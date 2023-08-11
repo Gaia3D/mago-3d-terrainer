@@ -3,17 +3,89 @@ plugins {
 }
 
 group = 'com.gaia3d'
-version = '1.0-SNAPSHOT'
+version = '0.0.0-ALPHA'
+
+project.ext.lwjglVersion = "3.3.1"
+switch ( org.gradle.internal.os.OperatingSystem.current() ) {
+    case org.gradle.internal.os.OperatingSystem.WINDOWS:
+        project.ext.lwjglNatives = "natives-windows"
+        break
+    case org.gradle.internal.os.OperatingSystem.LINUX:
+        project.ext.lwjglNatives = "natives-linux"
+        break
+    case org.gradle.internal.os.OperatingSystem.MAC_OS:
+        project.ext.lwjglNatives = "natives-macos"
+        break
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    compileOnly "org.projectlombok:lombok:1.18.26"
+    annotationProcessor "org.projectlombok:lombok:1.18.26"
+
+    // logging
+    implementation 'org.slf4j:slf4j-api:1.7.25'
+    // log4j
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
+    implementation 'org.apache.logging.log4j:log4j-api:2.14.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+
+    // commons library (apache)
+    implementation 'commons-logging:commons-logging:1.2'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'commons-cli:commons-cli:1.5.0'
+    implementation 'commons-collections:commons-collections:3.2.2'
+    implementation 'org.apache.commons:commons-text:1.10.0'
+
+    // lwjgl (lightweight java game library)
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-opengl"
+    //implementation "org.lwjgl:lwjgl-assimp"
+    implementation "org.lwjgl:lwjgl-stb"
+    implementation "org.lwjgl:lwjgl-glfw"
+    //implementation "org.lwjgl:lwjgl-openal"
+
+    // joml (java opengl math library)
+    implementation "org.joml:joml:1.10.5"
+
+    // proj4j (java projection library)
+    implementation "org.locationtech.proj4j:proj4j:1.2.3"
+    implementation "org.locationtech.proj4j:proj4j-epsg:1.2.3"
+
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    // jackson (json library)
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
+
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+    testCompileOnly "org.projectlombok:lombok:1.18.26"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.26"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.0"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.0"
 }
 
 test {
-    useJUnitPlatform()
+    //useJUnitPlatform()
+}
+
+// jar task
+jar {
+    manifest {
+        attributes "Main-Class": "com.gaia3d.command.MesherMain"
+    }
+    from {
+        configurations.runtimeClasspath.collect {it.isDirectory() ? it : zipTree(it)}
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

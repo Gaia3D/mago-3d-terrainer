@@ -1,6 +1,6 @@
-package com.gaia3d;
+package com.gaia3d.comand;
 
-public class Main {
+public class MesherMain {
     public static void main(String[] args) {
         System.out.println("Hello world!");
     }
