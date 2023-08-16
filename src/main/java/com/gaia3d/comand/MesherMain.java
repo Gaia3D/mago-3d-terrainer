@@ -1,6 +1,7 @@
 package com.gaia3d.comand;
 
 import com.gaia3d.reader.GeoTiffReader;
+import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.geometry.DirectPosition2D;
@@ -23,9 +24,13 @@ public class MesherMain {
     public static void main(String[] args) throws FactoryException, TransformException {
         System.out.println("Hello world!");
 
+        TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
+
         GeoTiffReader reader = new GeoTiffReader();
         String path = "D:\\QuantizedMesh_JavaProjects\\ws2_merged_dem.tif";
-        GridCoverage2D coverage = reader.read(path);
+        tileWgs84Manager.coverage = reader.read(path);
+        GridCoverage2D coverage = tileWgs84Manager.coverage;
+
         GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
         Envelope envelope = coverage.getEnvelope();
 
@@ -39,19 +44,21 @@ public class MesherMain {
         DirectPosition p = coverage.getGridGeometry().gridToWorld(coord);
         Point point = gf.createPoint(new Coordinate(p.getOrdinate(0), p.getOrdinate(1)));
         Geometry wgsP = (Geometry) JTS.transform(point, targetToWgs);
-        double minLon = wgsP.getCentroid().getCoordinate().x;
+        double maxLon = wgsP.getCentroid().getCoordinate().x;
         double minLat = wgsP.getCentroid().getCoordinate().y;
 
         coord = new GridCoordinates2D(1, 1);
         p = coverage.getGridGeometry().gridToWorld(coord);
         point = gf.createPoint(new Coordinate(p.getOrdinate(0), p.getOrdinate(1)));
         wgsP = (Geometry) JTS.transform(point, targetToWgs);
-        double maxLon = wgsP.getCentroid().getCoordinate().x;
+        double minLon = wgsP.getCentroid().getCoordinate().x;
         double maxLat = wgsP.getCentroid().getCoordinate().y;
+
+        tileWgs84Manager.geographicExtension.setDegrees(minLon, minLat, 0.0, maxLon, maxLat, 0.0);
 
 
         // start quantized mesh tiling.***
-        // calculate the bounding box of the terrain.***
+        tileWgs84Manager.startTiling();
 
 
         int hola2 = 0;
