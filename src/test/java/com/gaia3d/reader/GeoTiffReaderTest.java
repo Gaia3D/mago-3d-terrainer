@@ -8,6 +8,9 @@ class GeoTiffReaderTest {
     @Test
     void read() {
         GeoTiffReader reader = new GeoTiffReader();
-        reader.read();
+        String path = "D:\\QuantizedMesh_JavaProjects\\ws2_merged_dem.tif";
+        reader.read(path);
+
+        int hola = 0;
     }
 }

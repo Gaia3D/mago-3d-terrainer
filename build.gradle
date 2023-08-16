@@ -59,6 +59,7 @@ dependencies {
 
     // geotools (java geospatial library)
     implementation "org.geotools:gt-geotiff:22.1"
+    implementation "org.geotools:gt-epsg-hsql:22.1"
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
