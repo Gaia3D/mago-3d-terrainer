@@ -122,6 +122,28 @@ public class TileWgs84Utils {
         return resultTileIndicesArray;
     }
 
+    static public String getTileFileName(int X, int Y, int L)
+    {
+        return "L" + L + "_X" + X + "_Y" + Y + ".til";
+    }
+
+    static public String getTileFolderName_L(int L)
+    {
+        return "L" + String.valueOf(L);
+    }
+
+    static public String getTileFolderName_X(int X)
+    {
+        return "X" + String.valueOf(X);
+    }
+
+    static public String getTileFilePath(int X, int Y, int L)
+    {
+        return getTileFolderName_L(L) + "\\" + getTileFolderName_X(X) + "\\" + getTileFileName(X, Y, L);
+    }
+
+
+
     static public GeographicExtension getGeographicExtentOfTileLXY (int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType)
     {
         if (resultGeoExtend == null)
@@ -131,9 +153,9 @@ public class TileWgs84Utils {
         {
             double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(L);
             double minLon = angRange*X - 180.0;
-            double maxLon = angRange*(X+1) - 180.0;
-            double minLat = 90.0 - angRange*(Y+1);
-            double maxLat = 90.0 - angRange*(Y);
+            double maxLon = angRange*((double)X+1.0) - 180.0;
+            double minLat = 90.0 - angRange*((double)Y+1.0);
+            double maxLat = 90.0 - angRange*((double)Y);
 
             resultGeoExtend.setDegrees(minLon, minLat, 0, maxLon, maxLat, 0);
             return resultGeoExtend;
@@ -165,7 +187,7 @@ public class TileWgs84Utils {
             {
                 if (currL == L)
                 {
-                    double min_longitude = lonAngDegRange * X - 180.0;
+                    double min_longitude = lonAngDegRange * (double)X - 180.0;
                     double max_longitude = min_longitude + lonAngDegRange;
                     double min_latitude = minLadRad * 180.0 / M_PI;
                     double max_latitude = maxLadRad * 180.0 / M_PI;
