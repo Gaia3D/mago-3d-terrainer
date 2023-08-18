@@ -7,8 +7,10 @@ import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 
+import java.io.IOException;
+
 public class MesherMain {
-    public static void main(String[] args) throws FactoryException, TransformException {
+    public static void main(String[] args) throws FactoryException, TransformException, IOException {
 
         // create tileManager & set params.***
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();

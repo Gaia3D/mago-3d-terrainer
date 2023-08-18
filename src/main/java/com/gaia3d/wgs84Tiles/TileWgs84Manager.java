@@ -4,6 +4,7 @@ import com.gaia3d.basic.structure.GeographicExtension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.joml.Vector3d;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,8 +19,10 @@ public class TileWgs84Manager {
 
     public List<TileWgs84> tileWgs84List = new ArrayList<TileWgs84>();
 
+    public String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
 
-    public void makeTileMeshes() {
+
+    public void makeTileMeshes() throws IOException {
 
         GeographicExtension geographicExtension = this.terrainElevationData.geographicExtension;
         double minLon = geographicExtension.getMinLongitudeDeg();
@@ -33,11 +36,9 @@ public class TileWgs84Manager {
 
             for (TileIndices tileIndices : resultTileIndicesArray)
             {
-
-
                 TileWgs84 tile = new TileWgs84(null, this);
                 tile.tileIndices = tileIndices;
-                tile.makeMesh();
+                tile.makeBigMesh();
                 tileWgs84List.add(tile);
             }
 

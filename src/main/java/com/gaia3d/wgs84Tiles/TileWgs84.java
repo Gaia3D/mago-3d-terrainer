@@ -1,8 +1,10 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
+import com.gaia3d.reader.FileUtils;
 import org.joml.Vector3d;
 
+import java.io.*;
 import java.util.ArrayList;
 
 public class TileWgs84 {
@@ -19,27 +21,27 @@ public class TileWgs84 {
     // for current tile, create the 8 neighbor tiles.
     //  +----------+----------+----------+
     //  |          |          |          |
-    //  |  LUTile  |   UTile  |  RUTile  |
+    //  | LU_Tile  |  U_Tile  | RU_Tile  |
     //  |          |          |          |
     //  +----------+----------+----------+
     //  |          |          |          |
-    //  |  LTile   | currTile |  RTile   |
+    //  | L_Tile   |curr_Tile | R_Tile   |
     //  |          |          |          |
     //  +----------+----------+----------+
     //  |          |          |          |
-    //  |  LDTile  |  DTile   |  RDTile  |
+    //  | LD_Tile  | D_Tile   | RD_Tile  |
     //  |          |          |          |
     //  +----------+----------+----------+
 
     public TileWgs84[] neighborTiles = new TileWgs84[8];
-    // neighborTiles[0] = LDTile
-    // neighborTiles[1] = DTile
-    // neighborTiles[2] = RDTile
-    // neighborTiles[3] = RTile
-    // neighborTiles[4] = RUTile
-    // neighborTiles[5] = UTile
-    // neighborTiles[6] = LUTile
-    // neighborTiles[7] = LTile
+    // neighborTiles[0] = LD_Tile
+    // neighborTiles[1] = D_Tile
+    // neighborTiles[2] = RD_Tile
+    // neighborTiles[3] = R_Tile
+    // neighborTiles[4] = RU_Tile
+    // neighborTiles[5] = U_Tile
+    // neighborTiles[6] = LU_Tile
+    // neighborTiles[7] = L_Tile
 
 
     public TileWgs84[] childTiles = new TileWgs84[4];
@@ -47,6 +49,31 @@ public class TileWgs84 {
     public TileWgs84(TileWgs84 parentTile, TileWgs84Manager manager) {
         this.parentTile = parentTile;
         this.manager = manager;
+    }
+
+    public void saveFile(String filePath) throws IOException {
+        String foldersPath = FileUtils.removeFileNameFromPath(filePath);
+        if(!FileUtils.createAllFoldersIfNoExist(foldersPath))
+        {
+            return;
+        }
+
+        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream);
+
+        // delete the file if exists before save.***
+        FileUtils.deleteFileIfExists(filePath);
+
+        // save the tile.***
+        this.mesh.saveDataOutputStream(dataOutputStream);
+    }
+
+    public void loadFile(String filePath) throws IOException {
+        FileInputStream fileInputStream = new FileInputStream(filePath);
+        DataInputStream dataInputStream = new DataInputStream(fileInputStream);
+
+        this.mesh = new GaiaMesh();
+        this.mesh.loadDataInputStream(dataInputStream);
     }
 
     public void createInitialMesh()
@@ -70,15 +97,16 @@ public class TileWgs84 {
         //   +---------------------+
         //   |        he2        / |
         //   |                 /   |
-        //   |      T2       /     |
+        //   |     (T2)      /     |
         //   |             /       |
         //   | he3       /         |
         //   |     he1 /       he2 |
         //   |       /he3          |
-        //   |     /     T1        |
+        //   |     /     (T1)      |
         //   |   /                 |
         //   | /    he1            |
         //   +---------------------+
+        // so, the halfEdge_T1_3 is the twin of halfEdge_T2_1.***
 
         GaiaTriangle triangle1 = this.mesh.newTriangle();
         GaiaTriangle triangle2 = this.mesh.newTriangle();
@@ -122,23 +150,89 @@ public class TileWgs84 {
         triangle1.setHalfEdge(halfEdge_T1_1);
         triangle2.setHalfEdge(halfEdge_T2_1);
 
+        // now set objects id in list.***
+        this.mesh.setObjectsIdInList();
+
     }
 
-    public void makeMesh()
-    {
-        // 1rst, check if exist neighbor tiles.
-        int currDepth = this.tileIndices.L;
-        int currX = this.tileIndices.X;
-        int currY = this.tileIndices.Y;
-
+    private GaiaMesh getNeighborMesh(TileIndices neighborTileIndices) throws IOException {
         String tileTempDirectory = this.manager.tileTempDirectory;
         String outputDirectory = this.manager.outputDirectory;
 
         // check if exist LDTileFile.***
-        TileIndices LD_TileIndices = this.tileIndices.get_LD_TileIndices();
-        String LDTileFilePath = TileWgs84Utils.getTileFilePath(LD_TileIndices.X, LD_TileIndices.Y, LD_TileIndices.L);
-        String LDTileFullPath = tileTempDirectory + "\\" + LDTileFilePath;
+        String neighborFilePath = TileWgs84Utils.getTileFilePath(neighborTileIndices.X, neighborTileIndices.Y, neighborTileIndices.L);
+        String neighborFullPath = tileTempDirectory + "\\" + neighborFilePath;
 
+        if(!FileUtils.isFileExists(neighborFullPath))
+        {
+            // create the Tile.***
+            TileWgs84 neighborTile = new TileWgs84(null, this.manager);
+            neighborTile.tileIndices = neighborTileIndices;
+            String imageryType = this.manager.imageryType;
+            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(neighborTileIndices.L, neighborTileIndices.X, neighborTileIndices.Y, null, imageryType);
+            neighborTile.createInitialMesh();
+            neighborTile.saveFile(neighborFullPath);
+
+            return neighborTile.mesh;
+        }
+        else
+        {
+            // load the Tile.***
+            TileWgs84 neighborTile = new TileWgs84(null, this.manager);
+            neighborTile.tileIndices = neighborTileIndices;
+            neighborTile.loadFile(neighborFullPath);
+
+            return neighborTile.mesh;
+        }
+
+    }
+
+    public void makeBigMesh() throws IOException {
+
+        // make a bigMesh.***
+        // bigMesh:
+        //  +----------+----------+----------+
+        //  |          |          |          |
+        //  | LU_mesh  |  U_mesh  | RU_mesh  |
+        //  |          |          |          |
+        //  +----------+----------+----------+
+        //  |          |          |          |
+        //  | L_mesh   |curr_mesh | R_mesh   |
+        //  |          |          |          |
+        //  +----------+----------+----------+
+        //  |          |          |          |
+        //  | LD_mesh  | D_mesh   | RD_mesh  |
+        //  |          |          |          |
+        //  +----------+----------+----------+
+
+        GaiaMesh curr_Mesh = this.mesh;
+
+        TileIndices LD_TileIndices = this.tileIndices.get_LD_TileIndices();
+        GaiaMesh LD_Mesh = this.getNeighborMesh(LD_TileIndices);
+
+        TileIndices D_TileIndices = this.tileIndices.get_D_TileIndices();
+        GaiaMesh D_Mesh = this.getNeighborMesh(D_TileIndices);
+
+        TileIndices RD_TileIndices = this.tileIndices.get_RD_TileIndices();
+        GaiaMesh RD_Mesh = this.getNeighborMesh(RD_TileIndices);
+
+        TileIndices L_TileIndices = this.tileIndices.get_L_TileIndices();
+        GaiaMesh L_Mesh = this.getNeighborMesh(L_TileIndices);
+
+        TileIndices R_TileIndices = this.tileIndices.get_R_TileIndices();
+        GaiaMesh R_Mesh = this.getNeighborMesh(R_TileIndices);
+
+        TileIndices LU_TileIndices = this.tileIndices.get_LU_TileIndices();
+        GaiaMesh LU_Mesh = this.getNeighborMesh(LU_TileIndices);
+
+        TileIndices U_TileIndices = this.tileIndices.get_U_TileIndices();
+        GaiaMesh U_Mesh = this.getNeighborMesh(U_TileIndices);
+
+        TileIndices RU_TileIndices = this.tileIndices.get_RU_TileIndices();
+        GaiaMesh RU_Mesh = this.getNeighborMesh(RU_TileIndices);
+
+        // now make the bigMesh.***
+        GaiaMesh bigMesh = new GaiaMesh();
 
 
         int hola = 0;
