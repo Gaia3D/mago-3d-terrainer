@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GaiaMesh {
     public ArrayList<GaiaVertex> vertices = null;
@@ -11,7 +12,7 @@ public class GaiaMesh {
 
     public ArrayList<GaiaHalfEdge> halfEdges = null;
 
-    public long id = -1L;
+    public int id = -1;
 
     public GaiaMesh() {
         vertices = new ArrayList<GaiaVertex>();
@@ -71,6 +72,39 @@ public class GaiaMesh {
         setHalfEdgeIdInList();
     }
 
+    public HashMap<Integer, GaiaVertex> getVerticesMap()
+    {
+        HashMap<Integer, GaiaVertex> verticesMap = new HashMap<Integer, GaiaVertex>();
+        int verticesCount = vertices.size();
+        for(int i=0; i<verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+            verticesMap.put(vertex.id, vertex);
+        }
+        return verticesMap;
+    }
+
+    public HashMap<Integer, GaiaTriangle> getTrianglesMap()
+    {
+        HashMap<Integer, GaiaTriangle> trianglesMap = new HashMap<Integer, GaiaTriangle>();
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            trianglesMap.put(triangle.id, triangle);
+        }
+        return trianglesMap;
+    }
+
+    public HashMap<Integer, GaiaHalfEdge> getHalfEdgesMap()
+    {
+        HashMap<Integer, GaiaHalfEdge> halfEdgesMap = new HashMap<Integer, GaiaHalfEdge>();
+        int halfEdgesCount = halfEdges.size();
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = halfEdges.get(i);
+            halfEdgesMap.put(halfEdge.id, halfEdge);
+        }
+        return halfEdgesMap;
+    }
+
     public void addMesh(GaiaMesh mesh)
     {
         // 1rst, add vertices.***
@@ -99,7 +133,7 @@ public class GaiaMesh {
 
     public void saveDataOutputStream(DataOutputStream dataOutputStream) throws IOException {
         // save id.***
-        dataOutputStream.writeLong(id);
+        dataOutputStream.writeInt(id);
 
         // save vertices.***
         int verticesCount = vertices.size();
@@ -135,7 +169,7 @@ public class GaiaMesh {
 
     public void loadDataInputStream(DataInputStream dataInputStream) throws IOException
     {
-        this.id = dataInputStream.readLong();
+        this.id = dataInputStream.readInt();
 
         // load vertices.***
         int verticesCount = dataInputStream.readInt();
@@ -159,7 +193,64 @@ public class GaiaMesh {
         }
 
         // now, for each object, find pointing objects.***
+        HashMap<Integer, GaiaVertex> verticesMap = getVerticesMap();
+        HashMap<Integer, GaiaTriangle> trianglesMap = getTrianglesMap();
+        HashMap<Integer, GaiaHalfEdge> halfEdgesMap = getHalfEdgesMap();
 
+        // now, find pointing objects.***
+        for(int i=0; i<verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+
+            // vertex points outingHalfEdge.***
+            int outingHalfEdgeId = vertex.outingHEdgeId;
+            if(outingHalfEdgeId != -1) {
+                GaiaHalfEdge outingHalfEdge = halfEdgesMap.get(outingHalfEdgeId);
+                vertex.outingHEdge = outingHalfEdge;
+            }
+        }
+
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+
+            // triangle points halfEdge.***
+            int halfEdgeId = triangle.halfEdgeId;
+            if(halfEdgeId != -1) {
+                GaiaHalfEdge halfEdge = halfEdgesMap.get(halfEdgeId);
+                triangle.halfEdge = halfEdge;
+            }
+        }
+
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = halfEdges.get(i);
+
+            // halfEdge points vertex.***
+            int vertexId = halfEdge.startVertexId;
+            if(vertexId != -1) {
+                GaiaVertex vertex = verticesMap.get(vertexId);
+                halfEdge.startVertex = vertex;
+            }
+
+            // halfEdge points triangle.***
+            int triangleId = halfEdge.triangleId;
+            if(triangleId != -1) {
+                GaiaTriangle triangle = trianglesMap.get(triangleId);
+                halfEdge.triangle = triangle;
+            }
+
+            // halfEdge points next.***
+            int nextId = halfEdge.nextId;
+            if(nextId != -1) {
+                GaiaHalfEdge next = halfEdgesMap.get(nextId);
+                halfEdge.next = next;
+            }
+
+            // halfEdge points twin.***
+            int twinId = halfEdge.twinId;
+            if(twinId != -1) {
+                GaiaHalfEdge twin = halfEdgesMap.get(twinId);
+                halfEdge.twin = twin;
+            }
+        }
 
     }
 
