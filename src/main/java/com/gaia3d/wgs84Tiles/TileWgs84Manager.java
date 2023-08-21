@@ -1,6 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.reader.FileUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.joml.Vector3d;
 
@@ -47,5 +48,30 @@ public class TileWgs84Manager {
 
     }
 
+    public TileWgs84 loadOrCreateTileWgs84(TileIndices tileIndices) throws IOException {
+        // this function loads or creates a TileWgs84.***
+        // check if exist LDTileFile.***
+        String tileTempDirectory = this.tileTempDirectory;
+        String outputDirectory = this.outputDirectory;
+        String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
+        String neighborFullPath = tileTempDirectory + "\\" + neighborFilePath;
+        TileWgs84 neighborTile = new TileWgs84(null, this);
+        if(!FileUtils.isFileExists(neighborFullPath))
+        {
+            // create the Tile.***
+            neighborTile.tileIndices = tileIndices;
+            String imageryType = this.imageryType;
+            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
+            neighborTile.createInitialMesh();
+            neighborTile.saveFile(neighborFullPath);
+        }
+        else
+        {
+            // load the Tile.***
+            neighborTile.tileIndices = tileIndices;
+            neighborTile.loadFile(neighborFullPath);
+        }
+        return neighborTile;
+    }
 
 }

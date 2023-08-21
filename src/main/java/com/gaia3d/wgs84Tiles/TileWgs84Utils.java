@@ -1,7 +1,10 @@
 package com.gaia3d.wgs84Tiles;
 
+import com.gaia3d.basic.structure.GaiaMesh;
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.reader.FileUtils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -234,4 +237,6 @@ public class TileWgs84Utils {
 
         return null;
     }
+
+
 }

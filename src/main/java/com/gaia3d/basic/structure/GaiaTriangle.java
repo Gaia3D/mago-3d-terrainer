@@ -1,7 +1,9 @@
 package com.gaia3d.basic.structure;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import com.gaia3d.util.io.LittleEndianDataInputStream;
+import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.wgs84Tiles.TileIndices;
+
 import java.io.IOException;
 
 public class GaiaTriangle {
@@ -11,11 +13,14 @@ public class GaiaTriangle {
 
     public int halfEdgeId = -1;
 
+    // this triangle belongs to a tile.***
+    public TileIndices ownerTile_tileIndices = new TileIndices();
+
     public void setHalfEdge(GaiaHalfEdge halfEdge) {
         this.halfEdge = halfEdge;
     }
 
-    public void saveDataOutputStream(DataOutputStream dataOutputStream)
+    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
     {
         try {
             // 1rst, save id.***
@@ -30,15 +35,31 @@ public class GaiaTriangle {
             {
                 dataOutputStream.writeInt(-1);
             }
+
+            // 3rd, save ownerTile_tileIndices.***
+            if(ownerTile_tileIndices == null)
+            {
+                dataOutputStream.writeInt(-1);
+                dataOutputStream.writeInt(-1);
+                dataOutputStream.writeInt(-1);
+            }
+            else
+            {
+                ownerTile_tileIndices.saveDataOutputStream(dataOutputStream);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void loadDataInputStream(DataInputStream dataInputStream) throws IOException
+    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException
     {
         this.id = dataInputStream.readInt();
-
         this.halfEdgeId = dataInputStream.readInt();
+        if(this.ownerTile_tileIndices == null)
+        {
+            this.ownerTile_tileIndices = new TileIndices();
+        }
+        this.ownerTile_tileIndices.loadDataInputStream(dataInputStream);
     }
 }

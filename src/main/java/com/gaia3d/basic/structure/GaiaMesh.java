@@ -1,7 +1,8 @@
 package com.gaia3d.basic.structure;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import com.gaia3d.util.io.LittleEndianDataInputStream;
+import com.gaia3d.util.io.LittleEndianDataOutputStream;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -131,7 +132,7 @@ public class GaiaMesh {
 
     }
 
-    public void saveDataOutputStream(DataOutputStream dataOutputStream) throws IOException {
+    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException {
         // save id.***
         dataOutputStream.writeInt(id);
 
@@ -167,7 +168,7 @@ public class GaiaMesh {
 
     }
 
-    public void loadDataInputStream(DataInputStream dataInputStream) throws IOException
+    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException
     {
         this.id = dataInputStream.readInt();
 

@@ -1,7 +1,10 @@
 package com.gaia3d.basic.structure;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+
+
+import com.gaia3d.util.io.LittleEndianDataInputStream;
+import com.gaia3d.util.io.LittleEndianDataOutputStream;
+
 import java.io.IOException;
 
 public class GaiaHalfEdge {
@@ -27,7 +30,18 @@ public class GaiaHalfEdge {
         startVertex.outingHEdge = this;
     }
 
-    public void saveDataOutputStream(DataOutputStream dataOutputStream)
+    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException
+    {
+        this.id = dataInputStream.readInt();
+
+        this.startVertexId = dataInputStream.readInt();
+        this.nextId = dataInputStream.readInt();
+        this.twinId = dataInputStream.readInt();
+        this.triangleId = dataInputStream.readInt();
+
+    }
+
+    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
     {
         try {
             // 1rst, save id.***
@@ -77,14 +91,5 @@ public class GaiaHalfEdge {
         }
     }
 
-    public void loadDataInputStream(DataInputStream dataInputStream) throws IOException
-    {
-        this.id = dataInputStream.readInt();
 
-        this.startVertexId = dataInputStream.readInt();
-        this.nextId = dataInputStream.readInt();
-        this.twinId = dataInputStream.readInt();
-        this.triangleId = dataInputStream.readInt();
-
-    }
 }

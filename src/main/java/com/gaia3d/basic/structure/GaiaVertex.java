@@ -1,9 +1,9 @@
 package com.gaia3d.basic.structure;
 
+import com.gaia3d.util.io.LittleEndianDataInputStream;
+import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import org.joml.Vector3d;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class GaiaVertex {
@@ -14,7 +14,7 @@ public class GaiaVertex {
 
     public int outingHEdgeId = -1;
 
-    public void saveDataOutputStream(DataOutputStream dataOutputStream)
+    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
     {
         try {
             // 1rst, save id.***
@@ -37,7 +37,7 @@ public class GaiaVertex {
         }
     }
 
-    public void loadDataInputStream(DataInputStream dataInputStream) throws IOException {
+    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException {
         this.id = dataInputStream.readInt();
         this.position.x = dataInputStream.readDouble();
         this.position.y = dataInputStream.readDouble();
