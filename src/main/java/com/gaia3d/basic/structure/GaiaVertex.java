@@ -15,6 +15,8 @@ public class GaiaVertex {
 
     public int outingHEdgeId = -1;
 
+    public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
+
     public boolean isCoincidentVertex(GaiaVertex vertex, double error)
     {
         if(vertex == null)
@@ -49,6 +51,12 @@ public class GaiaVertex {
         while(!finished)
         {
             GaiaHalfEdge twinHalfEdge = currHalfEdge.twin;
+            if(twinHalfEdge == null)
+            {
+                finished = true;
+                isInteriorVertex = false;
+                break;
+            }
             GaiaHalfEdge nextHalfEdge = twinHalfEdge.next;
             if(nextHalfEdge == null)
             {
@@ -70,7 +78,6 @@ public class GaiaVertex {
         if(!isInteriorVertex)
         {
             // check if there are more outing halfEdges.***
-            firstHalfEdge = this.outingHEdge;
             currHalfEdge = this.outingHEdge;
             finished = false;
             while(!finished)
@@ -84,6 +91,8 @@ public class GaiaVertex {
                 }
 
                 outingHalfEdges.add(twinHalfEdge);
+
+                currHalfEdge = twinHalfEdge;
             }
 
         }

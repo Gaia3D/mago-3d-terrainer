@@ -15,6 +15,7 @@ public class GaiaTriangle {
 
     // this triangle belongs to a tile.***
     public TileIndices ownerTile_tileIndices = new TileIndices();
+    public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
 
     public void setHalfEdge(GaiaHalfEdge halfEdge) {
         this.halfEdge = halfEdge;

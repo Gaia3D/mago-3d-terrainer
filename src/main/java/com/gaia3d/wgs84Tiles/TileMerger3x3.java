@@ -1,10 +1,9 @@
 package com.gaia3d.wgs84Tiles;
 
-import com.gaia3d.basic.structure.GaiaHalfEdge;
-import com.gaia3d.basic.structure.GaiaMesh;
-import com.gaia3d.basic.structure.HalfEdgeType;
+import com.gaia3d.basic.structure.*;
 
 import java.util.ArrayList;
+
 
 public class TileMerger3x3 {
 
@@ -32,6 +31,8 @@ public class TileMerger3x3 {
     TileWgs84 left_down_tile = null;
     TileWgs84 right_down_tile = null;
 
+    double vertexCoincidentError = 0.0000000000001;
+
     public TileMerger3x3(TileWgs84 center_tile, TileWgs84 left_tile, TileWgs84 right_tile,
                          TileWgs84 up_tile, TileWgs84 down_tile, TileWgs84 left_up_tile,
                          TileWgs84 right_up_tile, TileWgs84 left_down_tile, TileWgs84 right_down_tile) {
@@ -46,21 +47,69 @@ public class TileMerger3x3 {
         this.right_down_tile = right_down_tile;
     }
 
+    private boolean setTwinHalfEdgeWithHalfEdgesList(GaiaHalfEdge halfEdge, ArrayList<GaiaHalfEdge> halfEdgesList)
+    {
+        int halfEdgesList_count = halfEdgesList.size();
+        for(int i=0; i<halfEdgesList_count; i++)
+        {
+            GaiaHalfEdge halfEdge2 = halfEdgesList.get(i);
+
+            if(halfEdge2.twin != null)
+            {
+                // this halfEdge2 has a twin.***
+                continue;
+            }
+
+            if(halfEdge.isHalfEdgePossibleTwin(halfEdge2, vertexCoincidentError))
+            {
+                // 1rst, must change the startVertex & endVertex of the halfEdge2.***
+                GaiaVertex startVertex = halfEdge.getStartVertex();
+                GaiaVertex endVertex = halfEdge.getEndVertex();
+
+                GaiaVertex startVertex2 = halfEdge2.getStartVertex();
+                GaiaVertex endVertex2 = halfEdge2.getEndVertex();
+
+                ArrayList<GaiaHalfEdge> outingHalfEdges_strVertex2 = startVertex2.getAllOutingHalfEdges();
+                ArrayList<GaiaHalfEdge> outingHalfEdges_endVertex2 = endVertex2.getAllOutingHalfEdges();
+
+                int outingHalfEdges_strVertex2_count = outingHalfEdges_strVertex2.size();
+                for(int j=0; j<outingHalfEdges_strVertex2_count; j++)
+                {
+                    GaiaHalfEdge outingHalfEdge = outingHalfEdges_strVertex2.get(j);
+                    outingHalfEdge.setStartVertex(endVertex);
+                }
+
+                int outingHalfEdges_endVertex2_count = outingHalfEdges_endVertex2.size();
+                for(int j=0; j<outingHalfEdges_endVertex2_count; j++)
+                {
+                    GaiaHalfEdge outingHalfEdge = outingHalfEdges_endVertex2.get(j);
+                    outingHalfEdge.setStartVertex(startVertex);
+                }
+
+                // finally set twins.***
+                halfEdge.setTwin(halfEdge2);
+
+                // now, set as deleted the startVertex2 & endVertex2.***
+                startVertex2.objectStatus = GaiaObjectStatus.DELETED;
+                endVertex2.objectStatus = GaiaObjectStatus.DELETED;
+
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void setTwinsBetweenHalfEdges(ArrayList<GaiaHalfEdge> listHEdges_A, ArrayList<GaiaHalfEdge> listHEdges_B)
     {
         int listHEdges_A_count = listHEdges_A.size();
-        int listHEdges_B_count = listHEdges_B.size();
         for(int i=0; i<listHEdges_A_count; i++)
         {
-            GaiaHalfEdge halfEdge_A = listHEdges_A.get(i);
-            for(int j=0; j<listHEdges_B_count; j++)
+            GaiaHalfEdge halfEdge = listHEdges_A.get(i);
+            if(!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B))
             {
-                GaiaHalfEdge halfEdge_B = listHEdges_B.get(j);
-                if(halfEdge_A.isHalfEdgePossibleTwin(halfEdge_B))
-                {
-                    halfEdge_A.setTwin(halfEdge_B);
-                    break;
-                }
+                // system.out.println("Error: no twin halfEdge found.");
+                // error.!***
+                int hola = 0;
             }
         }
     }
@@ -89,8 +138,12 @@ public class TileMerger3x3 {
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(L_mesh_right_halfEdges, result_mesh_left_halfEdges);
 
-            //resultMergedMesh = resultMergedMesh.merge(left_tile.mesh);
+            // now, merge the left tile mesh to the result mesh.
+            resultMergedMesh.removeDeletedObjects();
+            resultMergedMesh.mergeMesh(L_mesh);
 
+            //resultMergedMesh = resultMergedMesh.merge(left_tile.mesh);
+            int hola = 0;
         }
 
         return resultMergedMesh;

@@ -48,6 +48,74 @@ public class GaiaMesh {
         }
     }
 
+    public void removeDeletedObjects()
+    {
+        // 1rst, check vertices.***
+        int verticesCount = vertices.size();
+        for(int i=0; i<verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+            if(vertex.objectStatus == GaiaObjectStatus.DELETED) {
+                vertices.remove(i);
+                i--;
+                verticesCount--;
+            }
+        }
+
+        // 2nd, check triangles.***
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            if(triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                triangles.remove(i);
+                i--;
+                trianglesCount--;
+            }
+        }
+
+        // 3rd, check halfEdges.***
+        int halfEdgesCount = halfEdges.size();
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = halfEdges.get(i);
+            if(halfEdge.objectStatus == GaiaObjectStatus.DELETED) {
+                halfEdges.remove(i);
+                i--;
+                halfEdgesCount--;
+            }
+        }
+    }
+
+    public void mergeMesh(GaiaMesh mesh) {
+        // 1rst, add vertices.***
+        int verticesCount = mesh.vertices.size();
+        for (int i = 0; i < verticesCount; i++) {
+            GaiaVertex vertex = mesh.vertices.get(i);
+            if(vertex.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+            vertices.add(vertex);
+        }
+
+        // 2nd, add triangles.***
+        int trianglesCount = mesh.triangles.size();
+        for (int i = 0; i < trianglesCount; i++) {
+            GaiaTriangle triangle = mesh.triangles.get(i);
+            if(triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+            triangles.add(triangle);
+        }
+
+        // 3rd, add halfEdges.***
+        int halfEdgesCount = mesh.halfEdges.size();
+        for (int i = 0; i < halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = mesh.halfEdges.get(i);
+            if(halfEdge.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+            halfEdges.add(halfEdge);
+        }
+    }
+
     public ArrayList<GaiaHalfEdge> getHalfEdgesByType(HalfEdgeType type)
     {
         ArrayList<GaiaHalfEdge> halfEdges = new ArrayList<GaiaHalfEdge>();

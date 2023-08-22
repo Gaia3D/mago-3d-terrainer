@@ -21,6 +21,7 @@ public class GaiaHalfEdge {
     public int triangleId = -1;
 
     public HalfEdgeType type = HalfEdgeType.UNKNOWN;
+    public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
 
     public void setTwin(GaiaHalfEdge twin) {
         this.twin = twin;
@@ -87,7 +88,7 @@ public class GaiaHalfEdge {
         return prevHalfEdge;
     }
 
-    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge)
+    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error)
     {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
         GaiaVertex startPoint_A = this.getStartVertex();
@@ -97,13 +98,13 @@ public class GaiaHalfEdge {
         GaiaVertex endPoint_B = halfEdge.getEndVertex();
 
         // 1rst compare objects as pointers.***
-        if(startPoint_A.equals(endPoint_B) && startPoint_B.equals(endPoint_A))
-        {
-            return true;
-        }
+        //if(startPoint_A.equals(endPoint_B) && startPoint_B.equals(endPoint_A))
+        //{
+        //    return true;
+        //}
 
         // 2nd compare objects as values.***
-        if(startPoint_A.isCoincidentVertex(endPoint_B, 0.0000001) && startPoint_B.isCoincidentVertex(endPoint_A, 0.0000001))
+        if(startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error))
         {
             return true;
         }

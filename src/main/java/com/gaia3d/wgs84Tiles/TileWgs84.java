@@ -55,10 +55,7 @@ public class TileWgs84 {
 
     public void saveFile(String filePath) throws IOException {
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
-        if(!FileUtils.createAllFoldersIfNoExist(foldersPath))
-        {
-            return;
-        }
+        FileUtils.createAllFoldersIfNoExist(foldersPath);
 
         FileOutputStream fileOutputStream = new FileOutputStream(filePath);
         LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
@@ -68,6 +65,22 @@ public class TileWgs84 {
 
         // save the tile.***
         this.mesh.saveDataOutputStream(dataOutputStream);
+    }
+
+    public void saveFileBigMesh(String filePath, GaiaMesh bigMesh) throws IOException {
+        // this is a temp function.***
+        // delete after test.***
+        String foldersPath = FileUtils.removeFileNameFromPath(filePath);
+        FileUtils.createAllFoldersIfNoExist(foldersPath);
+
+        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+
+        // delete the file if exists before save.***
+        FileUtils.deleteFileIfExists(filePath);
+
+        // save the tile.***
+        bigMesh.saveDataOutputStream(dataOutputStream);
     }
 
     public void loadFile(String filePath) throws IOException {
@@ -187,7 +200,8 @@ public class TileWgs84 {
         //  |          |          |          |
         //  +----------+----------+----------+
 
-        GaiaMesh curr_Mesh = this.mesh;
+        TileIndices curr_TileIndices = this.tileIndices;
+        TileWgs84 curr_tile = this.manager.loadOrCreateTileWgs84(curr_TileIndices);
 
         TileIndices LD_TileIndices = this.tileIndices.get_LD_TileIndices();
         TileWgs84 LD_tile = this.manager.loadOrCreateTileWgs84(LD_TileIndices);
@@ -214,9 +228,20 @@ public class TileWgs84 {
         TileWgs84 RU_tile = this.manager.loadOrCreateTileWgs84(RU_TileIndices);
 
         // now make the bigMesh.***
-        TileWgs84 bigTile3x3 = new TileWgs84(null, this.manager);
+        // public TileMerger3x3(TileWgs84 center_tile, TileWgs84 left_tile, TileWgs84 right_tile,
+        //                         TileWgs84 up_tile, TileWgs84 down_tile, TileWgs84 left_up_tile,
+        //                         TileWgs84 right_up_tile, TileWgs84 left_down_tile, TileWgs84 right_down_tile)
+        TileMerger3x3 tileMerger3x3 = new TileMerger3x3(curr_tile, L_tile, R_tile, U_tile, D_tile, LU_tile, RU_tile, LD_tile, RD_tile);
 
+        GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
+        bigMesh.setObjectsIdInList();
 
+        // provisionally save the bigMesh.***
+        String tileTempDirectory = this.manager.tileTempDirectory;
+        String outputDirectory = this.manager.outputDirectory;
+        String bigMeshFilePath = "bigMesh.til";
+        String bigMeshFullPath = tileTempDirectory + "\\" + bigMeshFilePath;
+        this.saveFileBigMesh(bigMeshFullPath, bigMesh);
         int hola = 0;
     }
 
