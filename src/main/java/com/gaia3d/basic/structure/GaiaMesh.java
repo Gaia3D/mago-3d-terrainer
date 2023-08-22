@@ -48,6 +48,20 @@ public class GaiaMesh {
         }
     }
 
+    public ArrayList<GaiaHalfEdge> getHalfEdgesByType(HalfEdgeType type)
+    {
+        ArrayList<GaiaHalfEdge> halfEdges = new ArrayList<GaiaHalfEdge>();
+        int halfEdgesCount = this.halfEdges.size();
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = this.halfEdges.get(i);
+            if(halfEdge.type == type) {
+                halfEdges.add(halfEdge);
+            }
+        }
+        return halfEdges;
+    }
+
+
     public void setTriangleIdInList()
     {
         int trianglesCount = triangles.size();

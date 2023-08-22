@@ -5,6 +5,7 @@ import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import org.joml.Vector3d;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class GaiaVertex {
     public GaiaHalfEdge outingHEdge = null;
@@ -13,6 +14,83 @@ public class GaiaVertex {
     public int id = -1;
 
     public int outingHEdgeId = -1;
+
+    public boolean isCoincidentVertex(GaiaVertex vertex, double error)
+    {
+        if(vertex == null)
+        {
+            return false;
+        }
+
+        if(Math.abs(this.position.x - vertex.position.x) < error &&
+                Math.abs(this.position.y - vertex.position.y) < error &&
+                Math.abs(this.position.z - vertex.position.z) < error)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public ArrayList<GaiaHalfEdge> getAllOutingHalfEdges()
+    {
+        ArrayList<GaiaHalfEdge> outingHalfEdges = new ArrayList<GaiaHalfEdge>();
+
+        // there are 2 cases: this vertex is interior vertex or boundary vertex, but we dont know.***
+        // 1- interior vertex.***
+        // 2- boundary vertex.***
+        GaiaHalfEdge firstHalfEdge = this.outingHEdge;
+        GaiaHalfEdge currHalfEdge = this.outingHEdge;
+        outingHalfEdges.add(this.outingHEdge); // put the first halfEdge.***
+        boolean finished = false;
+        boolean isInteriorVertex = true;
+        while(!finished)
+        {
+            GaiaHalfEdge twinHalfEdge = currHalfEdge.twin;
+            GaiaHalfEdge nextHalfEdge = twinHalfEdge.next;
+            if(nextHalfEdge == null)
+            {
+                finished = true;
+                isInteriorVertex = false;
+                break;
+            }
+            else if(nextHalfEdge == firstHalfEdge)
+            {
+                finished = true;
+                break;
+            }
+
+            outingHalfEdges.add(nextHalfEdge);
+            currHalfEdge = nextHalfEdge;
+        }
+
+        // if this vertex is NO interior vertex, then must check if there are more outing halfEdges.***
+        if(!isInteriorVertex)
+        {
+            // check if there are more outing halfEdges.***
+            firstHalfEdge = this.outingHEdge;
+            currHalfEdge = this.outingHEdge;
+            finished = false;
+            while(!finished)
+            {
+                GaiaHalfEdge prevHalfEdge = currHalfEdge.getPrev();
+                GaiaHalfEdge twinHalfEdge = prevHalfEdge.twin;
+                if(twinHalfEdge == null)
+                {
+                    finished = true;
+                    break;
+                }
+
+                outingHalfEdges.add(twinHalfEdge);
+            }
+
+        }
+
+        return outingHalfEdges;
+    }
+
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
     {

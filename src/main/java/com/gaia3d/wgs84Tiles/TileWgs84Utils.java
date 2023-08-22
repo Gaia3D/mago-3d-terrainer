@@ -145,8 +145,6 @@ public class TileWgs84Utils {
         return getTileFolderName_L(L) + "\\" + getTileFolderName_X(X) + "\\" + getTileFileName(X, Y, L);
     }
 
-
-
     static public GeographicExtension getGeographicExtentOfTileLXY (int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType)
     {
         if (resultGeoExtend == null)

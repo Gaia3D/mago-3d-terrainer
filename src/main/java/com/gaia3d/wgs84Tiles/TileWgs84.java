@@ -119,8 +119,11 @@ public class TileWgs84 {
         GaiaHalfEdge halfEdge_T1_3 = this.mesh.newHalfEdge(); // twin of halfEdge_T2_1.***
 
         halfEdge_T1_1.setStartVertex(vertexLD);
+        halfEdge_T1_1.type = HalfEdgeType.DOWN;
         halfEdge_T1_2.setStartVertex(vertexRD);
+        halfEdge_T1_2.type = HalfEdgeType.RIGHT;
         halfEdge_T1_3.setStartVertex(vertexRU);
+        halfEdge_T1_3.type = HalfEdgeType.INTERIOR;
 
         ArrayList<GaiaHalfEdge> halfEdges_T1 = new ArrayList<GaiaHalfEdge>();
         halfEdges_T1.add(halfEdge_T1_1);
@@ -135,8 +138,11 @@ public class TileWgs84 {
         GaiaHalfEdge halfEdge_T2_3 = this.mesh.newHalfEdge();
 
         halfEdge_T2_1.setStartVertex(vertexLD);
+        halfEdge_T2_1.type = HalfEdgeType.INTERIOR;
         halfEdge_T2_2.setStartVertex(vertexRU);
+        halfEdge_T2_2.type = HalfEdgeType.UP;
         halfEdge_T2_3.setStartVertex(vertexLU);
+        halfEdge_T2_3.type = HalfEdgeType.LEFT;
 
         ArrayList<GaiaHalfEdge> halfEdges_T2 = new ArrayList<GaiaHalfEdge>();
         halfEdges_T2.add(halfEdge_T2_1);
