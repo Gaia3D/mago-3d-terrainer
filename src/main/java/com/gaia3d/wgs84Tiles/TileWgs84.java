@@ -4,10 +4,15 @@ import com.gaia3d.basic.structure.*;
 import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import com.gaia3d.reader.FileUtils;
+import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.opengis.referencing.operation.TransformException;
+
 
 import java.io.*;
 import java.util.ArrayList;
+
+import static java.lang.Math.abs;
 
 public class TileWgs84 {
     public TileWgs84Manager manager = null;
@@ -91,8 +96,7 @@ public class TileWgs84 {
         this.mesh.loadDataInputStream(dataInputStream);
     }
 
-    public void createInitialMesh()
-    {
+    public void createInitialMesh() throws TransformException {
         // The initial mesh consists in 4 vertex & 2 triangles.***
         this.mesh = new GaiaMesh();
 
@@ -101,10 +105,22 @@ public class TileWgs84 {
         GaiaVertex vertexRU = this.mesh.newVertex();
         GaiaVertex vertexLU = this.mesh.newVertex();
 
-        vertexLD.position = new Vector3d(this.geographicExtension.getMinLongitudeDeg(), this.geographicExtension.getMinLatitudeDeg(), 0.0);
-        vertexRD.position = new Vector3d(this.geographicExtension.getMaxLongitudeDeg(), this.geographicExtension.getMinLatitudeDeg(), 0.0);
-        vertexRU.position = new Vector3d(this.geographicExtension.getMaxLongitudeDeg(), this.geographicExtension.getMaxLatitudeDeg(), 0.0);
-        vertexLU.position = new Vector3d(this.geographicExtension.getMinLongitudeDeg(), this.geographicExtension.getMaxLatitudeDeg(), 0.0);
+        TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+
+        double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
+        double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
+        double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
+        double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
+
+        double elevMinLonMinLat = terrainElevationData.getElevation(minLonDeg, minLatDeg);
+        double elevMaxLonMinLat = terrainElevationData.getElevation(maxLonDeg, minLatDeg);
+        double elevMaxLonMaxLat = terrainElevationData.getElevation(maxLonDeg, maxLatDeg);
+        double elevMinLonMaxLat = terrainElevationData.getElevation(minLonDeg, maxLatDeg);
+
+        vertexLD.position = new Vector3d(minLonDeg, minLatDeg, elevMinLonMinLat);
+        vertexRD.position = new Vector3d(maxLonDeg, minLatDeg, elevMaxLonMinLat);
+        vertexRU.position = new Vector3d(maxLonDeg, maxLatDeg, elevMaxLonMaxLat);
+        vertexLU.position = new Vector3d(minLonDeg, maxLatDeg, elevMinLonMaxLat);
 
 
         // create the 2 triangles.***
@@ -182,7 +198,7 @@ public class TileWgs84 {
 
 
 
-    public void makeBigMesh() throws IOException {
+    public void makeBigMesh() throws IOException, TransformException {
 
         // make a bigMesh.***
         // bigMesh:
@@ -236,12 +252,99 @@ public class TileWgs84 {
         GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
         bigMesh.setObjectsIdInList();
 
+        refineMesh(bigMesh, curr_TileIndices);
+
         // provisionally save the bigMesh.***
         String tileTempDirectory = this.manager.tileTempDirectory;
         String outputDirectory = this.manager.outputDirectory;
-        String bigMeshFilePath = "bigMesh.til";
+        String bigMeshFilePath = TileWgs84Utils.getTileFileName(curr_TileIndices.X, curr_TileIndices.X, curr_TileIndices.L) + "bigMesh.til";
         String bigMeshFullPath = tileTempDirectory + "\\" + bigMeshFilePath;
         this.saveFileBigMesh(bigMeshFullPath, bigMesh);
+        int hola = 0;
+    }
+
+    public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException {
+        TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+        GeographicExtension terrainGeoExtension = terrainElevationData.geographicExtension;
+        Vector2d pixelSizeDeg = terrainElevationData.getPixelSizeDegree();
+
+        // check if the triangle must be refined.***
+        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+
+        //if(!bboxTriangle.intersectsRectangleXY(terrainGeoExtension.getMinLongitudeDeg(), terrainGeoExtension.getMinLatitudeDeg(),
+        //        terrainGeoExtension.getMaxLongitudeDeg(), terrainGeoExtension.getMaxLatitudeDeg()))
+        //{
+        //    return false;
+        //}
+        double widthDeg = bboxTriangle.getLengthX();
+        double heightDeg = bboxTriangle.getLengthY();
+
+        double pixelSizeX = pixelSizeDeg.x * 4.0;
+        double pixelSizeY = pixelSizeDeg.y * 4.0;
+
+        GaiaPlane plane = triangle.getPlane();
+
+        int columnsCount = (int)(widthDeg / pixelSizeX);
+        int rowsCount = (int)(heightDeg / pixelSizeY);
+
+        double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
+        double bbox_minX = bboxTriangle.getMinX();
+        double bbox_minY = bboxTriangle.getMinY();
+
+        boolean intersects = false;
+        boolean intersects_v2 = false;
+        for(int row = 0; row < rowsCount; row++)
+        {
+            double pos_y = bbox_minY + row * pixelSizeY;
+            for(int column = 0; column < columnsCount; column++)
+            {
+                double pos_x = bbox_minX + column * pixelSizeX;
+                //intersects_v2 = triangle.intersectsPointXY_v2(pos_x, pos_y);
+                intersects = triangle.intersectsPointXY(pos_x, pos_y);
+
+                //if(intersects != intersects_v2)
+                //{
+                //    int hola = 0;
+                //}
+
+                if(!intersects)
+                {
+                    continue;
+                }
+
+                double elevation = terrainElevationData.getElevation(pos_x, pos_y);
+                double planeElevation = plane.getValueZ(pos_x, pos_y);
+
+                if(abs(elevation - planeElevation) > maxDiff)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public void refineMesh(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException {
+        // Inside the mesh, there are triangles of 9 different tiles.***
+        // Here refine only the triangles of the current tile.***
+
+        // refine the mesh.***
+        int trianglesCount = mesh.triangles.size();
+        for(int i=0; i< trianglesCount; i++)
+        {
+            GaiaTriangle triangle = mesh.triangles.get(i);
+            if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices))
+            {
+                continue;
+            }
+
+            if(mustRefineTriangle(triangle))
+            {
+                int hola = 0;
+            }
+        }
+
         int hola = 0;
     }
 

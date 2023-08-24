@@ -40,4 +40,56 @@ public class GeographicExtension {
     {
         return minGeographicCoordDeg.z;
     }
+
+    public double getLongitudeRangeDegree()
+    {
+        return maxGeographicCoordDeg.x - minGeographicCoordDeg.x;
+    }
+
+    public double getLatitudeRangeDegree()
+    {
+        return maxGeographicCoordDeg.y - minGeographicCoordDeg.y;
+    }
+
+    public double getAltitudeRange()
+    {
+        return maxGeographicCoordDeg.z - minGeographicCoordDeg.z;
+    }
+
+    public boolean intersects(double lonDeg, double latDeg)
+    {
+        if(lonDeg >= minGeographicCoordDeg.x && lonDeg <= maxGeographicCoordDeg.x &&
+                latDeg >= minGeographicCoordDeg.y && latDeg <= maxGeographicCoordDeg.y)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public boolean intersectsLongitude(double lonDeg)
+    {
+        if(lonDeg >= minGeographicCoordDeg.x && lonDeg <= maxGeographicCoordDeg.x)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public boolean intersectsLatitude(double latDeg)
+    {
+        if(latDeg >= minGeographicCoordDeg.y && latDeg <= maxGeographicCoordDeg.y)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 }

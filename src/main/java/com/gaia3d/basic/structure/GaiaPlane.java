@@ -1,0 +1,36 @@
+package com.gaia3d.basic.structure;
+
+import org.joml.Vector3d;
+
+public class GaiaPlane {
+    // plane : ax + by + cz + d = 0
+    public double a;
+    public double b;
+    public double c;
+    public double d;
+
+    public GaiaPlane() {
+        a = 0;
+        b = 0;
+        c = 0;
+        d = 0;
+    }
+
+    public GaiaPlane(Vector3d p0, Vector3d p1, Vector3d p2) {
+        this.set3Points(p0, p1, p2);
+    }
+
+    public void set3Points(Vector3d p0, Vector3d p1, Vector3d p2) {
+        Vector3d v1 = new Vector3d(p1).sub(p0);
+        Vector3d v2 = new Vector3d(p2).sub(p0);
+        Vector3d normal = new Vector3d(v1).cross(v2).normalize();
+        a = normal.x;
+        b = normal.y;
+        c = normal.z;
+        d = -(a * p0.x + b * p0.y + c * p0.z);
+    }
+
+    public double getValueZ(double x, double y) {
+        return -(a * x + b * y + d) / c;
+    }
+}

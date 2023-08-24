@@ -4,8 +4,11 @@ package com.gaia3d.basic.structure;
 
 import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import org.joml.Vector2d;
+import org.joml.Vector3d;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class GaiaHalfEdge {
     public GaiaVertex startVertex = null;
@@ -86,6 +89,45 @@ public class GaiaHalfEdge {
         }
 
         return prevHalfEdge;
+    }
+
+    public GaiaLine2D getLine2DXY()
+    {
+        GaiaLine2D line2D = new GaiaLine2D();
+        Vector3d startPos = this.getStartVertex().position;
+        Vector3d endPos = this.getEndVertex().position;
+        line2D.setBy2Points(new Vector2d(startPos.x, startPos.y), new Vector2d(endPos.x, endPos.y));
+        return line2D;
+    }
+
+    public ArrayList<GaiaHalfEdge> getHalfEdgesLoop()
+    {
+        ArrayList<GaiaHalfEdge> halfEdgesLoop = new ArrayList<GaiaHalfEdge>();
+        GaiaHalfEdge currHalfEdge = this;
+        GaiaHalfEdge firstHalfEdge = this;
+        halfEdgesLoop.add(currHalfEdge);
+        boolean finished = false;
+        while (!finished)
+        {
+            GaiaHalfEdge nextHalfEdge = currHalfEdge.next;
+            if(nextHalfEdge == null)
+            {
+                finished = true;
+                break;
+            }
+            else
+            {
+                currHalfEdge = nextHalfEdge;
+                if(currHalfEdge == firstHalfEdge)
+                {
+                    finished = true;
+                    break;
+                }
+                halfEdgesLoop.add(currHalfEdge);
+            }
+        }
+
+        return halfEdgesLoop;
     }
 
     public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error)

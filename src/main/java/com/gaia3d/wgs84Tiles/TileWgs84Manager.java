@@ -4,6 +4,7 @@ import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.reader.FileUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.joml.Vector3d;
+import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public class TileWgs84Manager {
     public String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
 
 
-    public void makeTileMeshes() throws IOException {
+    public void makeTileMeshes() throws IOException, TransformException {
 
         GeographicExtension geographicExtension = this.terrainElevationData.geographicExtension;
         double minLon = geographicExtension.getMinLongitudeDeg();
@@ -48,7 +49,7 @@ public class TileWgs84Manager {
 
     }
 
-    public TileWgs84 loadOrCreateTileWgs84(TileIndices tileIndices) throws IOException {
+    public TileWgs84 loadOrCreateTileWgs84(TileIndices tileIndices) throws IOException, TransformException {
         // this function loads or creates a TileWgs84.***
         // check if exist LDTileFile.***
         String tileTempDirectory = this.tileTempDirectory;

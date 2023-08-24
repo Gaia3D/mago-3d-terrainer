@@ -26,6 +26,13 @@ public class TileIndices {
         L = tileIndices.L;
     }
 
+    public boolean isCoincident(TileIndices tileIndices) {
+        if (X == tileIndices.X && Y == tileIndices.Y && L == tileIndices.L) {
+            return true;
+        }
+        return false;
+    }
+
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
     {
         try {
