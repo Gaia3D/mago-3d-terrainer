@@ -331,6 +331,7 @@ public class TileWgs84 {
 
         // refine the mesh.***
         int trianglesCount = mesh.triangles.size();
+        int splitCount = 0;
         for(int i=0; i< trianglesCount; i++)
         {
             GaiaTriangle triangle = mesh.triangles.get(i);
@@ -339,10 +340,27 @@ public class TileWgs84 {
                 continue;
             }
 
+            if(triangle.objectStatus == GaiaObjectStatus.DELETED)
+            {
+                continue;
+            }
+
             if(mustRefineTriangle(triangle))
             {
                 mesh.splitTriangle(triangle);
+                splitCount++;
+
+                if(splitCount > 0) // provisional.***
+                {
+                    break;
+                }
             }
+        }
+
+        if(splitCount > 0)
+        {
+            mesh.removeDeletedObjects();
+            mesh.setObjectsIdInList();
         }
 
         int hola = 0;

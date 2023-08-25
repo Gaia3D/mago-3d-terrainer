@@ -194,8 +194,8 @@ public class GaiaMesh {
         halfEdge.objectStatus = GaiaObjectStatus.DELETED;
 
         // now, disable the twin.***
-        GaiaHalfEdge twin = halfEdge.twin;
-        twin.twin = null;
+        //GaiaHalfEdge twin = halfEdge.twin;
+        //twin.twin = null;
         halfEdge.twin = null;
 
         // now, disable the next.***
@@ -217,13 +217,19 @@ public class GaiaMesh {
 
         // now, disable the halfEdges.***
         GaiaHalfEdge halfEdge = triangle.halfEdge;
-        GaiaHalfEdge nextHalfEdge = halfEdge.next;
-        GaiaHalfEdge nextNextHalfEdge = nextHalfEdge.next;
+        if(halfEdge != null)
+        {
+            GaiaHalfEdge nextHalfEdge = halfEdge.next;
+            GaiaHalfEdge nextNextHalfEdge = nextHalfEdge.next;
 
-        disableHalfEdge(halfEdge);
-        disableHalfEdge(nextHalfEdge);
-        disableHalfEdge(nextNextHalfEdge);
+            disableHalfEdge(halfEdge);
+            disableHalfEdge(nextHalfEdge);
+            disableHalfEdge(nextNextHalfEdge);
+        }
+
     }
+
+
 
     public ArrayList<GaiaTriangle> splitTriangle(GaiaTriangle triangle)
     {
@@ -303,6 +309,7 @@ public class GaiaMesh {
             GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_A1, halfEdge_A2, halfEdge_A3);
             GaiaTriangle triangleA = newTriangle();
             triangleA.setHalfEdge(halfEdge_A1);
+            triangleA.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleA);
@@ -320,6 +327,7 @@ public class GaiaMesh {
             GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_B1, halfEdge_B2, halfEdge_B3);
             GaiaTriangle triangleB = newTriangle();
             triangleB.setHalfEdge(halfEdge_B1);
+            triangleB.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleB);
@@ -346,7 +354,183 @@ public class GaiaMesh {
         else
         {
             // split the 2 triangles.***
+            //                                        oppVtx_T
+            //                                          / \
+            //                                       /       \
+            //                                    /             \
+            //             longestEdge_prev--->/         T         \<-- longestHEdge_next
+            //                              /                         \
+            //                           /         longestHEdge          \
+            //  longestHEdge_strVtx--> +-------------------------------------+  <-- longestHEdge_endVertex
+            //                           \       longestHEdgeAdjT         /
+            //                              \                          /
+            //                                 \       adjT         /<-- longestHEdgeAdjT_prev
+            //            longestEdgeAdjT_next--->\              /
+            //                                       \        /
+            //                                          \  /
+            //                                       oppVtx_AdjT
 
+            GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
+            GaiaHalfEdge prevHEdge = longestHEdge.getPrev();
+            GaiaHalfEdge nextHEdge = longestHEdge.getNext();
+
+            GaiaHalfEdge longestHEdgeAdjT = adjacentTriangle.getLongestHalfEdge();
+            GaiaHalfEdge prevHEdgeAdjT = longestHEdgeAdjT.getPrev();
+            GaiaHalfEdge nextHEdgeAdjT = longestHEdgeAdjT.getNext();
+
+            // keep the twin of the longestHEdge, prevHEdge and nextHEdge.***
+            GaiaHalfEdge longestHEdge_twin = longestHEdge.twin;
+            GaiaHalfEdge prevHEdge_twin = prevHEdge.twin;
+            GaiaHalfEdge nextHEdge_twin = nextHEdge.twin;
+
+            // keep the twin of the longestHEdgeAdjT, prevHEdgeAdjT and nextHEdgeAdjT.***
+            GaiaHalfEdge longestHEdgeAdjT_twin = longestHEdgeAdjT.twin;
+            GaiaHalfEdge prevHEdgeAdjT_twin = prevHEdgeAdjT.twin;
+            GaiaHalfEdge nextHEdgeAdjT_twin = nextHEdgeAdjT.twin;
+
+            // need know the oppVtx_T and oppVtx_AdjT.***
+            GaiaVertex oppVtx_T = prevHEdge.getStartVertex();
+            GaiaVertex oppVtx_AdjT = prevHEdgeAdjT.getStartVertex();
+
+            // need know the midVertex.***
+            Vector3d midPosition = longestHEdge.getMidPosition();
+            GaiaVertex midVertex = newVertex();
+            midVertex.position = midPosition;
+
+            // need longEdge_startVertex and longEdge_endVertex.***
+            GaiaVertex longEdge_startVertex = longestHEdge.getStartVertex();
+            GaiaVertex longEdge_endVertex = longestHEdge.getEndVertex();
+
+
+            // A triangle is split by the longest edge.***
+            //                                        oppVtx_T
+            //                                           / \
+            //                                        /   |   \
+            //                longestEdge_prev---> /      |      \ <-- longestHEdge_next
+            //                                  /         |         \
+            //                               /    A       |     B      \
+            //                            /   halfEdge_A1 | halfEdge_B1   \
+            // longestHEdge_strVtx-->  +------------------+------------------+ <-- longestHEdge_endVertex
+            //                            \   halfEdge_C1 | halfEdge_D1   /
+            //                               \      C     |     D      /
+            //                                  \         |         / <-- longestHEdgeAdjT_prev
+            //            longestEdgeAdjT_next---> \      |      /
+            //                                        \   |   /
+            //                                           \ /
+            //                                        oppVtx_AdjT
+
+            // split the triangle.***
+            // 1rst, create 4 new triangles.***
+            // triangle_A.***
+            GaiaHalfEdge halfEdge_A1 = newHalfEdge();
+            GaiaHalfEdge halfEdge_A2 = newHalfEdge();
+            GaiaHalfEdge halfEdge_A3 = newHalfEdge();
+
+            // set vertex to the new halfEdges.***
+            halfEdge_A1.setStartVertex(longEdge_startVertex);
+            halfEdge_A2.setStartVertex(midVertex);
+            halfEdge_A3.setStartVertex(oppVtx_T);
+
+            GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_A1, halfEdge_A2, halfEdge_A3);
+            GaiaTriangle triangleA = newTriangle();
+            triangleA.setHalfEdge(halfEdge_A1);
+            triangleA.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
+
+            // put the new triangle in the result list.***
+            newTriangles.add(triangleA);
+
+            // triangle_B.***
+            GaiaHalfEdge halfEdge_B1 = newHalfEdge();
+            GaiaHalfEdge halfEdge_B2 = newHalfEdge();
+            GaiaHalfEdge halfEdge_B3 = newHalfEdge();
+
+            // set vertex to the new halfEdges.***
+            halfEdge_B1.setStartVertex(midVertex);
+            halfEdge_B2.setStartVertex(longEdge_endVertex);
+            halfEdge_B3.setStartVertex(oppVtx_T);
+
+            GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_B1, halfEdge_B2, halfEdge_B3);
+            GaiaTriangle triangleB = newTriangle();
+            triangleB.setHalfEdge(halfEdge_B1);
+            triangleB.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
+
+            // put the new triangle in the result list.***
+            newTriangles.add(triangleB);
+
+            // triangle_C.***
+            GaiaHalfEdge halfEdge_C1 = newHalfEdge();
+            GaiaHalfEdge halfEdge_C2 = newHalfEdge();
+            GaiaHalfEdge halfEdge_C3 = newHalfEdge();
+
+            // set vertex to the new halfEdges.***
+            halfEdge_C1.setStartVertex(midVertex);
+            halfEdge_C2.setStartVertex(longEdge_startVertex);
+            halfEdge_C3.setStartVertex(oppVtx_AdjT);
+
+            GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_C1, halfEdge_C2, halfEdge_C3);
+            GaiaTriangle triangleC = newTriangle();
+            triangleC.setHalfEdge(halfEdge_C1);
+            triangleC.ownerTile_tileIndices.copyFrom(adjacentTriangle.ownerTile_tileIndices);
+
+            // put the new triangle in the result list.***
+            newTriangles.add(triangleC);
+
+            // triangle_D.***
+            GaiaHalfEdge halfEdge_D1 = newHalfEdge();
+            GaiaHalfEdge halfEdge_D2 = newHalfEdge();
+            GaiaHalfEdge halfEdge_D3 = newHalfEdge();
+
+            // set vertex to the new halfEdges.***
+            halfEdge_D1.setStartVertex(longEdge_endVertex);
+            halfEdge_D2.setStartVertex(midVertex);
+            halfEdge_D3.setStartVertex(oppVtx_AdjT);
+
+            GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_D1, halfEdge_D2, halfEdge_D3);
+            GaiaTriangle triangleD = newTriangle();
+            triangleD.setHalfEdge(halfEdge_D1);
+            triangleD.ownerTile_tileIndices.copyFrom(adjacentTriangle.ownerTile_tileIndices);
+
+            // put the new triangle in the result list.***
+            newTriangles.add(triangleD);
+
+            // now, set the twins.***
+            // here, all newHEdges has twins.***
+            halfEdge_A1.setTwin(halfEdge_C1);
+            halfEdge_A2.setTwin(halfEdge_B3);
+            halfEdge_A3.setTwin(prevHEdge_twin);
+
+            halfEdge_B1.setTwin(halfEdge_D1);
+            halfEdge_B2.setTwin(nextHEdge_twin);
+            //halfEdge_B3.setTwin(halfEdge_A2); // redundant.***
+
+            //halfEdge_C1.setTwin(halfEdge_A1); // redundant.***
+            halfEdge_C2.setTwin(nextHEdgeAdjT_twin);
+            halfEdge_C3.setTwin(halfEdge_D2);
+
+            //halfEdge_D1.setTwin(halfEdge_B1); // redundant.***
+            //halfEdge_D2.setTwin(halfEdge_C3); // redundant.***
+            halfEdge_D3.setTwin(prevHEdgeAdjT_twin);
+
+            // now set the triangles of halfEdges.***
+            halfEdge_A1.setTriangle(triangleA);
+            halfEdge_A2.setTriangle(triangleA);
+            halfEdge_A3.setTriangle(triangleA);
+
+            halfEdge_B1.setTriangle(triangleB);
+            halfEdge_B2.setTriangle(triangleB);
+            halfEdge_B3.setTriangle(triangleB);
+
+            halfEdge_C1.setTriangle(triangleC);
+            halfEdge_C2.setTriangle(triangleC);
+            halfEdge_C3.setTriangle(triangleC);
+
+            halfEdge_D1.setTriangle(triangleD);
+            halfEdge_D2.setTriangle(triangleD);
+            halfEdge_D3.setTriangle(triangleD);
+
+            // now delete the triangles.***
+            disableTriangle(triangle);
+            disableTriangle(adjacentTriangle);
         }
 
         return newTriangles;
@@ -370,7 +554,7 @@ public class GaiaMesh {
         GaiaTriangle adjacentTriangle = twin.triangle;
         GaiaHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge();
 
-        if(longestHEdgeOfAdjacentTriangle == longestHEdge)
+        if(longestHEdgeOfAdjacentTriangle.twin == longestHEdge)
         {
             return adjacentTriangle;
         }
