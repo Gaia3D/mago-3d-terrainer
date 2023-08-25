@@ -31,6 +31,11 @@ public class GaiaHalfEdge {
         twin.twin = this;
     }
 
+    public void setTriangle(GaiaTriangle triangle) {
+        this.triangle = triangle;
+        triangle.halfEdge = this;
+    }
+
     public void setStartVertex(GaiaVertex startVertex) {
         this.startVertex = startVertex;
         startVertex.outingHEdge = this;
@@ -128,6 +133,23 @@ public class GaiaHalfEdge {
         }
 
         return halfEdgesLoop;
+    }
+
+    public double getSquaredLength()
+    {
+        Vector3d startPos = this.getStartVertex().position;
+        Vector3d endPos = this.getEndVertex().position;
+        double squaredLength = startPos.distanceSquared(endPos);
+        return squaredLength;
+    }
+
+    public Vector3d getMidPosition()
+    {
+        Vector3d startPos = this.getStartVertex().position;
+        Vector3d endPos = this.getEndVertex().position;
+        Vector3d midPos = new Vector3d();
+        midPos.add(startPos).add(endPos).mul(0.5);
+        return midPos;
     }
 
     public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error)

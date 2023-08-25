@@ -36,6 +36,25 @@ public class GaiaVertex {
         }
     }
 
+    public void avoidOutingHalfEdge(GaiaHalfEdge avoidOutingHalfEdge)
+    {
+        // if this outingHEdge is the avoidOutingHalfEdge, then must change it.***
+        if(this.outingHEdge != avoidOutingHalfEdge)
+        {
+            return;
+        }
+
+        ArrayList<GaiaHalfEdge> allOutingHalfEdges = this.getAllOutingHalfEdges();
+        for(GaiaHalfEdge outingHalfEdge : allOutingHalfEdges)
+        {
+            if(outingHalfEdge != avoidOutingHalfEdge)
+            {
+                this.outingHEdge = outingHalfEdge;
+                break;
+            }
+        }
+    }
+
     public ArrayList<GaiaHalfEdge> getAllOutingHalfEdges()
     {
         ArrayList<GaiaHalfEdge> outingHalfEdges = new ArrayList<GaiaHalfEdge>();

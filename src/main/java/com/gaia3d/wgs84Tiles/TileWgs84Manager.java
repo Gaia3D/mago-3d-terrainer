@@ -23,6 +23,8 @@ public class TileWgs84Manager {
 
     public String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
 
+    double vertexCoincidentError = 0.0000000000001;
+
 
     public void makeTileMeshes() throws IOException, TransformException {
 

@@ -2,6 +2,7 @@ package com.gaia3d.basic.structure;
 
 import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -186,6 +187,220 @@ public class GaiaMesh {
             halfEdgesMap.put(halfEdge.id, halfEdge);
         }
         return halfEdgesMap;
+    }
+
+    private void disableHalfEdge(GaiaHalfEdge halfEdge)
+    {
+        halfEdge.objectStatus = GaiaObjectStatus.DELETED;
+
+        // now, disable the twin.***
+        GaiaHalfEdge twin = halfEdge.twin;
+        twin.twin = null;
+        halfEdge.twin = null;
+
+        // now, disable the next.***
+        halfEdge.next = null;
+
+        // now, disable the triangle.***
+        halfEdge.triangle.halfEdge = null;
+        halfEdge.triangle = null;
+
+        // now, disable the startVertex.***
+        halfEdge.startVertex.avoidOutingHalfEdge(halfEdge);
+        halfEdge.startVertex = null;
+    }
+
+    private void disableTriangle(GaiaTriangle triangle)
+    {
+        triangle.objectStatus = GaiaObjectStatus.DELETED;
+        triangle.halfEdge = null;
+
+        // now, disable the halfEdges.***
+        GaiaHalfEdge halfEdge = triangle.halfEdge;
+        GaiaHalfEdge nextHalfEdge = halfEdge.next;
+        GaiaHalfEdge nextNextHalfEdge = nextHalfEdge.next;
+
+        disableHalfEdge(halfEdge);
+        disableHalfEdge(nextHalfEdge);
+        disableHalfEdge(nextNextHalfEdge);
+    }
+
+    public ArrayList<GaiaTriangle> splitTriangle(GaiaTriangle triangle)
+    {
+        // A triangle is split by the longest edge.***
+        // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle.***
+        // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first.***
+        // If the adjacentTriangle is null, then the triangle is splittable.***
+        ArrayList<GaiaTriangle> newTriangles = new ArrayList<GaiaTriangle>();
+
+        GaiaTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle);
+        if(adjacentTriangle == null)
+        {
+            // the triangle is border triangle, so is splittable.***
+            GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
+            GaiaHalfEdge prevHEdge = longestHEdge.getPrev();
+            GaiaHalfEdge nextHEdge = longestHEdge.getNext();
+
+            // keep the twin of the longestHEdge, prevHEdge and nextHEdge.***
+            GaiaHalfEdge longestHEdge_twin = longestHEdge.twin;
+            GaiaHalfEdge prevHEdge_twin = prevHEdge.twin;
+            GaiaHalfEdge nextHEdge_twin = nextHEdge.twin;
+
+            // in this case the twin is null.***
+            Vector3d midPosition = longestHEdge.getMidPosition();
+            GaiaVertex midVertex = newVertex();
+            midVertex.position = midPosition;
+
+            // find the opposite vertex of the longestHEdge.***
+            // In a triangle, the opposite vertex of the longestHEdge is the startVertex of the prevHEdge of the longestHEdge.***
+
+            GaiaVertex oppositeVertex = prevHEdge.getStartVertex();
+
+            //                        oppositeVertex
+            //                            / \
+            //                         /       \
+            //  longestEdge_prev--->/             \<-- longestHEdge_next
+            //                   /        T          \
+            //                /                         \
+            //             /                               \
+            //          +------------------+------------------+
+            //                        midVertex    ^
+            //                                     |
+            //                                     |
+            //                                     +-- longestHEdge
+
+            // split the triangle.***
+            // 1rst, create 2 new triangles.***
+
+            //                      oppositeVertex
+            //                            / \
+            //                         /   |   \
+            //                      /      |      \
+            //                   /         |         \
+            //                /    A       |     B      \
+            //             /   halfEdge_A1 | halfEdge_B1   \
+            //          +------------------+------------------+ <-- longestHEdge_endVertex
+            //          ^            midVertex    ^
+            //          |                         |
+            //          |                         |
+            //          |                         +-- longestHEdge
+            //          |
+            //          +-- longestHEdge_startVertex
+
+            GaiaVertex longestHEdge_startVertex = longestHEdge.getStartVertex();
+            GaiaVertex longestHEdge_endVertex = longestHEdge.getEndVertex();
+
+            // Triangle_A.***
+            GaiaHalfEdge halfEdge_A1 = newHalfEdge();
+            GaiaHalfEdge halfEdge_A2 = newHalfEdge();
+            GaiaHalfEdge halfEdge_A3 = newHalfEdge();
+
+            // set vertex to the new halfEdges.***
+            halfEdge_A1.setStartVertex(longestHEdge_startVertex);
+            halfEdge_A2.setStartVertex(midVertex);
+            halfEdge_A3.setStartVertex(oppositeVertex);
+
+            GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_A1, halfEdge_A2, halfEdge_A3);
+            GaiaTriangle triangleA = newTriangle();
+            triangleA.setHalfEdge(halfEdge_A1);
+
+            // put the new triangle in the result list.***
+            newTriangles.add(triangleA);
+
+            // Triangle_B.***
+            GaiaHalfEdge halfEdge_B1 = newHalfEdge();
+            GaiaHalfEdge halfEdge_B2 = newHalfEdge();
+            GaiaHalfEdge halfEdge_B3 = newHalfEdge();
+
+            // set vertex to the new halfEdges.***
+            halfEdge_B1.setStartVertex(midVertex);
+            halfEdge_B2.setStartVertex(longestHEdge_endVertex);
+            halfEdge_B3.setStartVertex(oppositeVertex);
+
+            GaiaHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_B1, halfEdge_B2, halfEdge_B3);
+            GaiaTriangle triangleB = newTriangle();
+            triangleB.setHalfEdge(halfEdge_B1);
+
+            // put the new triangle in the result list.***
+            newTriangles.add(triangleB);
+
+            // now, set the twins.***
+            // the halfEdge_A1 and halfEdge_B1 has no twins.***
+            halfEdge_A2.setTwin(halfEdge_B3);
+            halfEdge_A3.setTwin(prevHEdge_twin);
+            halfEdge_B2.setTwin(nextHEdge_twin);
+
+            // now set the triangles of halfEdges.***
+            halfEdge_A1.setTriangle(triangleA);
+            halfEdge_A2.setTriangle(triangleA);
+            halfEdge_A3.setTriangle(triangleA);
+
+            halfEdge_B1.setTriangle(triangleB);
+            halfEdge_B2.setTriangle(triangleB);
+            halfEdge_B3.setTriangle(triangleB);
+
+
+            // now delete the triangle.***
+            disableTriangle(triangle);
+        }
+        else
+        {
+            // split the 2 triangles.***
+
+        }
+
+        return newTriangles;
+    }
+
+    public GaiaTriangle getSplittableAdjacentTriangle(GaiaTriangle targetTriangle)
+    {
+        // A triangle is split by the longest edge.***
+        // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle.***
+        // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first.***
+        // If the adjacentTriangle is null, then the triangle is splittable.***
+
+        GaiaHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge();
+        GaiaHalfEdge twin = longestHEdge.twin;
+
+        if(twin == null)
+        {
+            return null;
+        }
+
+        GaiaTriangle adjacentTriangle = twin.triangle;
+        GaiaHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge();
+
+        if(longestHEdgeOfAdjacentTriangle == longestHEdge)
+        {
+            return adjacentTriangle;
+        }
+        else
+        {
+            // first split the adjacentTriangle.***;
+            ArrayList<GaiaTriangle> newTriangles = splitTriangle(adjacentTriangle);
+
+            // now search the new adjacentTriangle for the targetTriangle.***
+            double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError.***
+            int newTrianglesCount = newTriangles.size();
+            for(int i=0; i<newTrianglesCount; i++)
+            {
+                GaiaTriangle newTriangle = newTriangles.get(i);
+                GaiaHalfEdge longestHEdgeOfNewTriangle = newTriangle.getLongestHalfEdge();
+                if(longestHEdgeOfNewTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError))
+                {
+                    return newTriangle;
+                }
+            }
+
+            // if not found, then is error.!!!
+            int hola = 0;
+        }
+
+
+        GaiaTriangle splitableTriangle = null;
+
+
+        return splitableTriangle;
     }
 
     public void addMesh(GaiaMesh mesh)

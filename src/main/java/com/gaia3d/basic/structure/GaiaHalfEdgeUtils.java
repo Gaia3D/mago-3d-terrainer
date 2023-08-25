@@ -11,4 +11,10 @@ public class GaiaHalfEdgeUtils {
             halfEdge.next = nextHalfEdge;
         }
     }
+
+    public static void concatenate3HalfEdgesLoop(GaiaHalfEdge hedge1, GaiaHalfEdge hedge2, GaiaHalfEdge hedge3) {
+        hedge1.next = hedge2;
+        hedge2.next = hedge3;
+        hedge3.next = hedge1;
+    }
 }

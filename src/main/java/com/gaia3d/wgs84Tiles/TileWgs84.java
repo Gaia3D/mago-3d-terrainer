@@ -341,7 +341,7 @@ public class TileWgs84 {
 
             if(mustRefineTriangle(triangle))
             {
-                int hola = 0;
+                mesh.splitTriangle(triangle);
             }
         }
 

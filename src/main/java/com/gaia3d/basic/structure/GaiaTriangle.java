@@ -24,6 +24,7 @@ public class GaiaTriangle {
 
     public void setHalfEdge(GaiaHalfEdge halfEdge) {
         this.halfEdge = halfEdge;
+        halfEdge.triangle = this;
     }
 
     public ArrayList<GaiaVertex> getVertices()
@@ -83,44 +84,22 @@ public class GaiaTriangle {
         return true;
     }
 
-    public boolean intersectsPointXY_v2(double pos_x, double pos_y)
+    public GaiaHalfEdge getLongestHalfEdge()
     {
-        // this function checks if a point2D is intersected by the triangle only meaning xAxis and yAxis.***
-        // 1rst, get the boundingBox.***
-        GaiaBoundingBox boundingBox = this.getBoundingBox();
-        if(boundingBox.intersectsPointXY(pos_x, pos_y))
+        ArrayList<GaiaHalfEdge> halfEdges = this.halfEdge.getHalfEdgesLoop();
+        GaiaHalfEdge longestHalfEdge = null;
+        double maxLength = 0.0;
+        for(GaiaHalfEdge halfEdge : halfEdges)
         {
-            // 2nd, check if the point is inside the triangle.***
-            ArrayList<GaiaVertex> vertices = this.getVertices();
-            GaiaVertex vertex0 = vertices.get(0);
-            GaiaVertex vertex1 = vertices.get(1);
-            GaiaVertex vertex2 = vertices.get(2);
-
-            double x0 = vertex0.position.x;
-            double y0 = vertex0.position.y;
-            double x1 = vertex1.position.x;
-            double y1 = vertex1.position.y;
-            double x2 = vertex2.position.x;
-            double y2 = vertex2.position.y;
-
-            double x = pos_x;
-            double y = pos_y;
-
-            double dX = x - x0;
-            double dY = y - y0;
-            double dX21 = x2 - x1;
-            double dY12 = y1 - y2;
-            double D = dY12 * (x0 - x2) + dX21 * (y0 - y2);
-            double s = dY12 * dX + dX21 * dY;
-            double t = (y2 - y0) * dX + (x0 - x2) * dY;
-
-            if (D < 0) return s <= 0 && t <= 0 && s + t >= D;
-            return s >= 0 && t >= 0 && s + t <= D;
+            double length = halfEdge.getSquaredLength();
+            if(length > maxLength)
+            {
+                maxLength = length;
+                longestHalfEdge = halfEdge;
+            }
         }
-        else
-        {
-            return false;
-        }
+
+        return longestHalfEdge;
     }
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
