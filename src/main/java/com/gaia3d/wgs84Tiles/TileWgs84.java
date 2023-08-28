@@ -14,6 +14,7 @@ import java.util.ArrayList;
 
 import static java.lang.Math.abs;
 
+
 public class TileWgs84 {
     public TileWgs84Manager manager = null;
 
@@ -277,23 +278,32 @@ public class TileWgs84 {
         // check if the triangle must be refined.***
         GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
 
-        //if(!bboxTriangle.intersectsRectangleXY(terrainGeoExtension.getMinLongitudeDeg(), terrainGeoExtension.getMinLatitudeDeg(),
-        //        terrainGeoExtension.getMaxLongitudeDeg(), terrainGeoExtension.getMaxLatitudeDeg()))
-        //{
-        //    return false;
-        //}
+        double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
+
+        // fast check.***
+        // check the baricenter of the triangle.***
+        Vector3d baricenter = triangle.getBaricenter();
+        double elevation = terrainElevationData.getElevation(baricenter.x, baricenter.y);
+        double planeElevation = baricenter.z;
+
+        if(abs(elevation - planeElevation) > maxDiff)
+        {
+            return true;
+        }
+        // end check the baricenter of the triangle.***
+
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
 
-        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 2000.0);
-        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 2000.0);
+        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 500.0);
+        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 500.0);
 
         GaiaPlane plane = triangle.getPlane();
 
         int columnsCount = (int)(widthDeg / pixelSizeX);
         int rowsCount = (int)(heightDeg / pixelSizeY);
 
-        double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
+
         double bbox_minX = bboxTriangle.getMinX();
         double bbox_minY = bboxTriangle.getMinY();
 
@@ -318,8 +328,8 @@ public class TileWgs84 {
                     continue;
                 }
 
-                double elevation = terrainElevationData.getElevation(pos_x, pos_y);
-                double planeElevation = plane.getValueZ(pos_x, pos_y);
+                elevation = terrainElevationData.getElevation(pos_x, pos_y);
+                planeElevation = plane.getValueZ(pos_x, pos_y);
 
                 if(abs(elevation - planeElevation) > maxDiff)
                 {
@@ -331,6 +341,45 @@ public class TileWgs84 {
         return false;
     }
 
+    private boolean refineMeshOneIteration(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException {
+        // Inside the mesh, there are triangles of 9 different tiles.***
+        // Here refine only the triangles of the current tile.***
+
+        // refine the mesh.***
+        boolean refined = false;
+        int splitCount = 0;
+        int trianglesCount = mesh.triangles.size();
+        System.out.println("Triangles count : " + trianglesCount);
+        splitCount = 0;
+        for (int i = 0; i < trianglesCount; i++) {
+            GaiaTriangle triangle = mesh.triangles.get(i);
+            if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices)) {
+                continue;
+            }
+
+            if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+
+            if (mustRefineTriangle(triangle))
+            {
+                TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+                ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
+
+                if (splitTriangles.size() > 0)
+                {
+                    splitCount++;
+                    refined = true;
+                    mesh.removeDeletedObjects();
+                    mesh.setObjectsIdInList();
+                }
+            }
+
+        }
+
+        return refined;
+    }
+
     public void refineMesh(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException {
         // Inside the mesh, there are triangles of 9 different tiles.***
         // Here refine only the triangles of the current tile.***
@@ -339,53 +388,23 @@ public class TileWgs84 {
         boolean finished = false;
         int splitCount = 0;
         while(!finished) {
-            int trianglesCount = mesh.triangles.size();
-            splitCount = 0;
-            for (int i = 0; i < trianglesCount; i++) {
-                GaiaTriangle triangle = mesh.triangles.get(i);
-                if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices)) {
-                    continue;
-                }
-
-                if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
-                    continue;
-                }
-
-                if (mustRefineTriangle(triangle))
-                {
-                    TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
-                    ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
-
-                    if (splitTriangles.size() > 0)
-                    {
-                        splitCount++;
-                    }
-                }
-            }
-
-            if(splitCount > 0)
+            System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
+            if(!this.refineMeshOneIteration(mesh, currTileIndices))
             {
-                //finished = true;
-
-                mesh.removeDeletedObjects();
-                mesh.setObjectsIdInList();
+                finished = true;
             }
-            else {
-                finished = false;
-                break;
-            }
-
-            if(splitCount > 1) // provisional break.***
+            else
             {
-                break;
+                splitCount++;
+            }
+
+            if(splitCount >= 10)
+            {
+                finished = true;
             }
         }
 
-        if(splitCount > 0)
-        {
-            mesh.removeDeletedObjects();
-            mesh.setObjectsIdInList();
-        }
+
 
         int hola = 0;
     }

@@ -65,11 +65,11 @@ public class TileWgs84Utils {
         if (depth == 24)
         { return 500.0; }
         if (depth == 25)
-        { return 10.0; }
+        { return 5.0; }
         if (depth == 26)
-        { return 10.0; }
+        { return 5.0; }
         if (depth == 27)
-        { return 10.0; }
+        { return 4.0; }
 
         return -1.0;
     }

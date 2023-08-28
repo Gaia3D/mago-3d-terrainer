@@ -4,6 +4,7 @@ import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TileIndices;
 import org.joml.Vector2d;
+import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,6 +85,18 @@ public class GaiaTriangle {
             }
         }
         return true;
+    }
+
+    public Vector3d getBaricenter()
+    {
+        ArrayList<GaiaVertex> vertices = this.getVertices();
+        Vector3d baricenter = new Vector3d();
+        for(GaiaVertex vertex : vertices)
+        {
+            baricenter.add(vertex.position);
+        }
+        baricenter.mul(1.0/3.0);
+        return baricenter;
     }
 
     public GaiaHalfEdge getLongestHalfEdge()
