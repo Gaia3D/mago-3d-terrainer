@@ -28,12 +28,24 @@ public class GaiaHalfEdge {
 
     public void setTwin(GaiaHalfEdge twin) {
         this.twin = twin;
-        twin.twin = this;
+        if(twin != null)
+        {
+            twin.twin = this;
+        }
     }
 
     public void setTriangle(GaiaTriangle triangle) {
         this.triangle = triangle;
         triangle.halfEdge = this;
+    }
+
+    public void setTriangleToHEdgesLoop(GaiaTriangle triangle)
+    {
+        ArrayList<GaiaHalfEdge> halfEdgesLoop = this.getHalfEdgesLoop();
+        for(GaiaHalfEdge halfEdge : halfEdgesLoop)
+        {
+            halfEdge.setTriangle(triangle);
+        }
     }
 
     public void setStartVertex(GaiaVertex startVertex) {
@@ -112,6 +124,7 @@ public class GaiaHalfEdge {
         GaiaHalfEdge firstHalfEdge = this;
         halfEdgesLoop.add(currHalfEdge);
         boolean finished = false;
+        int testDebugCounter = 0;
         while (!finished)
         {
             GaiaHalfEdge nextHalfEdge = currHalfEdge.next;
@@ -130,6 +143,13 @@ public class GaiaHalfEdge {
                 }
                 halfEdgesLoop.add(currHalfEdge);
             }
+
+            testDebugCounter++;
+
+            if(testDebugCounter > 10)
+            {
+                int hola = 0;
+            }
         }
 
         return halfEdgesLoop;
@@ -140,6 +160,16 @@ public class GaiaHalfEdge {
         Vector3d startPos = this.getStartVertex().position;
         Vector3d endPos = this.getEndVertex().position;
         double squaredLength = startPos.distanceSquared(endPos);
+        return squaredLength;
+    }
+
+    public double getSquaredLengthXY()
+    {
+        Vector3d startPos = this.getStartVertex().position;
+        Vector3d endPos = this.getEndVertex().position;
+        Vector2d startPosXY = new Vector2d(startPos.x, startPos.y);
+        Vector2d endPosXY = new Vector2d(endPos.x, endPos.y);
+        double squaredLength = startPosXY.distanceSquared(endPosXY);
         return squaredLength;
     }
 

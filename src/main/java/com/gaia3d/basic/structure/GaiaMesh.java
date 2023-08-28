@@ -2,7 +2,9 @@ package com.gaia3d.basic.structure;
 
 import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import org.joml.Vector3d;
+import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -213,33 +215,86 @@ public class GaiaMesh {
     private void disableTriangle(GaiaTriangle triangle)
     {
         triangle.objectStatus = GaiaObjectStatus.DELETED;
-        triangle.halfEdge = null;
 
         // now, disable the halfEdges.***
+        /*
         GaiaHalfEdge halfEdge = triangle.halfEdge;
-        if(halfEdge != null)
-        {
-            GaiaHalfEdge nextHalfEdge = halfEdge.next;
-            GaiaHalfEdge nextNextHalfEdge = nextHalfEdge.next;
+        GaiaHalfEdge nextHalfEdge = halfEdge.next;
+        GaiaHalfEdge nextNextHalfEdge = nextHalfEdge.next;
 
-            disableHalfEdge(halfEdge);
-            disableHalfEdge(nextHalfEdge);
-            disableHalfEdge(nextNextHalfEdge);
+        disableHalfEdge(halfEdge);
+        disableHalfEdge(nextHalfEdge);
+        disableHalfEdge(nextNextHalfEdge);
+
+         */
+
+        triangle.halfEdge = null;
+    }
+
+    public boolean checkMesh()
+    {
+        // 1rst check if the adjacent triangles are correct.***
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            if(triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+
+            GaiaHalfEdge halfEdge = triangle.getLongestHalfEdge();
+            if(halfEdge.objectStatus == GaiaObjectStatus.DELETED) {
+                // error.***
+                return false;
+            }
+
+            GaiaHalfEdge twin = halfEdge.twin;
+            if(twin != null)
+            {
+                if(twin.objectStatus == GaiaObjectStatus.DELETED) {
+                    // error.***
+                    return false;
+                }
+                GaiaTriangle adjacentTriangle = twin.triangle;
+                if(adjacentTriangle.objectStatus == GaiaObjectStatus.DELETED) {
+                    // error.***
+                    return false;
+                }
+
+                if(adjacentTriangle.splitDepth == triangle.splitDepth)
+                {
+                    GaiaHalfEdge adjacentTriangle_longestHalfEdge = adjacentTriangle.getLongestHalfEdge();
+                    if(adjacentTriangle_longestHalfEdge.objectStatus == GaiaObjectStatus.DELETED) {
+                        // error.***
+                        return false;
+                    }
+                    if(adjacentTriangle_longestHalfEdge.twin != halfEdge)
+                    {
+                        // error.***
+                        return false;
+                    }
+                }
+
+            }
         }
-
+        return true;
     }
 
 
 
-    public ArrayList<GaiaTriangle> splitTriangle(GaiaTriangle triangle)
-    {
+    public ArrayList<GaiaTriangle> splitTriangle(GaiaTriangle triangle, TerrainElevationData terrainElevationData) throws TransformException {
         // A triangle is split by the longest edge.***
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle.***
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first.***
         // If the adjacentTriangle is null, then the triangle is splittable.***
+
+        if(!this.checkMesh())
+        {
+            int hola = 0;
+        }
+
         ArrayList<GaiaTriangle> newTriangles = new ArrayList<GaiaTriangle>();
 
-        GaiaTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle);
+        GaiaTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationData);
         if(adjacentTriangle == null)
         {
             // the triangle is border triangle, so is splittable.***
@@ -254,6 +309,10 @@ public class GaiaMesh {
 
             // in this case the twin is null.***
             Vector3d midPosition = longestHEdge.getMidPosition();
+
+            // now determine the elevation of the midPoint.***
+            double elevation = terrainElevationData.getElevation(midPosition.x, midPosition.y);
+            midPosition.z = elevation;
             GaiaVertex midVertex = newVertex();
             midVertex.position = midPosition;
 
@@ -310,6 +369,7 @@ public class GaiaMesh {
             GaiaTriangle triangleA = newTriangle();
             triangleA.setHalfEdge(halfEdge_A1);
             triangleA.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
+            triangleA.splitDepth = triangle.splitDepth + 1;
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleA);
@@ -328,6 +388,7 @@ public class GaiaMesh {
             GaiaTriangle triangleB = newTriangle();
             triangleB.setHalfEdge(halfEdge_B1);
             triangleB.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
+            triangleB.splitDepth = triangle.splitDepth + 1;
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleB);
@@ -350,6 +411,10 @@ public class GaiaMesh {
 
             // now delete the triangle.***
             disableTriangle(triangle);
+
+            longestHEdge.objectStatus = GaiaObjectStatus.DELETED;
+            prevHEdge.objectStatus = GaiaObjectStatus.DELETED;
+            nextHEdge.objectStatus = GaiaObjectStatus.DELETED;
         }
         else
         {
@@ -395,6 +460,11 @@ public class GaiaMesh {
             // need know the midVertex.***
             Vector3d midPosition = longestHEdge.getMidPosition();
             GaiaVertex midVertex = newVertex();
+
+            // now determine the elevation of the midPoint.***
+            double elevation = terrainElevationData.getElevation(midPosition.x, midPosition.y);
+            midPosition.z = elevation;
+
             midVertex.position = midPosition;
 
             // need longEdge_startVertex and longEdge_endVertex.***
@@ -435,6 +505,7 @@ public class GaiaMesh {
             GaiaTriangle triangleA = newTriangle();
             triangleA.setHalfEdge(halfEdge_A1);
             triangleA.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
+            triangleA.splitDepth = triangle.splitDepth + 1;
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleA);
@@ -453,6 +524,7 @@ public class GaiaMesh {
             GaiaTriangle triangleB = newTriangle();
             triangleB.setHalfEdge(halfEdge_B1);
             triangleB.ownerTile_tileIndices.copyFrom(triangle.ownerTile_tileIndices);
+            triangleB.splitDepth = triangle.splitDepth + 1;
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleB);
@@ -471,6 +543,7 @@ public class GaiaMesh {
             GaiaTriangle triangleC = newTriangle();
             triangleC.setHalfEdge(halfEdge_C1);
             triangleC.ownerTile_tileIndices.copyFrom(adjacentTriangle.ownerTile_tileIndices);
+            triangleC.splitDepth = adjacentTriangle.splitDepth + 1;
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleC);
@@ -489,6 +562,7 @@ public class GaiaMesh {
             GaiaTriangle triangleD = newTriangle();
             triangleD.setHalfEdge(halfEdge_D1);
             triangleD.ownerTile_tileIndices.copyFrom(adjacentTriangle.ownerTile_tileIndices);
+            triangleD.splitDepth = adjacentTriangle.splitDepth + 1;
 
             // put the new triangle in the result list.***
             newTriangles.add(triangleD);
@@ -504,6 +578,10 @@ public class GaiaMesh {
             //halfEdge_B3.setTwin(halfEdge_A2); // redundant.***
 
             //halfEdge_C1.setTwin(halfEdge_A1); // redundant.***
+            if(nextHEdgeAdjT_twin == null)
+            {
+                int hola = 0;
+            }
             halfEdge_C2.setTwin(nextHEdgeAdjT_twin);
             halfEdge_C3.setTwin(halfEdge_D2);
 
@@ -531,13 +609,26 @@ public class GaiaMesh {
             // now delete the triangles.***
             disableTriangle(triangle);
             disableTriangle(adjacentTriangle);
+
+            // disable hedges.***
+            longestHEdge.objectStatus = GaiaObjectStatus.DELETED;
+            prevHEdge.objectStatus = GaiaObjectStatus.DELETED;
+            nextHEdge.objectStatus = GaiaObjectStatus.DELETED;
+
+            longestHEdgeAdjT.objectStatus = GaiaObjectStatus.DELETED;
+            prevHEdgeAdjT.objectStatus = GaiaObjectStatus.DELETED;
+            nextHEdgeAdjT.objectStatus = GaiaObjectStatus.DELETED;
+        }
+
+        if(!this.checkMesh())
+        {
+            int hola = 0;
         }
 
         return newTriangles;
     }
 
-    public GaiaTriangle getSplittableAdjacentTriangle(GaiaTriangle targetTriangle)
-    {
+    public GaiaTriangle getSplittableAdjacentTriangle(GaiaTriangle targetTriangle, TerrainElevationData terrainElevationData) throws TransformException {
         // A triangle is split by the longest edge.***
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle.***
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first.***
@@ -552,19 +643,37 @@ public class GaiaMesh {
         }
 
         GaiaTriangle adjacentTriangle = twin.triangle;
+        if(adjacentTriangle == null)
+        {
+            int hola = 0;
+        }
+
+        double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError.***
+
         GaiaHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge();
+
+        if(targetTriangle.splitDepth != adjacentTriangle.splitDepth)
+        {
+            // if the triangles are not in the same level, then is error.***
+            int hola = 0;
+        }
 
         if(longestHEdgeOfAdjacentTriangle.twin == longestHEdge)
         {
             return adjacentTriangle;
         }
+        else if(longestHEdgeOfAdjacentTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError))
+        {
+            // here is error.***
+            int hola = 0;
+        }
         else
         {
             // first split the adjacentTriangle.***;
-            ArrayList<GaiaTriangle> newTriangles = splitTriangle(adjacentTriangle);
+            ArrayList<GaiaTriangle> newTriangles = splitTriangle(adjacentTriangle, terrainElevationData);
 
             // now search the new adjacentTriangle for the targetTriangle.***
-            double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError.***
+
             int newTrianglesCount = newTriangles.size();
             for(int i=0; i<newTrianglesCount; i++)
             {
@@ -649,6 +758,21 @@ public class GaiaMesh {
 
     }
 
+    public boolean checkHalfEdges()
+    {
+        boolean isOk = true;
+        int halfEdgesCount = halfEdges.size();
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = halfEdges.get(i);
+            if(halfEdge.triangle == null)
+            {
+                isOk = false;
+                break;
+            }
+        }
+        return isOk;
+    }
+
     public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException
     {
         this.id = dataInputStream.readInt();
@@ -689,6 +813,10 @@ public class GaiaMesh {
                 GaiaHalfEdge outingHalfEdge = halfEdgesMap.get(outingHalfEdgeId);
                 vertex.outingHEdge = outingHalfEdge;
             }
+            else
+            {
+                int hola = 0;
+            }
         }
 
         for(int i=0; i<trianglesCount; i++) {
@@ -699,6 +827,10 @@ public class GaiaMesh {
             if(halfEdgeId != -1) {
                 GaiaHalfEdge halfEdge = halfEdgesMap.get(halfEdgeId);
                 triangle.halfEdge = halfEdge;
+            }
+            else
+            {
+                int hola = 0;
             }
         }
 
@@ -711,12 +843,20 @@ public class GaiaMesh {
                 GaiaVertex vertex = verticesMap.get(vertexId);
                 halfEdge.startVertex = vertex;
             }
+            else
+            {
+                int hola = 0;
+            }
 
             // halfEdge points triangle.***
             int triangleId = halfEdge.triangleId;
             if(triangleId != -1) {
                 GaiaTriangle triangle = trianglesMap.get(triangleId);
                 halfEdge.triangle = triangle;
+            }
+            else
+            {
+                int hola = 0;
             }
 
             // halfEdge points next.***
@@ -725,12 +865,20 @@ public class GaiaMesh {
                 GaiaHalfEdge next = halfEdgesMap.get(nextId);
                 halfEdge.next = next;
             }
+            else
+            {
+                int hola = 0;
+            }
 
             // halfEdge points twin.***
             int twinId = halfEdge.twinId;
             if(twinId != -1) {
                 GaiaHalfEdge twin = halfEdgesMap.get(twinId);
                 halfEdge.twin = twin;
+            }
+            else
+            {
+                int hola = 0;
             }
         }
 

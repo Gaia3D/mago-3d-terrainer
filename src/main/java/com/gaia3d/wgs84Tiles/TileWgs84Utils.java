@@ -216,7 +216,7 @@ public class TileWgs84Utils {
         if (imageryType == "CRS84")
         {
             double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(L);
-            double minLon = angRange*X - 180.0;
+            double minLon = angRange*(double)X - 180.0;
             double maxLon = angRange*((double)X+1.0) - 180.0;
             double minLat = 90.0 - angRange*((double)Y+1.0);
             double maxLat = 90.0 - angRange*((double)Y);

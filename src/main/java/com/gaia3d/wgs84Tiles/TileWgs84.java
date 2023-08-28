@@ -251,6 +251,12 @@ public class TileWgs84 {
 
         GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
         bigMesh.setObjectsIdInList();
+        //bigMesh.
+
+        if(!bigMesh.checkHalfEdges())
+        {
+            int hola = 0;
+        }
 
         refineMesh(bigMesh, curr_TileIndices);
 
@@ -279,8 +285,8 @@ public class TileWgs84 {
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
 
-        double pixelSizeX = pixelSizeDeg.x * 4.0;
-        double pixelSizeY = pixelSizeDeg.y * 4.0;
+        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 2000.0);
+        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 2000.0);
 
         GaiaPlane plane = triangle.getPlane();
 
@@ -330,30 +336,48 @@ public class TileWgs84 {
         // Here refine only the triangles of the current tile.***
 
         // refine the mesh.***
-        int trianglesCount = mesh.triangles.size();
+        boolean finished = false;
         int splitCount = 0;
-        for(int i=0; i< trianglesCount; i++)
-        {
-            GaiaTriangle triangle = mesh.triangles.get(i);
-            if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices))
-            {
-                continue;
-            }
-
-            if(triangle.objectStatus == GaiaObjectStatus.DELETED)
-            {
-                continue;
-            }
-
-            if(mustRefineTriangle(triangle))
-            {
-                mesh.splitTriangle(triangle);
-                splitCount++;
-
-                if(splitCount > 0) // provisional.***
-                {
-                    break;
+        while(!finished) {
+            int trianglesCount = mesh.triangles.size();
+            splitCount = 0;
+            for (int i = 0; i < trianglesCount; i++) {
+                GaiaTriangle triangle = mesh.triangles.get(i);
+                if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices)) {
+                    continue;
                 }
+
+                if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                    continue;
+                }
+
+                if (mustRefineTriangle(triangle))
+                {
+                    TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+                    ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
+
+                    if (splitTriangles.size() > 0)
+                    {
+                        splitCount++;
+                    }
+                }
+            }
+
+            if(splitCount > 0)
+            {
+                //finished = true;
+
+                mesh.removeDeletedObjects();
+                mesh.setObjectsIdInList();
+            }
+            else {
+                finished = false;
+                break;
+            }
+
+            if(splitCount > 1) // provisional break.***
+            {
+                break;
             }
         }
 

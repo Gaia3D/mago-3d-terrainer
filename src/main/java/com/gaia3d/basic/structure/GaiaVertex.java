@@ -24,6 +24,12 @@ public class GaiaVertex {
             return false;
         }
 
+        // Test debug:***
+        double xDiff = Math.abs(this.position.x - vertex.position.x);
+        double yDiff = Math.abs(this.position.y - vertex.position.y);
+        double zDiff = Math.abs(this.position.z - vertex.position.z);
+        // end test debug.***
+
         if(Math.abs(this.position.x - vertex.position.x) < error &&
                 Math.abs(this.position.y - vertex.position.y) < error &&
                 Math.abs(this.position.z - vertex.position.z) < error)

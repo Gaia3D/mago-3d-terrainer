@@ -22,9 +22,11 @@ public class GaiaTriangle {
     public GaiaBoundingBox boundingBox = null;
     public GaiaPlane plane = null;
 
+    public int splitDepth = 0;
+
     public void setHalfEdge(GaiaHalfEdge halfEdge) {
         this.halfEdge = halfEdge;
-        halfEdge.triangle = this;
+        halfEdge.setTriangleToHEdgesLoop(this);
     }
 
     public ArrayList<GaiaVertex> getVertices()
@@ -86,12 +88,13 @@ public class GaiaTriangle {
 
     public GaiaHalfEdge getLongestHalfEdge()
     {
+        // Note : the length of the halfEdges meaning only the length of the XY plane.***
         ArrayList<GaiaHalfEdge> halfEdges = this.halfEdge.getHalfEdgesLoop();
         GaiaHalfEdge longestHalfEdge = null;
         double maxLength = 0.0;
         for(GaiaHalfEdge halfEdge : halfEdges)
         {
-            double length = halfEdge.getSquaredLength();
+            double length = halfEdge.getSquaredLengthXY();
             if(length > maxLength)
             {
                 maxLength = length;
@@ -129,6 +132,10 @@ public class GaiaTriangle {
             {
                 ownerTile_tileIndices.saveDataOutputStream(dataOutputStream);
             }
+
+            // save splitDepth.***
+            dataOutputStream.writeInt(splitDepth);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -143,5 +150,7 @@ public class GaiaTriangle {
             this.ownerTile_tileIndices = new TileIndices();
         }
         this.ownerTile_tileIndices.loadDataInputStream(dataInputStream);
+
+        this.splitDepth = dataInputStream.readInt();
     }
 }
