@@ -68,6 +68,12 @@ public class GaiaVertex {
         // there are 2 cases: this vertex is interior vertex or boundary vertex, but we dont know.***
         // 1- interior vertex.***
         // 2- boundary vertex.***
+        if(this.outingHEdge == null)
+        {
+            // error.***
+            System.out.println("Error: this.outingHEdge == null");
+        }
+
         GaiaHalfEdge firstHalfEdge = this.outingHEdge;
         GaiaHalfEdge currHalfEdge = this.outingHEdge;
         outingHalfEdges.add(this.outingHEdge); // put the first halfEdge.***

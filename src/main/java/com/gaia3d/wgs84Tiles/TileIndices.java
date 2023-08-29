@@ -100,5 +100,10 @@ public class TileIndices {
         return tileIndices;
     }
 
+    public String getString() {
+        String result = "";
+        result += "X : " + X + ", Y : " + Y + ", L : " + L;
+        return result;
+    }
 
 }

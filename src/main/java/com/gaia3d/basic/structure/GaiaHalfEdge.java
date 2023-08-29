@@ -182,6 +182,34 @@ public class GaiaHalfEdge {
         return midPos;
     }
 
+    public Vector3d getDirection()
+    {
+        Vector3d startPos = this.getStartVertex().position;
+        Vector3d endPos = this.getEndVertex().position;
+        Vector3d dir = new Vector3d();
+        dir.sub(endPos, startPos);
+        dir.normalize();
+        return dir;
+    }
+
+    public void getInterpolatedPositions(ArrayList<Vector3d> resultPositions, int numPositions)
+    {
+        // this function returns the interpolated positions of this halfEdge.***
+        // resultPositions must be initialized.***
+        resultPositions.clear();
+        Vector3d startPos = this.getStartVertex().position;
+        Vector3d endPos = this.getEndVertex().position;
+        Vector3d dir = getDirection();
+        double length = startPos.distance(endPos);
+        double step = length / (numPositions - 1);
+        for(int i=0; i<numPositions; i++)
+        {
+            Vector3d pos = new Vector3d();
+            pos.add(startPos).add(dir.mul(step * i));
+            resultPositions.add(pos);
+        }
+    }
+
     public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error)
     {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
@@ -216,6 +244,7 @@ public class GaiaHalfEdge {
         this.triangleId = dataInputStream.readInt();
         int typeValue= dataInputStream.readInt();
         this.type = HalfEdgeType.fromValue(typeValue);
+        int hola = 0;
     }
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
@@ -263,7 +292,10 @@ public class GaiaHalfEdge {
             {
                 dataOutputStream.writeInt(-1);
             }
-            dataOutputStream.writeInt(type.getValue());
+            int type_int = type.getValue();
+            dataOutputStream.writeInt(type_int);
+
+            int hola = 0;
         } catch (Exception e) {
             e.printStackTrace();
         }

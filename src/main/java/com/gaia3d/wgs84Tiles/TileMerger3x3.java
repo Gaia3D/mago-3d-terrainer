@@ -3,6 +3,7 @@ package com.gaia3d.wgs84Tiles;
 import com.gaia3d.basic.structure.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
 public class TileMerger3x3 {
@@ -106,6 +107,15 @@ public class TileMerger3x3 {
 
                 return true;
             }
+            else
+            {
+                // do a test.***
+                double error = 1e-11    ;
+                if(halfEdge.isHalfEdgePossibleTwin(halfEdge2, error))
+                {
+                    int hola = 0;
+                }
+            }
         }
         return false;
     }
@@ -119,14 +129,20 @@ public class TileMerger3x3 {
             if(halfEdge.twin != null)
             {
                 // this halfEdge has a twin.***
+                System.out.println("Error: halfEdge has a twin.");
                 continue;
             }
 
             if(!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B))
             {
-                // system.out.println("Error: no twin halfEdge found.");
                 // error.!***
+                System.out.println("Error: no twin halfEdge found.");
                 int hola = 0;
+                if(!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B))
+                {
+                    int hola2 = 0;
+
+                }
             }
         }
     }
@@ -155,6 +171,24 @@ public class TileMerger3x3 {
             ArrayList<GaiaHalfEdge> L_mesh_right_halfEdges = L_mesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
             ArrayList<GaiaHalfEdge> result_mesh_left_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.LEFT);
 
+            if(!L_mesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: L_mesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(!resultMergedMesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(L_mesh_right_halfEdges.size() != result_mesh_left_halfEdges.size())
+            {
+                // error.***
+                System.out.println("Error: L_mesh_right_halfEdges.size() != result_mesh_left_halfEdges.size()");
+            }
+
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(L_mesh_right_halfEdges, result_mesh_left_halfEdges);
 
@@ -177,6 +211,24 @@ public class TileMerger3x3 {
             GaiaMesh R_mesh = R_Tile.mesh;
             ArrayList<GaiaHalfEdge> R_mesh_left_halfEdges = R_mesh.getHalfEdgesByType(HalfEdgeType.LEFT);
             ArrayList<GaiaHalfEdge> result_mesh_right_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
+
+            if(!R_mesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: R_mesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(!resultMergedMesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(R_mesh_left_halfEdges.size() != result_mesh_right_halfEdges.size())
+            {
+                // error.***
+                System.out.println("Error: R_mesh_left_halfEdges.size() != result_mesh_right_halfEdges.size()");
+            }
 
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(R_mesh_left_halfEdges, result_mesh_right_halfEdges);
@@ -224,6 +276,24 @@ public class TileMerger3x3 {
             ArrayList<GaiaHalfEdge> U_mesh_down_halfEdges = U_mesh.getHalfEdgesByType(HalfEdgeType.DOWN);
             ArrayList<GaiaHalfEdge> result_mesh_up_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.UP);
 
+            if(!U_mesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: U_mesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(!resultMergedMesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(U_mesh_down_halfEdges.size() != result_mesh_up_halfEdges.size())
+            {
+                // error.***
+                System.out.println("Error: U_mesh_down_halfEdges.size() != result_mesh_up_halfEdges.size()");
+            }
+
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(U_mesh_down_halfEdges, result_mesh_up_halfEdges);
 
@@ -247,6 +317,24 @@ public class TileMerger3x3 {
             // in this case, join halfEdges of the up side of the down tile with the down side of the result mesh.
             ArrayList<GaiaHalfEdge> D_mesh_up_halfEdges = D_mesh.getHalfEdgesByType(HalfEdgeType.UP);
             ArrayList<GaiaHalfEdge> result_mesh_down_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.DOWN);
+
+            if(!D_mesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: D_mesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(!resultMergedMesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
+            }
+
+            if(D_mesh_up_halfEdges.size() != result_mesh_down_halfEdges.size())
+            {
+                // error.***
+                System.out.println("Error: D_mesh_up_halfEdges.size() != result_mesh_down_halfEdges.size()");
+            }
 
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(D_mesh_up_halfEdges, result_mesh_down_halfEdges);
@@ -273,6 +361,111 @@ public class TileMerger3x3 {
 
 
         return resultMergedMesh;
+    }
+
+    private ArrayList<GaiaHalfEdge> getHalfEdgesOfTriangles(ArrayList<GaiaTriangle>triangles)
+    {
+        ArrayList<GaiaHalfEdge> resultHalfEdges = new ArrayList<GaiaHalfEdge>();
+        int triangles_count = triangles.size();
+        for(int i=0; i<triangles_count; i++)
+        {
+            GaiaTriangle triangle = triangles.get(i);
+            ArrayList<GaiaHalfEdge> halfEdgesLoop = triangle.halfEdge.getHalfEdgesLoop();
+            resultHalfEdges.addAll(halfEdgesLoop);
+        }
+        return resultHalfEdges;
+    }
+
+    private ArrayList<GaiaVertex> getVerticesOfTriangles(ArrayList<GaiaTriangle>triangles)
+    {
+        ArrayList<GaiaVertex> resultVertices = new ArrayList<GaiaVertex>();
+        HashMap<GaiaVertex, Integer> map_vertices = new HashMap<GaiaVertex, Integer>();
+        int triangles_count = triangles.size();
+        for(int i=0; i<triangles_count; i++)
+        {
+            GaiaTriangle triangle = triangles.get(i);
+            ArrayList<GaiaVertex> vertices = triangle.getVertices();
+            int vertices_count = vertices.size();
+            for(int j=0; j<vertices_count; j++)
+            {
+                GaiaVertex vertex = vertices.get(j);
+                if(!map_vertices.containsKey(vertex))
+                {
+                    map_vertices.put(vertex, 1);
+                    resultVertices.add(vertex);
+                }
+            }
+        }
+        return resultVertices;
+    }
+
+    public void getSeparatedMeshes(GaiaMesh bigMesh, ArrayList<GaiaMesh>resultSeparatedMeshes)
+    {
+        // separate by ownerTile_tileIndices.***
+        ArrayList<GaiaTriangle> triangles = bigMesh.triangles;
+        HashMap<String, ArrayList<GaiaTriangle>> map_triangles = new HashMap<String, ArrayList<GaiaTriangle>>();
+        int triangles_count = triangles.size();
+        for(int i=0; i<triangles_count; i++)
+        {
+            GaiaTriangle triangle = triangles.get(i);
+            if(triangle.ownerTile_tileIndices != null)
+            {
+                TileIndices tileIndices = triangle.ownerTile_tileIndices;
+                String tileIndicesString = tileIndices.getString();
+                ArrayList<GaiaTriangle> trianglesList = map_triangles.get(tileIndicesString);
+                if(trianglesList == null)
+                {
+                    trianglesList = new ArrayList<GaiaTriangle>();
+                    map_triangles.put(tileIndicesString, trianglesList);
+                }
+                trianglesList.add(triangle);
+            }
+            else
+            {
+                // error.***
+                System.out.println("Error: triangle has not ownerTile_tileIndices.");
+            }
+        }
+
+        // now, create separated meshes.***
+        for(String tileIndices : map_triangles.keySet())
+        {
+            ArrayList<GaiaTriangle> trianglesList = map_triangles.get(tileIndices);
+            GaiaMesh separatedMesh = new GaiaMesh();
+            separatedMesh.triangles = trianglesList;
+            ArrayList<GaiaHalfEdge> halfEdges = this.getHalfEdgesOfTriangles(trianglesList);
+            // for all HEdges, check the triangle of the twin.***
+            // if the triangle of the twin has different ownerTile_tileIndices, then set the twin as null.***
+            int halfEdges_count = halfEdges.size();
+            for(int i=0; i<halfEdges_count; i++)
+            {
+                GaiaHalfEdge halfEdge = halfEdges.get(i);
+                GaiaHalfEdge twin = halfEdge.twin;
+                if(twin != null)
+                {
+                    GaiaTriangle twins_triangle = twin.triangle;
+                    if(twins_triangle != null)
+                    {
+                        String twins_triangle_tileIndices = twins_triangle.ownerTile_tileIndices.getString();
+                        if(!twins_triangle_tileIndices.equals(tileIndices))
+                        {
+                            // the twin triangle has different ownerTile_tileIndices.***
+                            halfEdge.setTwin(null);
+                        }
+                        else {
+                            int hola = 0;
+                        }
+                    }
+                }
+            }
+
+            separatedMesh.halfEdges = halfEdges;
+            ArrayList<GaiaVertex> vertices = this.getVerticesOfTriangles(trianglesList);
+            separatedMesh.vertices = vertices;
+
+            resultSeparatedMeshes.add(separatedMesh);
+        }
+
     }
 
 }

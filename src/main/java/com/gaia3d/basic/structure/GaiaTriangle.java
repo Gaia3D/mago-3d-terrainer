@@ -25,6 +25,8 @@ public class GaiaTriangle {
 
     public int splitDepth = 0;
 
+    public boolean refineChecked = false;
+
     public void setHalfEdge(GaiaHalfEdge halfEdge) {
         this.halfEdge = halfEdge;
         halfEdge.setTriangleToHEdgesLoop(this);
@@ -87,16 +89,44 @@ public class GaiaTriangle {
         return true;
     }
 
-    public Vector3d getBaricenter()
+    public Vector3d getBarycenter()
     {
         ArrayList<GaiaVertex> vertices = this.getVertices();
-        Vector3d baricenter = new Vector3d();
+        Vector3d barycenter = new Vector3d();
         for(GaiaVertex vertex : vertices)
         {
-            baricenter.add(vertex.position);
+            barycenter.add(vertex.position);
         }
-        baricenter.mul(1.0/3.0);
-        return baricenter;
+        barycenter.mul(1.0/3.0);
+        return barycenter;
+    }
+
+    public ArrayList<Vector3d> getSomePointsToCheckForTriangleRefinement()
+    {
+        ArrayList<Vector3d> somePoints = new ArrayList<Vector3d>();
+
+        Vector3d barycenter = this.getBarycenter();
+        somePoints.add(barycenter);
+
+        ArrayList<GaiaVertex> vertices = this.getVertices();
+        for(GaiaVertex vertex : vertices)
+        {
+            Vector3d pos = vertex.position.add(barycenter).mul(0.5);
+            somePoints.add(pos);
+        }
+
+        return somePoints;
+    }
+
+    public ArrayList<Vector3d> getPerimeterPositions(int numInterpolation)
+    {
+        ArrayList<Vector3d> perimeterPositions = new ArrayList<Vector3d>();
+        ArrayList<GaiaHalfEdge> halfEdges = this.halfEdge.getHalfEdgesLoop();
+        for(GaiaHalfEdge halfEdge : halfEdges)
+        {
+            halfEdge.getInterpolatedPositions(perimeterPositions, numInterpolation);
+        }
+        return perimeterPositions;
     }
 
     public GaiaHalfEdge getLongestHalfEdge()

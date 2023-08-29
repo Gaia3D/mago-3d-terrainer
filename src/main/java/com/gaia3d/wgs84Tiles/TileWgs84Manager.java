@@ -1,5 +1,6 @@
 package com.gaia3d.wgs84Tiles;
 
+import com.gaia3d.basic.structure.GaiaMesh;
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.reader.FileUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -66,14 +67,33 @@ public class TileWgs84Manager {
             String imageryType = this.imageryType;
             neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
             neighborTile.createInitialMesh();
-            neighborTile.saveFile(neighborFullPath);
+            if(neighborTile.mesh == null)
+            {
+                // error.***
+                System.out.println("Error: neighborTile.mesh == null");
+            }
+
+            if(!neighborTile.mesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: neighborTile.mesh.checkVerticesOutingHEdge() == false");
+            }
+            neighborTile.saveFile(neighborTile.mesh, neighborFullPath);
         }
         else
         {
             // load the Tile.***
             neighborTile.tileIndices = tileIndices;
             neighborTile.loadFile(neighborFullPath);
+
+            if(!neighborTile.mesh.checkVerticesOutingHEdge())
+            {
+                // error.***
+                System.out.println("Error: neighborTile.mesh.checkVerticesOutingHEdge() == false");
+            }
         }
+
+
         return neighborTile;
     }
 

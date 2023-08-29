@@ -11,6 +11,7 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import static java.lang.Math.abs;
 
@@ -59,7 +60,7 @@ public class TileWgs84 {
         this.manager = manager;
     }
 
-    public void saveFile(String filePath) throws IOException {
+    public void saveFile(GaiaMesh mesh, String filePath) throws IOException {
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
@@ -70,7 +71,7 @@ public class TileWgs84 {
         FileUtils.deleteFileIfExists(filePath);
 
         // save the tile.***
-        this.mesh.saveDataOutputStream(dataOutputStream);
+        mesh.saveDataOutputStream(dataOutputStream);
     }
 
     public void saveFileBigMesh(String filePath, GaiaMesh bigMesh) throws IOException {
@@ -250,16 +251,65 @@ public class TileWgs84 {
         //                         TileWgs84 right_up_tile, TileWgs84 left_down_tile, TileWgs84 right_down_tile)
         TileMerger3x3 tileMerger3x3 = new TileMerger3x3(curr_tile, L_tile, R_tile, U_tile, D_tile, LU_tile, RU_tile, LD_tile, RD_tile);
 
-        GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
-        bigMesh.setObjectsIdInList();
-        //bigMesh.
-
-        if(!bigMesh.checkHalfEdges())
+        if(!curr_tile.mesh.checkVerticesOutingHEdge())
         {
             int hola = 0;
         }
 
+        if(!L_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        if(!R_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        if(!U_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        if(!D_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        if(!LU_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        if(!RU_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        if(!LD_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        if(!RD_tile.mesh.checkVerticesOutingHEdge())
+        {
+            int hola = 0;
+        }
+
+        GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
+        bigMesh.setObjectsIdInList();
+
+        //if(!bigMesh.checkHalfEdges())
+        //{
+        //    int hola = 0;
+        //}
+
         refineMesh(bigMesh, curr_TileIndices);
+
+        // now save the 9 tiles.***
+        ArrayList<GaiaMesh> separatedMeshes = new ArrayList<GaiaMesh>();
+        tileMerger3x3.getSeparatedMeshes(bigMesh, separatedMeshes);
+        saveSeparatedTiles(separatedMeshes);
 
         // provisionally save the bigMesh.***
         String tileTempDirectory = this.manager.tileTempDirectory;
@@ -270,9 +320,46 @@ public class TileWgs84 {
         int hola = 0;
     }
 
+    public boolean saveSeparatedTiles(ArrayList<GaiaMesh> separatedMeshes)
+    {
+        // save the 9 tiles.***
+        int meshesCount = separatedMeshes.size();
+        for(int i = 0; i < meshesCount; i++)
+        {
+            GaiaMesh mesh = separatedMeshes.get(i);
+            GaiaTriangle triangle = mesh.triangles.get(0); // take the first triangle.***
+            TileIndices tileIndices = triangle.ownerTile_tileIndices;
+            String tileTempDirectory = this.manager.tileTempDirectory;
+            String outputDirectory = this.manager.outputDirectory;
+            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
+            String tileFullPath = tileTempDirectory + "\\" + tileFilePath;
+            /*
+             String tileTempDirectory = this.tileTempDirectory;
+            String outputDirectory = this.outputDirectory;
+            String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
+            String neighborFullPath = tileTempDirectory + "\\" + neighborFilePath;
+            TileWgs84 neighborTile = new TileWgs84(null, this);
+             */
+            try {
+                saveFile(mesh, tileFullPath);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException {
+        if(triangle.refineChecked)
+        {
+            System.out.println("SUPER-FAST-Check : false");
+            return false;
+        }
+
         TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
-        GeographicExtension terrainGeoExtension = terrainElevationData.geographicExtension;
         Vector2d pixelSizeDeg = terrainElevationData.getPixelSizeDegree();
 
         // check if the triangle must be refined.***
@@ -280,17 +367,33 @@ public class TileWgs84 {
 
         double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
 
-        // fast check.***
-        // check the baricenter of the triangle.***
-        Vector3d baricenter = triangle.getBaricenter();
-        double elevation = terrainElevationData.getElevation(baricenter.x, baricenter.y);
-        double planeElevation = baricenter.z;
+        // fast check.******************************************************************
+        // check the barycenter of the triangle.***
+        Vector3d barycenter = triangle.getBarycenter();
+        double elevation = terrainElevationData.getElevation(barycenter.x, barycenter.y);
+        double planeElevation = barycenter.z;
 
         if(abs(elevation - planeElevation) > maxDiff)
         {
+            System.out.println("FAST-Check : true");
             return true;
         }
-        // end check the baricenter of the triangle.***
+
+        // more fast check.***
+        /*
+        int numInterpolation = 5;
+        ArrayList<Vector3d> perimeterPositions = triangle.getPerimeterPositions(numInterpolation);
+        for(Vector3d perimeterPosition : perimeterPositions)
+        {
+            elevation = terrainElevationData.getElevation(perimeterPosition.x, perimeterPosition.y);
+            planeElevation = perimeterPosition.z;
+
+            if(abs(elevation - planeElevation) > maxDiff)
+            {
+                return true;
+            }
+        }*/
+        // end check the barycenter of the triangle.***************************************
 
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
@@ -303,25 +406,22 @@ public class TileWgs84 {
         int columnsCount = (int)(widthDeg / pixelSizeX);
         int rowsCount = (int)(heightDeg / pixelSizeY);
 
+        //System.out.println("Col count : " + columnsCount + " , Row count : " + rowsCount);
+
 
         double bbox_minX = bboxTriangle.getMinX();
         double bbox_minY = bboxTriangle.getMinY();
 
         boolean intersects = false;
-        boolean intersects_v2 = false;
+        int counter = 0;
         for(int row = 0; row < rowsCount; row++)
         {
             double pos_y = bbox_minY + row * pixelSizeY;
             for(int column = 0; column < columnsCount; column++)
             {
                 double pos_x = bbox_minX + column * pixelSizeX;
-                //intersects_v2 = triangle.intersectsPointXY_v2(pos_x, pos_y);
                 intersects = triangle.intersectsPointXY(pos_x, pos_y);
-
-                //if(intersects != intersects_v2)
-                //{
-                //    int hola = 0;
-                //}
+                counter++;
 
                 if(!intersects)
                 {
@@ -333,11 +433,14 @@ public class TileWgs84 {
 
                 if(abs(elevation - planeElevation) > maxDiff)
                 {
+                    System.out.println("SLOW-Check : true" + " , counter : " + counter);
                     return true;
                 }
             }
         }
 
+        System.out.println("SLOW-Check : false");
+        triangle.refineChecked = true;
         return false;
     }
 

@@ -121,11 +121,13 @@ public class GaiaMesh {
 
     public ArrayList<GaiaHalfEdge> getHalfEdgesByType(HalfEdgeType type)
     {
+        // This function returns the halfEdges that have the type and the twin is null.***
         ArrayList<GaiaHalfEdge> halfEdges = new ArrayList<GaiaHalfEdge>();
         int halfEdgesCount = this.halfEdges.size();
         for(int i=0; i<halfEdgesCount; i++) {
             GaiaHalfEdge halfEdge = this.halfEdges.get(i);
-            if(halfEdge.type == type) {
+            if(halfEdge.type == type && halfEdge.twin == null)
+            {
                 halfEdges.add(halfEdge);
             }
         }
@@ -148,6 +150,16 @@ public class GaiaMesh {
         for(int i=0; i<halfEdgesCount; i++) {
             GaiaHalfEdge halfEdge = halfEdges.get(i);
             halfEdge.id = i;
+        }
+    }
+
+    public void setHalfEdgesStartVertexAsOutingHEdges()
+    {
+        // this function is used when the vertices belong to different tiles.***
+        int halfEdgesCount = halfEdges.size();
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = halfEdges.get(i);
+            halfEdge.startVertex.outingHEdge = halfEdge;
         }
     }
 
@@ -231,6 +243,30 @@ public class GaiaMesh {
         triangle.halfEdge = null;
     }
 
+    public boolean checkVerticesOutingHEdge()
+    {
+        // check if the outingHEdge of the vertices are correct.***
+        int verticesCount = vertices.size();
+        for(int i=0; i<verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+            if(vertex.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+            GaiaHalfEdge outingHEdge = vertex.outingHEdge;
+            if(outingHEdge == null)
+            {
+                // error.***
+                return false;
+            }
+            if(outingHEdge.objectStatus == GaiaObjectStatus.DELETED)
+            {
+                // error.***
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean checkMesh()
     {
         // 1rst check if the adjacent triangles are correct.***
@@ -287,10 +323,10 @@ public class GaiaMesh {
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first.***
         // If the adjacentTriangle is null, then the triangle is splittable.***
 
-        if(!this.checkMesh())
-        {
-            int hola = 0;
-        }
+        //if(!this.checkMesh())
+        //{
+        //    int hola = 0;
+        //}
 
         ArrayList<GaiaTriangle> newTriangles = new ArrayList<GaiaTriangle>();
 
@@ -357,8 +393,11 @@ public class GaiaMesh {
 
             // Triangle_A.***
             GaiaHalfEdge halfEdge_A1 = newHalfEdge();
+            halfEdge_A1.type = longestHEdge.type;
             GaiaHalfEdge halfEdge_A2 = newHalfEdge();
+            halfEdge_A2.type = HalfEdgeType.INTERIOR;
             GaiaHalfEdge halfEdge_A3 = newHalfEdge();
+            halfEdge_A3.type = prevHEdge.type;
 
             // set vertex to the new halfEdges.***
             halfEdge_A1.setStartVertex(longestHEdge_startVertex);
@@ -376,8 +415,11 @@ public class GaiaMesh {
 
             // Triangle_B.***
             GaiaHalfEdge halfEdge_B1 = newHalfEdge();
+            halfEdge_B1.type = longestHEdge.type;
             GaiaHalfEdge halfEdge_B2 = newHalfEdge();
+            halfEdge_B2.type = nextHEdge.type;
             GaiaHalfEdge halfEdge_B3 = newHalfEdge();
+            halfEdge_B3.type = HalfEdgeType.INTERIOR;
 
             // set vertex to the new halfEdges.***
             halfEdge_B1.setStartVertex(midVertex);
@@ -493,8 +535,11 @@ public class GaiaMesh {
             // 1rst, create 4 new triangles.***
             // triangle_A.***
             GaiaHalfEdge halfEdge_A1 = newHalfEdge();
+            halfEdge_A1.type = longestHEdge.type;
             GaiaHalfEdge halfEdge_A2 = newHalfEdge();
+            halfEdge_A2.type = HalfEdgeType.INTERIOR;
             GaiaHalfEdge halfEdge_A3 = newHalfEdge();
+            halfEdge_A3.type = prevHEdge.type;
 
             // set vertex to the new halfEdges.***
             halfEdge_A1.setStartVertex(longEdge_startVertex);
@@ -512,8 +557,11 @@ public class GaiaMesh {
 
             // triangle_B.***
             GaiaHalfEdge halfEdge_B1 = newHalfEdge();
+            halfEdge_B1.type = longestHEdge.type;
             GaiaHalfEdge halfEdge_B2 = newHalfEdge();
+            halfEdge_B2.type = nextHEdge.type;
             GaiaHalfEdge halfEdge_B3 = newHalfEdge();
+            halfEdge_B3.type = HalfEdgeType.INTERIOR;
 
             // set vertex to the new halfEdges.***
             halfEdge_B1.setStartVertex(midVertex);
@@ -531,8 +579,11 @@ public class GaiaMesh {
 
             // triangle_C.***
             GaiaHalfEdge halfEdge_C1 = newHalfEdge();
+            halfEdge_C1.type = longestHEdgeAdjT.type;
             GaiaHalfEdge halfEdge_C2 = newHalfEdge();
+            halfEdge_C2.type = nextHEdgeAdjT.type;
             GaiaHalfEdge halfEdge_C3 = newHalfEdge();
+            halfEdge_C3.type = HalfEdgeType.INTERIOR;
 
             // set vertex to the new halfEdges.***
             halfEdge_C1.setStartVertex(midVertex);
@@ -550,8 +601,11 @@ public class GaiaMesh {
 
             // triangle_D.***
             GaiaHalfEdge halfEdge_D1 = newHalfEdge();
+            halfEdge_D1.type = longestHEdgeAdjT.type;
             GaiaHalfEdge halfEdge_D2 = newHalfEdge();
+            halfEdge_D2.type = HalfEdgeType.INTERIOR;
             GaiaHalfEdge halfEdge_D3 = newHalfEdge();
+            halfEdge_D3.type = prevHEdgeAdjT.type;
 
             // set vertex to the new halfEdges.***
             halfEdge_D1.setStartVertex(longEdge_endVertex);
@@ -620,10 +674,10 @@ public class GaiaMesh {
             nextHEdgeAdjT.objectStatus = GaiaObjectStatus.DELETED;
         }
 
-        if(!this.checkMesh())
-        {
-            int hola = 0;
-        }
+        //if(!this.checkMesh())
+        //{
+        //    int hola = 0;
+        //}
 
         return newTriangles;
     }
@@ -719,10 +773,12 @@ public class GaiaMesh {
             halfEdges.add(halfEdge);
         }
 
-
     }
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException {
+        this.setObjectsIdInList();
+        this.setHalfEdgesStartVertexAsOutingHEdges();// this function is used when the vertices belong to different tiles.***
+
         // save id.***
         dataOutputStream.writeInt(id);
 
@@ -733,6 +789,12 @@ public class GaiaMesh {
 
         for(int i=0; i<verticesCount; i++) {
             GaiaVertex vertex = vertices.get(i);
+
+            // check.***
+            if(vertex.outingHEdge.id > halfEdges.size())
+            {
+                int hola = 0;
+            }
             vertex.saveDataOutputStream(dataOutputStream);
         }
 
@@ -811,6 +873,10 @@ public class GaiaMesh {
             int outingHalfEdgeId = vertex.outingHEdgeId;
             if(outingHalfEdgeId != -1) {
                 GaiaHalfEdge outingHalfEdge = halfEdgesMap.get(outingHalfEdgeId);
+                if(outingHalfEdge == null)
+                {
+                    int hola = 0;
+                }
                 vertex.outingHEdge = outingHalfEdge;
             }
             else
