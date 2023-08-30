@@ -35,7 +35,11 @@ public class TileWgs84Manager {
         double minLat = geographicExtension.getMinLatitudeDeg();
         double maxLat = geographicExtension.getMaxLatitudeDeg();
 
-        for(int depth = minTileDepth; depth <= maxTileDepth; depth+=1)
+        double lonRange = maxLon - minLon; // test.***
+        double latRange = maxLat - minLat; // test.***
+        double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(26); // test.***
+
+        for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {
             ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null);
 
@@ -73,11 +77,11 @@ public class TileWgs84Manager {
                 System.out.println("Error: neighborTile.mesh == null");
             }
 
-            if(!neighborTile.mesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: neighborTile.mesh.checkVerticesOutingHEdge() == false");
-            }
+            //if(!neighborTile.mesh.checkVerticesOutingHEdge())
+            //{
+            //    // error.***
+            //    System.out.println("Error: neighborTile.mesh.checkVerticesOutingHEdge() == false");
+            //}
             neighborTile.saveFile(neighborTile.mesh, neighborFullPath);
         }
         else
@@ -86,11 +90,11 @@ public class TileWgs84Manager {
             neighborTile.tileIndices = tileIndices;
             neighborTile.loadFile(neighborFullPath);
 
-            if(!neighborTile.mesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: neighborTile.mesh.checkVerticesOutingHEdge() == false");
-            }
+            //if(!neighborTile.mesh.checkVerticesOutingHEdge())
+            //{
+            //    // error.***
+            //    System.out.println("Error: neighborTile.mesh.checkVerticesOutingHEdge() == false");
+            //}
         }
 
 

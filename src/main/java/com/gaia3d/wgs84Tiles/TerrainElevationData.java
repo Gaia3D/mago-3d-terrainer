@@ -40,6 +40,15 @@ public class TerrainElevationData {
     double minAltitude = Double.MAX_VALUE;
     double maxAltitude = Double.MIN_VALUE;
 
+    private Vector2d getLongitudeLatitudeDegree(int coordX, int coordY, GeometryFactory gf, MathTransform targetToWgs) throws TransformException {
+        GridCoordinates2D coord = new GridCoordinates2D(coordX, coordY);
+        DirectPosition p = coverage.getGridGeometry().gridToWorld(coord);
+        Point point = gf.createPoint(new Coordinate(p.getOrdinate(0), p.getOrdinate(1)));
+        Geometry wgsP = (Geometry) JTS.transform(point, targetToWgs);
+        Vector2d lonLat = new Vector2d(wgsP.getCentroid().getCoordinate().x, wgsP.getCentroid().getCoordinate().y);
+        return lonLat;
+    }
+
     public void loadGeoTiffFile(String geotiffFilePath) throws FactoryException, TransformException {
         // load the geotiff file.***
         this.geotiffFilePath = geotiffFilePath;
@@ -59,19 +68,41 @@ public class TerrainElevationData {
         GeometryFactory gf = new GeometryFactory();
         MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
 
-        GridCoordinates2D coord = new GridCoordinates2D(1, 1);
-        DirectPosition p = coverage.getGridGeometry().gridToWorld(coord);
-        Point point = gf.createPoint(new Coordinate(p.getOrdinate(0), p.getOrdinate(1)));
-        Geometry wgsP = (Geometry) JTS.transform(point, targetToWgs);
-        double maxLon = wgsP.getCentroid().getCoordinate().x;
-        double minLat = wgsP.getCentroid().getCoordinate().y;
+        int gridLow0 = gridRange2D.getLow(0);
+        int gridLow1 = gridRange2D.getLow(1);
+        int gridHigh0 = gridRange2D.getHigh(0);
+        int gridHigh1 = gridRange2D.getHigh(1);
 
-        coord = new GridCoordinates2D(0, 0);
-        p = coverage.getGridGeometry().gridToWorld(coord);
-        point = gf.createPoint(new Coordinate(p.getOrdinate(0), p.getOrdinate(1)));
-        wgsP = (Geometry) JTS.transform(point, targetToWgs);
-        double minLon = wgsP.getCentroid().getCoordinate().x;
-        double maxLat = wgsP.getCentroid().getCoordinate().y;
+        // gridLow0, gridLow1.***
+        Vector2d lonLat_LU = this.getLongitudeLatitudeDegree(gridLow0, gridLow1, gf, targetToWgs);
+
+        // gridHigh0, gridHigh1.***
+        Vector2d lonLat_RD = this.getLongitudeLatitudeDegree(gridHigh0, gridHigh1, gf, targetToWgs);
+
+        // gridLow0, gridHigh1.***
+        Vector2d lonLat_LD = this.getLongitudeLatitudeDegree(gridLow0, gridHigh1, gf, targetToWgs);
+
+        // gridHigh0, gridLow1.***
+        Vector2d lonLat_RU = this.getLongitudeLatitudeDegree(gridHigh0, gridLow1, gf, targetToWgs);
+
+        double minLon = Math.min(lonLat_LU.x, lonLat_RD.x);
+        minLon = Math.min(minLon, lonLat_LD.x);
+        minLon = Math.min(minLon, lonLat_RU.x);
+
+        double maxLon = Math.max(lonLat_LU.x, lonLat_RD.x);
+        maxLon = Math.max(maxLon, lonLat_LD.x);
+        maxLon = Math.max(maxLon, lonLat_RU.x);
+
+        double minLat = Math.min(lonLat_LU.y, lonLat_RD.y);
+        minLat = Math.min(minLat, lonLat_LD.y);
+        minLat = Math.min(minLat, lonLat_RU.y);
+
+        double maxLat = Math.max(lonLat_LU.y, lonLat_RD.y);
+        maxLat = Math.max(maxLat, lonLat_LD.y);
+        maxLat = Math.max(maxLat, lonLat_RU.y);
+
+        // 127.1672976210000030,37.6009237940000034
+        // 127.1985472009999967,37.6293537840000027
 
         this.geographicExtension.setDegrees(minLon, minLat, 0.0, maxLon, maxLat, 0.0);
 

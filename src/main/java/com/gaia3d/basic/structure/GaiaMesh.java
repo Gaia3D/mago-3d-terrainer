@@ -156,6 +156,7 @@ public class GaiaMesh {
     public void setHalfEdgesStartVertexAsOutingHEdges()
     {
         // this function is used when the vertices belong to different tiles.***
+        // call this function just before to save the mesh.***
         int halfEdgesCount = halfEdges.size();
         for(int i=0; i<halfEdgesCount; i++) {
             GaiaHalfEdge halfEdge = halfEdges.get(i);
@@ -789,12 +790,6 @@ public class GaiaMesh {
 
         for(int i=0; i<verticesCount; i++) {
             GaiaVertex vertex = vertices.get(i);
-
-            // check.***
-            if(vertex.outingHEdge.id > halfEdges.size())
-            {
-                int hola = 0;
-            }
             vertex.saveDataOutputStream(dataOutputStream);
         }
 

@@ -251,58 +251,8 @@ public class TileWgs84 {
         //                         TileWgs84 right_up_tile, TileWgs84 left_down_tile, TileWgs84 right_down_tile)
         TileMerger3x3 tileMerger3x3 = new TileMerger3x3(curr_tile, L_tile, R_tile, U_tile, D_tile, LU_tile, RU_tile, LD_tile, RD_tile);
 
-        if(!curr_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!L_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!R_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!U_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!D_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!LU_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!RU_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!LD_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
-        if(!RD_tile.mesh.checkVerticesOutingHEdge())
-        {
-            int hola = 0;
-        }
-
         GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
         bigMesh.setObjectsIdInList();
-
-        //if(!bigMesh.checkHalfEdges())
-        //{
-        //    int hola = 0;
-        //}
 
         refineMesh(bigMesh, curr_TileIndices);
 
@@ -333,13 +283,7 @@ public class TileWgs84 {
             String outputDirectory = this.manager.outputDirectory;
             String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
             String tileFullPath = tileTempDirectory + "\\" + tileFilePath;
-            /*
-             String tileTempDirectory = this.tileTempDirectory;
-            String outputDirectory = this.outputDirectory;
-            String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
-            String neighborFullPath = tileTempDirectory + "\\" + neighborFilePath;
-            TileWgs84 neighborTile = new TileWgs84(null, this);
-             */
+
             try {
                 saveFile(mesh, tileFullPath);
 

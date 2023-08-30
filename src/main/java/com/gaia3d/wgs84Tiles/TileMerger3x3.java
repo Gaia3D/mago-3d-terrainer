@@ -107,15 +107,6 @@ public class TileMerger3x3 {
 
                 return true;
             }
-            else
-            {
-                // do a test.***
-                double error = 1e-11    ;
-                if(halfEdge.isHalfEdgePossibleTwin(halfEdge2, error))
-                {
-                    int hola = 0;
-                }
-            }
         }
         return false;
     }
@@ -138,11 +129,6 @@ public class TileMerger3x3 {
                 // error.!***
                 System.out.println("Error: no twin halfEdge found.");
                 int hola = 0;
-                if(!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B))
-                {
-                    int hola2 = 0;
-
-                }
             }
         }
     }
@@ -171,24 +157,6 @@ public class TileMerger3x3 {
             ArrayList<GaiaHalfEdge> L_mesh_right_halfEdges = L_mesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
             ArrayList<GaiaHalfEdge> result_mesh_left_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.LEFT);
 
-            if(!L_mesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: L_mesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(!resultMergedMesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(L_mesh_right_halfEdges.size() != result_mesh_left_halfEdges.size())
-            {
-                // error.***
-                System.out.println("Error: L_mesh_right_halfEdges.size() != result_mesh_left_halfEdges.size()");
-            }
-
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(L_mesh_right_halfEdges, result_mesh_left_halfEdges);
 
@@ -211,24 +179,6 @@ public class TileMerger3x3 {
             GaiaMesh R_mesh = R_Tile.mesh;
             ArrayList<GaiaHalfEdge> R_mesh_left_halfEdges = R_mesh.getHalfEdgesByType(HalfEdgeType.LEFT);
             ArrayList<GaiaHalfEdge> result_mesh_right_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
-
-            if(!R_mesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: R_mesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(!resultMergedMesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(R_mesh_left_halfEdges.size() != result_mesh_right_halfEdges.size())
-            {
-                // error.***
-                System.out.println("Error: R_mesh_left_halfEdges.size() != result_mesh_right_halfEdges.size()");
-            }
 
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(R_mesh_left_halfEdges, result_mesh_right_halfEdges);
@@ -276,24 +226,6 @@ public class TileMerger3x3 {
             ArrayList<GaiaHalfEdge> U_mesh_down_halfEdges = U_mesh.getHalfEdgesByType(HalfEdgeType.DOWN);
             ArrayList<GaiaHalfEdge> result_mesh_up_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.UP);
 
-            if(!U_mesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: U_mesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(!resultMergedMesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(U_mesh_down_halfEdges.size() != result_mesh_up_halfEdges.size())
-            {
-                // error.***
-                System.out.println("Error: U_mesh_down_halfEdges.size() != result_mesh_up_halfEdges.size()");
-            }
-
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(U_mesh_down_halfEdges, result_mesh_up_halfEdges);
 
@@ -317,24 +249,6 @@ public class TileMerger3x3 {
             // in this case, join halfEdges of the up side of the down tile with the down side of the result mesh.
             ArrayList<GaiaHalfEdge> D_mesh_up_halfEdges = D_mesh.getHalfEdgesByType(HalfEdgeType.UP);
             ArrayList<GaiaHalfEdge> result_mesh_down_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.DOWN);
-
-            if(!D_mesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: D_mesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(!resultMergedMesh.checkVerticesOutingHEdge())
-            {
-                // error.***
-                System.out.println("Error: resultMergedMesh.checkVerticesOutingHEdge() == false");
-            }
-
-            if(D_mesh_up_halfEdges.size() != result_mesh_down_halfEdges.size())
-            {
-                // error.***
-                System.out.println("Error: D_mesh_up_halfEdges.size() != result_mesh_down_halfEdges.size()");
-            }
 
             // now, set twins of halfEdges.***
             this.setTwinsBetweenHalfEdges(D_mesh_up_halfEdges, result_mesh_down_halfEdges);

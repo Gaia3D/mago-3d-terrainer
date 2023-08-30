@@ -70,13 +70,15 @@ public class TileWgs84Utils {
         { return 5.0; }
         if (depth == 27)
         { return 4.0; }
+        if (depth == 28)
+        { return 3.0; }
 
         return -1.0;
     }
     static public double selectTileAngleRangeByDepth(int depth)
     {
         // given tile depth, this function returns the latitude angle range of the tile
-        if (depth < 0 || depth > 27)
+        if (depth < 0 || depth > 28)
         { return -1.0; }
 
         if (depth == 0)
@@ -127,7 +129,7 @@ public class TileWgs84Utils {
         { return 0.010986328 / 256.0; }
         if (depth == 23)
         { return 0.010986328 / 512.0; }
-        if (depth == 24)
+        if (depth == 24) // tile aprox 1m edge.***
         { return 0.010986328 / 1024.0; }
         if (depth == 25)
         { return 0.010986328 / 2048.0; }
@@ -135,6 +137,8 @@ public class TileWgs84Utils {
         { return 0.010986328 / (2048.0 * 2.0); }
         if (depth == 27)
         { return 0.010986328 / (2048.0 * 4.0); }
+        if (depth == 28)
+        { return 0.010986328 / (2048.0 * 8.0); }
 
         return -1.0;
     }
@@ -144,6 +148,10 @@ public class TileWgs84Utils {
         double xMin = -180.0;
         double yMin = 90.0;
         double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+
+        //double testRange = 180.0/Math.pow(2, depth);
+        //int xIndexTest = (int) Math.floor((longitude - xMin)/testRange);
+        //int yIndexTest = (int) Math.floor((yMin - latitude)/testRange);
 
         int xIndex = (int) Math.floor((longitude - xMin)/angRange);
         int yIndex = (int) Math.floor((yMin - latitude)/angRange);
