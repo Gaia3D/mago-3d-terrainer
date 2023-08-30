@@ -417,12 +417,17 @@ public class TileWgs84 {
                 {
                     splitCount++;
                     refined = true;
-                    mesh.removeDeletedObjects();
-                    mesh.setObjectsIdInList();
                 }
             }
 
         }
+
+        if(refined)
+        {
+            mesh.removeDeletedObjects();
+            mesh.setObjectsIdInList();
+        }
+
 
         return refined;
     }
@@ -434,6 +439,7 @@ public class TileWgs84 {
         // refine the mesh.***
         boolean finished = false;
         int splitCount = 0;
+        int maxIterations = 9;
         while(!finished) {
             System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
             if(!this.refineMeshOneIteration(mesh, currTileIndices))
@@ -445,7 +451,7 @@ public class TileWgs84 {
                 splitCount++;
             }
 
-            if(splitCount >= 10)
+            if(splitCount >= maxIterations)
             {
                 finished = true;
             }

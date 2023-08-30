@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TileWgs84Manager {
-    public int minTileDepth = 26;
-    public int maxTileDepth = 27;
+    public int minTileDepth = 10;
+    public int maxTileDepth = 14;
 
     public String tileTempDirectory = null;
     public String outputDirectory = null;
@@ -34,10 +34,6 @@ public class TileWgs84Manager {
         double maxLon = geographicExtension.getMaxLongitudeDeg();
         double minLat = geographicExtension.getMinLatitudeDeg();
         double maxLat = geographicExtension.getMaxLatitudeDeg();
-
-        double lonRange = maxLon - minLon; // test.***
-        double latRange = maxLat - minLat; // test.***
-        double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(26); // test.***
 
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {

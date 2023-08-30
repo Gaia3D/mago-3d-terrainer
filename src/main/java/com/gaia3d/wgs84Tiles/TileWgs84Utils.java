@@ -15,55 +15,55 @@ public class TileWgs84Utils {
         { return -1.0; }
 
         if (depth == 0)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 1)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 2)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 3)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 4)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 5)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 6)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 7)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 8)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 9)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 10)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 11)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 12)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 13)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 14)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 15)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 16)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 17)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 18)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 19)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 20)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 21)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 22)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 23)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 24)
-        { return 500.0; }
+        { return 5.0; }
         if (depth == 25)
         { return 5.0; }
         if (depth == 26)
