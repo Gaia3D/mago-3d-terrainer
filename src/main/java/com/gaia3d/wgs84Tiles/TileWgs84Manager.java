@@ -24,7 +24,7 @@ public class TileWgs84Manager {
 
     public String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
 
-    double vertexCoincidentError = 0.0000000000001;
+    double vertexCoincidentError = 1e-12;
 
 
     public void makeTileMeshes() throws IOException, TransformException {
@@ -43,9 +43,13 @@ public class TileWgs84Manager {
             {
                 TileWgs84 tile = new TileWgs84(null, this);
                 tile.tileIndices = tileIndices;
+                tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
                 tile.makeBigMesh();
                 tileWgs84List.add(tile);
             }
+
+            // once finished the current depth, make initial tiles of the children.***
+
 
             int hola = 0;
         }

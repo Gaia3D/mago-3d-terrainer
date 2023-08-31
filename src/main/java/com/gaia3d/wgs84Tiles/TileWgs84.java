@@ -254,6 +254,11 @@ public class TileWgs84 {
         GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
         bigMesh.setObjectsIdInList();
 
+        // create the geographicExtension of the bigMesh.***
+        // The geographicExtension of the bigMesh is the geographicExtension of the current tile.***
+        //double midLonDeg = this.geographicExtension.getMidLongitudeDeg();
+        //double midLatDeg = this.geographicExtension.getMidLatitudeDeg();
+
         refineMesh(bigMesh, curr_TileIndices);
 
         // now save the 9 tiles.***
@@ -294,6 +299,58 @@ public class TileWgs84 {
         }
 
         return true;
+    }
+
+    private boolean mustDivideTriangle(GaiaTriangle triangle, double midLonDeg, double midLatDeg)
+    {
+        ArrayList<GaiaVertex> vertices = triangle.getVertices();
+        int verticesCount = vertices.size();
+        int vertexLeftSideCount = 0;
+        int vertexRightSideCount = 0;
+        int vertexUpsideCount = 0;
+        int vertexDownsideCount = 0;
+        double vertexCoincidentError = this.manager.vertexCoincidentError;
+
+        for(int i = 0; i < verticesCount; i++)
+        {
+            GaiaVertex vertex = vertices.get(i);
+            if(Math.abs(vertex.position.x - midLonDeg) < vertexCoincidentError ||
+                    Math.abs(vertex.position.y - midLatDeg) < vertexCoincidentError)
+            {
+                // the vertex is coincident with midLon or midLat.***
+                continue;
+            }
+
+            if(vertex.position.x < midLonDeg)
+            {
+                vertexLeftSideCount++;
+            }
+            else
+            {
+                vertexRightSideCount++;
+            }
+
+            if(vertex.position.y < midLatDeg)
+            {
+                vertexDownsideCount++;
+            }
+            else
+            {
+                vertexUpsideCount++;
+            }
+        }
+
+        if(vertexLeftSideCount > 0 && vertexRightSideCount > 0)
+        {
+            return true;
+        }
+
+        if(vertexUpsideCount > 0 && vertexDownsideCount > 0)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException {
@@ -338,6 +395,17 @@ public class TileWgs84 {
             }
         }*/
         // end check the barycenter of the triangle.***************************************
+
+        // Another fast check.*************************************************************
+        double midLongitudeDeg = this.geographicExtension.getMidLongitudeDeg();
+        double midLatitudeDeg = this.geographicExtension.getMidLatitudeDeg();
+
+        if(mustDivideTriangle(triangle, midLongitudeDeg, midLatitudeDeg))
+        {
+            System.out.println("ANOTHER-FAST-Check : true*******************************************");
+            return true;
+        }
+        // end another fast check.*********************************************************
 
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
@@ -457,9 +525,33 @@ public class TileWgs84 {
             }
         }
 
-
-
         int hola = 0;
+    }
+
+    public void saveChildren()
+    {
+        //******************************************
+        // Function used when save 4 child tiles.***
+        //******************************************
+        // 1rst, divide the tile in 4 subTiles.***
+
+    }
+
+
+
+    public void divideTileIn4SubTiles()
+    {
+        //******************************************
+        // Function used when save 4 child tiles.***
+        //******************************************
+        double midLongitudeDeg = this.geographicExtension.getMidLongitudeDeg();
+        double midLatitudeDeg = this.geographicExtension.getMidLatitudeDeg();
+
+        // check if exist triangles that has vertices on the left side and right side of midLongitudeDeg.***
+        // check if exist triangles that has vertices on the upside and downside of midLatitudeDeg.***
+        // these triangles must be divided in 2 triangles.***
+
+
     }
 
 }

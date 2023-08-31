@@ -133,7 +133,7 @@ public class TileMerger3x3 {
         }
     }
 
-    public GaiaMesh getMergedMesh_3x1(TileWgs84 L_Tile, TileWgs84 C_Tile, TileWgs84 R_Tile)
+    private GaiaMesh getMergedMesh_3x1(TileWgs84 L_Tile, TileWgs84 C_Tile, TileWgs84 R_Tile)
     {
         // given 3 tiles in row, merge them.***
         //  +----------+----------+----------+
@@ -191,7 +191,7 @@ public class TileMerger3x3 {
         return resultMergedMesh;
     }
 
-    public GaiaMesh getMergedMesh_1x3(GaiaMesh U_mesh, GaiaMesh C_mesh, GaiaMesh D_mesh)
+    private GaiaMesh getMergedMesh_1x3(GaiaMesh U_mesh, GaiaMesh C_mesh, GaiaMesh D_mesh)
     {
         // given 3 tiles in column, merge them.***
         //  +----------+

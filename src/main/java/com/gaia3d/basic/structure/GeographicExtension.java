@@ -31,6 +31,21 @@ public class GeographicExtension {
         return minGeographicCoordDeg.y;
     }
 
+    public double getMidLongitudeDeg()
+    {
+        return (maxGeographicCoordDeg.x + minGeographicCoordDeg.x) / 2.0;
+    }
+
+    public double getMidLatitudeDeg()
+    {
+        return (maxGeographicCoordDeg.y + minGeographicCoordDeg.y) / 2.0;
+    }
+
+    public double getMidAltitude()
+    {
+        return (maxGeographicCoordDeg.z + minGeographicCoordDeg.z) / 2.0;
+    }
+
     public double getMaxAltitude()
     {
         return maxGeographicCoordDeg.z;

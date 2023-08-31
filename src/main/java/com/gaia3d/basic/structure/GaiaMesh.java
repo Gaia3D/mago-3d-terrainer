@@ -932,14 +932,11 @@ public class GaiaMesh {
             }
 
             // halfEdge points twin.***
+            // twin can be null.***
             int twinId = halfEdge.twinId;
             if(twinId != -1) {
                 GaiaHalfEdge twin = halfEdgesMap.get(twinId);
                 halfEdge.twin = twin;
-            }
-            else
-            {
-                int hola = 0;
             }
         }
 
