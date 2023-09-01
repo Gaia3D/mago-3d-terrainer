@@ -13,7 +13,7 @@ import java.util.List;
 
 public class TileWgs84Manager {
     public int minTileDepth = 10;
-    public int maxTileDepth = 14;
+    public int maxTileDepth = 15;
 
     public String tileTempDirectory = null;
     public String outputDirectory = null;
@@ -42,11 +42,11 @@ public class TileWgs84Manager {
             ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null);
             if(depth == minTileDepth)
             {
-                this.triangleRefinementMaxIterations = 9;
+                this.triangleRefinementMaxIterations = 8;
             }
             else
             {
-                this.triangleRefinementMaxIterations = 2;
+                this.triangleRefinementMaxIterations = 1;
             }
 
             for (TileIndices tileIndices : resultTileIndicesArray)
@@ -74,15 +74,9 @@ public class TileWgs84Manager {
                     tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
 
                     tile.loadTileAndSave4Children(tileIndices);
-                    int hola = 0;
                 }
             }
-
-
-
-            int hola = 0;
         }
-
     }
 
     public String getTilePath(TileIndices tileIndices)

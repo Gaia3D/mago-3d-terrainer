@@ -605,7 +605,6 @@ public class TileWgs84 {
 
             if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices))
             {
-
                 int L = triangle.ownerTile_tileIndices.L;
                 int X = triangle.ownerTile_tileIndices.X;
                 int Y = triangle.ownerTile_tileIndices.Y;
@@ -663,10 +662,8 @@ public class TileWgs84 {
             {
                 finished = true;
             }
-            else
-            {
-                splitCount++;
-            }
+
+            splitCount++;
 
             if(splitCount >= maxIterations)
             {

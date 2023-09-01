@@ -15,63 +15,63 @@ public class TileWgs84Utils {
         { return -1.0; }
 
         if (depth == 0)
-        { return 5.0; }
+        { return 100.0; }
         if (depth == 1)
-        { return 5.0; }
+        { return 100.0; }
         if (depth == 2)
-        { return 5.0; }
+        { return 10.0; }
         if (depth == 3)
-        { return 5.0; }
+        { return 9.0; }
         if (depth == 4)
-        { return 5.0; }
+        { return 9.0; }
         if (depth == 5)
-        { return 5.0; }
+        { return 8.0; }
         if (depth == 6)
-        { return 5.0; }
+        { return 8.0; }
         if (depth == 7)
-        { return 5.0; }
+        { return 7.0; }
         if (depth == 8)
-        { return 5.0; }
+        { return 7.0; }
         if (depth == 9)
-        { return 5.0; }
+        { return 6.0; }
         if (depth == 10)
-        { return 5.0; }
+        { return 6.0; }
         if (depth == 11)
-        { return 5.0; }
-        if (depth == 12)
-        { return 5.0; }
-        if (depth == 13)
-        { return 5.0; }
-        if (depth == 14)
-        { return 5.0; }
-        if (depth == 15)
-        { return 5.0; }
-        if (depth == 16)
-        { return 5.0; }
-        if (depth == 17)
-        { return 5.0; }
-        if (depth == 18)
-        { return 5.0; }
-        if (depth == 19)
-        { return 5.0; }
-        if (depth == 20)
-        { return 5.0; }
-        if (depth == 21)
-        { return 5.0; }
-        if (depth == 22)
-        { return 5.0; }
-        if (depth == 23)
-        { return 5.0; }
-        if (depth == 24)
-        { return 5.0; }
-        if (depth == 25)
-        { return 5.0; }
-        if (depth == 26)
-        { return 5.0; }
-        if (depth == 27)
         { return 4.0; }
-        if (depth == 28)
+        if (depth == 12)
+        { return 4.0; }
+        if (depth == 13)
         { return 3.0; }
+        if (depth == 14)
+        { return 3.0; }
+        if (depth == 15)
+        { return 2.0; }
+        if (depth == 16)
+        { return 2.0; }
+        if (depth == 17)
+        { return 1.0; }
+        if (depth == 18)
+        { return 1.0; }
+        if (depth == 19)
+        { return 1.0; }
+        if (depth == 20)
+        { return 0.5; }
+        if (depth == 21)
+        { return 0.5; }
+        if (depth == 22)
+        { return 0.5; }
+        if (depth == 23)
+        { return 0.4; }
+        if (depth == 24)
+        { return 0.4; }
+        if (depth == 25)
+        { return 0.3; }
+        if (depth == 26)
+        { return 0.2; }
+        if (depth == 27)
+        { return 0.1; }
+        if (depth == 28)
+        { return 0.01; }
 
         return -1.0;
     }
