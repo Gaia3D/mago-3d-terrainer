@@ -34,6 +34,10 @@ public class TileMerger3x3 {
 
     double vertexCoincidentError = 0.0000000000001;
 
+    public TileMerger3x3()
+    {
+
+    }
     public TileMerger3x3(TileWgs84 center_tile, TileWgs84 left_tile, TileWgs84 right_tile,
                          TileWgs84 up_tile, TileWgs84 down_tile, TileWgs84 left_up_tile,
                          TileWgs84 right_up_tile, TileWgs84 left_down_tile, TileWgs84 right_down_tile) {
@@ -142,7 +146,16 @@ public class TileMerger3x3 {
         //  |          |          |          |
         //  +----------+----------+----------+
 
-        GaiaMesh resultMergedMesh = C_Tile.mesh;
+        GaiaMesh resultMergedMesh = null;
+        if(C_Tile != null)
+        {
+            resultMergedMesh = C_Tile.mesh;
+        }
+
+        if(resultMergedMesh == null)
+        {
+            resultMergedMesh = new GaiaMesh();
+        }
 
         if(L_Tile != null)
         {
@@ -209,6 +222,11 @@ public class TileMerger3x3 {
         //  +----------+
 
         GaiaMesh resultMergedMesh = C_mesh;
+
+        if(resultMergedMesh == null)
+        {
+            resultMergedMesh = new GaiaMesh();
+        }
 
         if(U_mesh != null)
         {

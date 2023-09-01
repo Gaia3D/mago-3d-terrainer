@@ -200,7 +200,7 @@ public class TileWgs84 {
 
 
 
-    public void makeBigMesh() throws IOException, TransformException {
+    public void makeBigMesh(boolean is1rstGeneration) throws IOException, TransformException {
 
         // make a bigMesh.***
         // bigMesh:
@@ -218,32 +218,98 @@ public class TileWgs84 {
         //  |          |          |          |
         //  +----------+----------+----------+
 
+        // Note : only in the 1rst generation the tiles must be created.***
+
         TileIndices curr_TileIndices = this.tileIndices;
-        TileWgs84 curr_tile = this.manager.loadOrCreateTileWgs84(curr_TileIndices);
+        TileWgs84 curr_tile = null;
+        if(is1rstGeneration)
+        {
+            curr_tile = this.manager.loadOrCreateTileWgs84(curr_TileIndices);
+        }
+        else {
+            curr_tile = this.manager.loadTileWgs84(curr_TileIndices);
+        }
+
 
         TileIndices LD_TileIndices = this.tileIndices.get_LD_TileIndices();
-        TileWgs84 LD_tile = this.manager.loadOrCreateTileWgs84(LD_TileIndices);
+        TileWgs84 LD_tile = null;
+        if(is1rstGeneration)
+        {
+            LD_tile = this.manager.loadOrCreateTileWgs84(LD_TileIndices);
+        }
+        else {
+            LD_tile = this.manager.loadTileWgs84(LD_TileIndices);
+        }
 
         TileIndices D_TileIndices = this.tileIndices.get_D_TileIndices();
-        TileWgs84 D_tile = this.manager.loadOrCreateTileWgs84(D_TileIndices);
+        TileWgs84 D_tile = null;
+        if(is1rstGeneration)
+        {
+            D_tile = this.manager.loadOrCreateTileWgs84(D_TileIndices);
+        }
+        else {
+            D_tile = this.manager.loadTileWgs84(D_TileIndices);
+        }
 
         TileIndices RD_TileIndices = this.tileIndices.get_RD_TileIndices();
-        TileWgs84 RD_tile = this.manager.loadOrCreateTileWgs84(RD_TileIndices);
+        TileWgs84 RD_tile = null;
+        if(is1rstGeneration)
+        {
+            RD_tile = this.manager.loadOrCreateTileWgs84(RD_TileIndices);
+        }
+        else {
+            RD_tile = this.manager.loadTileWgs84(RD_TileIndices);
+        }
 
         TileIndices L_TileIndices = this.tileIndices.get_L_TileIndices();
-        TileWgs84 L_tile = this.manager.loadOrCreateTileWgs84(L_TileIndices);
+        TileWgs84 L_tile = null;
+        if(is1rstGeneration)
+        {
+            L_tile = this.manager.loadOrCreateTileWgs84(L_TileIndices);
+        }
+        else {
+            L_tile = this.manager.loadTileWgs84(L_TileIndices);
+        }
 
         TileIndices R_TileIndices = this.tileIndices.get_R_TileIndices();
-        TileWgs84 R_tile = this.manager.loadOrCreateTileWgs84(R_TileIndices);
+        TileWgs84 R_tile = null;
+        if(is1rstGeneration)
+        {
+            R_tile = this.manager.loadOrCreateTileWgs84(R_TileIndices);
+        }
+        else {
+            R_tile = this.manager.loadTileWgs84(R_TileIndices);
+        }
 
         TileIndices LU_TileIndices = this.tileIndices.get_LU_TileIndices();
-        TileWgs84 LU_tile = this.manager.loadOrCreateTileWgs84(LU_TileIndices);
+        TileWgs84 LU_tile = null;
+        if(is1rstGeneration)
+        {
+            LU_tile = this.manager.loadOrCreateTileWgs84(LU_TileIndices);
+        }
+        else {
+            LU_tile = this.manager.loadTileWgs84(LU_TileIndices);
+        }
 
         TileIndices U_TileIndices = this.tileIndices.get_U_TileIndices();
-        TileWgs84 U_tile = this.manager.loadOrCreateTileWgs84(U_TileIndices);
+        TileWgs84 U_tile = null;
+        if(is1rstGeneration)
+        {
+            U_tile = this.manager.loadOrCreateTileWgs84(U_TileIndices);
+        }
+        else {
+            U_tile = this.manager.loadTileWgs84(U_TileIndices);
+        }
 
         TileIndices RU_TileIndices = this.tileIndices.get_RU_TileIndices();
-        TileWgs84 RU_tile = this.manager.loadOrCreateTileWgs84(RU_TileIndices);
+        TileWgs84 RU_tile = null;
+        if(is1rstGeneration)
+        {
+            RU_tile = this.manager.loadOrCreateTileWgs84(RU_TileIndices);
+        }
+        else {
+            RU_tile = this.manager.loadTileWgs84(RU_TileIndices);
+        }
 
         // now make the bigMesh.***
         // public TileMerger3x3(TileWgs84 center_tile, TileWgs84 left_tile, TileWgs84 right_tile,
@@ -309,16 +375,24 @@ public class TileWgs84 {
         int vertexRightSideCount = 0;
         int vertexUpsideCount = 0;
         int vertexDownsideCount = 0;
+        int vertexCoincidentCount = 0;
         double vertexCoincidentError = this.manager.vertexCoincidentError;
 
         for(int i = 0; i < verticesCount; i++)
         {
             GaiaVertex vertex = vertices.get(i);
-            if(Math.abs(vertex.position.x - midLonDeg) < vertexCoincidentError ||
-                    Math.abs(vertex.position.y - midLatDeg) < vertexCoincidentError)
+            double diffX = Math.abs(vertex.position.x - midLonDeg);
+            double diffY = Math.abs(vertex.position.y - midLatDeg);
+            if(diffX < vertexCoincidentError || diffY < vertexCoincidentError)
             {
                 // the vertex is coincident with midLon or midLat.***
+                vertexCoincidentCount++;
                 continue;
+            }
+
+            if(vertexCoincidentCount > 1)
+            {
+                return false;
             }
 
             if(vertex.position.x < midLonDeg)
@@ -365,6 +439,8 @@ public class TileWgs84 {
 
         // check if the triangle must be refined.***
         GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+        double widthDeg = bboxTriangle.getLengthX();
+        double heightDeg = bboxTriangle.getLengthY();
 
         double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
 
@@ -397,18 +473,14 @@ public class TileWgs84 {
         // end check the barycenter of the triangle.***************************************
 
         // Another fast check.*************************************************************
-        double midLongitudeDeg = this.geographicExtension.getMidLongitudeDeg();
-        double midLatitudeDeg = this.geographicExtension.getMidLatitudeDeg();
-
-        if(mustDivideTriangle(triangle, midLongitudeDeg, midLatitudeDeg))
+        if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, this.geographicExtension))
         {
             System.out.println("ANOTHER-FAST-Check : true*******************************************");
             return true;
         }
         // end another fast check.*********************************************************
 
-        double widthDeg = bboxTriangle.getLengthX();
-        double heightDeg = bboxTriangle.getLengthY();
+
 
         double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 500.0);
         double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 500.0);
@@ -456,6 +528,64 @@ public class TileWgs84 {
         return false;
     }
 
+    public boolean mustDivideTriangleByMidLongitudeAndMidLatitude(GaiaTriangle triangle)
+    {
+        GeographicExtension geoExtent = this.geographicExtension;
+
+        double lonDegRange = geoExtent.getLongitudeRangeDegree();
+        double latDegRange = geoExtent.getLatitudeRangeDegree();
+
+        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+
+        double bboxLengthX = bboxTriangle.getLengthX();
+        double bboxLengthY = bboxTriangle.getLengthY();
+        double lonError = lonDegRange*0.1;
+        double latError = latDegRange*0.1;
+
+        double lonDiff = abs(lonDegRange*0.5 - bboxLengthX);
+        double latDiff = abs(latDegRange*0.5 - bboxLengthY);
+
+        if(abs(lonDiff) < lonError || abs(latDiff) < latError)
+        {
+            double midLonDeg = geoExtent.getMidLongitudeDeg();
+            double midLatDeg = geoExtent.getMidLatitudeDeg();
+            if(mustDivideTriangle(triangle, midLonDeg, midLatDeg))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean mustDivideTriangleByMidLongitudeAndMidLatitude(GaiaTriangle triangle, GeographicExtension geoExtent)
+    {
+        double lonDegRange = geoExtent.getLongitudeRangeDegree();
+        double latDegRange = geoExtent.getLatitudeRangeDegree();
+
+        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+
+        double bboxLengthX = bboxTriangle.getLengthX();
+        double bboxLengthY = bboxTriangle.getLengthY();
+        double lonError = lonDegRange*0.1;
+        double latError = latDegRange*0.1;
+
+        double lonDiff = abs(lonDegRange - bboxLengthX);
+        double latDiff = abs(latDegRange - bboxLengthY);
+
+        if(lonDiff < lonError || latDiff < latError)
+        {
+            double midLonDeg = geoExtent.getMidLongitudeDeg();
+            double midLatDeg = geoExtent.getMidLatitudeDeg();
+            if(mustDivideTriangle(triangle, midLonDeg, midLatDeg))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private boolean refineMeshOneIteration(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException {
         // Inside the mesh, there are triangles of 9 different tiles.***
         // Here refine only the triangles of the current tile.***
@@ -468,11 +598,30 @@ public class TileWgs84 {
         splitCount = 0;
         for (int i = 0; i < trianglesCount; i++) {
             GaiaTriangle triangle = mesh.triangles.get(i);
-            if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices)) {
+
+            if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
                 continue;
             }
 
-            if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
+            if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices))
+            {
+
+                int L = triangle.ownerTile_tileIndices.L;
+                int X = triangle.ownerTile_tileIndices.X;
+                int Y = triangle.ownerTile_tileIndices.Y;
+                GeographicExtension geoExtent = TileWgs84Utils.getGeographicExtentOfTileLXY(L, X, Y, null, this.manager.imageryType);
+                if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, geoExtent))
+                {
+                    TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+                    ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
+
+                    if (splitTriangles.size() > 0)
+                    {
+                        splitCount++;
+                        refined = true;
+                    }
+                }
+
                 continue;
             }
 
@@ -507,7 +656,7 @@ public class TileWgs84 {
         // refine the mesh.***
         boolean finished = false;
         int splitCount = 0;
-        int maxIterations = 9;
+        int maxIterations = this.manager.triangleRefinementMaxIterations;
         while(!finished) {
             System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
             if(!this.refineMeshOneIteration(mesh, currTileIndices))
@@ -528,30 +677,98 @@ public class TileWgs84 {
         int hola = 0;
     }
 
-    public void saveChildren()
-    {
+    public void loadTileAndSave4Children(TileIndices tileIndices) throws IOException, TransformException {
         //******************************************
         // Function used when save 4 child tiles.***
         //******************************************
-        // 1rst, divide the tile in 4 subTiles.***
 
+        // 1- load the tile.***
+        // 2- make the 4 children.***
+        // 3- save the 4 children.***
+        // 4- delete the tile.***
+
+        String tilePath = this.manager.getTilePath(tileIndices);
+
+        // 1- load the tile.***
+        this.loadFile(tilePath);
+
+        // 2- make the 4 children.***
+        TileIndices child_LU_TileIndices = tileIndices.getChild_LU_TileIndices();
+        TileIndices child_RU_TileIndices = tileIndices.getChild_RU_TileIndices();
+        TileIndices child_LD_TileIndices = tileIndices.getChild_LD_TileIndices();
+        TileIndices child_RD_TileIndices = tileIndices.getChild_RD_TileIndices();
+
+        // 1rst, classify the triangles of the tile.***
+        double midLonDeg = this.geographicExtension.getMidLongitudeDeg();
+        double midLatDeg = this.geographicExtension.getMidLatitudeDeg();
+        ArrayList<GaiaTriangle> triangles = this.mesh.triangles;
+        int trianglesCount = triangles.size();
+        for(int i = 0; i < trianglesCount; i++)
+        {
+            GaiaTriangle triangle = triangles.get(i);
+
+            if(triangle.objectStatus == GaiaObjectStatus.DELETED)
+            {
+                continue;
+            }
+
+            Vector3d barycenter = triangle.getBarycenter();
+            if(barycenter.x < midLonDeg)
+            {
+                if(barycenter.y < midLatDeg)
+                {
+                    // LD_Tile
+                    triangle.ownerTile_tileIndices = child_LD_TileIndices;
+                }
+                else
+                {
+                    // LU_Tile
+                    triangle.ownerTile_tileIndices = child_LU_TileIndices;
+                }
+            }
+            else
+            {
+                if(barycenter.y < midLatDeg)
+                {
+                    // RD_Tile
+                    triangle.ownerTile_tileIndices = child_RD_TileIndices;
+                }
+                else
+                {
+                    // RU_Tile
+                    triangle.ownerTile_tileIndices = child_RU_TileIndices;
+                }
+            }
+        }
+
+        TileMerger3x3 tileMerger3x3 = new TileMerger3x3();
+        ArrayList<GaiaMesh>childMeshes = new ArrayList<>();
+        tileMerger3x3.getSeparatedMeshes(this.mesh, childMeshes);
+
+        // 3- save the 4 children.***
+        int childMeshesCount = childMeshes.size();
+        for(int i = 0; i < childMeshesCount; i++)
+        {
+            GaiaMesh childMesh = childMeshes.get(i);
+            GaiaTriangle triangle = childMesh.triangles.get(0); // take the first triangle.***
+            TileIndices childTileIndices = triangle.ownerTile_tileIndices;
+            String tileTempDirectory = this.manager.tileTempDirectory;
+            String outputDirectory = this.manager.outputDirectory;
+            String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.X, childTileIndices.Y, childTileIndices.L);
+            String childTileFullPath = tileTempDirectory + "\\" + childTileFilePath;
+
+            try {
+                saveFile(childMesh, childTileFullPath);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
+            }
+        }
+
+        // 4- delete the tile.***
+        //tile.deleteFile(tileIndices);
     }
 
-
-
-    public void divideTileIn4SubTiles()
-    {
-        //******************************************
-        // Function used when save 4 child tiles.***
-        //******************************************
-        double midLongitudeDeg = this.geographicExtension.getMidLongitudeDeg();
-        double midLatitudeDeg = this.geographicExtension.getMidLatitudeDeg();
-
-        // check if exist triangles that has vertices on the left side and right side of midLongitudeDeg.***
-        // check if exist triangles that has vertices on the upside and downside of midLatitudeDeg.***
-        // these triangles must be divided in 2 triangles.***
-
-
-    }
 
 }

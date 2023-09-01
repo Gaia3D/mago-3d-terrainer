@@ -6,6 +6,18 @@ import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import java.io.IOException;
 
 public class TileIndices {
+
+    // child tile indices.***
+    //    +--------+--------+
+    //    |        |        |
+    //    |   LU   |   RU   |
+    //    |        |        |
+    //    +--------+--------+
+    //    |        |        |
+    //    |   LD   |   RD   |
+    //    |        |        |
+    //    +--------+--------+
+
     int X = 0;
     int Y = 0;
     int L = 0; // tile depth.
@@ -97,6 +109,30 @@ public class TileIndices {
     public TileIndices get_L_TileIndices() {
         TileIndices tileIndices = new TileIndices();
         tileIndices.set(X - 1, Y, L);
+        return tileIndices;
+    }
+
+    public TileIndices getChild_LU_TileIndices() {
+        TileIndices tileIndices = new TileIndices();
+        tileIndices.set(X * 2, Y * 2, L + 1);
+        return tileIndices;
+    }
+
+    public TileIndices getChild_RU_TileIndices() {
+        TileIndices tileIndices = new TileIndices();
+        tileIndices.set(X * 2 + 1, Y * 2, L + 1);
+        return tileIndices;
+    }
+
+    public TileIndices getChild_LD_TileIndices() {
+        TileIndices tileIndices = new TileIndices();
+        tileIndices.set(X * 2, Y * 2 + 1, L + 1);
+        return tileIndices;
+    }
+
+    public TileIndices getChild_RD_TileIndices() {
+        TileIndices tileIndices = new TileIndices();
+        tileIndices.set(X * 2 + 1, Y * 2 + 1, L + 1);
         return tileIndices;
     }
 

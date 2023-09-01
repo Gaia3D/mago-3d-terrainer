@@ -179,6 +179,7 @@ public class GaiaHalfEdge {
         Vector3d endPos = this.getEndVertex().position;
         Vector3d midPos = new Vector3d();
         midPos.add(startPos).add(endPos).mul(0.5);
+
         return midPos;
     }
 
