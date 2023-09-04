@@ -61,19 +61,21 @@ public class TileWgs84Manager {
         terrainLayer.bounds[3] = maxLat;
 
 
+
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {
             TilesRange tilesRange = new TilesRange();
             ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange);
             terrainLayer.available.add(tilesRange);
 
+            this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
             if(depth == minTileDepth)
             {
-                this.triangleRefinementMaxIterations = 8;
+                //this.triangleRefinementMaxIterations = 8;
             }
             else
             {
-                this.triangleRefinementMaxIterations = 1;
+                //this.triangleRefinementMaxIterations = 1;
             }
 
             for (TileIndices tileIndices : resultTileIndicesArray)

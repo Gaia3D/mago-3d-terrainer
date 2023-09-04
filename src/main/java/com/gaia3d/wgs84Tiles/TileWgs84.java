@@ -193,6 +193,20 @@ public class TileWgs84 {
         triangle1.ownerTile_tileIndices.copyFrom(this.tileIndices);
         triangle2.ownerTile_tileIndices.copyFrom(this.tileIndices);
 
+        // now split triangles.***
+        //    +----------+----------+
+        //    |  \       |        / |
+        //    |    \     |      /   |
+        //    |      \   |    /     |
+        //    |        \ |  /       |
+        //    +----------X----------+
+        //    |        / |  \       |
+        //    |      /   |    \     |
+        //    |    /     |      \   |
+        //    |  /       |        \ |
+        //    +----------+----------+
+        this.refineMeshInitial(this.mesh);
+
         // now set objects id in list.***
         this.mesh.setObjectsIdInList();
 
@@ -528,39 +542,8 @@ public class TileWgs84 {
         return false;
     }
 
-    public boolean mustDivideTriangleByMidLongitudeAndMidLatitude(GaiaTriangle triangle)
-    {
-        GeographicExtension geoExtent = this.geographicExtension;
-
-        double lonDegRange = geoExtent.getLongitudeRangeDegree();
-        double latDegRange = geoExtent.getLatitudeRangeDegree();
-
-        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
-
-        double bboxLengthX = bboxTriangle.getLengthX();
-        double bboxLengthY = bboxTriangle.getLengthY();
-        double lonError = lonDegRange*0.1;
-        double latError = latDegRange*0.1;
-
-        double lonDiff = abs(lonDegRange*0.5 - bboxLengthX);
-        double latDiff = abs(latDegRange*0.5 - bboxLengthY);
-
-        if(abs(lonDiff) < lonError || abs(latDiff) < latError)
-        {
-            double midLonDeg = geoExtent.getMidLongitudeDeg();
-            double midLatDeg = geoExtent.getMidLatitudeDeg();
-            if(mustDivideTriangle(triangle, midLonDeg, midLatDeg))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public boolean mustDivideTriangleByMidLongitudeAndMidLatitude(GaiaTriangle triangle, GeographicExtension geoExtent)
     {
-        // if the longestHEdge's twin is null do not divide the triangle.***
         double lonDegRange = geoExtent.getLongitudeRangeDegree();
         double latDegRange = geoExtent.getLatitudeRangeDegree();
 
@@ -576,11 +559,11 @@ public class TileWgs84 {
 
         if(lonDiff < lonError || latDiff < latError)
         {
-            GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
-            if(longestHEdge.twin == null)
-            {
-                return false;
-            }
+            //GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
+            //if(longestHEdge.twin == null)
+            //{
+            //    return false;
+            //}
             double midLonDeg = geoExtent.getMidLongitudeDeg();
             double midLatDeg = geoExtent.getMidLatitudeDeg();
             if(mustDivideTriangle(triangle, midLonDeg, midLatDeg))
@@ -652,6 +635,68 @@ public class TileWgs84 {
 
 
         return refined;
+    }
+
+    private boolean refineMeshOneIterationInitial(GaiaMesh mesh) throws TransformException {
+
+        // refine big triangles of the mesh.***
+        boolean refined = false;
+        int splitCount = 0;
+        int trianglesCount = mesh.triangles.size();
+        System.out.println("Triangles count : " + trianglesCount);
+        splitCount = 0;
+        for (int i = 0; i < trianglesCount; i++) {
+            GaiaTriangle triangle = mesh.triangles.get(i);
+
+            if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+
+            int L = triangle.ownerTile_tileIndices.L;
+            int X = triangle.ownerTile_tileIndices.X;
+            int Y = triangle.ownerTile_tileIndices.Y;
+            GeographicExtension geoExtent = TileWgs84Utils.getGeographicExtentOfTileLXY(L, X, Y, null, this.manager.imageryType);
+            if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, geoExtent))
+            {
+                TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+                ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
+
+                if (splitTriangles.size() > 0)
+                {
+                    splitCount++;
+                    refined = true;
+                }
+            }
+        }
+
+        if(refined)
+        {
+            mesh.removeDeletedObjects();
+            mesh.setObjectsIdInList();
+        }
+
+
+        return refined;
+    }
+
+    public void refineMeshInitial(GaiaMesh mesh) throws TransformException {
+        boolean finished = false;
+        int splitCount = 0;
+        int maxIterations = 10;
+        while(!finished) {
+            //System.out.println("iteration : " + splitCount);
+            if(!this.refineMeshOneIterationInitial(mesh))
+            {
+                finished = true;
+            }
+
+            splitCount++;
+
+            if(splitCount >= maxIterations)
+            {
+                finished = true;
+            }
+        }
     }
 
     public void refineMesh(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException {

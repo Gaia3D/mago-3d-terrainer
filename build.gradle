@@ -67,7 +67,6 @@ dependencies {
     // jackson (json library)
     implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
     implementation('com.fasterxml.jackson.core:jackson-databind:2.12.7.1')
-    implementation("com.fasterxml.jackson.core:jackson-core:2.15.0-rc2")
 
     runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"

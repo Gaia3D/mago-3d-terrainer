@@ -70,10 +70,11 @@ public class TerrainLayer
             objectNodeTileDepth.put("endX", tilesRange.maxTileX);
             objectNodeTileDepth.put("startY", tilesRange.minTileY);
             objectNodeTileDepth.put("endY", tilesRange.maxTileY);
-            objectNodeAvailable.put(String.valueOf(tileDepth), objectNodeTileDepth);
+
+            objectNodeRoot.put("available", objectNodeTileDepth);
         }
 
-        objectNodeRoot.put("available", objectNodeAvailable);
+
 
         // Save the json index file.***
         try {

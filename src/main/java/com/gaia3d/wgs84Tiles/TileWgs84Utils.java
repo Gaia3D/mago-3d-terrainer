@@ -143,6 +143,73 @@ public class TileWgs84Utils {
         return -1.0;
     }
 
+    static public int getRefinementIterations(int depth)
+    {
+        if (depth < 0 || depth > 28)
+        { return 3; }
+
+        if (depth == 0)
+        { return 3; }
+        if (depth == 1)
+        { return 3; }
+        if (depth == 2)
+        { return 3; }
+        if (depth == 3)
+        { return 3; }
+        if (depth == 4)
+        { return 3; }
+        if (depth == 5)
+        { return 3; }
+        if (depth == 6)
+        { return 3; }
+        if (depth == 7)
+        { return 3; }
+        if (depth == 8)
+        { return 3; }
+        if (depth == 9)
+        { return 3; }
+        if (depth == 10)
+        { return 3; }
+        if (depth == 11)
+        { return 3; }
+        if (depth == 12)
+        { return 3; }
+        if (depth == 13)
+        { return 3; }
+        if (depth == 14)
+        { return 3; }
+        if (depth == 15)
+        { return 3; }
+        if (depth == 16)
+        { return 3; }
+        if (depth == 17)
+        { return 3; }
+        if (depth == 18)
+        { return 3; }
+        if (depth == 19)
+        { return 3; }
+        if (depth == 20)
+        { return 3; }
+        if (depth == 21)
+        { return 3; }
+        if (depth == 22)
+        { return 3; }
+        if (depth == 23)
+        { return 3; }
+        if (depth == 24)
+        { return 3; }
+        if (depth == 25)
+        { return 3; }
+        if (depth == 26)
+        { return 3; }
+        if (depth == 27)
+        { return 3; }
+        if (depth == 28)
+        { return 3; }
+
+        return 3;
+    }
+
     static public TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices)
     {
         double xMin = -180.0;
