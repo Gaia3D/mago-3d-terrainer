@@ -560,6 +560,7 @@ public class TileWgs84 {
 
     public boolean mustDivideTriangleByMidLongitudeAndMidLatitude(GaiaTriangle triangle, GeographicExtension geoExtent)
     {
+        // if the longestHEdge's twin is null do not divide the triangle.***
         double lonDegRange = geoExtent.getLongitudeRangeDegree();
         double latDegRange = geoExtent.getLatitudeRangeDegree();
 
@@ -575,6 +576,11 @@ public class TileWgs84 {
 
         if(lonDiff < lonError || latDiff < latError)
         {
+            GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
+            if(longestHEdge.twin == null)
+            {
+                return false;
+            }
             double midLonDeg = geoExtent.getMidLongitudeDeg();
             double midLatDeg = geoExtent.getMidLatitudeDeg();
             if(mustDivideTriangle(triangle, midLonDeg, midLatDeg))

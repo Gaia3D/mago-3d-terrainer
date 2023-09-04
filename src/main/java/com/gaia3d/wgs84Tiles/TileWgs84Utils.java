@@ -165,7 +165,7 @@ public class TileWgs84Utils {
         return resultTileIndices;
     }
 
-    static public ArrayList<TileIndices> selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, ArrayList<TileIndices> resultTileIndicesArray)
+    static public ArrayList<TileIndices> selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, ArrayList<TileIndices> resultTileIndicesArray, TilesRange tilesRange)
     {
         // Given a geographic rectangle (minLon, minLat, maxLon, maxLat) & a depth, this function returns all
         // tilesIndices intersected by the rectangle for the specific depth.**
@@ -177,6 +177,16 @@ public class TileWgs84Utils {
         int maxX = rightDownTileName.X;
         int maxY = leftDownTileName.Y; // origin is left-up.
         int minY = rightUpTileName.Y;
+
+        // the "tilesRange" is optional.***
+        if(tilesRange != null)
+        {
+            tilesRange.tileDepth = depth;
+            tilesRange.minTileX = minX;
+            tilesRange.maxTileX = maxX;
+            tilesRange.minTileY = minY;
+            tilesRange.maxTileY = maxY;
+        }
 
         if (resultTileIndicesArray == null)
         {

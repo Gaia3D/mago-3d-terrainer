@@ -1,5 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gaia3d.basic.structure.GaiaMesh;
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.reader.FileUtils;
@@ -10,6 +12,7 @@ import org.opengis.referencing.operation.TransformException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class TileWgs84Manager {
     public int minTileDepth = 10;
@@ -28,6 +31,8 @@ public class TileWgs84Manager {
 
     int triangleRefinementMaxIterations = 9;
 
+    TerrainLayer terrainLayer = null;
+
 
     public void makeTileMeshes() throws IOException, TransformException {
 
@@ -37,9 +42,31 @@ public class TileWgs84Manager {
         double minLat = geographicExtension.getMinLatitudeDeg();
         double maxLat = geographicExtension.getMaxLatitudeDeg();
 
+        // create the terrainLayer.***
+        terrainLayer = new TerrainLayer();
+        terrainLayer.name = "insert name here";
+        terrainLayer.description = "insert description here";
+        terrainLayer.version = "1.1.0";
+        terrainLayer.attribution = "insert attribution here";
+        terrainLayer.template = "terrain";
+        terrainLayer.legend = "insert legend here";
+        terrainLayer.scheme = "tms";
+        terrainLayer.tiles = new String[1];
+        terrainLayer.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
+        terrainLayer.projection = "EPSG:4326";
+        terrainLayer.bounds = new double[4];
+        terrainLayer.bounds[0] = minLon;
+        terrainLayer.bounds[1] = minLat;
+        terrainLayer.bounds[2] = maxLon;
+        terrainLayer.bounds[3] = maxLat;
+
+
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {
-            ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null);
+            TilesRange tilesRange = new TilesRange();
+            ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange);
+            terrainLayer.available.add(tilesRange);
+
             if(depth == minTileDepth)
             {
                 this.triangleRefinementMaxIterations = 8;
@@ -77,6 +104,15 @@ public class TileWgs84Manager {
                 }
             }
         }
+
+        // finally save the terrainLayer.json.***
+        saveQuantizedMeshes();
+    }
+
+    public void saveQuantizedMeshes() throws IOException, TransformException {
+        // 1rst save terrainLayer.json.***
+        terrainLayer.saveJsonFile(outputDirectory, "layer.json");
+
     }
 
     public String getTilePath(TileIndices tileIndices)

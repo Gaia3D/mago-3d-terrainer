@@ -18,7 +18,7 @@ public class MesherMain {
         String tileTempDirectory = "D:\\QuantizedMesh_JavaProjects\\tileTempFolder";
         tileWgs84Manager.tileTempDirectory = tileTempDirectory;
 
-        String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\outputFolder";
+        String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
         tileWgs84Manager.outputDirectory = outputDirectory;
 
         // terrain elevation data.***
@@ -26,7 +26,8 @@ public class MesherMain {
         tileWgs84Manager.terrainElevationData = new TerrainElevationData();
         tileWgs84Manager.terrainElevationData.loadGeoTiffFile(geoTiffFilePath);
 
-
+        tileWgs84Manager.maxTileDepth = 12;
+        tileWgs84Manager.minTileDepth = 10;
 
         // start quantized mesh tiling.***
         tileWgs84Manager.makeTileMeshes();
