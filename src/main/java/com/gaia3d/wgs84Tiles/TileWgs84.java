@@ -1,6 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
+import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import com.gaia3d.reader.FileUtils;
@@ -381,7 +382,7 @@ public class TileWgs84 {
         return true;
     }
 
-    private boolean mustDivideTriangle(GaiaTriangle triangle, double midLonDeg, double midLatDeg)
+    private boolean triangleIntersectsLongitudeOrLatitude(GaiaTriangle triangle, double midLonDeg, double midLatDeg)
     {
         ArrayList<GaiaVertex> vertices = triangle.getVertices();
         int verticesCount = vertices.size();
@@ -453,6 +454,7 @@ public class TileWgs84 {
 
         // check if the triangle must be refined.***
         GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
 
@@ -486,6 +488,7 @@ public class TileWgs84 {
         }*/
         // end check the barycenter of the triangle.***************************************
 
+
         // Another fast check.*************************************************************
         if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, this.geographicExtension))
         {
@@ -493,6 +496,39 @@ public class TileWgs84 {
             return true;
         }
         // end another fast check.*********************************************************
+
+        // if the triangle size is very small, then do not refine.*************************
+        // Calculate the maxLength of the triangle in meters.***
+        double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
+        double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
+        double triangleMaxLengthMeters = triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
+        double minTriangleSizeForDepth = TileWgs84Utils.getMinTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
+        if(triangleMaxLengthMeters < minTriangleSizeForDepth)
+        {
+            triangle.refineChecked = true;
+            System.out.println("MIN-TRIANGLE-SIZE-Check : false &*###################-----------------#################");
+            return false;
+        }
+
+        // check if the triangle intersects the terrainData.***
+        if(!this.geographicExtension.intersectsBBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY()))
+        {
+            // Need check only the 3 vertex of the triangle.***
+            ArrayList<GaiaVertex>vertices = triangle.getVertices();
+            int verticesCount = vertices.size();
+            for(int i = 0; i < verticesCount; i++)
+            {
+                GaiaVertex vertex = vertices.get(i);
+                if(vertex.position.z > maxDiff)
+                {
+                    System.out.println("SUPER-FAST-Check : true * true * true * true * true * true * true * ");
+                    return true;
+                }
+            }
+
+            System.out.println("SUPER-FAST-Check : false *----------------------------------------");
+            return false;
+        }
 
 
 
@@ -559,14 +595,58 @@ public class TileWgs84 {
 
         if(lonDiff < lonError || latDiff < latError)
         {
-            //GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
-            //if(longestHEdge.twin == null)
-            //{
-            //    return false;
-            //}
+            GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
+            if(longestHEdge.twin == null)
+            {
+                // in this case must check if exist neiborghTile.***
+                HalfEdgeType halfEdgeType = longestHEdge.type;
+                if(halfEdgeType == HalfEdgeType.LEFT)
+                {
+                    // check if exist left neigborTile.***
+                    TileIndices leftTileIndices = this.tileIndices.get_L_TileIndices();
+                    if(this.manager.existTileFile(leftTileIndices))
+                    {
+                        return false;
+                    }
+                }
+                else if(halfEdgeType == HalfEdgeType.RIGHT)
+                {
+                    // check if exist right neigborTile.***
+                    TileIndices rightTileIndices = this.tileIndices.get_R_TileIndices();
+                    if(this.manager.existTileFile(rightTileIndices))
+                    {
+                        return false;
+                    }
+                }
+                else if(halfEdgeType == HalfEdgeType.UP)
+                {
+                    // check if exist up neigborTile.***
+                    TileIndices upTileIndices = this.tileIndices.get_U_TileIndices();
+                    if(this.manager.existTileFile(upTileIndices))
+                    {
+                        return false;
+                    }
+                }
+                else if(halfEdgeType == HalfEdgeType.DOWN)
+                {
+                    // check if exist down neigborTile.***
+                    TileIndices downTileIndices = this.tileIndices.get_D_TileIndices();
+                    if(this.manager.existTileFile(downTileIndices))
+                    {
+                        return false;
+                    }
+                }
+                else {
+                    // error.***
+                    System.out.println("ERROR: mustDivideTriangleByMidLongitudeAndMidLatitude.***");
+                }
+
+                return true;
+            }
+
             double midLonDeg = geoExtent.getMidLongitudeDeg();
             double midLatDeg = geoExtent.getMidLatitudeDeg();
-            if(mustDivideTriangle(triangle, midLonDeg, midLatDeg))
+            if(triangleIntersectsLongitudeOrLatitude(triangle, midLonDeg, midLatDeg))
             {
                 return true;
             }
@@ -592,6 +672,7 @@ public class TileWgs84 {
                 continue;
             }
 
+            /*
             if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices))
             {
                 int L = triangle.ownerTile_tileIndices.L;
@@ -612,6 +693,8 @@ public class TileWgs84 {
 
                 continue;
             }
+
+             */
 
             if (mustRefineTriangle(triangle))
             {
@@ -652,12 +735,29 @@ public class TileWgs84 {
                 continue;
             }
 
+            // if the triangle is big, then split it.***
+
             int L = triangle.ownerTile_tileIndices.L;
             int X = triangle.ownerTile_tileIndices.X;
             int Y = triangle.ownerTile_tileIndices.Y;
             GeographicExtension geoExtent = TileWgs84Utils.getGeographicExtentOfTileLXY(L, X, Y, null, this.manager.imageryType);
-            if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, geoExtent))
+
+            double lonDegRange = geoExtent.getLongitudeRangeDegree();
+            double latDegRange = geoExtent.getLatitudeRangeDegree();
+
+            GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+
+            double bboxLengthX = bboxTriangle.getLengthX();
+            double bboxLengthY = bboxTriangle.getLengthY();
+            double lonError = lonDegRange*0.1;
+            double latError = latDegRange*0.1;
+
+            double lonDiff = abs(lonDegRange - bboxLengthX);
+            double latDiff = abs(latDegRange - bboxLengthY);
+
+            if(lonDiff < lonError || latDiff < latError)
             {
+                // The triangle is big, so split it.***
                 TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
                 ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
 
@@ -667,6 +767,7 @@ public class TileWgs84 {
                     refined = true;
                 }
             }
+
         }
 
         if(refined)

@@ -308,6 +308,19 @@ public class TileMerger3x3 {
         return resultHalfEdges;
     }
 
+    private GaiaBoundingBox getBBoxOfTriangles(ArrayList<GaiaTriangle>triangles)
+    {
+        GaiaBoundingBox resultBBox = new GaiaBoundingBox();
+        int triangles_count = triangles.size();
+        for(int i=0; i<triangles_count; i++)
+        {
+            GaiaTriangle triangle = triangles.get(i);
+            GaiaBoundingBox triangleBBox = triangle.getBoundingBox();
+            resultBBox.addBoundingBox(triangleBBox);
+        }
+        return resultBBox;
+    }
+
     private ArrayList<GaiaVertex> getVerticesOfTriangles(ArrayList<GaiaTriangle>triangles)
     {
         ArrayList<GaiaVertex> resultVertices = new ArrayList<GaiaVertex>();
@@ -360,11 +373,19 @@ public class TileMerger3x3 {
         }
 
         // now, create separated meshes.***
-        for(String tileIndices : map_triangles.keySet())
+        for(String tileIndicesString : map_triangles.keySet())
         {
-            ArrayList<GaiaTriangle> trianglesList = map_triangles.get(tileIndices);
+            ArrayList<GaiaTriangle> trianglesList = map_triangles.get(tileIndicesString);
+
             GaiaMesh separatedMesh = new GaiaMesh();
             separatedMesh.triangles = trianglesList;
+            TileIndices tileIndices = trianglesList.get(0).ownerTile_tileIndices;
+            TileIndices L_tileIndices = tileIndices.get_L_TileIndices();
+            TileIndices R_tileIndices = tileIndices.get_R_TileIndices();
+            TileIndices U_tileIndices = tileIndices.get_U_TileIndices();
+            TileIndices D_tileIndices = tileIndices.get_D_TileIndices();
+
+            //GaiaBoundingBox bbox = this.getBBoxOfTriangles(trianglesList);
             ArrayList<GaiaHalfEdge> halfEdges = this.getHalfEdgesOfTriangles(trianglesList);
             // for all HEdges, check the triangle of the twin.***
             // if the triangle of the twin has different ownerTile_tileIndices, then set the twin as null.***
@@ -378,11 +399,40 @@ public class TileMerger3x3 {
                     GaiaTriangle twins_triangle = twin.triangle;
                     if(twins_triangle != null)
                     {
-                        String twins_triangle_tileIndices = twins_triangle.ownerTile_tileIndices.getString();
-                        if(!twins_triangle_tileIndices.equals(tileIndices))
+                        String twins_triangle_tileIndicesString = twins_triangle.ownerTile_tileIndices.getString();
+                        if(!twins_triangle_tileIndicesString.equals(tileIndicesString))
                         {
                             // the twin triangle has different ownerTile_tileIndices.***
                             halfEdge.setTwin(null);
+
+                            // now, for the hedges, must calculate the hedgeType.***
+                            // must know the relative position of the twin triangle's tile.***
+
+                            if(twins_triangle_tileIndicesString.equals(L_tileIndices.getString()))
+                            {
+                                halfEdge.type = HalfEdgeType.LEFT;
+                                twin.type = HalfEdgeType.RIGHT;
+                            }
+                            else if(twins_triangle_tileIndicesString.equals(R_tileIndices.getString()))
+                            {
+                                halfEdge.type = HalfEdgeType.RIGHT;
+                                twin.type = HalfEdgeType.LEFT;
+                            }
+                            else if(twins_triangle_tileIndicesString.equals(U_tileIndices.getString()))
+                            {
+                                halfEdge.type = HalfEdgeType.UP;
+                                twin.type = HalfEdgeType.DOWN;
+                            }
+                            else if(twins_triangle_tileIndicesString.equals(D_tileIndices.getString()))
+                            {
+                                halfEdge.type = HalfEdgeType.DOWN;
+                                twin.type = HalfEdgeType.UP;
+                            }
+                            else
+                            {
+                                // error.***
+                                int hola = 0;
+                            }
                         }
                         else {
                             int hola = 0;

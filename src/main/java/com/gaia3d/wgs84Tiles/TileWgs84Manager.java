@@ -160,6 +160,19 @@ public class TileWgs84Manager {
         return neighborTile;
     }
 
+    public boolean existTileFile(TileIndices tileIndices)
+    {
+        String neighborFullPath = getTilePath(tileIndices);
+        if(!FileUtils.isFileExists(neighborFullPath))
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
     public TileWgs84 loadTileWgs84(TileIndices tileIndices) throws IOException, TransformException {
         // this function loads or creates a TileWgs84.***
         // check if exist LDTileFile.***

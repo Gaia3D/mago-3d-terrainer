@@ -23,6 +23,10 @@ public class GlobeUtils {
     private static final CRSFactory factory = new CRSFactory();
     private static final CoordinateReferenceSystem wgs84 = factory.createFromParameters("WGS84", "+proj=longlat +datum=WGS84 +no_defs");
 
+    public static double getEquatorialRadius() {
+        return equatorialRadius;
+    }
+
     public static double[] geographicToCartesianWgs84(double longitude, double latitude, double altitude) {
         double[] result = new double[3];
         double lonRad = longitude * degToRadFactor;

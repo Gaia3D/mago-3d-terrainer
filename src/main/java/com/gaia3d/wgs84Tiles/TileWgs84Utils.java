@@ -143,6 +143,73 @@ public class TileWgs84Utils {
         return -1.0;
     }
 
+    static public double getMinTriangleSizeForTileDepth(int depth)
+    {
+        if (depth < 0 || depth > 28)
+        { return -1.0; }
+
+        if (depth == 0)
+        { return 6000.0; }
+        if (depth == 1)
+        { return 5000.0; }
+        if (depth == 2)
+        { return 4000.0; }
+        if (depth == 3)
+        { return 3000.0; }
+        if (depth == 4)
+        { return 2000.0; }
+        if (depth == 5)
+        { return 1000.0; }
+        if (depth == 6)
+        { return 900.0; }
+        if (depth == 7)
+        { return 800.0; }
+        if (depth == 8)
+        { return 700.0; }
+        if (depth == 9)
+        { return 600.0; }
+        if (depth == 10)
+        { return 500.0; }
+        if (depth == 11)
+        { return 400.0; }
+        if (depth == 12)
+        { return 300.0; }
+        if (depth == 13)
+        { return 200.0; }
+        if (depth == 14)
+        { return 100.0; }
+        if (depth == 15)
+        { return 90.0; }
+        if (depth == 16)
+        { return 80.0; }
+        if (depth == 17)
+        { return 70.0; }
+        if (depth == 18)
+        { return 60.0; }
+        if (depth == 19)
+        { return 50.0; }
+        if (depth == 20)
+        { return 40.0; }
+        if (depth == 21)
+        { return 30.0; }
+        if (depth == 22)
+        { return 1.0; }
+        if (depth == 23)
+        { return 0.5; }
+        if (depth == 24) // tile aprox 1m edge.***
+        { return 0.1; }
+        if (depth == 25)
+        { return 0.05; }
+        if (depth == 26)
+        { return 0.01; }
+        if (depth == 27)
+        { return 0.01; }
+        if (depth == 28)
+        { return 0.01; }
+
+        return -1.0;
+    }
+
     static public int getRefinementIterations(int depth)
     {
         if (depth < 0 || depth > 28)
@@ -169,43 +236,43 @@ public class TileWgs84Utils {
         if (depth == 9)
         { return 3; }
         if (depth == 10)
-        { return 3; }
+        { return 2; }
         if (depth == 11)
-        { return 3; }
+        { return 2; }
         if (depth == 12)
-        { return 3; }
+        { return 2; }
         if (depth == 13)
-        { return 3; }
+        { return 2; }
         if (depth == 14)
-        { return 3; }
+        { return 2; }
         if (depth == 15)
-        { return 3; }
+        { return 2; }
         if (depth == 16)
-        { return 3; }
+        { return 2; }
         if (depth == 17)
-        { return 3; }
+        { return 2; }
         if (depth == 18)
-        { return 3; }
+        { return 2; }
         if (depth == 19)
-        { return 3; }
+        { return 2; }
         if (depth == 20)
-        { return 3; }
+        { return 2; }
         if (depth == 21)
-        { return 3; }
+        { return 2; }
         if (depth == 22)
-        { return 3; }
+        { return 2; }
         if (depth == 23)
-        { return 3; }
+        { return 2; }
         if (depth == 24)
-        { return 3; }
+        { return 2; }
         if (depth == 25)
-        { return 3; }
+        { return 1; }
         if (depth == 26)
-        { return 3; }
+        { return 1; }
         if (depth == 27)
-        { return 3; }
+        { return 1; }
         if (depth == 28)
-        { return 3; }
+        { return 1; }
 
         return 3;
     }
