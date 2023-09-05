@@ -672,9 +672,10 @@ public class TileWgs84 {
                 continue;
             }
 
-            /*
+
             if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices))
             {
+                /*
                 int L = triangle.ownerTile_tileIndices.L;
                 int X = triangle.ownerTile_tileIndices.X;
                 int Y = triangle.ownerTile_tileIndices.Y;
@@ -691,10 +692,12 @@ public class TileWgs84 {
                     }
                 }
 
+                 */
+
                 continue;
             }
 
-             */
+
 
             if (mustRefineTriangle(triangle))
             {

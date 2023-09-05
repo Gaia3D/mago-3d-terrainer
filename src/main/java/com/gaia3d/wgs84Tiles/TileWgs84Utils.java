@@ -3,6 +3,8 @@ package com.gaia3d.wgs84Tiles;
 import com.gaia3d.basic.structure.GaiaMesh;
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.reader.FileUtils;
+import com.gaia3d.util.GlobeUtils;
+import org.joml.Vector2d;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,69 +13,9 @@ import java.util.List;
 public class TileWgs84Utils {
     static public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth)
     {
-        if (depth < 0 || depth > 27)
-        { return -1.0; }
-
-        if (depth == 0)
-        { return 100.0; }
-        if (depth == 1)
-        { return 100.0; }
-        if (depth == 2)
-        { return 10.0; }
-        if (depth == 3)
-        { return 9.0; }
-        if (depth == 4)
-        { return 9.0; }
-        if (depth == 5)
-        { return 8.0; }
-        if (depth == 6)
-        { return 8.0; }
-        if (depth == 7)
-        { return 7.0; }
-        if (depth == 8)
-        { return 7.0; }
-        if (depth == 9)
-        { return 6.0; }
-        if (depth == 10)
-        { return 6.0; }
-        if (depth == 11)
-        { return 4.0; }
-        if (depth == 12)
-        { return 4.0; }
-        if (depth == 13)
-        { return 3.0; }
-        if (depth == 14)
-        { return 3.0; }
-        if (depth == 15)
-        { return 2.0; }
-        if (depth == 16)
-        { return 2.0; }
-        if (depth == 17)
-        { return 1.0; }
-        if (depth == 18)
-        { return 1.0; }
-        if (depth == 19)
-        { return 1.0; }
-        if (depth == 20)
-        { return 0.5; }
-        if (depth == 21)
-        { return 0.5; }
-        if (depth == 22)
-        { return 0.5; }
-        if (depth == 23)
-        { return 0.4; }
-        if (depth == 24)
-        { return 0.4; }
-        if (depth == 25)
-        { return 0.3; }
-        if (depth == 26)
-        { return 0.2; }
-        if (depth == 27)
-        { return 0.1; }
-        if (depth == 28)
-        { return 0.01; }
-
-        return -1.0;
+        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+        return tileSize / 50.0;
+        //return TileWgs84Utils.getMinTriangleSizeForTileDepth(depth);
     }
     static public double selectTileAngleRangeByDepth(int depth)
     {
@@ -145,69 +87,8 @@ public class TileWgs84Utils {
 
     static public double getMinTriangleSizeForTileDepth(int depth)
     {
-        if (depth < 0 || depth > 28)
-        { return -1.0; }
-
-        if (depth == 0)
-        { return 6000.0; }
-        if (depth == 1)
-        { return 5000.0; }
-        if (depth == 2)
-        { return 4000.0; }
-        if (depth == 3)
-        { return 3000.0; }
-        if (depth == 4)
-        { return 2000.0; }
-        if (depth == 5)
-        { return 1000.0; }
-        if (depth == 6)
-        { return 900.0; }
-        if (depth == 7)
-        { return 800.0; }
-        if (depth == 8)
-        { return 700.0; }
-        if (depth == 9)
-        { return 600.0; }
-        if (depth == 10)
-        { return 500.0; }
-        if (depth == 11)
-        { return 400.0; }
-        if (depth == 12)
-        { return 300.0; }
-        if (depth == 13)
-        { return 200.0; }
-        if (depth == 14)
-        { return 100.0; }
-        if (depth == 15)
-        { return 90.0; }
-        if (depth == 16)
-        { return 80.0; }
-        if (depth == 17)
-        { return 70.0; }
-        if (depth == 18)
-        { return 60.0; }
-        if (depth == 19)
-        { return 50.0; }
-        if (depth == 20)
-        { return 40.0; }
-        if (depth == 21)
-        { return 30.0; }
-        if (depth == 22)
-        { return 1.0; }
-        if (depth == 23)
-        { return 0.5; }
-        if (depth == 24) // tile aprox 1m edge.***
-        { return 0.1; }
-        if (depth == 25)
-        { return 0.05; }
-        if (depth == 26)
-        { return 0.01; }
-        if (depth == 27)
-        { return 0.01; }
-        if (depth == 28)
-        { return 0.01; }
-
-        return -1.0;
+        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+        return tileSize / 40.0;
     }
 
     static public int getRefinementIterations(int depth)
@@ -275,6 +156,15 @@ public class TileWgs84Utils {
         { return 1; }
 
         return 3;
+    }
+
+    static public double getTileSizeInMetersByDepth(int depth)
+    {
+        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        double angRad = angDeg * Math.PI / 180.0;
+        double equatorialRadius = GlobeUtils.getEquatorialRadius();
+        double tileSizeInMeters = angRad * equatorialRadius;
+        return tileSizeInMeters;
     }
 
     static public TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices)
