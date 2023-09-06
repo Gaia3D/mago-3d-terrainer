@@ -37,7 +37,36 @@ public class GaiaBoundingBox {
         return new Vector3d(maxX - minX, maxY - minY, maxZ - minZ);
     }
 
-    //addPoint
+    public void addPoint(double x, double y, double z) {
+        if (isInit) {
+            if (x < minX) {
+                minX = x;
+            }
+            if (y < minY) {
+                minY = y;
+            }
+            if (z < minZ) {
+                minZ = z;
+            }
+            if (x > maxX) {
+                maxX = x;
+            }
+            if (y > maxY) {
+                maxY = y;
+            }
+            if (z > maxZ) {
+                maxZ = z;
+            }
+        } else {
+            isInit = true;
+            minX = x;
+            minY = y;
+            minZ = z;
+            maxX = x;
+            maxY = y;
+            maxZ = z;
+        }
+    }
     public void addPoint(Vector3d vector3d) {
         if (isInit) {
             if (vector3d.x < minX) {

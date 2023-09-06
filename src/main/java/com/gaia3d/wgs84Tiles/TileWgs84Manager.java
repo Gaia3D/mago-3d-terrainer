@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gaia3d.basic.structure.GaiaMesh;
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.quantizedMesh.QuantizedMesh;
+import com.gaia3d.quantizedMesh.QuantizedMeshManager;
 import com.gaia3d.reader.FileUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.joml.Vector3d;
@@ -11,6 +13,7 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -44,6 +47,7 @@ public class TileWgs84Manager {
 
         // create the terrainLayer.***
         terrainLayer = new TerrainLayer();
+        terrainLayer.tilejson = "2.1.0";
         terrainLayer.name = "insert name here";
         terrainLayer.description = "insert description here";
         terrainLayer.version = "1.1.0";
@@ -69,14 +73,6 @@ public class TileWgs84Manager {
             terrainLayer.available.add(tilesRange);
 
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
-            if(depth == minTileDepth)
-            {
-                //this.triangleRefinementMaxIterations = 8;
-            }
-            else
-            {
-                //this.triangleRefinementMaxIterations = 1;
-            }
 
             for (TileIndices tileIndices : resultTileIndicesArray)
             {
@@ -115,14 +111,59 @@ public class TileWgs84Manager {
         // 1rst save terrainLayer.json.***
         terrainLayer.saveJsonFile(outputDirectory, "layer.json");
 
+        // 2nd save the quantized meshes.***
+        // load each tile, and save the quantized mesh.***
+        QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
+        HashMap<Integer, TilesRange> tilesRangeMap = terrainLayer.getTilesRangeMap();
+        for (Integer tileDepth : tilesRangeMap.keySet())
+        {
+            TilesRange tilesRange = tilesRangeMap.get(tileDepth);
+            int minX = tilesRange.minTileX;
+            int maxX = tilesRange.maxTileX;
+            int minY = tilesRange.minTileY;
+            int maxY = tilesRange.maxTileY;
+
+            for(int x = minX; x <= maxX; x++)
+            {
+                for(int y = minY; y <= maxY; y++)
+                {
+                    TileIndices tileIndices = new TileIndices();
+                    tileIndices.X = x;
+                    tileIndices.Y = y;
+                    tileIndices.L = tileDepth;
+
+                    TileWgs84 tile = loadTileWgs84(tileIndices);
+                    if(tile != null)
+                    {
+                        // save the quantizedMesh.***
+                        QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile);
+                        String tileFullPath = getQuantizedMeshTilePath(tileIndices);
+                        FileUtils.createAllFoldersIfNoExist(tileFullPath);
+
+                        //quantizedMeshManager.saveQuantizedMesh(quantizedMesh, tileFullPath);
+                        int hola = 0;
+
+                    }
+                }
+            }
+
+        }
+
     }
 
     public String getTilePath(TileIndices tileIndices)
     {
         String tileTempDirectory = this.tileTempDirectory;
-        //String outputDirectory = this.outputDirectory;
         String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
         String tileFullPath = tileTempDirectory + "\\" + neighborFilePath;
+        return tileFullPath;
+    }
+
+    public String getQuantizedMeshTilePath(TileIndices tileIndices)
+     {
+        String outputDirectory = this.outputDirectory;
+        String neighborFilePath = String.valueOf(tileIndices.L) + "\\" + String.valueOf(tileIndices.X) + "\\" + String.valueOf(tileIndices.Y);
+        String tileFullPath = outputDirectory + "\\" + neighborFilePath + ".terrain";
         return tileFullPath;
     }
 

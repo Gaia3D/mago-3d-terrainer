@@ -11,11 +11,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TileWgs84Utils {
+
+    static public double getTileSizeInMetersByDepth(int depth)
+    {
+        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        double angRad = angDeg * Math.PI / 180.0;
+        double equatorialRadius = GlobeUtils.getEquatorialRadius();
+        double tileSizeInMeters = angRad * equatorialRadius;
+        return tileSizeInMeters;
+    }
     static public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth)
     {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        return tileSize / 50.0;
+        return tileSize / 60.0;
         //return TileWgs84Utils.getMinTriangleSizeForTileDepth(depth);
+    }
+
+    static public double getMinTriangleSizeForTileDepth(int depth)
+    {
+        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+        return tileSize / 60.0;
     }
     static public double selectTileAngleRangeByDepth(int depth)
     {
@@ -85,87 +100,35 @@ public class TileWgs84Utils {
         return -1.0;
     }
 
-    static public double getMinTriangleSizeForTileDepth(int depth)
-    {
-        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        return tileSize / 40.0;
-    }
+
 
     static public int getRefinementIterations(int depth)
     {
         if (depth < 0 || depth > 28)
         { return 3; }
 
-        if (depth == 0)
-        { return 3; }
-        if (depth == 1)
-        { return 3; }
-        if (depth == 2)
-        { return 3; }
-        if (depth == 3)
-        { return 3; }
-        if (depth == 4)
-        { return 3; }
-        if (depth == 5)
-        { return 3; }
-        if (depth == 6)
-        { return 3; }
-        if (depth == 7)
-        { return 3; }
-        if (depth == 8)
-        { return 3; }
-        if (depth == 9)
-        { return 3; }
-        if (depth == 10)
-        { return 2; }
-        if (depth == 11)
-        { return 2; }
-        if (depth == 12)
-        { return 2; }
-        if (depth == 13)
-        { return 2; }
-        if (depth == 14)
-        { return 2; }
-        if (depth == 15)
-        { return 2; }
-        if (depth == 16)
-        { return 2; }
-        if (depth == 17)
-        { return 2; }
-        if (depth == 18)
-        { return 2; }
-        if (depth == 19)
-        { return 2; }
-        if (depth == 20)
-        { return 2; }
-        if (depth == 21)
-        { return 2; }
-        if (depth == 22)
-        { return 2; }
-        if (depth == 23)
-        { return 2; }
-        if (depth == 24)
-        { return 2; }
-        if (depth == 25)
-        { return 1; }
-        if (depth == 26)
-        { return 1; }
-        if (depth == 27)
-        { return 1; }
-        if (depth == 28)
-        { return 1; }
+        if(depth >= 0 && depth < 6)
+        {
+            return 3;
+        }
+        else if(depth >= 6 && depth < 20)
+        {
+            return 4;
+        }
+        else if(depth >= 20 && depth < 28)
+        {
+            return 5;
+        }
+        else if(depth == 28)
+        {
+            return 6;
+        }
+
 
         return 3;
     }
 
-    static public double getTileSizeInMetersByDepth(int depth)
-    {
-        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
-        double angRad = angDeg * Math.PI / 180.0;
-        double equatorialRadius = GlobeUtils.getEquatorialRadius();
-        double tileSizeInMeters = angRad * equatorialRadius;
-        return tileSizeInMeters;
-    }
+
 
     static public TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices)
     {

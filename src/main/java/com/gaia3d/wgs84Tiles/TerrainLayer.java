@@ -2,6 +2,7 @@ package com.gaia3d.wgs84Tiles;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gaia3d.reader.FileUtils;
 
@@ -28,7 +29,7 @@ public class TerrainLayer
     double[] bounds = null;
     ArrayList<TilesRange> available = new ArrayList<TilesRange>();
 
-    private HashMap<Integer, TilesRange> getTilesRangeMap()
+    public HashMap<Integer, TilesRange> getTilesRangeMap()
     {
         HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<Integer, TilesRange>();
 
@@ -60,21 +61,24 @@ public class TerrainLayer
         objectNodeRoot.putArray("tiles").add(this.tiles[0]);
         objectNodeRoot.putArray("bounds").add(this.bounds[0]).add(this.bounds[1]).add(this.bounds[2]).add(this.bounds[3]);
 
-        ObjectNode objectNodeAvailable = objectMapper.createObjectNode();
+        ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         HashMap<Integer, TilesRange> tilesRangeMap = this.getTilesRangeMap();
         for (Integer tileDepth : tilesRangeMap.keySet())
         {
             TilesRange tilesRange = tilesRangeMap.get(tileDepth);
+            ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
             objectNodeTileDepth.put("startX", tilesRange.minTileX);
             objectNodeTileDepth.put("endX", tilesRange.maxTileX);
             objectNodeTileDepth.put("startY", tilesRange.minTileY);
             objectNodeTileDepth.put("endY", tilesRange.maxTileY);
 
-            objectNodeRoot.put("available", objectNodeTileDepth);
+            objectNodeTileDepth_array.add(objectNodeTileDepth);
+            objectNodeAvailable.add(objectNodeTileDepth_array);
+
         }
 
-
+        objectNodeRoot.put("available", objectNodeAvailable);
 
         // Save the json index file.***
         try {

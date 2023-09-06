@@ -27,6 +27,10 @@ public class GlobeUtils {
         return equatorialRadius;
     }
 
+    public static double getDegToRadFactor() {
+        return degToRadFactor;
+    }
+
     public static double[] geographicToCartesianWgs84(double longitude, double latitude, double altitude) {
         double[] result = new double[3];
         double lonRad = longitude * degToRadFactor;
@@ -84,6 +88,12 @@ public class GlobeUtils {
 
     public static Matrix4d normalAtCartesianPointWgs84(Vector3d position) {
         return normalAtCartesianPointWgs84(position.x, position.y, position.z);
+    }
+
+    public static Vector3d cartesianToGeographicWgs84(double poxX, double posY, double posZ)
+    {
+        Vector3d position = new Vector3d(poxX, posY, posZ);
+        return cartesianToGeographicWgs84(position);
     }
 
     public static Vector3d cartesianToGeographicWgs84(Vector3d position) {

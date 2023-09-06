@@ -134,6 +134,122 @@ public class GaiaMesh {
         return halfEdges;
     }
 
+    public ArrayList<GaiaVertex> getLeftVerticesSortedUpToDown()
+    {
+        ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
+        ArrayList<GaiaHalfEdge> leftHedges = getHalfEdgesByType(HalfEdgeType.LEFT);
+        int leftHedgesCount = leftHedges.size();
+        for(int i=0; i<leftHedgesCount; i++) {
+            GaiaHalfEdge halfEdge = leftHedges.get(i);
+            vertices.add(halfEdge.startVertex);
+        }
+
+        // sort the vertices.***
+        vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
+            if(v1.position.y < v2.position.y)
+            {
+                return -1;
+            }
+            else if(v1.position.y > v2.position.y)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        });
+
+        return vertices;
+    }
+
+    public ArrayList<GaiaVertex> getDownVerticesSortedLeftToRight()
+    {
+        ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
+        ArrayList<GaiaHalfEdge> downHedges = getHalfEdgesByType(HalfEdgeType.DOWN);
+        int downHedgesCount = downHedges.size();
+        for(int i=0; i<downHedgesCount; i++) {
+            GaiaHalfEdge halfEdge = downHedges.get(i);
+            vertices.add(halfEdge.startVertex);
+        }
+
+        // sort the vertices.***
+        vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
+            if(v1.position.x < v2.position.x)
+            {
+                return -1;
+            }
+            else if(v1.position.x > v2.position.x)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        });
+
+        return vertices;
+    }
+
+    public ArrayList<GaiaVertex> getRightVerticesSortedDownToUp()
+    {
+        ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
+        ArrayList<GaiaHalfEdge> rightHedges = getHalfEdgesByType(HalfEdgeType.RIGHT);
+        int rightHedgesCount = rightHedges.size();
+        for(int i=0; i<rightHedgesCount; i++) {
+            GaiaHalfEdge halfEdge = rightHedges.get(i);
+            vertices.add(halfEdge.startVertex);
+        }
+
+        // sort the vertices.***
+        vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
+            if(v1.position.y > v2.position.y)
+            {
+                return -1;
+            }
+            else if(v1.position.y < v2.position.y)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        });
+
+        return vertices;
+    }
+
+    public ArrayList<GaiaVertex> getUpVerticesSortedRightToLeft()
+    {
+        ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
+        ArrayList<GaiaHalfEdge> upHedges = getHalfEdgesByType(HalfEdgeType.UP);
+        int upHedgesCount = upHedges.size();
+        for(int i=0; i<upHedgesCount; i++) {
+            GaiaHalfEdge halfEdge = upHedges.get(i);
+            vertices.add(halfEdge.startVertex);
+        }
+
+        // sort the vertices.***
+        vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
+            if(v1.position.x > v2.position.x)
+            {
+                return -1;
+            }
+            else if(v1.position.x < v2.position.x)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        });
+
+        return vertices;
+    }
+
 
     public void setTriangleIdInList()
     {

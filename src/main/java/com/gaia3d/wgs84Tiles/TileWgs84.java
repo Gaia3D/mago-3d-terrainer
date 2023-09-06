@@ -672,32 +672,10 @@ public class TileWgs84 {
                 continue;
             }
 
-
             if (!triangle.ownerTile_tileIndices.isCoincident(currTileIndices))
             {
-                /*
-                int L = triangle.ownerTile_tileIndices.L;
-                int X = triangle.ownerTile_tileIndices.X;
-                int Y = triangle.ownerTile_tileIndices.Y;
-                GeographicExtension geoExtent = TileWgs84Utils.getGeographicExtentOfTileLXY(L, X, Y, null, this.manager.imageryType);
-                if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, geoExtent))
-                {
-                    TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
-                    ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
-
-                    if (splitTriangles.size() > 0)
-                    {
-                        splitCount++;
-                        refined = true;
-                    }
-                }
-
-                 */
-
                 continue;
             }
-
-
 
             if (mustRefineTriangle(triangle))
             {

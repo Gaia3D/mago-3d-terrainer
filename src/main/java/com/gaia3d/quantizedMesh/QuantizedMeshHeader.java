@@ -1,5 +1,9 @@
 package com.gaia3d.quantizedMesh;
 
+import com.gaia3d.util.io.LittleEndianDataOutputStream;
+
+import java.io.IOException;
+
 public class QuantizedMeshHeader
 {
     //https://github.com/CesiumGS/quantized-mesh
@@ -29,4 +33,26 @@ public class QuantizedMeshHeader
     double HorizonOcclusionPointX = 0.0;
     double HorizonOcclusionPointY = 0.0;
     double HorizonOcclusionPointZ = 0.0;
+
+    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException
+    {
+        dataOutputStream.writeDouble(CenterX);
+        dataOutputStream.writeDouble(CenterY);
+        dataOutputStream.writeDouble(CenterZ);
+
+        dataOutputStream.writeFloat(MinimumHeight);
+        dataOutputStream.writeFloat(MaximumHeight);
+
+        dataOutputStream.writeDouble(BoundingSphereCenterX);
+        dataOutputStream.writeDouble(BoundingSphereCenterY);
+        dataOutputStream.writeDouble(BoundingSphereCenterZ);
+        dataOutputStream.writeDouble(BoundingSphereRadius);
+
+        dataOutputStream.writeDouble(HorizonOcclusionPointX);
+        dataOutputStream.writeDouble(HorizonOcclusionPointY);
+        dataOutputStream.writeDouble(HorizonOcclusionPointZ);
+
+
+        int hola = 0;
+    }
 }
