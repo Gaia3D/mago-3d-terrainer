@@ -24,13 +24,18 @@ public class TileWgs84Utils {
     {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
         return tileSize / 60.0;
-        //return TileWgs84Utils.getMinTriangleSizeForTileDepth(depth);
     }
 
     static public double getMinTriangleSizeForTileDepth(int depth)
     {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
         return tileSize / 60.0;
+    }
+
+    static public double getMaxTriangleSizeForTileDepth(int depth)
+    {
+        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+        return tileSize / 10.0;
     }
     static public double selectTileAngleRangeByDepth(int depth)
     {
@@ -109,7 +114,7 @@ public class TileWgs84Utils {
 
         if(depth >= 0 && depth < 6)
         {
-            return 3;
+            return 4;
         }
         else if(depth >= 6 && depth < 20)
         {
