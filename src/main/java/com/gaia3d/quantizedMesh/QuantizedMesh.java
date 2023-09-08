@@ -33,7 +33,7 @@ public class QuantizedMesh
         return (short)((n << 1) ^ (n >> 31));
     }
 
-    public void getEncodedIndices32(int[] indices, int count, int[] encodedIndices)
+    public void getDecodedIndices32(int[] indices, int count, int[] decodedIndices)
     {
         int highest = 0;
         int code;
@@ -41,7 +41,34 @@ public class QuantizedMesh
         {
             int idx = indices[i];
             code = highest - idx;
-            encodedIndices[i] = code;
+            decodedIndices[i] = code;
+            if (code == 0)
+                highest += 1;
+        }
+    }
+
+    public void getEncodedIndices32(int[] indices, int count, int[] encodedIndices)
+    {
+        int highest = 0;
+        int code;
+        for (int i = 0; i < count; i++)
+        {
+            code = indices[i];
+            encodedIndices[i] = highest - code;
+            if (code == 0)
+                highest += 1;
+        }
+    }
+
+    public void getDecodedIndices16(int[] indices, int count, short[] decodedIndices)
+    {
+        int highest = 0;
+        int code;
+        for (int i = 0; i < count; i++)
+        {
+            int idx = indices[i];
+            code = highest - idx;
+            decodedIndices[i] = (short)code;
             if (code == 0)
                 highest += 1;
         }
@@ -53,9 +80,8 @@ public class QuantizedMesh
         int code;
         for (int i = 0; i < count; i++)
         {
-            int idx = indices[i];
-            code = highest - idx;
-            encodedIndices[i] = (short)code;
+            code = indices[i];
+            encodedIndices[i] = (short)(highest - code);
             if (code == 0)
                 highest += 1;
         }
@@ -89,30 +115,36 @@ public class QuantizedMesh
          */
 
         // save uBuffer.***
-        dataOutputStream.writeShort(uBuffer[0]);
-        for(int i = 0; i < vertexCount - 1; i++)
+        short uPrev = 0;
+        for(int i = 0; i < vertexCount; i++)
         {
-            short uNext = uBuffer[i+1];
-            short uDiff = (short)(uNext - uBuffer[i]);
+            short uCurr = uBuffer[i];
+            short uDiff = (short)(uCurr - uPrev);
             dataOutputStream.writeShort(zigZagEncode(uDiff));
+
+            uPrev = uCurr;
         }
 
         // save vBuffer.***
-        dataOutputStream.writeShort(vBuffer[0]);
-        for(int i = 0; i < vertexCount - 1; i++)
+        short vPrev = 0;
+        for(int i = 0; i < vertexCount; i++)
         {
-            short vNext = vBuffer[i+1];
-            short vDiff = (short)(vNext - vBuffer[i]);
+            short vCurr = vBuffer[i];
+            short vDiff = (short)(vCurr - vPrev);
             dataOutputStream.writeShort(zigZagEncode(vDiff));
+
+            vPrev = vCurr;
         }
 
         // save heightBuffer.***
-        dataOutputStream.writeShort(heightBuffer[0]);
-        for(int i = 0; i < vertexCount - 1; i++)
+        short heightPrev = 0;
+        for(int i = 0; i < vertexCount; i++)
         {
-            short heightNext = heightBuffer[i+1];
-            short heightDiff = (short)(heightNext - heightBuffer[i]);
+            short heightCurr = heightBuffer[i];
+            short heightDiff = (short)(heightCurr - heightPrev);
             dataOutputStream.writeShort(zigZagEncode(heightDiff));
+
+            heightPrev = heightCurr;
         }
 
         // save triangleCount.***
@@ -125,7 +157,7 @@ public class QuantizedMesh
         {
             // save IndexData32.***
             int[] encodedIndices = new int[indicesCount];
-            getEncodedIndices32(triangleIndices, indicesCount, encodedIndices);
+            getDecodedIndices32(triangleIndices, indicesCount, encodedIndices);
             for(int i = 0; i < indicesCount; i++)
             {
                 dataOutputStream.writeInt(encodedIndices[i]);
@@ -135,7 +167,7 @@ public class QuantizedMesh
         {
             // save IndexData16.***
             short[] encodedIndices = new short[indicesCount];
-            getEncodedIndices16(triangleIndices, indicesCount, encodedIndices);
+            getDecodedIndices16(triangleIndices, indicesCount, encodedIndices);
             for(int i = 0; i < indicesCount; i++)
             {
                 dataOutputStream.writeShort(encodedIndices[i]);
@@ -208,4 +240,5 @@ public class QuantizedMesh
 
         int hola = 0;
     }
+
 }

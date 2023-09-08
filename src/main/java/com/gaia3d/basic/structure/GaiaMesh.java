@@ -465,6 +465,13 @@ public class GaiaMesh {
 
             // now determine the elevation of the midPoint.***
             double elevation = terrainElevationData.getElevation(midPosition.x, midPosition.y);
+
+            // test degub:::
+            if(elevation > 10.0)
+            {
+                elevation = elevation * 100.0; // delete this after test.***************************************************************************
+            }
+
             midPosition.z = elevation;
             GaiaVertex midVertex = newVertex();
             midVertex.position = midPosition;

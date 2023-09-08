@@ -19,6 +19,7 @@ public class TerrainLayer
     String name = null;
     String description = null;
     String version = null;
+    String format = null;
     String attribution = null;
     String template = null;
     String legend = null;
@@ -53,6 +54,7 @@ public class TerrainLayer
         objectNodeRoot.put("name", this.name);
         objectNodeRoot.put("description", this.description);
         objectNodeRoot.put("version", this.version);
+        objectNodeRoot.put("format", this.format);
         objectNodeRoot.put("attribution", this.attribution);
         objectNodeRoot.put("template", this.template);
         objectNodeRoot.put("legend", this.legend);

@@ -96,10 +96,13 @@ public class QuantizedMeshManager
 
         double lonRange = maxLonDeg - minLonDeg;
         double latRange = maxLatDeg - minLatDeg;
+        double heightRange = maximumHeight - minimumHeight;
+        if(heightRange == 0.0)
+            heightRange = 1.0;
 
         double lonScale = lonRange / 32767.0;
         double latScale = latRange / 32767.0;
-        double heightScale = 32767.0 / (maximumHeight - minimumHeight);
+        double heightScale = 32767.0 / heightRange;
 
         for(int i = 0; i < vertexCount; i++)
         {

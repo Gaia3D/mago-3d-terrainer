@@ -7,10 +7,12 @@ import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.quantizedMesh.QuantizedMesh;
 import com.gaia3d.quantizedMesh.QuantizedMeshManager;
 import com.gaia3d.reader.FileUtils;
+import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +53,7 @@ public class TileWgs84Manager {
         terrainLayer.name = "insert name here";
         terrainLayer.description = "insert description here";
         terrainLayer.version = "1.1.0";
+        terrainLayer.format = "quantized-mesh-1.0";
         terrainLayer.attribution = "insert attribution here";
         terrainLayer.template = "terrain";
         terrainLayer.legend = "insert legend here";
@@ -138,9 +141,16 @@ public class TileWgs84Manager {
                         // save the quantizedMesh.***
                         QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile);
                         String tileFullPath = getQuantizedMeshTilePath(tileIndices);
-                        FileUtils.createAllFoldersIfNoExist(tileFullPath);
+                        String tileFolderPath = getQuantizedMeshTileFolderPath(tileIndices);
+                        FileUtils.createAllFoldersIfNoExist(tileFolderPath);
 
-                        //quantizedMeshManager.saveQuantizedMesh(quantizedMesh, tileFullPath);
+                        FileOutputStream fileOutputStream = new FileOutputStream(tileFullPath);
+                        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+
+                        // delete the file if exists before save.***
+                        FileUtils.deleteFileIfExists(tileFullPath);
+
+                        quantizedMesh.saveDataOutputStream(dataOutputStream);
                         int hola = 0;
 
                     }
@@ -156,6 +166,14 @@ public class TileWgs84Manager {
         String tileTempDirectory = this.tileTempDirectory;
         String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
         String tileFullPath = tileTempDirectory + "\\" + neighborFilePath;
+        return tileFullPath;
+    }
+
+    public String getQuantizedMeshTileFolderPath(TileIndices tileIndices)
+    {
+        String outputDirectory = this.outputDirectory;
+        String neighborFolderPath = String.valueOf(tileIndices.L) + "\\" + String.valueOf(tileIndices.X);
+        String tileFullPath = outputDirectory + "\\" + neighborFolderPath;
         return tileFullPath;
     }
 
@@ -194,6 +212,7 @@ public class TileWgs84Manager {
             // load the Tile.***
             System.out.println("Loading tile: LOAD - * - LOAD :" + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             neighborTile.tileIndices = tileIndices;
+            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
             neighborTile.loadFile(neighborFullPath);
         }
 
@@ -219,7 +238,7 @@ public class TileWgs84Manager {
         // check if exist LDTileFile.***
 
         String neighborFullPath = getTilePath(tileIndices);
-        TileWgs84 neighborTile = new TileWgs84(null, this);
+        TileWgs84 neighborTile = null;
         if(!FileUtils.isFileExists(neighborFullPath))
         {
             return null;
@@ -227,11 +246,12 @@ public class TileWgs84Manager {
         else
         {
             // load the Tile.***
+            neighborTile = new TileWgs84(null, this);
             System.out.println("Loading tile: LOAD - * - LOAD :" + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             neighborTile.tileIndices = tileIndices;
+            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
             neighborTile.loadFile(neighborFullPath);
         }
-
 
         return neighborTile;
     }
