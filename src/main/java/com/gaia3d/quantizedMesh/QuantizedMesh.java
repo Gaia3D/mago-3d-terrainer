@@ -39,12 +39,13 @@ public class QuantizedMesh
         int code;
         for (int i = 0; i < count; i++)
         {
-            int idx = indices[i];
-            code = highest - idx;
-            decodedIndices[i] = code;
+            code = indices[i];
+            decodedIndices[i] = highest - code;
             if (code == 0)
                 highest += 1;
         }
+
+
     }
 
     public void getEncodedIndices32(int[] indices, int count, int[] encodedIndices)
@@ -53,8 +54,9 @@ public class QuantizedMesh
         int code;
         for (int i = 0; i < count; i++)
         {
-            code = indices[i];
-            encodedIndices[i] = highest - code;
+            int idx = indices[i];
+            code = highest - idx;
+            encodedIndices[i] = code;
             if (code == 0)
                 highest += 1;
         }
@@ -63,12 +65,22 @@ public class QuantizedMesh
     public void getDecodedIndices16(int[] indices, int count, short[] decodedIndices)
     {
         int highest = 0;
-        int code;
         for (int i = 0; i < count; i++)
         {
-            int idx = indices[i];
-            code = highest - idx;
-            decodedIndices[i] = (short)code;
+            int code = indices[i];
+            decodedIndices[i] = (short)(highest - code);
+            if (code == 0)
+                highest += 1;
+        }
+    }
+
+    public void getDecodedIndices16fromShort(short[] indices, int count, short[] decodedIndices)
+    {
+        int highest = 0;
+        for (int i = 0; i < count; i++)
+        {
+            short code = indices[i];
+            decodedIndices[i] = (short)(highest - code);
             if (code == 0)
                 highest += 1;
         }
@@ -80,12 +92,14 @@ public class QuantizedMesh
         int code;
         for (int i = 0; i < count; i++)
         {
-            code = indices[i];
-            encodedIndices[i] = (short)(highest - code);
+            int idx = indices[i];
+            code = highest - idx;
+            encodedIndices[i] = (short) code;
             if (code == 0)
                 highest += 1;
         }
     }
+
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException
     {
@@ -157,7 +171,7 @@ public class QuantizedMesh
         {
             // save IndexData32.***
             int[] encodedIndices = new int[indicesCount];
-            getDecodedIndices32(triangleIndices, indicesCount, encodedIndices);
+            getEncodedIndices32(triangleIndices, indicesCount, encodedIndices);
             for(int i = 0; i < indicesCount; i++)
             {
                 dataOutputStream.writeInt(encodedIndices[i]);
@@ -167,7 +181,8 @@ public class QuantizedMesh
         {
             // save IndexData16.***
             short[] encodedIndices = new short[indicesCount];
-            getDecodedIndices16(triangleIndices, indicesCount, encodedIndices);
+            getEncodedIndices16(triangleIndices, indicesCount, encodedIndices);
+
             for(int i = 0; i < indicesCount; i++)
             {
                 dataOutputStream.writeShort(encodedIndices[i]);
