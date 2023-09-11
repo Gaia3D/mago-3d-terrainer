@@ -64,75 +64,161 @@ public class TileIndices {
         L = dataInputStream.readInt();
     }
 
-    public TileIndices get_LD_TileIndices() {
+    public TileIndices get_LD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X - 1, Y + 1, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X - 1, Y + 1, L);
+        }
+        else {
+            tileIndices.set(X - 1, Y - 1, L);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices get_D_TileIndices() {
+    public TileIndices get_D_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X, Y + 1, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X, Y + 1, L);
+        }
+        else {
+            tileIndices.set(X, Y - 1, L);
+        }
+
+
         return tileIndices;
     }
 
-    public TileIndices get_RD_TileIndices() {
+    public TileIndices get_RD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X + 1, Y + 1, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X + 1, Y + 1, L);
+        }
+        else {
+            tileIndices.set(X + 1, Y - 1, L);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices get_R_TileIndices() {
+    public TileIndices get_R_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X + 1, Y, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X + 1, Y, L);
+        }
+        else {
+            tileIndices.set(X + 1, Y, L);
+        }
+
+
         return tileIndices;
     }
 
-    public TileIndices get_RU_TileIndices() {
+    public TileIndices get_RU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X + 1, Y - 1, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X + 1, Y - 1, L);
+        }
+        else {
+            tileIndices.set(X + 1, Y + 1, L);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices get_U_TileIndices() {
+    public TileIndices get_U_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X, Y - 1, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X, Y - 1, L);
+        }
+        else {
+            tileIndices.set(X, Y + 1, L);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices get_LU_TileIndices() {
+    public TileIndices get_LU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X - 1, Y - 1, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X - 1, Y - 1, L);
+        }
+        else {
+            tileIndices.set(X - 1, Y + 1, L);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices get_L_TileIndices() {
+    public TileIndices get_L_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X - 1, Y, L);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X - 1, Y, L);
+        }
+        else {
+            tileIndices.set(X - 1, Y, L);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices getChild_LU_TileIndices() {
+    public TileIndices getChild_LU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X * 2, Y * 2, L + 1);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X * 2, Y * 2, L + 1);
+        }
+        else {
+            tileIndices.set(X * 2, Y * 2 + 1, L + 1);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices getChild_RU_TileIndices() {
+    public TileIndices getChild_RU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X * 2 + 1, Y * 2, L + 1);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X * 2 + 1, Y * 2, L + 1);
+        }
+        else {
+            tileIndices.set(X * 2 + 1, Y * 2 + 1, L + 1);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices getChild_LD_TileIndices() {
+    public TileIndices getChild_LD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X * 2, Y * 2 + 1, L + 1);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X * 2, Y * 2 + 1, L + 1);
+        }
+        else {
+            tileIndices.set(X * 2, Y * 2, L + 1);
+        }
+
         return tileIndices;
     }
 
-    public TileIndices getChild_RD_TileIndices() {
+    public TileIndices getChild_RD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        tileIndices.set(X * 2 + 1, Y * 2 + 1, L + 1);
+        if(originIsLeftUp)
+        {
+            tileIndices.set(X * 2 + 1, Y * 2 + 1, L + 1);
+        }
+        else {
+            tileIndices.set(X * 2 + 1, Y * 2, L + 1);
+        }
+
         return tileIndices;
     }
 

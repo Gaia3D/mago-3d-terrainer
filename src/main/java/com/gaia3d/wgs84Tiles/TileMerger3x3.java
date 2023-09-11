@@ -344,7 +344,7 @@ public class TileMerger3x3 {
         return resultVertices;
     }
 
-    public void getSeparatedMeshes(GaiaMesh bigMesh, ArrayList<GaiaMesh>resultSeparatedMeshes)
+    public void getSeparatedMeshes(GaiaMesh bigMesh, ArrayList<GaiaMesh>resultSeparatedMeshes, boolean originIsLeftUp)
     {
         // separate by ownerTile_tileIndices.***
         ArrayList<GaiaTriangle> triangles = bigMesh.triangles;
@@ -380,10 +380,10 @@ public class TileMerger3x3 {
             GaiaMesh separatedMesh = new GaiaMesh();
             separatedMesh.triangles = trianglesList;
             TileIndices tileIndices = trianglesList.get(0).ownerTile_tileIndices;
-            TileIndices L_tileIndices = tileIndices.get_L_TileIndices();
-            TileIndices R_tileIndices = tileIndices.get_R_TileIndices();
-            TileIndices U_tileIndices = tileIndices.get_U_TileIndices();
-            TileIndices D_tileIndices = tileIndices.get_D_TileIndices();
+            TileIndices L_tileIndices = tileIndices.get_L_TileIndices(originIsLeftUp);
+            TileIndices R_tileIndices = tileIndices.get_R_TileIndices(originIsLeftUp);
+            TileIndices U_tileIndices = tileIndices.get_U_TileIndices(originIsLeftUp);
+            TileIndices D_tileIndices = tileIndices.get_D_TileIndices(originIsLeftUp);
 
             //GaiaBoundingBox bbox = this.getBBoxOfTriangles(trianglesList);
             ArrayList<GaiaHalfEdge> halfEdges = this.getHalfEdgesOfTriangles(trianglesList);

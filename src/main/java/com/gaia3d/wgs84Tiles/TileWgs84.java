@@ -234,6 +234,7 @@ public class TileWgs84 {
         //  +----------+----------+----------+
 
         // Note : only in the 1rst generation the tiles must be created.***
+        boolean originIsLeftUp = this.manager.originIsLeftUp;
 
         TileIndices curr_TileIndices = this.tileIndices;
         TileWgs84 curr_tile = null;
@@ -246,7 +247,7 @@ public class TileWgs84 {
         }
 
 
-        TileIndices LD_TileIndices = this.tileIndices.get_LD_TileIndices();
+        TileIndices LD_TileIndices = this.tileIndices.get_LD_TileIndices(originIsLeftUp);
         TileWgs84 LD_tile = null;
         if(is1rstGeneration)
         {
@@ -256,7 +257,7 @@ public class TileWgs84 {
             LD_tile = this.manager.loadTileWgs84(LD_TileIndices);
         }
 
-        TileIndices D_TileIndices = this.tileIndices.get_D_TileIndices();
+        TileIndices D_TileIndices = this.tileIndices.get_D_TileIndices(originIsLeftUp);
         TileWgs84 D_tile = null;
         if(is1rstGeneration)
         {
@@ -266,7 +267,7 @@ public class TileWgs84 {
             D_tile = this.manager.loadTileWgs84(D_TileIndices);
         }
 
-        TileIndices RD_TileIndices = this.tileIndices.get_RD_TileIndices();
+        TileIndices RD_TileIndices = this.tileIndices.get_RD_TileIndices(originIsLeftUp);
         TileWgs84 RD_tile = null;
         if(is1rstGeneration)
         {
@@ -276,7 +277,7 @@ public class TileWgs84 {
             RD_tile = this.manager.loadTileWgs84(RD_TileIndices);
         }
 
-        TileIndices L_TileIndices = this.tileIndices.get_L_TileIndices();
+        TileIndices L_TileIndices = this.tileIndices.get_L_TileIndices(originIsLeftUp);
         TileWgs84 L_tile = null;
         if(is1rstGeneration)
         {
@@ -286,7 +287,7 @@ public class TileWgs84 {
             L_tile = this.manager.loadTileWgs84(L_TileIndices);
         }
 
-        TileIndices R_TileIndices = this.tileIndices.get_R_TileIndices();
+        TileIndices R_TileIndices = this.tileIndices.get_R_TileIndices(originIsLeftUp);
         TileWgs84 R_tile = null;
         if(is1rstGeneration)
         {
@@ -296,7 +297,7 @@ public class TileWgs84 {
             R_tile = this.manager.loadTileWgs84(R_TileIndices);
         }
 
-        TileIndices LU_TileIndices = this.tileIndices.get_LU_TileIndices();
+        TileIndices LU_TileIndices = this.tileIndices.get_LU_TileIndices(originIsLeftUp);
         TileWgs84 LU_tile = null;
         if(is1rstGeneration)
         {
@@ -306,7 +307,7 @@ public class TileWgs84 {
             LU_tile = this.manager.loadTileWgs84(LU_TileIndices);
         }
 
-        TileIndices U_TileIndices = this.tileIndices.get_U_TileIndices();
+        TileIndices U_TileIndices = this.tileIndices.get_U_TileIndices(originIsLeftUp);
         TileWgs84 U_tile = null;
         if(is1rstGeneration)
         {
@@ -316,7 +317,7 @@ public class TileWgs84 {
             U_tile = this.manager.loadTileWgs84(U_TileIndices);
         }
 
-        TileIndices RU_TileIndices = this.tileIndices.get_RU_TileIndices();
+        TileIndices RU_TileIndices = this.tileIndices.get_RU_TileIndices(originIsLeftUp);
         TileWgs84 RU_tile = null;
         if(is1rstGeneration)
         {
@@ -344,7 +345,7 @@ public class TileWgs84 {
 
         // now save the 9 tiles.***
         ArrayList<GaiaMesh> separatedMeshes = new ArrayList<GaiaMesh>();
-        tileMerger3x3.getSeparatedMeshes(bigMesh, separatedMeshes);
+        tileMerger3x3.getSeparatedMeshes(bigMesh, separatedMeshes, originIsLeftUp);
         saveSeparatedTiles(separatedMeshes);
 
         // provisionally save the bigMesh.***
@@ -517,7 +518,7 @@ public class TileWgs84 {
         }
 
         // check if the triangle intersects the terrainData.***
-        if(!this.geographicExtension.intersectsBBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY()))
+        if(!terrainElevationData.geographicExtension.intersectsBBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY()))
         {
             // Need check only the 3 vertex of the triangle.***
             ArrayList<GaiaVertex>vertices = triangle.getVertices();
@@ -599,6 +600,8 @@ public class TileWgs84 {
         double lonDiff = abs(lonDegRange - bboxLengthX);
         double latDiff = abs(latDegRange - bboxLengthY);
 
+        boolean originIsLeftUp = this.manager.originIsLeftUp;
+
         if(lonDiff < lonError || latDiff < latError)
         {
             GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
@@ -609,7 +612,7 @@ public class TileWgs84 {
                 if(halfEdgeType == HalfEdgeType.LEFT)
                 {
                     // check if exist left neigborTile.***
-                    TileIndices leftTileIndices = this.tileIndices.get_L_TileIndices();
+                    TileIndices leftTileIndices = this.tileIndices.get_L_TileIndices(originIsLeftUp);
                     if(this.manager.existTileFile(leftTileIndices))
                     {
                         return false;
@@ -618,7 +621,7 @@ public class TileWgs84 {
                 else if(halfEdgeType == HalfEdgeType.RIGHT)
                 {
                     // check if exist right neigborTile.***
-                    TileIndices rightTileIndices = this.tileIndices.get_R_TileIndices();
+                    TileIndices rightTileIndices = this.tileIndices.get_R_TileIndices(originIsLeftUp);
                     if(this.manager.existTileFile(rightTileIndices))
                     {
                         return false;
@@ -627,7 +630,7 @@ public class TileWgs84 {
                 else if(halfEdgeType == HalfEdgeType.UP)
                 {
                     // check if exist up neigborTile.***
-                    TileIndices upTileIndices = this.tileIndices.get_U_TileIndices();
+                    TileIndices upTileIndices = this.tileIndices.get_U_TileIndices(originIsLeftUp);
                     if(this.manager.existTileFile(upTileIndices))
                     {
                         return false;
@@ -636,7 +639,7 @@ public class TileWgs84 {
                 else if(halfEdgeType == HalfEdgeType.DOWN)
                 {
                     // check if exist down neigborTile.***
-                    TileIndices downTileIndices = this.tileIndices.get_D_TileIndices();
+                    TileIndices downTileIndices = this.tileIndices.get_D_TileIndices(originIsLeftUp);
                     if(this.manager.existTileFile(downTileIndices))
                     {
                         return false;
@@ -803,7 +806,7 @@ public class TileWgs84 {
         boolean finished = false;
         int splitCount = 0;
         int maxIterations = 3;
-        if(this.tileIndices.L < 6)
+        if(this.tileIndices.L < 13)
         {
             maxIterations = 5;
         }
@@ -865,11 +868,13 @@ public class TileWgs84 {
         // 1- load the tile.***
         this.loadFile(tilePath);
 
+        boolean originIsLeftUp = this.manager.originIsLeftUp;
+
         // 2- make the 4 children.***
-        TileIndices child_LU_TileIndices = tileIndices.getChild_LU_TileIndices();
-        TileIndices child_RU_TileIndices = tileIndices.getChild_RU_TileIndices();
-        TileIndices child_LD_TileIndices = tileIndices.getChild_LD_TileIndices();
-        TileIndices child_RD_TileIndices = tileIndices.getChild_RD_TileIndices();
+        TileIndices child_LU_TileIndices = tileIndices.getChild_LU_TileIndices(originIsLeftUp);
+        TileIndices child_RU_TileIndices = tileIndices.getChild_RU_TileIndices(originIsLeftUp);
+        TileIndices child_LD_TileIndices = tileIndices.getChild_LD_TileIndices(originIsLeftUp);
+        TileIndices child_RD_TileIndices = tileIndices.getChild_RD_TileIndices(originIsLeftUp);
 
         // 1rst, classify the triangles of the tile.***
         double midLonDeg = this.geographicExtension.getMidLongitudeDeg();
@@ -916,7 +921,7 @@ public class TileWgs84 {
 
         TileMerger3x3 tileMerger3x3 = new TileMerger3x3();
         ArrayList<GaiaMesh>childMeshes = new ArrayList<>();
-        tileMerger3x3.getSeparatedMeshes(this.mesh, childMeshes);
+        tileMerger3x3.getSeparatedMeshes(this.mesh, childMeshes, this.manager.originIsLeftUp);
 
         // 3- save the 4 children.***
         int childMeshesCount = childMeshes.size();

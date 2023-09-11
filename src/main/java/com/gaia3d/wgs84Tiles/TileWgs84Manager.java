@@ -38,6 +38,8 @@ public class TileWgs84Manager {
 
     TerrainLayer terrainLayer = null;
 
+    boolean originIsLeftUp = false;
+
 
     public void makeTileMeshes() throws IOException, TransformException {
 
@@ -72,7 +74,7 @@ public class TileWgs84Manager {
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {
             TilesRange tilesRange = new TilesRange();
-            ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange);
+            ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange, originIsLeftUp);
             terrainLayer.available.add(tilesRange);
 
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
@@ -81,7 +83,7 @@ public class TileWgs84Manager {
             {
                 TileWgs84 tile = new TileWgs84(null, this);
                 tile.tileIndices = tileIndices;
-                tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
+                tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
                 boolean is1rstGeneration = false;
                 if(depth == minTileDepth)
                 {
@@ -99,7 +101,7 @@ public class TileWgs84Manager {
                     // for each tile, load the tile, make 4 children, and save the children.***
                     TileWgs84 tile = new TileWgs84(null, this);
                     tile.tileIndices = tileIndices;
-                    tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
+                    tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
 
                     tile.loadTileAndSave4Children(tileIndices);
                 }
@@ -197,7 +199,7 @@ public class TileWgs84Manager {
             System.out.println("Creating tile: CREATE - * - CREATE : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             neighborTile.tileIndices = tileIndices;
             String imageryType = this.imageryType;
-            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
+            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
             neighborTile.createInitialMesh();
             if(neighborTile.mesh == null)
             {
@@ -212,7 +214,7 @@ public class TileWgs84Manager {
             // load the Tile.***
             System.out.println("Loading tile: LOAD - * - LOAD :" + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             neighborTile.tileIndices = tileIndices;
-            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
+            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
             neighborTile.loadFile(neighborFullPath);
         }
 
@@ -249,7 +251,7 @@ public class TileWgs84Manager {
             neighborTile = new TileWgs84(null, this);
             System.out.println("Loading tile: LOAD - * - LOAD :" + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             neighborTile.tileIndices = tileIndices;
-            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType);
+            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
             neighborTile.loadFile(neighborFullPath);
         }
 

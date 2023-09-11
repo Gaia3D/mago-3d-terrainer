@@ -43,6 +43,11 @@ public class QuantizedMeshHeader
         dataOutputStream.writeFloat(MinimumHeight);
         dataOutputStream.writeFloat(MaximumHeight);
 
+        if(MaximumHeight > 0.0)
+        {
+            int hola = 0;
+        }
+
         dataOutputStream.writeDouble(BoundingSphereCenterX);
         dataOutputStream.writeDouble(BoundingSphereCenterY);
         dataOutputStream.writeDouble(BoundingSphereCenterZ);

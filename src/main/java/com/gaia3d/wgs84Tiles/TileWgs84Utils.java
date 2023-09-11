@@ -135,40 +135,59 @@ public class TileWgs84Utils {
 
 
 
-    static public TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices)
+    static public TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices, boolean originIsLeftUp)
     {
-        double xMin = -180.0;
-        double yMin = 90.0;
+        // Given a geographic point (longitude, latitude) & a depth, this function returns the tileIndices for the specific depth.**
         double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
-
-        //double testRange = 180.0/Math.pow(2, depth);
-        //int xIndexTest = (int) Math.floor((longitude - xMin)/testRange);
-        //int yIndexTest = (int) Math.floor((yMin - latitude)/testRange);
-
-        int xIndex = (int) Math.floor((longitude - xMin)/angRange);
-        int yIndex = (int) Math.floor((yMin - latitude)/angRange);
 
         if (resultTileIndices == null)
         {
             resultTileIndices = new TileIndices();
         }
-        resultTileIndices.set( xIndex, yIndex, depth);
+
+        if (originIsLeftUp)
+        {
+            double xMin = -180.0;
+            double yMin = 90.0;
+
+            int xIndex = (int) Math.floor((longitude - xMin)/angRange);
+            int yIndex = (int) Math.floor((yMin - latitude)/angRange);
+
+            resultTileIndices.set( xIndex, yIndex, depth);
+        }
+        else
+        {
+            double xMin = -180.0;
+            double yMin = -90.0;
+
+            int xIndex = (int) Math.floor((longitude - xMin)/angRange);
+            int yIndex = (int) Math.floor((latitude - yMin)/angRange);
+
+            resultTileIndices.set( xIndex, yIndex, depth);
+        }
 
         return resultTileIndices;
     }
 
-    static public ArrayList<TileIndices> selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, ArrayList<TileIndices> resultTileIndicesArray, TilesRange tilesRange)
+    static public ArrayList<TileIndices> selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, ArrayList<TileIndices> resultTileIndicesArray, TilesRange tilesRange, boolean originIsLeftUp)
     {
         // Given a geographic rectangle (minLon, minLat, maxLon, maxLat) & a depth, this function returns all
         // tilesIndices intersected by the rectangle for the specific depth.**
-        TileIndices leftDownTileName = TileWgs84Utils.selectTileIndices(depth, minLon, minLat, null);
-        TileIndices rightDownTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, minLat, null);
-        TileIndices rightUpTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, maxLat, null);
+        TileIndices leftDownTileName = TileWgs84Utils.selectTileIndices(depth, minLon, minLat, null, originIsLeftUp);
+        TileIndices rightDownTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, minLat, null, originIsLeftUp);
+        TileIndices rightUpTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, maxLat, null, originIsLeftUp);
 
         int minX = leftDownTileName.X;
         int maxX = rightDownTileName.X;
         int maxY = leftDownTileName.Y; // origin is left-up.
         int minY = rightUpTileName.Y;
+
+        if(!originIsLeftUp)
+        {
+            maxY = rightUpTileName.Y;
+            minY = leftDownTileName.Y;
+        }
+
 
         // the "tilesRange" is optional.***
         if(tilesRange != null)
@@ -218,7 +237,7 @@ public class TileWgs84Utils {
         return getTileFolderName_L(L) + "\\" + getTileFolderName_X(X) + "\\" + getTileFileName(X, Y, L);
     }
 
-    static public GeographicExtension getGeographicExtentOfTileLXY (int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType)
+    static public GeographicExtension getGeographicExtentOfTileLXY (int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType, boolean originIsLeftUp)
     {
         if (resultGeoExtend == null)
         { resultGeoExtend = new GeographicExtension(); }
@@ -230,6 +249,12 @@ public class TileWgs84Utils {
             double maxLon = angRange*((double)X+1.0) - 180.0;
             double minLat = 90.0 - angRange*((double)Y+1.0);
             double maxLat = 90.0 - angRange*((double)Y);
+
+            if(!originIsLeftUp)
+            {
+                minLat = -90.0 + angRange*((double)Y);
+                maxLat = -90.0 + angRange*((double)Y+1.0);
+            }
 
             resultGeoExtend.setDegrees(minLon, minLat, 0, maxLon, maxLat, 0);
             return resultGeoExtend;
