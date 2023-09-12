@@ -100,7 +100,33 @@ public class QuantizedMesh
         }
     }
 
+    private void saveIndices32(LittleEndianDataOutputStream dataOutputStream, int[] indices, int count) throws IOException
+    {
+        int highest = 0;
+        int code;
+        for (int i = 0; i < count; i++)
+        {
+            int idx = indices[i];
+            code = highest - idx;
+            dataOutputStream.writeInt(code);
+            if (code == 0)
+                highest += 1;
+        }
+    }
 
+    private void saveIndices16(LittleEndianDataOutputStream dataOutputStream, int[] indices, int count) throws IOException
+    {
+        int highest = 0;
+        int code;
+        for (int i = 0; i < count; i++)
+        {
+            int idx = indices[i];
+            code = highest - idx;
+            dataOutputStream.writeShort((short)code);
+            if (code == 0)
+                highest += 1;
+        }
+    }
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException
     {
         // 1rst save the header.***
@@ -108,25 +134,6 @@ public class QuantizedMesh
 
         // 2nd save the vertexCount.***
         dataOutputStream.writeInt(vertexCount);
-
-        /*
-        // now, zigZagEncode u, v, height.***
-        for(int i = 0; i < vertexCount-1; i++)
-        {
-            short uNext = quantizedMesh.uBuffer[i+1];
-            short vNext = quantizedMesh.vBuffer[i+1];
-            short heightNext = quantizedMesh.heightBuffer[i+1];
-
-            short uDiff = (short)(uNext - quantizedMesh.uBuffer[i]);
-            quantizedMesh.uBuffer[i] = zigZagEncode(uDiff);
-
-            short vDiff = (short)(vNext - quantizedMesh.vBuffer[i]);
-            quantizedMesh.vBuffer[i] = zigZagEncode(vDiff);
-
-            short heightDiff = (short)(heightNext - quantizedMesh.heightBuffer[i]);
-            quantizedMesh.heightBuffer[i] = zigZagEncode(heightDiff);
-        }
-         */
 
         // save uBuffer.***
         short uPrev = 0;

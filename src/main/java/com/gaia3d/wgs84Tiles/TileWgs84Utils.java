@@ -237,6 +237,28 @@ public class TileWgs84Utils {
         return getTileFolderName_L(L) + "\\" + getTileFolderName_X(X) + "\\" + getTileFileName(X, Y, L);
     }
 
+    static boolean isValidTileIndices(int L, int X, int Y)
+    {
+        // calculate the minX & minY, maxX & maxY for the tile depth(L).***
+        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(L);
+
+        // in longitude, the range is (-180, 180).***
+        int numTilesX = (int) (360.0 / angDeg);
+        int numTilesY = (int) (180.0 / angDeg);
+
+        if( X < 0 || X >= numTilesX )
+        {
+            return false;
+        }
+
+        if( Y < 0 || Y >= numTilesY )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     static public GeographicExtension getGeographicExtentOfTileLXY (int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType, boolean originIsLeftUp)
     {
         if (resultGeoExtend == null)

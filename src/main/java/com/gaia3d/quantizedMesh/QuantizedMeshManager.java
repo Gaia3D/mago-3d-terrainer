@@ -104,6 +104,7 @@ public class QuantizedMeshManager
         double latScale = latRange / 32767.0;
         double heightScale = 32767.0 / heightRange;
 
+
         for(int i = 0; i < vertexCount; i++)
         {
             GaiaVertex vertex = vertices.get(i);
@@ -127,9 +128,14 @@ public class QuantizedMeshManager
 
         // now, edgesIndices.***
         // west vertices.***
-        ArrayList<GaiaVertex> westVertices = mesh.getLeftVerticesSortedUpToDown();
+        ArrayList<GaiaVertex> westVertices = mesh.getLeftVerticesSortedUpToDown(); // original.***
         int westVerticesCount = westVertices.size();
+        if(westVerticesCount == 0)
+        {
+            int hola = 0;
+        }
         quantizedMesh.westIndices = new int[westVerticesCount];
+        quantizedMesh.westVertexCount = westVerticesCount;
         for(int i = 0; i < westVerticesCount; i++)
         {
             quantizedMesh.westIndices[i] = westVertices.get(i).id;
@@ -138,7 +144,12 @@ public class QuantizedMeshManager
         // east vertices.***
         ArrayList<GaiaVertex> eastVertices = mesh.getRightVerticesSortedDownToUp();
         int eastVerticesCount = eastVertices.size();
+        if(eastVerticesCount == 0)
+        {
+            int hola = 0;
+        }
         quantizedMesh.eastIndices = new int[eastVerticesCount];
+        quantizedMesh.eastVertexCount = eastVerticesCount;
         for(int i = 0; i < eastVerticesCount; i++)
         {
             quantizedMesh.eastIndices[i] = eastVertices.get(i).id;
@@ -147,7 +158,12 @@ public class QuantizedMeshManager
         // south vertices.***
         ArrayList<GaiaVertex> southVertices = mesh.getDownVerticesSortedLeftToRight();
         int southVerticesCount = southVertices.size();
+        if(southVerticesCount == 0)
+        {
+            int hola = 0;
+        }
         quantizedMesh.southIndices = new int[southVerticesCount];
+        quantizedMesh.southVertexCount = southVerticesCount;
         for(int i = 0; i < southVerticesCount; i++)
         {
             quantizedMesh.southIndices[i] = southVertices.get(i).id;
@@ -156,7 +172,12 @@ public class QuantizedMeshManager
         // north vertices.***
         ArrayList<GaiaVertex> northVertices = mesh.getUpVerticesSortedRightToLeft();
         int northVerticesCount = northVertices.size();
+        if(northVerticesCount == 0)
+        {
+            int hola = 0;
+        }
         quantizedMesh.northIndices = new int[northVerticesCount];
+        quantizedMesh.northVertexCount = northVerticesCount;
         for(int i = 0; i < northVerticesCount; i++)
         {
             quantizedMesh.northIndices[i] = northVertices.get(i).id;

@@ -64,6 +64,12 @@ public class TileIndices {
         L = dataInputStream.readInt();
     }
 
+    public boolean isValid()
+    {
+        // for each tile depth (L), there are minX & maxX, minY & maxY.***
+        return TileWgs84Utils.isValidTileIndices(L, X, Y);
+    }
+
     public TileIndices get_LD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
         if(originIsLeftUp)

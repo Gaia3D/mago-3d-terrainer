@@ -163,6 +163,35 @@ public class GaiaMesh {
         return vertices;
     }
 
+    public ArrayList<GaiaVertex> getLeftVerticesSortedDownToUp()
+    {
+        ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
+        ArrayList<GaiaHalfEdge> leftHedges = getHalfEdgesByType(HalfEdgeType.LEFT);
+        int leftHedgesCount = leftHedges.size();
+        for(int i=0; i<leftHedgesCount; i++) {
+            GaiaHalfEdge halfEdge = leftHedges.get(i);
+            vertices.add(halfEdge.startVertex);
+        }
+
+        // sort the vertices.***
+        vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
+            if(v1.position.y > v2.position.y)
+            {
+                return -1;
+            }
+            else if(v1.position.y < v2.position.y)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        });
+
+        return vertices;
+    }
+
     public ArrayList<GaiaVertex> getDownVerticesSortedLeftToRight()
     {
         ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
