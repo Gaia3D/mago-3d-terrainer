@@ -27,12 +27,12 @@ public class MesherMain {
         tileWgs84Manager.terrainElevationData.loadGeoTiffFile(geoTiffFilePath);
 
         tileWgs84Manager.minTileDepth = 0;
-        tileWgs84Manager.maxTileDepth = 13;
+        tileWgs84Manager.maxTileDepth = 14;
 
 
         // start quantized mesh tiling.***
-        //tileWgs84Manager.makeTileMeshes(); // original.***
-        tileWgs84Manager.makeSimpleTileMeshes_test(); // test.***
+        tileWgs84Manager.makeTileMeshes(); // original.***
+        //tileWgs84Manager.makeSimpleTileMeshes_test(); // test.***
 
 
         int hola2 = 0;

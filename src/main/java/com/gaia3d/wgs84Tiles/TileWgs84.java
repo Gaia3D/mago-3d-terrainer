@@ -320,7 +320,7 @@ public class TileWgs84 {
         //    |    /     |      \   |
         //    |  /       |        \ |
         //    +----------+----------+
-        //this.refineMeshInitial(this.mesh);
+        this.refineMeshInitial(this.mesh);
 
         // now set objects id in list.***
         this.mesh.setObjectsIdInList();
@@ -473,6 +473,14 @@ public class TileWgs84 {
         for(int i = 0; i < meshesCount; i++)
         {
             GaiaMesh mesh = separatedMeshes.get(i);
+
+            // Test check meshes.***
+            if(!TileWgs84Utils.checkTile_test(mesh, this.manager.vertexCoincidentError, this.manager.originIsLeftUp))
+            {
+                System.out.println("Error: mesh is not valid.***");
+
+            }
+
             GaiaTriangle triangle = mesh.triangles.get(0); // take the first triangle.***
             TileIndices tileIndices = triangle.ownerTile_tileIndices;
             String tileTempDirectory = this.manager.tileTempDirectory;
@@ -795,6 +803,34 @@ public class TileWgs84 {
                 continue;
             }
 
+            // Test. Refine only the triangles that intersects the midLon or midLat.***double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
+            GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+            double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
+            double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
+            double triangleMaxLengthMeters = triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
+            double minTriangleSizeForDepth = TileWgs84Utils.getMinTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
+            if(triangleMaxLengthMeters < minTriangleSizeForDepth)
+            {
+                triangle.refineChecked = true;
+                System.out.println("MIN-TRIANGLE-SIZE-Check : false &*###################-----------------#################");
+                continue;
+            }
+
+            if(triangleMaxLengthMeters > TileWgs84Utils.getMaxTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L))
+            {
+                System.out.println("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
+                TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+                ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
+
+                if (splitTriangles.size() > 0)
+                {
+                    splitCount++;
+                    refined = true;
+                }
+            }
+            // end test.----------------------------------------------------------------------------------------------------------------------------
+
+            /*
             if (mustRefineTriangle(triangle))
             {
                 TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
@@ -806,6 +842,8 @@ public class TileWgs84 {
                     refined = true;
                 }
             }
+
+             */
 
         }
 
@@ -825,80 +863,25 @@ public class TileWgs84 {
         boolean refined = false;
         int splitCount = 0;
 
-
         splitCount = 0;
 
-            int trianglesCount = mesh.triangles.size();
-            System.out.println("Triangles count : " + trianglesCount);
-            for (int i = 0; i < trianglesCount; i++) {
-                GaiaTriangle triangle = mesh.triangles.get(i);
+        int trianglesCount = mesh.triangles.size();
+        System.out.println("Triangles count : " + trianglesCount);
+        for (int i = 0; i < trianglesCount; i++) {
+            GaiaTriangle triangle = mesh.triangles.get(i);
 
-                if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
-                    continue;
-                }
-
-                System.out.println("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
-                ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationData);
-
-                if (splitTriangles.size() > 0) {
-                    splitCount++;
-                    refined = true;
-                    //continue;
-                }
-                /*
-
-                GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
-
-                // if the triangle is big, then split it.***
-                double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
-                double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
-                double triangleMaxLengthMeters = triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
-                if(triangleMaxLengthMeters > TileWgs84Utils.getMaxTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L))
-                {
-                    System.out.println("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
-                    ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationData);
-
-                    if (splitTriangles.size() > 0) {
-                        splitCount++;
-                        refined = true;
-                        //continue;
-                    }
-                }
-
-                 */
-                /*
-                int L = triangle.ownerTile_tileIndices.L;
-                int X = triangle.ownerTile_tileIndices.X;
-                int Y = triangle.ownerTile_tileIndices.Y;
-                GeographicExtension geoExtent = TileWgs84Utils.getGeographicExtentOfTileLXY(L, X, Y, null, this.manager.imageryType);
-
-                double lonDegRange = geoExtent.getLongitudeRangeDegree();
-                double latDegRange = geoExtent.getLatitudeRangeDegree();
-
-                //GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
-
-                double bboxLengthX = bboxTriangle.getLengthX();
-                double bboxLengthY = bboxTriangle.getLengthY();
-                double lonError = lonDegRange * 0.1;
-                double latError = latDegRange * 0.1;
-
-                double lonDiff = abs(lonDegRange - bboxLengthX);
-                double latDiff = abs(latDegRange - bboxLengthY);
-
-                if (lonDiff < lonError || latDiff < latError) {
-                    // The triangle is big, so split it.***
-                    TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
-                    ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
-
-                    if (splitTriangles.size() > 0) {
-                        splitCount++;
-                        refined = true;
-                    }
-                }
-
-                 */
-
+            if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
             }
+
+            System.out.println("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
+            ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationData);
+
+            if (splitTriangles.size() > 0) {
+                splitCount++;
+                refined = true;
+            }
+        }
 
 
         if(refined)

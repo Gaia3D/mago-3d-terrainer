@@ -134,6 +134,20 @@ public class GaiaMesh {
         return halfEdges;
     }
 
+    public GaiaBoundingBox getBoundingBox()
+    {
+        GaiaBoundingBox boundingBox = new GaiaBoundingBox();
+        int verticesCount = vertices.size();
+        for(int i=0; i<verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+            if(vertex.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+            boundingBox.addPoint(vertex.position);
+        }
+        return boundingBox;
+    }
+
     public ArrayList<GaiaVertex> getLeftVerticesSortedUpToDown()
     {
         ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
@@ -316,6 +330,24 @@ public class GaiaMesh {
         setHalfEdgeIdInList();
     }
 
+    public void getVerticesByTriangles(ArrayList<GaiaVertex>resultVertices)
+    {
+        HashMap<GaiaVertex, GaiaVertex>mapVertices = new HashMap<GaiaVertex, GaiaVertex>();
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            ArrayList<GaiaVertex> vertices = triangle.getVertices();
+            int verticesCount = vertices.size();
+            for(int j=0; j<verticesCount; j++) {
+                GaiaVertex vertex = vertices.get(j);
+                mapVertices.put(vertex, vertex);
+            }
+        }
+
+        // now make vertices from the hashMap.***
+        resultVertices.addAll(mapVertices.values());
+    }
+
     public HashMap<Integer, GaiaVertex> getVerticesMap()
     {
         HashMap<Integer, GaiaVertex> verticesMap = new HashMap<Integer, GaiaVertex>();
@@ -492,6 +524,17 @@ public class GaiaMesh {
             // in this case the twin is null.***
             Vector3d midPosition = longestHEdge.getMidPosition();
 
+            // test.************************************************************************************************************************
+            Vector3d midPointTest = new Vector3d();
+            Vector3d startPos = longestHEdge.getStartVertex().position;
+            Vector3d endPos = longestHEdge.getEndVertex().position;
+            midPointTest.set((startPos.x/2.0 + endPos.x/2.0), (startPos.y/2.0 + endPos.y/2.0), (startPos.z/2.0 + endPos.z/2.0));
+            if(midPosition.distance(midPointTest) > 1e-10)
+            {
+                int hola = 0;
+            }
+            // end test.-------------------------------------------------------------------------------------------------------------
+
             // now determine the elevation of the midPoint.***
             double elevation = terrainElevationData.getElevation(midPosition.x, midPosition.y);
 
@@ -648,6 +691,18 @@ public class GaiaMesh {
 
             // need know the midVertex.***
             Vector3d midPosition = longestHEdge.getMidPosition();
+
+            // test.************************************************************************************************************************
+            Vector3d midPointTest = new Vector3d();
+            Vector3d startPos = longestHEdge.getStartVertex().position;
+            Vector3d endPos = longestHEdge.getEndVertex().position;
+            midPointTest.set((startPos.x/2.0 + endPos.x/2.0), (startPos.y/2.0 + endPos.y/2.0), (startPos.z/2.0 + endPos.z/2.0));
+            if(midPosition.distance(midPointTest) > 1e-10)
+            {
+                int hola = 0;
+            }
+            // end test.-------------------------------------------------------------------------------------------------------------
+
             GaiaVertex midVertex = newVertex();
 
             // now determine the elevation of the midPoint.***

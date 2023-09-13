@@ -35,7 +35,7 @@ public class TileWgs84Manager {
 
     double vertexCoincidentError = 1e-11; // 1e-12 is good.***
 
-    int triangleRefinementMaxIterations = 9;
+    int triangleRefinementMaxIterations = 4;
 
     TerrainLayer terrainLayer = null;
 
@@ -52,24 +52,10 @@ public class TileWgs84Manager {
 
         // create the terrainLayer.***
         terrainLayer = new TerrainLayer();
-        terrainLayer.tilejson = "2.1.0";
-        terrainLayer.name = "insert name here";
-        terrainLayer.description = "insert description here";
-        terrainLayer.version = "1.1.0";
-        terrainLayer.format = "quantized-mesh-1.0";
-        terrainLayer.attribution = "insert attribution here";
-        terrainLayer.template = "terrain";
-        terrainLayer.legend = "insert legend here";
-        terrainLayer.scheme = "tms";
-        terrainLayer.tiles = new String[1];
-        terrainLayer.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
-        terrainLayer.projection = "EPSG:4326";
-        terrainLayer.bounds = new double[4];
         terrainLayer.bounds[0] = minLon;
         terrainLayer.bounds[1] = minLat;
         terrainLayer.bounds[2] = maxLon;
         terrainLayer.bounds[3] = maxLat;
-
 
 
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
@@ -122,19 +108,6 @@ public class TileWgs84Manager {
 
         // create the terrainLayer.***
         terrainLayer = new TerrainLayer();
-        terrainLayer.tilejson = "2.1.0";
-        terrainLayer.name = "insert name here";
-        terrainLayer.description = "insert description here";
-        terrainLayer.version = "1.1.0";
-        terrainLayer.format = "quantized-mesh-1.0";
-        terrainLayer.attribution = "insert attribution here";
-        terrainLayer.template = "terrain";
-        terrainLayer.legend = "insert legend here";
-        terrainLayer.scheme = "tms";
-        terrainLayer.tiles = new String[1];
-        terrainLayer.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
-        terrainLayer.projection = "EPSG:4326";
-        terrainLayer.bounds = new double[4];
         terrainLayer.bounds[0] = minLon;
         terrainLayer.bounds[1] = minLat;
         terrainLayer.bounds[2] = maxLon;

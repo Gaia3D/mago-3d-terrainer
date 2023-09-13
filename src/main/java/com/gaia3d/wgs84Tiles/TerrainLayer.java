@@ -30,6 +30,11 @@ public class TerrainLayer
     double[] bounds = null;
     ArrayList<TilesRange> available = new ArrayList<TilesRange>();
 
+    public TerrainLayer()
+    {
+        this.setDefault();
+    }
+
     public HashMap<Integer, TilesRange> getTilesRangeMap()
     {
         HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<Integer, TilesRange>();
@@ -40,6 +45,27 @@ public class TerrainLayer
         }
 
         return tilesRangeMap;
+    }
+
+    public void setDefault()
+    {
+        this.tilejson = "2.1.0";
+        this.name = "insert name here";
+        this.description = "insert description here";
+        this.version = "1.1.0";
+        this.format = "quantized-mesh-1.0";
+        this.attribution = "insert attribution here";
+        this.template = "terrain";
+        this.legend = "insert legend here";
+        this.scheme = "tms";
+        this.tiles = new String[1];
+        this.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
+        this.projection = "EPSG:4326";
+        this.bounds = new double[4];
+        this.bounds[0] = 0.0;
+        this.bounds[1] = 0.0;
+        this.bounds[2] = 0.0;
+        this.bounds[3] = 0.0;
     }
 
     public void saveJsonFile(String outputDirectory, String tilejsonFileName)

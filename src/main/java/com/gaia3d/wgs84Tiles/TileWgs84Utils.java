@@ -1,6 +1,8 @@
 package com.gaia3d.wgs84Tiles;
 
+import com.gaia3d.basic.structure.GaiaBoundingBox;
 import com.gaia3d.basic.structure.GaiaMesh;
+import com.gaia3d.basic.structure.GaiaVertex;
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.GlobeUtils;
@@ -9,6 +11,8 @@ import org.joml.Vector2d;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Math.abs;
 
 public class TileWgs84Utils {
 
@@ -43,66 +47,7 @@ public class TileWgs84Utils {
         if (depth < 0 || depth > 28)
         { return -1.0; }
 
-        if (depth == 0)
-        { return 180; }
-        if (depth == 1)
-        { return 90; }
-        if (depth == 2)
-        { return 45; }
-        if (depth == 3)
-        { return 22.5; }
-        if (depth == 4)
-        { return 11.25; }
-        if (depth == 5)
-        { return 5.625; }
-        if (depth == 6)
-        { return 2.8125; }
-        if (depth == 7)
-        { return 1.40625; }
-        if (depth == 8)
-        { return 0.703125; }
-        if (depth == 9)
-        { return 0.3515625; }
-        if (depth == 10)
-        { return 0.17578125; }
-        if (depth == 11)
-        { return 0.087890625; }
-        if (depth == 12)
-        { return 0.043945313; }
-        if (depth == 13)
-        { return 0.021972656; }
-        if (depth == 14)
-        { return 0.010986328; }
-        if (depth == 15)
-        { return 0.010986328/2.0; }
-        if (depth == 16)
-        { return 0.010986328 / 4.0; }
-        if (depth == 17)
-        { return 0.010986328 / 8.0; }
-        if (depth == 18)
-        { return 0.010986328 / 16.0; }
-        if (depth == 19)
-        { return 0.010986328 / 32.0; }
-        if (depth == 20)
-        { return 0.010986328 / 64.0; }
-        if (depth == 21)
-        { return 0.010986328 / 128.0; }
-        if (depth == 22)
-        { return 0.010986328 / 256.0; }
-        if (depth == 23)
-        { return 0.010986328 / 512.0; }
-        if (depth == 24) // tile aprox 1m edge.***
-        { return 0.010986328 / 1024.0; }
-        if (depth == 25)
-        { return 0.010986328 / 2048.0; }
-        if (depth == 26)
-        { return 0.010986328 / (2048.0 * 2.0); }
-        if (depth == 27)
-        { return 0.010986328 / (2048.0 * 4.0); }
-        if (depth == 28)
-        { return 0.010986328 / (2048.0 * 8.0); }
-
-        return -1.0;
+        return 180.0 / Math.pow(2, depth);
     }
 
 
@@ -252,6 +197,48 @@ public class TileWgs84Utils {
         }
 
         if( Y < 0 || Y >= numTilesY )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    static public boolean checkTile_test(GaiaMesh mesh, double error, boolean originIsLeftUp)
+    {
+        ArrayList< GaiaVertex >resultVertices = new ArrayList< GaiaVertex >();
+        mesh.getVerticesByTriangles(resultVertices);
+
+        if(resultVertices.size()!= mesh.vertices.size())
+        {
+            return false;
+        }
+
+        // check the boundingBox of the tile.***
+        GaiaBoundingBox bbox = mesh.getBoundingBox();
+        TileIndices tileIndices = mesh.triangles.get(0).ownerTile_tileIndices;
+        GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, "CRS84", originIsLeftUp);
+        double minX = bbox.getMinX();
+        double minY = bbox.getMinY();
+        double maxX = bbox.getMaxX();
+        double maxY = bbox.getMaxY();
+
+        if(abs(minX - geographicExtension.getMinLongitudeDeg()) > error)
+        {
+            return false;
+        }
+
+        if(abs(minY - geographicExtension.getMinLatitudeDeg()) > error)
+        {
+            return false;
+        }
+
+        if(abs(maxX - geographicExtension.getMaxLongitudeDeg()) > error)
+        {
+            return false;
+        }
+
+        if(abs(maxY - geographicExtension.getMaxLatitudeDeg()) > error)
         {
             return false;
         }
