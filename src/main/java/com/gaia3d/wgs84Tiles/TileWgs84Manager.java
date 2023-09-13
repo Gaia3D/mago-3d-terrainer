@@ -21,7 +21,7 @@ import java.util.List;
 
 
 public class TileWgs84Manager {
-    public int minTileDepth = 10;
+    public int minTileDepth = 0;
     public int maxTileDepth = 15;
 
     public String tileTempDirectory = null;
@@ -41,7 +41,23 @@ public class TileWgs84Manager {
 
     boolean originIsLeftUp = false;
 
+    HashMap<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<Integer, Double>();
 
+    // constructor.***
+    public TileWgs84Manager()
+    {
+        // init the maxTriangleSizeForTileDepthMap.***
+        for(int i=0; i<28; i++)
+        {
+            double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(i);
+            double maxSize = tileSize/2.5;
+            if(i < 11)
+            {
+                maxSize *= 0.2;
+            }
+            maxTriangleSizeForTileDepthMap.put(i, maxSize);
+        }
+    }
     public void makeTileMeshes() throws IOException, TransformException {
 
         GeographicExtension geographicExtension = this.terrainElevationData.geographicExtension;
@@ -97,6 +113,11 @@ public class TileWgs84Manager {
 
         // finally save the terrainLayer.json.***
         saveQuantizedMeshes();
+    }
+
+    public double getMaxTriangleSizeForTileDepth(int depth)
+    {
+        return maxTriangleSizeForTileDepthMap.get(depth);
     }
     public void makeSimpleTileMeshes_test() throws IOException, TransformException {
 

@@ -577,6 +577,7 @@ public class TileWgs84 {
         double heightDeg = bboxTriangle.getLengthY();
 
         double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
+        System.out.println("maxDiff : " + maxDiff + " , tileDepth : " + triangle.ownerTile_tileIndices.L);
 
         // fast check.******************************************************************
         // check the barycenter of the triangle.***
@@ -628,7 +629,8 @@ public class TileWgs84 {
             return false;
         }
 
-        if(triangleMaxLengthMeters > TileWgs84Utils.getMaxTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L))
+        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
+        if(triangleMaxLengthMeters > maxTriangleSizeForDepth)
         {
             System.out.println("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
             return true;
@@ -803,6 +805,7 @@ public class TileWgs84 {
                 continue;
             }
 
+            /*
             // Test. Refine only the triangles that intersects the midLon or midLat.***double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
             GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
             double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
@@ -829,8 +832,8 @@ public class TileWgs84 {
                 }
             }
             // end test.----------------------------------------------------------------------------------------------------------------------------
+            */
 
-            /*
             if (mustRefineTriangle(triangle))
             {
                 TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
@@ -843,7 +846,7 @@ public class TileWgs84 {
                 }
             }
 
-             */
+
 
         }
 

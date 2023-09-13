@@ -36,11 +36,6 @@ public class TileWgs84Utils {
         return tileSize / 60.0;
     }
 
-    static public double getMaxTriangleSizeForTileDepth(int depth)
-    {
-        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        return tileSize / 10.0;
-    }
     static public double selectTileAngleRangeByDepth(int depth)
     {
         // given tile depth, this function returns the latitude angle range of the tile

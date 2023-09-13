@@ -524,17 +524,6 @@ public class GaiaMesh {
             // in this case the twin is null.***
             Vector3d midPosition = longestHEdge.getMidPosition();
 
-            // test.************************************************************************************************************************
-            Vector3d midPointTest = new Vector3d();
-            Vector3d startPos = longestHEdge.getStartVertex().position;
-            Vector3d endPos = longestHEdge.getEndVertex().position;
-            midPointTest.set((startPos.x/2.0 + endPos.x/2.0), (startPos.y/2.0 + endPos.y/2.0), (startPos.z/2.0 + endPos.z/2.0));
-            if(midPosition.distance(midPointTest) > 1e-10)
-            {
-                int hola = 0;
-            }
-            // end test.-------------------------------------------------------------------------------------------------------------
-
             // now determine the elevation of the midPoint.***
             double elevation = terrainElevationData.getElevation(midPosition.x, midPosition.y);
 
@@ -691,17 +680,6 @@ public class GaiaMesh {
 
             // need know the midVertex.***
             Vector3d midPosition = longestHEdge.getMidPosition();
-
-            // test.************************************************************************************************************************
-            Vector3d midPointTest = new Vector3d();
-            Vector3d startPos = longestHEdge.getStartVertex().position;
-            Vector3d endPos = longestHEdge.getEndVertex().position;
-            midPointTest.set((startPos.x/2.0 + endPos.x/2.0), (startPos.y/2.0 + endPos.y/2.0), (startPos.z/2.0 + endPos.z/2.0));
-            if(midPosition.distance(midPointTest) > 1e-10)
-            {
-                int hola = 0;
-            }
-            // end test.-------------------------------------------------------------------------------------------------------------
 
             GaiaVertex midVertex = newVertex();
 
