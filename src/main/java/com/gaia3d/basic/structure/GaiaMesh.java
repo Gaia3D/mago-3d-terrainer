@@ -152,40 +152,15 @@ public class GaiaMesh {
     {
         ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
         ArrayList<GaiaHalfEdge> leftHedges = getHalfEdgesByType(HalfEdgeType.LEFT);
+        HashMap<GaiaVertex, GaiaVertex> mapVertices = new HashMap<GaiaVertex, GaiaVertex>();
         int leftHedgesCount = leftHedges.size();
         for(int i=0; i<leftHedgesCount; i++) {
             GaiaHalfEdge halfEdge = leftHedges.get(i);
-            vertices.add(halfEdge.startVertex);
+            mapVertices.put(halfEdge.startVertex, halfEdge.startVertex);
+            mapVertices.put(halfEdge.getEndVertex(), halfEdge.getEndVertex());
         }
 
-        // sort the vertices.***
-        vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
-            if(v1.position.y < v2.position.y)
-            {
-                return -1;
-            }
-            else if(v1.position.y > v2.position.y)
-            {
-                return 1;
-            }
-            else
-            {
-                return 0;
-            }
-        });
-
-        return vertices;
-    }
-
-    public ArrayList<GaiaVertex> getLeftVerticesSortedDownToUp()
-    {
-        ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
-        ArrayList<GaiaHalfEdge> leftHedges = getHalfEdgesByType(HalfEdgeType.LEFT);
-        int leftHedgesCount = leftHedges.size();
-        for(int i=0; i<leftHedgesCount; i++) {
-            GaiaHalfEdge halfEdge = leftHedges.get(i);
-            vertices.add(halfEdge.startVertex);
-        }
+        vertices.addAll(mapVertices.values());
 
         // sort the vertices.***
         vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
@@ -206,15 +181,20 @@ public class GaiaMesh {
         return vertices;
     }
 
+
     public ArrayList<GaiaVertex> getDownVerticesSortedLeftToRight()
     {
         ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
         ArrayList<GaiaHalfEdge> downHedges = getHalfEdgesByType(HalfEdgeType.DOWN);
+        HashMap<GaiaVertex, GaiaVertex> mapVertices = new HashMap<GaiaVertex, GaiaVertex>();
         int downHedgesCount = downHedges.size();
         for(int i=0; i<downHedgesCount; i++) {
             GaiaHalfEdge halfEdge = downHedges.get(i);
-            vertices.add(halfEdge.startVertex);
+            mapVertices.put(halfEdge.startVertex, halfEdge.startVertex);
+            mapVertices.put(halfEdge.getEndVertex(), halfEdge.getEndVertex());
         }
+
+        vertices.addAll(mapVertices.values());
 
         // sort the vertices.***
         vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
@@ -239,19 +219,22 @@ public class GaiaMesh {
     {
         ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
         ArrayList<GaiaHalfEdge> rightHedges = getHalfEdgesByType(HalfEdgeType.RIGHT);
+        HashMap<GaiaVertex, GaiaVertex> mapVertices = new HashMap<GaiaVertex, GaiaVertex>();
         int rightHedgesCount = rightHedges.size();
         for(int i=0; i<rightHedgesCount; i++) {
             GaiaHalfEdge halfEdge = rightHedges.get(i);
-            vertices.add(halfEdge.startVertex);
+            mapVertices.put(halfEdge.startVertex, halfEdge.startVertex);
+            mapVertices.put(halfEdge.getEndVertex(), halfEdge.getEndVertex());
         }
+        vertices.addAll(mapVertices.values());
 
         // sort the vertices.***
         vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {
-            if(v1.position.y > v2.position.y)
+            if(v1.position.y < v2.position.y)
             {
                 return -1;
             }
-            else if(v1.position.y < v2.position.y)
+            else if(v1.position.y > v2.position.y)
             {
                 return 1;
             }
@@ -268,11 +251,15 @@ public class GaiaMesh {
     {
         ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
         ArrayList<GaiaHalfEdge> upHedges = getHalfEdgesByType(HalfEdgeType.UP);
+        HashMap<GaiaVertex, GaiaVertex> mapVertices = new HashMap<GaiaVertex, GaiaVertex>();
         int upHedgesCount = upHedges.size();
         for(int i=0; i<upHedgesCount; i++) {
             GaiaHalfEdge halfEdge = upHedges.get(i);
-            vertices.add(halfEdge.startVertex);
+            mapVertices.put(halfEdge.startVertex, halfEdge.startVertex);
+            mapVertices.put(halfEdge.getEndVertex(), halfEdge.getEndVertex());
         }
+
+        vertices.addAll(mapVertices.values());
 
         // sort the vertices.***
         vertices.sort((GaiaVertex v1, GaiaVertex v2) -> {

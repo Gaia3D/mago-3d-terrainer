@@ -80,6 +80,8 @@ public class TileWgs84Manager {
             ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange, originIsLeftUp);
             terrainLayer.available.add(tilesRange);
 
+
+
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
 
             for (TileIndices tileIndices : resultTileIndicesArray)

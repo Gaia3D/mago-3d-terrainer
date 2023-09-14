@@ -177,6 +177,18 @@ public class TileWgs84Utils {
         return getTileFolderName_L(L) + "\\" + getTileFolderName_X(X) + "\\" + getTileFileName(X, Y, L);
     }
 
+    static public int getTileIndiceMaxX(int depth)
+    {
+        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        return (int) (360.0 / angDeg);
+    }
+
+    static public int getTileIndiceMaxY(int depth)
+    {
+        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        return (int) (180.0 / angDeg);
+    }
+
     static boolean isValidTileIndices(int L, int X, int Y)
     {
         // calculate the minX & minY, maxX & maxY for the tile depth(L).***
