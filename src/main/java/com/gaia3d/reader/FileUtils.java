@@ -1,6 +1,7 @@
 package com.gaia3d.reader;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class FileUtils {
 
@@ -22,5 +23,33 @@ public class FileUtils {
     public static boolean deleteFileIfExists(String filePath) {
         File file = new File(filePath);
         return file.delete();
+    }
+
+    public static void getFileNames(String folderPath, String extension, ArrayList<String> fileNames)
+    {
+        File folder = new File(folderPath);
+        File[] listOfFiles = folder.listFiles();
+
+        for (File file : listOfFiles) {
+            if (file.isFile()) {
+                String fileName = file.getName();
+                if (fileName.endsWith(extension)) {
+                    fileNames.add(fileName);
+                }
+            }
+        }
+    }
+
+    public static void getFolderNames(String folderPath, ArrayList<String> folderNames)
+    {
+        File folder = new File(folderPath);
+        File[] listOfFiles = folder.listFiles();
+
+        for (File file : listOfFiles) {
+            if (file.isDirectory()) {
+                String folderName = file.getName();
+                folderNames.add(folderName);
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.gaia3d.comand;
 
 
+import com.gaia3d.wgs84Tiles.GaiaGeoTiffManager;
 import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 
@@ -24,15 +25,24 @@ public class MesherMain {
         // terrain elevation data.***
         String geoTiffFilePath = "D:\\QuantizedMesh_JavaProjects\\ws2_merged_dem.tif";
         tileWgs84Manager.terrainElevationData = new TerrainElevationData();
-        tileWgs84Manager.terrainElevationData.loadGeoTiffFile(geoTiffFilePath);
+        //tileWgs84Manager.terrainElevationData.loadGeoTiffFile(geoTiffFilePath);
+
+        // terrain elevation data in *.img format.***
+        //String imageFilePath = "D:\\QuantizedMesh_JavaProjects\\35902008.img";
+        //tileWgs84Manager.terrainElevationData.loadImageFile(imageFilePath);
 
         tileWgs84Manager.minTileDepth = 0;
-        tileWgs84Manager.maxTileDepth = 16;
+        tileWgs84Manager.maxTileDepth = 17;
 
+        // do resizing test.***
+        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        String geoTiffFilePathTest = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m\\33612(표선)\\33612010.tif";
+        String outputFilePathTest = "D:\\QuantizedMesh_JavaProjects\\resizedTiffTest.tif";
+
+        gaiaGeoTiffManager.resiseGeoTiff_test(geoTiffFilePathTest, outputFilePathTest, 1000, 1000);
 
         // start quantized mesh tiling.***
         tileWgs84Manager.makeTileMeshes(); // original.***
-        //tileWgs84Manager.makeSimpleTileMeshes_test(); // test.***
 
 
         int hola2 = 0;

@@ -5,7 +5,9 @@ import com.gaia3d.reader.GaiaGeoTiffReader;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;
+
 import org.geotools.coverage.util.CoverageUtilities;
+
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
@@ -18,6 +20,7 @@ import org.locationtech.jts.geom.Point;
 import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.geometry.Envelope;
+
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -25,12 +28,16 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.awt.image.Raster;
 
+import java.io.IOException;
+
+
 
 public class TerrainElevationData {
 
     // the terrain elevation data is stored in a geotiff file.***
 
     public String geotiffFilePath = "";
+    public String filePath = "";
     public GeographicExtension geographicExtension = new GeographicExtension();
 
     GridCoverage2D coverage = null;
@@ -48,6 +55,42 @@ public class TerrainElevationData {
         Vector2d lonLat = new Vector2d(wgsP.getCentroid().getCoordinate().x, wgsP.getCentroid().getCoordinate().y);
         return lonLat;
     }
+
+    public void loadImageFile(String imageFilePath) throws IOException {
+        // load the image file.***
+        this.filePath = imageFilePath;
+
+        //File imgFile = new File(imageFilePath);
+        //ErdasImgFormat format = new ErdasImgFormat();
+        //ErdasImgReader reader = (ErdasImgReader) format.getReader(imgFile);
+        //GeoTiffFormat format = new GeoTiffFormat();
+        //GeoTiffReader reader = format.getReader(imgFile);
+        //WorldImageFormat format = new WorldImageFormat();
+        //WorldImageReader reader = format.getReader(imgFile);
+
+        //GridCoverage2D coverage = reader.read(null);
+
+        //AbstractGridFormat format = GridFormatFinder.findFormat( imgFile );
+        //GridCoverage2DReader reader = format.getReader( imgFile );
+
+
+
+
+        /*
+        FileInputStream archivoInput = new FileInputStream(imageFilePath);
+        int contenido;
+
+        while ((contenido = archivoInput.read()) != -1) {
+
+            System.out.print((char) contenido);
+        }
+
+         */
+
+        int hola = 0;
+
+    }
+
 
     public void loadGeoTiffFile(String geotiffFilePath) throws FactoryException, TransformException {
         // load the geotiff file.***

@@ -77,10 +77,30 @@ public class TileWgs84Manager {
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {
             TilesRange tilesRange = new TilesRange();
-            ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange, originIsLeftUp);
+            ArrayList<TileIndices> resultTileIndicesArray = null;
+
+            if(depth == 0)
+            {
+                // in this case, the tile is the world. L0X0Y0 & L0X1Y0.***
+                TileIndices tileIndices = new TileIndices();
+                tileIndices.set(0, 0, 0);
+                resultTileIndicesArray = new ArrayList<TileIndices>();
+                resultTileIndicesArray.add(tileIndices);
+
+                tileIndices = new TileIndices();
+                tileIndices.set(1, 0, 0);
+                resultTileIndicesArray.add(tileIndices);
+
+                tilesRange.minTileX = 0;
+                tilesRange.maxTileX = 1;
+                tilesRange.minTileY = 0;
+                tilesRange.maxTileY = 0;
+            }
+            else
+            {
+                resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange, originIsLeftUp);
+            }
             terrainLayer.available.add(tilesRange);
-
-
 
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
 
