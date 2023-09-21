@@ -22,24 +22,29 @@ public class MesherMain {
         String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
         tileWgs84Manager.outputDirectory = outputDirectory;
 
+        String terrainElevationDataFolderPath = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m";
+        String terrainElevationDataFolderPath2 = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\10m";
+        String terrainElevationDataFolderPath3 = "D:\\QuantizedMesh_JavaProjects\\ws_geoTiff";
+
         // terrain elevation data.***
         String geoTiffFilePath = "D:\\QuantizedMesh_JavaProjects\\ws2_merged_dem.tif";
-        tileWgs84Manager.terrainElevationData = new TerrainElevationData();
+        //tileWgs84Manager.terrainElevationData = new TerrainElevationData(); // old.***
         //tileWgs84Manager.terrainElevationData.loadGeoTiffFile(geoTiffFilePath);
 
-        // terrain elevation data in *.img format.***
-        //String imageFilePath = "D:\\QuantizedMesh_JavaProjects\\35902008.img";
-        //tileWgs84Manager.terrainElevationData.loadImageFile(imageFilePath);
+        tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
+        // set the terrainElevation data folder path.***
+        tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(terrainElevationDataFolderPath3); // test.***
+        tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
 
         tileWgs84Manager.minTileDepth = 0;
-        tileWgs84Manager.maxTileDepth = 17;
+        tileWgs84Manager.maxTileDepth = 15;
 
         // do resizing test.***
         GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
         String geoTiffFilePathTest = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m\\33612(표선)\\33612010.tif";
         String outputFilePathTest = "D:\\QuantizedMesh_JavaProjects\\resizedTiffTest.tif";
 
-        gaiaGeoTiffManager.resiseGeoTiff_test(geoTiffFilePathTest, outputFilePathTest, 1000, 1000);
+        //gaiaGeoTiffManager.resiseGeoTiff_test(geoTiffFilePathTest, outputFilePathTest, 1000, 1000);
 
         // start quantized mesh tiling.***
         tileWgs84Manager.makeTileMeshes(); // original.***

@@ -27,7 +27,8 @@ public class TileWgs84Manager {
     public String tileTempDirectory = null;
     public String outputDirectory = null;
 
-    public TerrainElevationData terrainElevationData = null;
+    //public TerrainElevationData terrainElevationData = null; // old.***
+    public TerrainElevationDataManager terrainElevationDataManager = null; // new.***
 
     public List<TileWgs84> tileWgs84List = new ArrayList<TileWgs84>();
 
@@ -60,7 +61,7 @@ public class TileWgs84Manager {
     }
     public void makeTileMeshes() throws IOException, TransformException {
 
-        GeographicExtension geographicExtension = this.terrainElevationData.geographicExtension;
+        GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
         double minLon = geographicExtension.getMinLongitudeDeg();
         double maxLon = geographicExtension.getMaxLongitudeDeg();
         double minLat = geographicExtension.getMinLatitudeDeg();
@@ -114,6 +115,7 @@ public class TileWgs84Manager {
                 {
                     is1rstGeneration = true;
                 }
+
                 tile.makeBigMesh(is1rstGeneration);
                 tileWgs84List.add(tile);
             }
@@ -143,7 +145,7 @@ public class TileWgs84Manager {
     }
     public void makeSimpleTileMeshes_test() throws IOException, TransformException {
 
-        GeographicExtension geographicExtension = this.terrainElevationData.geographicExtension;
+        GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
         double minLon = geographicExtension.getMinLongitudeDeg();
         double maxLon = geographicExtension.getMaxLongitudeDeg();
         double minLat = geographicExtension.getMinLatitudeDeg();

@@ -3,12 +3,51 @@ package com.gaia3d.basic.structure;
 import org.joml.Vector3d;
 
 public class GeographicExtension {
-    Vector3d minGeographicCoordDeg = new Vector3d();
-    Vector3d maxGeographicCoordDeg = new Vector3d();
+    public Vector3d minGeographicCoordDeg = new Vector3d();
+    public Vector3d maxGeographicCoordDeg = new Vector3d();
 
     public void setDegrees(double minLonDeg, double minLatDeg, double minAlt, double maxLonDeg, double maxLatDeg, double maxAlt) {
         minGeographicCoordDeg.set(minLonDeg, minLatDeg, minAlt);
         maxGeographicCoordDeg.set(maxLonDeg, maxLatDeg, maxAlt);
+    }
+
+    public void copyFrom(GeographicExtension geographicExtension)
+    {
+        minGeographicCoordDeg.set(geographicExtension.minGeographicCoordDeg);
+        maxGeographicCoordDeg.set(geographicExtension.maxGeographicCoordDeg);
+    }
+
+    public void union(GeographicExtension geographicExtension)
+    {
+        if(geographicExtension.minGeographicCoordDeg.x < minGeographicCoordDeg.x)
+        {
+            minGeographicCoordDeg.x = geographicExtension.minGeographicCoordDeg.x;
+        }
+
+        if(geographicExtension.minGeographicCoordDeg.y < minGeographicCoordDeg.y)
+        {
+            minGeographicCoordDeg.y = geographicExtension.minGeographicCoordDeg.y;
+        }
+
+        if(geographicExtension.minGeographicCoordDeg.z < minGeographicCoordDeg.z)
+        {
+            minGeographicCoordDeg.z = geographicExtension.minGeographicCoordDeg.z;
+        }
+
+        if(geographicExtension.maxGeographicCoordDeg.x > maxGeographicCoordDeg.x)
+        {
+            maxGeographicCoordDeg.x = geographicExtension.maxGeographicCoordDeg.x;
+        }
+
+        if(geographicExtension.maxGeographicCoordDeg.y > maxGeographicCoordDeg.y)
+        {
+            maxGeographicCoordDeg.y = geographicExtension.maxGeographicCoordDeg.y;
+        }
+
+        if(geographicExtension.maxGeographicCoordDeg.z > maxGeographicCoordDeg.z)
+        {
+            maxGeographicCoordDeg.z = geographicExtension.maxGeographicCoordDeg.z;
+        }
     }
 
     public double getMaxLongitudeDeg()
@@ -82,6 +121,31 @@ public class GeographicExtension {
         {
             return false;
         }
+    }
+
+    public boolean intersects(GeographicExtension geographicExtension)
+    {
+        if(geographicExtension.minGeographicCoordDeg.x > this.maxGeographicCoordDeg.x)
+        {
+            return false;
+        }
+        else if(geographicExtension.maxGeographicCoordDeg.x < this.minGeographicCoordDeg.x)
+        {
+            return false;
+        }
+        else if(geographicExtension.minGeographicCoordDeg.y > this.maxGeographicCoordDeg.y)
+        {
+            return false;
+        }
+        else if(geographicExtension.maxGeographicCoordDeg.y < this.minGeographicCoordDeg.y)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+
     }
 
     public boolean intersectsBBox(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg)

@@ -99,7 +99,7 @@ public class TileWgs84 {
         this.mesh.loadDataInputStream(dataInputStream);
     }
 
-    public void createInitialMesh() throws TransformException {
+    public void createInitialMesh() throws TransformException, IOException {
         // The initial mesh consists in 4 vertex & 2 triangles.***
         this.mesh = new GaiaMesh();
 
@@ -108,17 +108,17 @@ public class TileWgs84 {
         GaiaVertex vertexRU = this.mesh.newVertex();
         GaiaVertex vertexLU = this.mesh.newVertex();
 
-        TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+        TerrainElevationDataManager terrainElevationDataManager = this.manager.terrainElevationDataManager;
 
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        double elevMinLonMinLat = terrainElevationData.getElevation(minLonDeg, minLatDeg);
-        double elevMaxLonMinLat = terrainElevationData.getElevation(maxLonDeg, minLatDeg);
-        double elevMaxLonMaxLat = terrainElevationData.getElevation(maxLonDeg, maxLatDeg);
-        double elevMinLonMaxLat = terrainElevationData.getElevation(minLonDeg, maxLatDeg);
+        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg);
+        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg);
+        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg);
+        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg);
 
         vertexLD.position = new Vector3d(minLonDeg, minLatDeg, elevMinLonMinLat);
         vertexRD.position = new Vector3d(maxLonDeg, minLatDeg, elevMaxLonMinLat);
@@ -213,7 +213,7 @@ public class TileWgs84 {
 
     }
 
-    public void createInitialMesh_test() throws TransformException {
+    public void createInitialMesh_test() throws TransformException, IOException {
         // The initial mesh consists in 4 vertex & 2 triangles.***
         this.mesh = new GaiaMesh();
 
@@ -222,17 +222,17 @@ public class TileWgs84 {
         GaiaVertex vertexRU = this.mesh.newVertex();
         GaiaVertex vertexLU = this.mesh.newVertex();
 
-        TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+        TerrainElevationDataManager terrainElevationDataManager = this.manager.terrainElevationDataManager;
 
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        double elevMinLonMinLat = terrainElevationData.getElevation(minLonDeg, minLatDeg);
-        double elevMaxLonMinLat = terrainElevationData.getElevation(maxLonDeg, minLatDeg);
-        double elevMaxLonMaxLat = terrainElevationData.getElevation(maxLonDeg, maxLatDeg);
-        double elevMinLonMaxLat = terrainElevationData.getElevation(minLonDeg, maxLatDeg);
+        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg);
+        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg);
+        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg);
+        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg);
 
         vertexLD.position = new Vector3d(minLonDeg, minLatDeg, elevMinLonMinLat);
         vertexRD.position = new Vector3d(maxLonDeg, minLatDeg, elevMaxLonMinLat);
@@ -560,15 +560,16 @@ public class TileWgs84 {
         return false;
     }
 
-    public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException {
+    public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException, IOException {
         if(triangle.refineChecked)
         {
             System.out.println("SUPER-FAST-Check : false");
             return false;
         }
 
-        TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
-        Vector2d pixelSizeDeg = terrainElevationData.getPixelSizeDegree();
+        //TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
+        TerrainElevationDataManager terrainElevationDataManager = this.manager.terrainElevationDataManager;
+
 
         // check if the triangle must be refined.***
         GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
@@ -582,7 +583,7 @@ public class TileWgs84 {
         // fast check.******************************************************************
         // check the barycenter of the triangle.***
         Vector3d barycenter = triangle.getBarycenter();
-        double elevation = terrainElevationData.getElevation(barycenter.x, barycenter.y);
+        double elevation = terrainElevationDataManager.getElevation(barycenter.x, barycenter.y);
         double planeElevation = barycenter.z;
 
         if(abs(elevation - planeElevation) > maxDiff)
@@ -637,7 +638,8 @@ public class TileWgs84 {
         }
 
         // check if the triangle intersects the terrainData.***
-        if(!terrainElevationData.geographicExtension.intersectsBBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY()))
+        GeographicExtension rootGeographicExtension = terrainElevationDataManager.getRootGeographicExtension();
+        if(!rootGeographicExtension.intersectsBBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY()))
         {
             // Need check only the 3 vertex of the triangle.***
             ArrayList<GaiaVertex>vertices = triangle.getVertices();
@@ -656,7 +658,12 @@ public class TileWgs84 {
             return false;
         }
 
-
+        TerrainElevationData terrainElevationData = terrainElevationDataManager.rootTerrainElevationDataQuadTree.getTerrainElevationData(barycenter.x, barycenter.y);
+        Vector2d pixelSizeDeg = new Vector2d(widthDeg / 500.0, heightDeg / 500.0);
+        if(terrainElevationData != null)
+        {
+            pixelSizeDeg = terrainElevationData.getPixelSizeDegree();
+        }
 
         double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 500.0);
         double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 500.0);
@@ -665,9 +672,6 @@ public class TileWgs84 {
 
         int columnsCount = (int)(widthDeg / pixelSizeX);
         int rowsCount = (int)(heightDeg / pixelSizeY);
-
-        //System.out.println("Col count : " + columnsCount + " , Row count : " + rowsCount);
-
 
         double bbox_minX = bboxTriangle.getMinX();
         double bbox_minY = bboxTriangle.getMinY();
@@ -688,7 +692,7 @@ public class TileWgs84 {
                     continue;
                 }
 
-                elevation = terrainElevationData.getElevation(pos_x, pos_y);
+                elevation = terrainElevationDataManager.getElevation(pos_x, pos_y);
                 planeElevation = plane.getValueZ(pos_x, pos_y);
 
                 if(abs(elevation - planeElevation) > maxDiff)
@@ -783,7 +787,7 @@ public class TileWgs84 {
         return false;
     }
 
-    private boolean refineMeshOneIteration(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException {
+    private boolean refineMeshOneIteration(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException, IOException {
         // Inside the mesh, there are triangles of 9 different tiles.***
         // Here refine only the triangles of the current tile.***
 
@@ -833,11 +837,14 @@ public class TileWgs84 {
             }
             // end test.----------------------------------------------------------------------------------------------------------------------------
             */
-
+            if(currTileIndices.L == 7 && i == 566)
+            {
+                int hola = 0;
+            }
+            System.out.println("iteration :" + i);
             if (mustRefineTriangle(triangle))
             {
-                TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
-                ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, terrainElevationData);
+                ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager);
 
                 if (splitTriangles.size() > 0)
                 {
@@ -860,7 +867,7 @@ public class TileWgs84 {
         return refined;
     }
 
-    private boolean refineMeshOneIterationInitial(GaiaMesh mesh) throws TransformException {
+    private boolean refineMeshOneIterationInitial(GaiaMesh mesh) throws TransformException, IOException {
 
         // refine big triangles of the mesh.***
         boolean refined = false;
@@ -878,7 +885,7 @@ public class TileWgs84 {
             }
 
             System.out.println("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
-            ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationData);
+            ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager);
 
             if (splitTriangles.size() > 0) {
                 splitCount++;
@@ -897,7 +904,7 @@ public class TileWgs84 {
         return refined;
     }
 
-    public void refineMeshInitial(GaiaMesh mesh) throws TransformException {
+    public void refineMeshInitial(GaiaMesh mesh) throws TransformException, IOException {
         boolean finished = false;
         int splitCount = 0;
         int maxIterations = 3;
@@ -922,7 +929,7 @@ public class TileWgs84 {
         }
     }
 
-    public void refineMesh(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException {
+    public void refineMesh(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException, IOException {
         // Inside the mesh, there are triangles of 9 different tiles.***
         // Here refine only the triangles of the current tile.***
 
@@ -932,6 +939,10 @@ public class TileWgs84 {
         int maxIterations = this.manager.triangleRefinementMaxIterations;
         while(!finished) {
             System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
+            if(currTileIndices.L == 7 && splitCount == 1)
+            {
+                int hola = 0;
+            }
             if(!this.refineMeshOneIteration(mesh, currTileIndices))
             {
                 finished = true;

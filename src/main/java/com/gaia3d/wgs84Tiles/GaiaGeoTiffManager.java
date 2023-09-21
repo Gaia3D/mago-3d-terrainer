@@ -35,6 +35,15 @@ public class GaiaGeoTiffManager
         System.out.println("GaiaGeoTiffManager.constructor()");
     }
 
+    public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) throws IOException {
+         // this function only loads the geotiff coverage.***
+        System.out.println("GaiaGeoTiffManager.loadGeoTiffCoverage2D()");
+        File file = new File(geoTiffFilePath);
+        GeoTiffReader reader = new GeoTiffReader(file);
+        GridCoverage2D coverage = reader.read(null);
+        return coverage;
+    }
+
     public void resiseGeoTiff_test(String inputFilePath, String outputFilePath, int width, int height) throws IOException, IOException {
         // https://www.javatips.net/api/org.geotools.coverage.processing.operations
         System.out.println("GeoTiffReader.resizeGeoTiff()");
@@ -84,7 +93,7 @@ public class GaiaGeoTiffManager
                 int originalX = (int)(originalPosX);
                 int originalY = (int)(originalPosY);
 
-                int sample = originalImageData.getSample(originalX, originalY, 0);
+                //int sample = originalImageData.getSample(originalX, originalY, 0);
                 int pixel[] = new int[1];
                 originalImageData.getPixel(originalX, originalY, pixel);
                 newRaster.setPixel(x, y, pixel);
@@ -98,9 +107,6 @@ public class GaiaGeoTiffManager
 
         // now save the newCoverage as geotiff.***
         FileOutputStream outputStream = new FileOutputStream(outputFile);
-
-        //GeoTiffWriter writer = (GeoTiffWriter) new GeoTiffWriter(outputStream);
-
         GeoTiffWriter writer = new GeoTiffWriter(outputStream);
         writer.write(newCoverage, null);
         writer.dispose();

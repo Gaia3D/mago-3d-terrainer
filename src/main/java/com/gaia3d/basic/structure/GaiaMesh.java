@@ -3,6 +3,7 @@ package com.gaia3d.basic.structure;
 import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TerrainElevationData;
+import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
@@ -482,7 +483,7 @@ public class GaiaMesh {
 
 
 
-    public ArrayList<GaiaTriangle> splitTriangle(GaiaTriangle triangle, TerrainElevationData terrainElevationData) throws TransformException {
+    public ArrayList<GaiaTriangle> splitTriangle(GaiaTriangle triangle, TerrainElevationDataManager terrainElevationDataManager) throws TransformException, IOException {
         // A triangle is split by the longest edge.***
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle.***
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first.***
@@ -495,7 +496,7 @@ public class GaiaMesh {
 
         ArrayList<GaiaTriangle> newTriangles = new ArrayList<GaiaTriangle>();
 
-        GaiaTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationData);
+        GaiaTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager);
         if(adjacentTriangle == null)
         {
             // the triangle is border triangle, so is splittable.***
@@ -512,7 +513,7 @@ public class GaiaMesh {
             Vector3d midPosition = longestHEdge.getMidPosition();
 
             // now determine the elevation of the midPoint.***
-            double elevation = terrainElevationData.getElevation(midPosition.x, midPosition.y);
+            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y);
 
             midPosition.z = elevation;
             GaiaVertex midVertex = newVertex();
@@ -671,7 +672,7 @@ public class GaiaMesh {
             GaiaVertex midVertex = newVertex();
 
             // now determine the elevation of the midPoint.***
-            double elevation = terrainElevationData.getElevation(midPosition.x, midPosition.y);
+            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y); // x
             midPosition.z = elevation;
 
             midVertex.position = midPosition;
@@ -849,7 +850,7 @@ public class GaiaMesh {
         return newTriangles;
     }
 
-    public GaiaTriangle getSplittableAdjacentTriangle(GaiaTriangle targetTriangle, TerrainElevationData terrainElevationData) throws TransformException {
+    public GaiaTriangle getSplittableAdjacentTriangle(GaiaTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager) throws TransformException, IOException {
         // A triangle is split by the longest edge.***
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle.***
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first.***
@@ -891,7 +892,7 @@ public class GaiaMesh {
         else
         {
             // first split the adjacentTriangle.***;
-            ArrayList<GaiaTriangle> newTriangles = splitTriangle(adjacentTriangle, terrainElevationData);
+            ArrayList<GaiaTriangle> newTriangles = splitTriangle(adjacentTriangle, terrainElevationDataManager);
 
             // now search the new adjacentTriangle for the targetTriangle.***
 
