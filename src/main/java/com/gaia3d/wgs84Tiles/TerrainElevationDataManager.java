@@ -3,6 +3,7 @@ package com.gaia3d.wgs84Tiles;
 import com.gaia3d.basic.structure.GeographicExtension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.CRS;
+import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -16,8 +17,14 @@ public class TerrainElevationDataManager
 {
     // Inside the folder, there are multiple geoTiff files.***
     String terrainElevationDataFolderPath;
+
     int quadtreesMaxDepth = 10;
-    TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree = null;
+    TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree;
+
+    public TerrainElevationDataManager()
+    {
+        rootTerrainElevationDataQuadTree = null;
+    }
 
     public void setTerrainElevationDataFolderPath(String terrainElevationDataFolderPath) {
         this.terrainElevationDataFolderPath = terrainElevationDataFolderPath;
@@ -82,7 +89,6 @@ public class TerrainElevationDataManager
             GridCoverage2D gridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
             terrainElevationData.geotiffFilePath = geoTiffFilePath;
 
-
             CoordinateReferenceSystem crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
             CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
             MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
@@ -107,5 +113,7 @@ public class TerrainElevationDataManager
 
         int hola = 0;
     }
+
+
 
 }

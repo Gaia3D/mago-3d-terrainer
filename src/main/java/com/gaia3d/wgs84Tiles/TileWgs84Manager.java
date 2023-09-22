@@ -10,7 +10,10 @@ import com.gaia3d.quantizedMesh.QuantizedMeshManager;
 import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.FileOutputStream;
@@ -26,9 +29,13 @@ public class TileWgs84Manager {
 
     public String tileTempDirectory = null;
     public String outputDirectory = null;
-
-    //public TerrainElevationData terrainElevationData = null; // old.***
     public TerrainElevationDataManager terrainElevationDataManager = null; // new.***
+
+    public String tempResizedGeoTiffFolderPath;
+
+    // For each depth level, use a different folder.***
+    public HashMap<Integer, String> map_depth_geoTiffFolderPath = new HashMap<Integer, String>();
+    public HashMap<Integer, Double> map_depth_desiredPixelSizeXinMeters = new HashMap<Integer, Double>();
 
     public List<TileWgs84> tileWgs84List = new ArrayList<TileWgs84>();
 
@@ -40,23 +47,32 @@ public class TileWgs84Manager {
 
     TerrainLayer terrainLayer = null;
 
-    boolean originIsLeftUp = false;
+    boolean originIsLeftUp = false; // false = origin is left-down (Cesium Tile System).***
 
     HashMap<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<Integer, Double>();
 
     // constructor.***
     public TileWgs84Manager()
     {
+        // Init default values.***
         // init the maxTriangleSizeForTileDepthMap.***
         for(int i=0; i<28; i++)
         {
-            double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(i);
-            double maxSize = tileSize/2.5;
+            double tileSizeMeters = TileWgs84Utils.getTileSizeInMetersByDepth(i);
+            double maxSize = tileSizeMeters/2.5;
             if(i < 11)
             {
                 maxSize *= 0.2;
             }
             maxTriangleSizeForTileDepthMap.put(i, maxSize);
+        }
+
+        // init the map_depth_desiredPixelSizeXinMeters.***
+        for(int depth = 0; depth <= 28; depth++)
+        {
+            double tileSizeMeters = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+            double desiredPixelSizeXinMeters = tileSizeMeters / 256.0;
+            this.map_depth_desiredPixelSizeXinMeters.put(depth, desiredPixelSizeXinMeters);
         }
     }
     public void makeTileMeshes() throws IOException, TransformException {
@@ -372,6 +388,65 @@ public class TileWgs84Manager {
         }
 
         return neighborTile;
+    }
+
+    public void resizeGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException {
+        // load all geoTiffFiles.***
+        ArrayList<String> geoTiffFileNames = new ArrayList<String>();
+        com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
+
+        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        GeometryFactory gf = new GeometryFactory();
+
+        // now load all geotiff and make geotiff geoExtension data.***
+        int geoTiffCount = geoTiffFileNames.size();
+        for(int i=0; i<geoTiffCount; i++)
+        {
+            String geoTiffFileName = geoTiffFileNames.get(i);
+            String geoTiffFilePath = terrainElevationDataFolderPath + "\\" + geoTiffFileName;
+
+            GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(originalGridCoverage2D);
+
+            int minDepth = this.minTileDepth;
+            int maxDepth = this.maxTileDepth;
+            for(int depth = minDepth; depth <= maxDepth; depth += 1)
+            {
+                double desiredPixelSizeXinMeters = this.map_depth_desiredPixelSizeXinMeters.get(depth);
+                double desiredPixelSizeYinMeters = desiredPixelSizeXinMeters;
+                if(desiredPixelSizeXinMeters < pixelSizeMeters.x)
+                {
+                    // In this case just assign the originalGeoTiffFolderPath.***
+                    this.map_depth_geoTiffFolderPath.put(depth, terrainElevationDataFolderPath);
+                    continue;
+                }
+
+                // in this case, resize the geotiff.***
+                GridCoverage2D resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
+                String depthStr = String.valueOf(depth);
+                String resizedGeoTiffFolderPath = this.tempResizedGeoTiffFolderPath + "\\" + depthStr + "\\" + currentFolderPath;
+                String resizedGeoTiffFilePath = resizedGeoTiffFolderPath + "\\" + geoTiffFileName;
+                com.gaia3d.reader.FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
+                gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
+                this.map_depth_geoTiffFolderPath.put(depth, resizedGeoTiffFolderPath);
+            }
+
+            int hola = 0;
+        }
+
+        // now check if exist folders inside the terrainElevationDataFolderPath.***
+        ArrayList<String> folderNames = new ArrayList<String>();
+        com.gaia3d.reader.FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
+        int folderCount = folderNames.size();
+        for(int i=0; i<folderCount; i++)
+        {
+            String folderName = folderNames.get(i);
+            currentFolderPath = currentFolderPath + "\\" + folderName;
+            String folderPath = terrainElevationDataFolderPath + "\\" + folderName;
+            resizeGeotiffSet(folderPath, currentFolderPath);
+        }
+
+        int hola = 0;
     }
 
 }

@@ -44,33 +44,24 @@ public class GaiaGeoTiffManager
         return coverage;
     }
 
-    public void resiseGeoTiff_test(String inputFilePath, String outputFilePath, int width, int height) throws IOException, IOException {
-        // https://www.javatips.net/api/org.geotools.coverage.processing.operations
-        System.out.println("GeoTiffReader.resizeGeoTiff()");
-        File inputFile = new File(inputFilePath); //path
-        File outputFile = new File(outputFilePath);
-        GeoTiffReader reader = new GeoTiffReader(inputFile);
-        GridCoverage2D coverage = reader.read(null);
-        GridGeometry gridGeometry = coverage.getGridGeometry();
-        GridGeometry2D gridGeometry2D = (GridGeometry2D)gridGeometry;
-        RenderedImage originalImage = coverage.getRenderedImage();
+    public GridCoverage2D getResizedCoverage2D(GridCoverage2D originalCoverage, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters)
+    {
+        GridCoverage2D resizedCoverage = null;
 
-        Envelope envelopeOriginal = coverage.getEnvelope();
-        int gridSpanX = gridGeometry.getGridRange().getSpan(0); // num of pixels.***
-        int gridSpanY = gridGeometry.getGridRange().getSpan(1); // num of pixels.***
+        GridGeometry originalGridGeometry = originalCoverage.getGridGeometry();
+        RenderedImage originalImage = originalCoverage.getRenderedImage();
+        Envelope envelopeOriginal = originalCoverage.getEnvelope();
+
+        int gridSpanX = originalGridGeometry.getGridRange().getSpan(0); // num of pixels.***
+        int gridSpanY = originalGridGeometry.getGridRange().getSpan(1); // num of pixels.***
         double envelopeSpanX = envelopeOriginal.getSpan(0); // in meters.***
         double envelopeSpanY = envelopeOriginal.getSpan(1); // in meters.***
-        double pixelSizeX = envelopeSpanX / gridSpanX;
-        double pixelSizeY = envelopeSpanY / gridSpanY;
-        int imageWidth = gridGeometry.getGridRange().getHigh(0);
-        int imageHeight = gridGeometry.getGridRange().getHigh(1);
 
-        double desiredPixelSizeX = 30.0;
-        double desiredPixelSizeY = 30.0;
-        double desiredPixelsCountX = envelopeSpanX / desiredPixelSizeX;
-        double desiredPixelsCountY = envelopeSpanY / desiredPixelSizeY;
-        int desiredImageWidth = (int)(envelopeSpanX / desiredPixelSizeX);
-        int desiredImageHeight = (int)(envelopeSpanY / desiredPixelSizeY);
+        double desiredPixelsCountX = envelopeSpanX / desiredPixelSizeXinMeters;
+        double desiredPixelsCountY = envelopeSpanY / desiredPixelSizeYinMeters;
+        int desiredImageWidth = Math.max((int)desiredPixelsCountX, 1);
+        int desiredImageHeight = Math.max((int)desiredPixelsCountY, 1);
+
 
         double scaleX = gridSpanX / desiredPixelsCountX;
         double scaleY = gridSpanY / desiredPixelsCountY;
@@ -79,10 +70,10 @@ public class GaiaGeoTiffManager
         originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
         originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
 
-        int dataType = originalImage.getSampleModel().getDataType();
         WritableRaster newRaster = originalImage.getData().createCompatibleWritableRaster(desiredImageWidth, desiredImageHeight);
 
         Raster originalImageData = originalImage.getData();
+
         for(int y=0; y<desiredImageHeight; y++)
         {
             for(int x=0; x<desiredImageWidth; x++)
@@ -93,7 +84,6 @@ public class GaiaGeoTiffManager
                 int originalX = (int)(originalPosX);
                 int originalY = (int)(originalPosY);
 
-                //int sample = originalImageData.getSample(originalX, originalY, 0);
                 int pixel[] = new int[1];
                 originalImageData.getPixel(originalX, originalY, pixel);
                 newRaster.setPixel(x, y, pixel);
@@ -103,15 +93,32 @@ public class GaiaGeoTiffManager
         }
 
         GridCoverageFactory factory = new GridCoverageFactory();
-        GridCoverage2D newCoverage = factory.create("newCoverage", newRaster, envelopeOriginal);
+        resizedCoverage = factory.create("resizedCoverage", newRaster, envelopeOriginal);
 
-        // now save the newCoverage as geotiff.***
-        FileOutputStream outputStream = new FileOutputStream(outputFile);
-        GeoTiffWriter writer = new GeoTiffWriter(outputStream);
-        writer.write(newCoverage, null);
-        writer.dispose();
+        return resizedCoverage;
+    }
 
+    public void resizeGeoTiff(String inputFilePath, String outputFilePath, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters) throws IOException, IOException {
+        // https://www.javatips.net/api/org.geotools.coverage.processing.operations
+        System.out.println("GeoTiffReader.resizeGeoTiff()");
+        File inputFile = new File(inputFilePath); //path
+        File outputFile = new File(outputFilePath);
+        GeoTiffReader reader = new GeoTiffReader(inputFile);
+        GridCoverage2D coverage = reader.read(null);
+
+        GridCoverage2D newCoverage = getResizedCoverage2D(coverage, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
+
+        this.saveGridCoverage2D(newCoverage, outputFilePath);
 
         int hola = 0;
+    }
+
+    public void saveGridCoverage2D(GridCoverage2D coverage, String outputFilePath) throws IOException {
+        // now save the newCoverage as geotiff.***
+        File outputFile = new File(outputFilePath);
+        FileOutputStream outputStream = new FileOutputStream(outputFile);
+        GeoTiffWriter writer = new GeoTiffWriter(outputStream);
+        writer.write(coverage, null);
+        writer.dispose();
     }
 }
