@@ -181,8 +181,11 @@ public class TerrainElevationDataQuadTree
 
     }
 
+
     public TerrainElevationData getTerrainElevationData(double lonDeg, double latDeg)
     {
+        // function used in "TileWgs84 class : public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException, IOException {"
+        // to know the pixelSizeDegree.***
         TerrainElevationData resultTerrainElevationData = null;
 
         int terrainElevationDataCount = terrainElevationDataList.size();

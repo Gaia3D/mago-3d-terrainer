@@ -83,17 +83,14 @@ public class TerrainElevationDataManager
                 continue;
             }
 
+            if(elevation < 0.0)
+            {
+                elevation = 0.0;
+            }
+
             resultElevation = elevation;
             break;
         }
-
-        //TerrainElevationData terrainElevationData = rootTerrainElevationDataQuadTree.getTerrainElevationData(lonDeg, latDeg);
-        //if(terrainElevationData == null)
-        //{
-        //    return resultElevation;
-        //}
-
-        //resultElevation = terrainElevationData.getElevation(lonDeg, latDeg);
 
         return resultElevation;
     }

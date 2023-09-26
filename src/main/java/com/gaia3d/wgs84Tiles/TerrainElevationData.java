@@ -137,6 +137,14 @@ public class TerrainElevationData {
         try{
             coverage.evaluate((DirectPosition) posWorld, alt);
             intersects[0] = true;
+
+            // check if is NoData.***
+            if(noDataContainer != null) {
+                double nodata = noDataContainer.getAsSingleValue();
+                if (alt[0] == nodata) {
+                    return 0.0;
+                }
+            }
         }
         catch (Exception e)
         {
