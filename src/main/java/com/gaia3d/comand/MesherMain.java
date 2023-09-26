@@ -28,25 +28,38 @@ public class MesherMain {
         String terrainElevationDataFolderPath3 = "D:\\QuantizedMesh_JavaProjects\\ws_geoTiff";
 
         tileWgs84Manager.minTileDepth = 0;
-        tileWgs84Manager.maxTileDepth = 15;
+        tileWgs84Manager.maxTileDepth = 13;
 
         // Set geoTiff resizing folder paths.***
         tileWgs84Manager.tempResizedGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder";
-        for(int depth=0; depth<=tileWgs84Manager.maxTileDepth; depth++)
-        {
-            String depthStr = String.valueOf(depth);
-            String terrainElevDataFolderPath = tileWgs84Manager.tempResizedGeoTiffFolderPath + "\\" + depthStr;
-            tileWgs84Manager.map_depth_geoTiffFolderPath.put(depth, terrainElevDataFolderPath);
-        }
+        tileWgs84Manager.originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m";
+        //tileWgs84Manager.resizeGeotiffSet(terrainElevationDataFolderPath, null);
 
-        String currentFolderPath = "";
-        tileWgs84Manager.resizeGeotiffSet(terrainElevationDataFolderPath, currentFolderPath);
+        // Set geoTiff folder paths directly.***
+
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(0, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\0");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(1, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\1");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(2, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\2");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(3, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\3");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(4, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\4");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(5, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\5");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(6, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\6");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(7, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\7");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(8, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\8");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(9, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\9");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(10, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\10");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(11, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\11");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(12, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\12");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(13, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\13");
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(14, tileWgs84Manager.originalGeoTiffFolderPath);
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(15, tileWgs84Manager.originalGeoTiffFolderPath);
+
 
 
         tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
         // set the terrainElevation data folder path.***
-        tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(terrainElevationDataFolderPath3);
-        //tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
+        tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath("D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\0");
+        tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
 
 
 
@@ -60,7 +73,7 @@ public class MesherMain {
         // End do resizing test.**************************************************************************************************************
 
         // start quantized mesh tiling.***
-        //tileWgs84Manager.makeTileMeshes(); // original.***
+        tileWgs84Manager.makeTileMeshes(); // original.***
 
 
         int hola2 = 0;

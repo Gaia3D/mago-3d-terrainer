@@ -35,12 +35,21 @@ public class GaiaGeoTiffManager
         System.out.println("GaiaGeoTiffManager.constructor()");
     }
 
-    public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) throws IOException {
+    public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
          // this function only loads the geotiff coverage.***
-        System.out.println("GaiaGeoTiffManager.loadGeoTiffCoverage2D()");
-        File file = new File(geoTiffFilePath);
-        GeoTiffReader reader = new GeoTiffReader(file);
-        GridCoverage2D coverage = reader.read(null);
+        System.out.println("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
+        GridCoverage2D coverage = null;
+        try
+        {
+            File file = new File(geoTiffFilePath);
+            GeoTiffReader reader = new GeoTiffReader(file);
+            coverage = reader.read(null);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
         return coverage;
     }
 

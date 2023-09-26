@@ -60,6 +60,7 @@ public class TerrainElevationDataQuadTree
         // 1rst create child nodes if no exist.***
         if(children == null)
         {
+            children = new TerrainElevationDataQuadTree[4];
             children[0] = new TerrainElevationDataQuadTree(this);
             children[1] = new TerrainElevationDataQuadTree(this);
             children[2] = new TerrainElevationDataQuadTree(this);
@@ -122,10 +123,62 @@ public class TerrainElevationDataQuadTree
         }
     }
 
+    public void deleteCoverage()
+    {
+        if(terrainElevationDataList != null)
+        {
+            int terrainElevationDataCount = terrainElevationDataList.size();
+            for(int i=0; i<terrainElevationDataCount; i++)
+            {
+                TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
+                terrainElevationData.deleteCoverage();
+            }
+        }
+
+        if(children != null)
+        {
+            for(int i=0; i<4; i++)
+            {
+                children[i].deleteCoverage();
+            }
+        }
+    }
+
     public void makeQuadTree(int maxDepth)
     {
         calculateGeographicExtension();
         makeTree(maxDepth);
+    }
+
+    public void getTerrainElevationDatasArray(double lonDeg, double latDeg, ArrayList<TerrainElevationData> resultTerrainElevDataArray)
+    {
+        int terrainElevationDataCount = terrainElevationDataList.size();
+        for(int i=0; i<terrainElevationDataCount; i++)
+        {
+            TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
+            GeographicExtension geographicExtension = terrainElevationData.geographicExtension;
+
+            if(geographicExtension.intersects(lonDeg, latDeg))
+            {
+                resultTerrainElevDataArray.add(terrainElevationData);
+                //break;
+            }
+        }
+
+
+            if(children != null)
+            {
+                // check children.***
+                for(int j=0; j<4; j++)
+                {
+                    if(children[j].geographicExtension.intersects(lonDeg, latDeg))
+                    {
+                        children[j].getTerrainElevationDatasArray(lonDeg, latDeg, resultTerrainElevDataArray);
+                        break;
+                    }
+                }
+            }
+
     }
 
     public TerrainElevationData getTerrainElevationData(double lonDeg, double latDeg)

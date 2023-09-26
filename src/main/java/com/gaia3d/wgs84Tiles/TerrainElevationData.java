@@ -2,6 +2,7 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.reader.GaiaGeoTiffReader;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;
@@ -17,6 +18,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.opengis.coverage.SampleDimension;
 import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.geometry.Envelope;
@@ -51,6 +53,13 @@ public class TerrainElevationData {
 
     public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
         this.terrainElevDataManager = terrainElevationDataManager;
+    }
+
+    public void deleteCoverage()
+    {
+        this.pixelSizeMeters = null;
+        this.coverage = null;
+        this.raster = null;
     }
 
     public void loadGeoTiffFile(String geotiffFilePath) throws FactoryException, TransformException {
@@ -100,12 +109,13 @@ public class TerrainElevationData {
         return value;
     }
 
-    public double getElevation(double lonDeg, double latDeg) throws TransformException, IOException {
+    public double getElevation(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
         double resultAltitude = 0.0;
 
         // 1rst check if lon, lat intersects with geoExtension.***
         if(!this.geographicExtension.intersects(lonDeg, latDeg))
         {
+            intersects[0] = false;
             return resultAltitude;
         }
 
@@ -119,27 +129,52 @@ public class TerrainElevationData {
         CoordinateReferenceSystem wgs84 = DefaultGeographicCRS.WGS84;
         GridGeometry2D gg = coverage.getGridGeometry();
 
-        double nodata = CoverageUtilities.getNoDataProperty(coverage).getAsSingleValue();
+        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
         DirectPosition2D posWorld = new DirectPosition2D(wgs84, lonDeg, latDeg); // longitude supplied first
-        GridCoordinates2D posGrid = gg.worldToGrid(posWorld);
+        //GridCoordinates2D posGrid = gg.worldToGrid(posWorld);
+
+        double alt[] = new double[1];
+        try{
+            coverage.evaluate((DirectPosition) posWorld, alt);
+            intersects[0] = true;
+        }
+        catch (Exception e)
+        {
+            //e.printStackTrace();
+            intersects[0] = false;
+            return resultAltitude;
+        }
+
+        resultAltitude = alt[0];
+        return resultAltitude;
+        /*
+        //double altDouble = altitude.
 
         int coverageW = coverage.getRenderedImage().getWidth();
         int coverageH = coverage.getRenderedImage().getHeight();
         int pixelX = (int)((lonDeg - this.geographicExtension.getMinLongitudeDeg())/(this.geographicExtension.getLongitudeRangeDegree())*coverageW);
         int pixelY = (int)((latDeg - this.geographicExtension.getMinLatitudeDeg())/(this.geographicExtension.getLatitudeRangeDegree())*coverageH);
 
+        // invert y.***
+        pixelY = coverageH - pixelY - 1;
+
         // sample tiff data with at pixel coordinate
         double[] rasterData = new double[1];
-        //this.raster.getPixel(posGrid.x, posGrid.y, rasterData);
         if(this.raster == null)
         {
             this.raster = this.coverage.getRenderedImage().getData();
         }
         this.raster.getPixel(pixelX, pixelY, rasterData);
-        if(rasterData[0] == nodata)
+
+        if(noDataContainer != null)
         {
-            return resultAltitude;
+            double nodata = noDataContainer.getAsSingleValue();
+            if(rasterData[0] == nodata)
+            {
+                return resultAltitude;
+            }
         }
+
         resultAltitude = rasterData[0];
 
         // update min, max altitude.***
@@ -147,6 +182,8 @@ public class TerrainElevationData {
         maxAltitude = Math.max(maxAltitude, resultAltitude);
 
         return resultAltitude;
+
+         */
     }
 
 }

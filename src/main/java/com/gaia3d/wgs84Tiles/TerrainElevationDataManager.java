@@ -46,6 +46,16 @@ public class TerrainElevationDataManager
         return rootTerrainElevationDataQuadTree.geographicExtension;
     }
 
+    public void deleteCoverage()
+    {
+        if(rootTerrainElevationDataQuadTree == null)
+        {
+            return;
+        }
+
+        rootTerrainElevationDataQuadTree.deleteCoverage();
+    }
+
     public double getElevation(double lonDeg, double latDeg) throws TransformException, IOException {
         double resultElevation = 0.0;
 
@@ -54,13 +64,36 @@ public class TerrainElevationDataManager
             return resultElevation;
         }
 
-        TerrainElevationData terrainElevationData = rootTerrainElevationDataQuadTree.getTerrainElevationData(lonDeg, latDeg);
-        if(terrainElevationData == null)
+        ArrayList<TerrainElevationData> terrainElevDatasArray = new ArrayList<TerrainElevationData>();
+        rootTerrainElevationDataQuadTree.getTerrainElevationDatasArray(lonDeg, latDeg, terrainElevDatasArray);
+
+        boolean intersects[] = {false};
+        int terrainElevDatasCount = terrainElevDatasArray.size();
+        if(terrainElevDatasCount > 1)
         {
-            return resultElevation;
+            int hola = 0;
+        }
+        for(int i=0; i<terrainElevDatasCount; i++)
+        {
+            TerrainElevationData terrainElevationData = terrainElevDatasArray.get(i);
+
+            double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
+            if(intersects[0] == false)
+            {
+                continue;
+            }
+
+            resultElevation = elevation;
+            break;
         }
 
-        resultElevation = terrainElevationData.getElevation(lonDeg, latDeg);
+        //TerrainElevationData terrainElevationData = rootTerrainElevationDataQuadTree.getTerrainElevationData(lonDeg, latDeg);
+        //if(terrainElevationData == null)
+        //{
+        //    return resultElevation;
+        //}
+
+        //resultElevation = terrainElevationData.getElevation(lonDeg, latDeg);
 
         return resultElevation;
     }

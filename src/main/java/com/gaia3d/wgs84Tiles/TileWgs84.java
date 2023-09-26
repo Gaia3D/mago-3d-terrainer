@@ -458,11 +458,14 @@ public class TileWgs84 {
         saveSeparatedTiles(separatedMeshes);
 
         // provisionally save the bigMesh.***
+        /*
         String tileTempDirectory = this.manager.tileTempDirectory;
         String outputDirectory = this.manager.outputDirectory;
         String bigMeshFilePath = TileWgs84Utils.getTileFileName(curr_TileIndices.X, curr_TileIndices.Y, curr_TileIndices.L) + "bigMesh.til";
         String bigMeshFullPath = tileTempDirectory + "\\" + bigMeshFilePath;
         this.saveFileBigMesh(bigMeshFullPath, bigMesh);
+        */
+
         int hola = 0;
     }
 
@@ -583,7 +586,7 @@ public class TileWgs84 {
         // fast check.******************************************************************
         // check the barycenter of the triangle.***
         Vector3d barycenter = triangle.getBarycenter();
-        double elevation = terrainElevationDataManager.getElevation(barycenter.x, barycenter.y);
+        double elevation = terrainElevationDataManager.getElevation(barycenter.x, barycenter.y); // X
         double planeElevation = barycenter.z;
 
         if(abs(elevation - planeElevation) > maxDiff)
@@ -837,12 +840,12 @@ public class TileWgs84 {
             }
             // end test.----------------------------------------------------------------------------------------------------------------------------
             */
-            if(currTileIndices.L == 7 && i == 566)
+            if(i == 783)
             {
                 int hola = 0;
             }
             System.out.println("iteration :" + i);
-            if (mustRefineTriangle(triangle))
+            if (mustRefineTriangle(triangle)) // X
             {
                 ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager);
 
@@ -939,10 +942,12 @@ public class TileWgs84 {
         int maxIterations = this.manager.triangleRefinementMaxIterations;
         while(!finished) {
             System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
-            if(currTileIndices.L == 7 && splitCount == 1)
+
+            if(currTileIndices.L == 10&& splitCount == 2)
             {
                 int hola = 0;
             }
+
             if(!this.refineMeshOneIteration(mesh, currTileIndices))
             {
                 finished = true;
