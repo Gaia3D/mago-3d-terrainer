@@ -297,6 +297,7 @@ public class TileWgs84Manager {
                         FileUtils.deleteFileIfExists(tileFullPath);
 
                         quantizedMesh.saveDataOutputStream(dataOutputStream);
+                        fileOutputStream.close();
                         int hola = 0;
 
                     }

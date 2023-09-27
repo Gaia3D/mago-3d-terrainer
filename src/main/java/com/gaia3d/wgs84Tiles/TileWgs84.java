@@ -73,6 +73,8 @@ public class TileWgs84 {
 
         // save the tile.***
         mesh.saveDataOutputStream(dataOutputStream);
+
+        fileOutputStream.close();
     }
 
     public void saveFileBigMesh(String filePath, GaiaMesh bigMesh) throws IOException {
@@ -89,6 +91,8 @@ public class TileWgs84 {
 
         // save the tile.***
         bigMesh.saveDataOutputStream(dataOutputStream);
+
+        fileOutputStream.close();
     }
 
     public void loadFile(String filePath) throws IOException {
@@ -97,6 +101,8 @@ public class TileWgs84 {
 
         this.mesh = new GaiaMesh();
         this.mesh.loadDataInputStream(dataInputStream);
+
+        fileInputStream.close();
     }
 
     public void createInitialMesh() throws TransformException, IOException {
@@ -697,6 +703,11 @@ public class TileWgs84 {
 
                 elevation = terrainElevationDataManager.getElevation(pos_x, pos_y);
                 planeElevation = plane.getValueZ(pos_x, pos_y);
+
+                if(elevation > planeElevation)
+                {
+                    maxDiff *= 0.5;
+                }
 
                 if(abs(elevation - planeElevation) > maxDiff)
                 {
