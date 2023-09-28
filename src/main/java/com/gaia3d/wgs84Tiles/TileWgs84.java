@@ -456,6 +456,10 @@ public class TileWgs84 {
         GaiaMesh bigMesh = tileMerger3x3.getMergedMesh();
         bigMesh.setObjectsIdInList();
 
+        // 1rst update elevations with the current tile depth geoTiff.***
+        recalculateElevation(bigMesh, curr_TileIndices);
+
+        // Now refine the bigMesh.***
         refineMesh(bigMesh, curr_TileIndices);
 
         // now save the 9 tiles.***
@@ -940,6 +944,37 @@ public class TileWgs84 {
             {
                 finished = true;
             }
+        }
+    }
+
+    public void recalculateElevation(GaiaMesh mesh, TileIndices currTileIndices) throws TransformException, IOException {
+        // Inside the mesh, there are triangles of 9 different tiles.***
+        ArrayList<GaiaTriangle>triangles = new ArrayList<>();
+        mesh.getTrianglesByTileIndices(currTileIndices, triangles);
+
+        HashMap<GaiaVertex, GaiaVertex>mapVertices = new HashMap<GaiaVertex, GaiaVertex>();
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            ArrayList<GaiaVertex> vertices = triangle.getVertices();
+            int verticesCount = vertices.size();
+            for(int j=0; j<verticesCount; j++) {
+                GaiaVertex vertex = vertices.get(j);
+                mapVertices.put(vertex, vertex);
+            }
+        }
+
+        // now make vertices from the hashMap.***
+        ArrayList<GaiaVertex> verticesOfCurrentTile = new ArrayList<>();
+        verticesOfCurrentTile.addAll(mapVertices.values());
+        TerrainElevationDataManager terrainElevationDataManager = this.manager.terrainElevationDataManager;
+
+        int verticesCount = verticesOfCurrentTile.size();
+        for(int i = 0; i < verticesCount; i++)
+        {
+            GaiaVertex vertex = verticesOfCurrentTile.get(i);
+            double elevation = terrainElevationDataManager.getElevation(vertex.position.x, vertex.position.y);
+            vertex.position.z = elevation;
         }
     }
 

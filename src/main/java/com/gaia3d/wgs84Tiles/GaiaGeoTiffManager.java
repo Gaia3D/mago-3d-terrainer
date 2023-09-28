@@ -44,6 +44,7 @@ public class GaiaGeoTiffManager
             File file = new File(geoTiffFilePath);
             GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
+            reader.dispose();
         }
         catch (Exception e)
         {
@@ -92,6 +93,12 @@ public class GaiaGeoTiffManager
 
                 int originalX = (int)(originalPosX);
                 int originalY = (int)(originalPosY);
+
+                if(originalX >= gridSpanX)
+                    originalX = gridSpanX - 1;
+
+                if(originalY >= gridSpanY)
+                    originalY = gridSpanY - 1;
 
                 int pixel[] = new int[1];
                 originalImageData.getPixel(originalX, originalY, pixel);

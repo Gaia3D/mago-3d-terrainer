@@ -134,6 +134,7 @@ public class TerrainElevationData {
         //GridCoordinates2D posGrid = gg.worldToGrid(posWorld);
 
         double alt[] = new double[1];
+        alt[0] = 0.0;
         try{
             coverage.evaluate((DirectPosition) posWorld, alt);
             intersects[0] = true;
@@ -152,8 +153,11 @@ public class TerrainElevationData {
             intersects[0] = false;
             return resultAltitude;
         }
-
+        // update min, max altitude.***
         resultAltitude = alt[0];
+        minAltitude = Math.min(minAltitude, resultAltitude);
+        maxAltitude = Math.max(maxAltitude, resultAltitude);
+
         return resultAltitude;
         /*
         //double altDouble = altitude.

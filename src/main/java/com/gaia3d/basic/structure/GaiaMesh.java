@@ -4,6 +4,7 @@ import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
+import com.gaia3d.wgs84Tiles.TileIndices;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
@@ -316,6 +317,26 @@ public class GaiaMesh {
         setVertexIdInList();
         setTriangleIdInList();
         setHalfEdgeIdInList();
+    }
+
+    public void getTrianglesByTileIndices(TileIndices tileIndices, ArrayList<GaiaTriangle> resultTriangles)
+    {
+        // This function returns the triangles that intersect the tile.***
+        // 1rst, get the geographicExtension of the tile.***
+
+        // 2nd, get the triangles that intersect the geographicExtension.***
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            if(triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+
+            if(triangle.ownerTile_tileIndices.isCoincident(tileIndices))
+            {
+                resultTriangles.add(triangle);
+            }
+        }
     }
 
     public void getVerticesByTriangles(ArrayList<GaiaVertex>resultVertices)
