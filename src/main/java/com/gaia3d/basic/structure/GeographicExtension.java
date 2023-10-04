@@ -17,6 +17,12 @@ public class GeographicExtension {
         maxGeographicCoordDeg.set(geographicExtension.maxGeographicCoordDeg);
     }
 
+    public void deleteObjects()
+    {
+        minGeographicCoordDeg = null;
+        maxGeographicCoordDeg = null;
+    }
+
     public void union(GeographicExtension geographicExtension)
     {
         if(geographicExtension.minGeographicCoordDeg.x < minGeographicCoordDeg.x)

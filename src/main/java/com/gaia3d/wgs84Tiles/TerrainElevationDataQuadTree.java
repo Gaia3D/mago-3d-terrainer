@@ -22,8 +22,33 @@ public class TerrainElevationDataQuadTree
         {
             this.depth = parent.depth + 1;
         }
+    }
 
+    public void deleteObjects()
+    {
+        if(terrainElevationDataList != null)
+        {
+            int terrainElevationDataCount = terrainElevationDataList.size();
+            for(int i=0; i<terrainElevationDataCount; i++)
+            {
+                TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
+                terrainElevationData.deleteObjects();
+            }
+        }
 
+        if(children != null)
+        {
+            for(int i=0; i<4; i++)
+            {
+                children[i].deleteObjects();
+            }
+        }
+
+        terrainElevationDataList = null;
+        children = null;
+        parent = null;
+        geographicExtension.deleteObjects();
+        geographicExtension = null;
     }
     public void addTerrainElevationData(TerrainElevationData terrainElevationData)
     {
