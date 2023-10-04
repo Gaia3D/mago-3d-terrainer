@@ -128,7 +128,7 @@ public class TileWgs84Manager {
             // Set terrainLayer.available of tileSet json.***
             terrainLayer.available.add(tilesRange);
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
-
+            this.terrainElevationDataManager.deleteObjects();
             this.terrainElevationDataManager = new TerrainElevationDataManager(); // new.***
             this.terrainElevationDataManager.terrainElevationDataFolderPath = this.map_depth_geoTiffFolderPath.get(depth);
             this.terrainElevationDataManager.makeTerrainQuadTree();
@@ -164,6 +164,7 @@ public class TileWgs84Manager {
                     tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
 
                     tile.loadTileAndSave4Children(tileIndices);
+                    tile.deleteObjects();
                 }
             }
         }

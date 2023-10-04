@@ -26,6 +26,33 @@ public class GaiaMesh {
         halfEdges = new ArrayList<GaiaHalfEdge>();
     }
 
+    public void deleteObjects()
+    {
+        int verticesCount = vertices.size();
+        for(int i=0; i<verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+            vertex.deleteObjects();
+        }
+        vertices.clear();
+        vertices = null;
+
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            triangle.deleteObjects();
+        }
+        triangles.clear();
+        triangles = null;
+
+        int halfEdgesCount = halfEdges.size();
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = halfEdges.get(i);
+            halfEdge.deleteObjects();
+        }
+        halfEdges.clear();
+        halfEdges = null;
+    }
+
     public GaiaVertex newVertex() {
         GaiaVertex vertex = new GaiaVertex();
         vertices.add(vertex);

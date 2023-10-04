@@ -27,6 +27,14 @@ public class GaiaTriangle {
 
     public boolean refineChecked = false;
 
+    public void deleteObjects()
+    {
+        halfEdge = null;
+        ownerTile_tileIndices = null;
+        boundingBox = null;
+        plane = null;
+    }
+
     public void setHalfEdge(GaiaHalfEdge halfEdge) {
         this.halfEdge = halfEdge;
         halfEdge.setTriangleToHEdgesLoop(this);

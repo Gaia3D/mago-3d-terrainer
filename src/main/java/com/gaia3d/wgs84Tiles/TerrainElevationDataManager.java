@@ -56,6 +56,17 @@ public class TerrainElevationDataManager
         rootTerrainElevationDataQuadTree.deleteCoverage();
     }
 
+    public void deleteObjects()
+    {
+        if(rootTerrainElevationDataQuadTree == null)
+        {
+            return;
+        }
+
+        rootTerrainElevationDataQuadTree.deleteObjects();
+        rootTerrainElevationDataQuadTree = null;
+    }
+
     public double getElevation(double lonDeg, double latDeg) throws TransformException, IOException {
         double resultElevation = 0.0;
 

@@ -62,6 +62,15 @@ public class TerrainElevationData {
         this.raster = null;
     }
 
+    public void deleteObjects()
+    {
+        this.deleteCoverage();
+        this.terrainElevDataManager = null;
+        this.geotiffFilePath = null;
+        this.geographicExtension.deleteObjects();
+        this.geographicExtension = null;
+    }
+
     public void loadGeoTiffFile(String geotiffFilePath) throws FactoryException, TransformException {
         // load the geotiff file.***
         this.geotiffFilePath = geotiffFilePath;

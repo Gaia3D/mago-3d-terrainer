@@ -26,6 +26,14 @@ public class GaiaHalfEdge {
     public HalfEdgeType type = HalfEdgeType.UNKNOWN;
     public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
 
+    public void deleteObjects()
+    {
+        startVertex = null;
+        next = null;
+        twin = null;
+        triangle = null;
+    }
+
     public void setTwin(GaiaHalfEdge twin) {
         this.twin = twin;
         if(twin != null)
