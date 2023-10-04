@@ -17,6 +17,12 @@ public class GaiaVertex {
 
     public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
 
+    public void deleteObjects()
+    {
+        outingHEdge = null;
+        position = null;
+    }
+
     public boolean isCoincidentVertex(GaiaVertex vertex, double error)
     {
         if(vertex == null)

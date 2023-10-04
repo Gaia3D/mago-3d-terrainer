@@ -61,6 +61,19 @@ public class TileWgs84 {
         this.manager = manager;
     }
 
+    public void deleteObjects()
+    {
+        this.parentTile = null;
+        this.tileIndices = null;
+        this.geographicExtension.deleteObjects();
+        this.geographicExtension = null;
+        this.mesh.deleteObjects();
+        this.mesh = null;
+        this.manager = null;
+        this.neighborTiles = null;
+        this.childTiles = null;
+    }
+
     public void saveFile(GaiaMesh mesh, String filePath) throws IOException {
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
         FileUtils.createAllFoldersIfNoExist(foldersPath);

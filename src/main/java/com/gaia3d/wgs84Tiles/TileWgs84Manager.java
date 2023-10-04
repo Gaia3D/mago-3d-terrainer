@@ -164,6 +164,7 @@ public class TileWgs84Manager {
                     tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
 
                     tile.loadTileAndSave4Children(tileIndices);
+                    tile.deleteObjects();
                 }
             }
         }
