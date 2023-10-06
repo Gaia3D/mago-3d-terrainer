@@ -42,12 +42,14 @@ public class GaiaTriangle {
 
     public ArrayList<GaiaVertex> getVertices()
     {
-        ArrayList<GaiaHalfEdge> halfEdges = this.halfEdge.getHalfEdgesLoop();
+        ArrayList<GaiaHalfEdge> halfEdges = new ArrayList<>();
+        this.halfEdge.getHalfEdgesLoop(halfEdges);
         ArrayList<GaiaVertex> vertices = new ArrayList<GaiaVertex>();
         for(GaiaHalfEdge halfEdge : halfEdges)
         {
             vertices.add(halfEdge.getStartVertex());
         }
+        halfEdges.clear();
         return vertices;
     }
 
@@ -81,19 +83,30 @@ public class GaiaTriangle {
         return this.plane;
     }
 
-    public boolean intersectsPointXY(double pos_x, double pos_y)
+    public boolean intersectsPointXY(double pos_x, double pos_y, ArrayList<GaiaHalfEdge> memSave_hedges, GaiaLine2D memSave_line2D)
     {
-        ArrayList<GaiaHalfEdge>hedges = this.halfEdge.getHalfEdgesLoop();
+        this.halfEdge.getHalfEdgesLoop(memSave_hedges);
         double error = 1e-8;
-        for(GaiaHalfEdge hedge : hedges)
+        int hedgesCount = memSave_hedges.size();
+
+        for(int i=0; i<hedgesCount; i++)
         {
-            GaiaLine2D line2D = hedge.getLine2DXY();
-            RelativePosition2D_LinePoint relativePosition2D_linePoint = line2D.relativePositionOfPoint(new Vector2d(pos_x, pos_y), error);
-            if(relativePosition2D_linePoint == RelativePosition2D_LinePoint.RIGHT_SIDE_OF_THE_LINE)
+            GaiaHalfEdge hedge = memSave_hedges.get(i);
+            hedge.getLine2DXY(memSave_line2D);
+            byte relativePosition2D_linePoint = memSave_line2D.relativePositionOfPoint(pos_x, pos_y, error);
+
+            // relative positions :
+            // 0 : point is on the line.
+            // 1 : point is on the left side of the line.
+            // 2 : point is on the right side of the line.
+            if(relativePosition2D_linePoint == 2)
             {
+                memSave_hedges.clear();
                 return false;
             }
         }
+
+        memSave_hedges.clear();
         return true;
     }
 
@@ -129,18 +142,21 @@ public class GaiaTriangle {
     public ArrayList<Vector3d> getPerimeterPositions(int numInterpolation)
     {
         ArrayList<Vector3d> perimeterPositions = new ArrayList<Vector3d>();
-        ArrayList<GaiaHalfEdge> halfEdges = this.halfEdge.getHalfEdgesLoop();
+        ArrayList<GaiaHalfEdge> halfEdges = new ArrayList<>();
+        this.halfEdge.getHalfEdgesLoop(halfEdges);
         for(GaiaHalfEdge halfEdge : halfEdges)
         {
             halfEdge.getInterpolatedPositions(perimeterPositions, numInterpolation);
         }
+        halfEdges.clear();
         return perimeterPositions;
     }
 
     public GaiaHalfEdge getLongestHalfEdge()
     {
         // Note : the length of the halfEdges meaning only the length of the XY plane.***
-        ArrayList<GaiaHalfEdge> halfEdges = this.halfEdge.getHalfEdgesLoop();
+        ArrayList<GaiaHalfEdge> halfEdges = new ArrayList<>();
+        this.halfEdge.getHalfEdgesLoop(halfEdges);
         GaiaHalfEdge longestHalfEdge = null;
         double maxLength = 0.0;
         for(GaiaHalfEdge halfEdge : halfEdges)
@@ -152,6 +168,7 @@ public class GaiaTriangle {
                 longestHalfEdge = halfEdge;
             }
         }
+        halfEdges.clear();
 
         return longestHalfEdge;
     }

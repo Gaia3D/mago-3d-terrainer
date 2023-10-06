@@ -49,11 +49,13 @@ public class GaiaHalfEdge {
 
     public void setTriangleToHEdgesLoop(GaiaTriangle triangle)
     {
-        ArrayList<GaiaHalfEdge> halfEdgesLoop = this.getHalfEdgesLoop();
+        ArrayList<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
+        this.getHalfEdgesLoop(halfEdgesLoop);
         for(GaiaHalfEdge halfEdge : halfEdgesLoop)
         {
             halfEdge.setTriangle(triangle);
         }
+        halfEdgesLoop.clear();
     }
 
     public void setStartVertex(GaiaVertex startVertex) {
@@ -116,18 +118,15 @@ public class GaiaHalfEdge {
         return prevHalfEdge;
     }
 
-    public GaiaLine2D getLine2DXY()
+    public void getLine2DXY(GaiaLine2D line2D)
     {
-        GaiaLine2D line2D = new GaiaLine2D();
         Vector3d startPos = this.getStartVertex().position;
         Vector3d endPos = this.getEndVertex().position;
-        line2D.setBy2Points(new Vector2d(startPos.x, startPos.y), new Vector2d(endPos.x, endPos.y));
-        return line2D;
+        line2D.setBy2Points(startPos.x, startPos.y, endPos.x, endPos.y);
     }
 
-    public ArrayList<GaiaHalfEdge> getHalfEdgesLoop()
+    public void getHalfEdgesLoop(ArrayList<GaiaHalfEdge> halfEdgesLoop)
     {
-        ArrayList<GaiaHalfEdge> halfEdgesLoop = new ArrayList<GaiaHalfEdge>();
         GaiaHalfEdge currHalfEdge = this;
         GaiaHalfEdge firstHalfEdge = this;
         halfEdgesLoop.add(currHalfEdge);
@@ -159,8 +158,6 @@ public class GaiaHalfEdge {
                 int hola = 0;
             }
         }
-
-        return halfEdgesLoop;
     }
 
     public double getSquaredLength()

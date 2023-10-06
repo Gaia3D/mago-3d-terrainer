@@ -65,10 +65,16 @@ public class TileWgs84 {
     {
         this.parentTile = null;
         this.tileIndices = null;
-        this.geographicExtension.deleteObjects();
-        this.geographicExtension = null;
-        this.mesh.deleteObjects();
-        this.mesh = null;
+        if(this.geographicExtension != null)
+        {
+            this.geographicExtension.deleteObjects();
+            this.geographicExtension = null;
+        }
+        if(this.mesh != null)
+        {
+            this.mesh.deleteObjects();
+            this.mesh = null;
+        }
         this.manager = null;
         this.neighborTiles = null;
         this.childTiles = null;
@@ -134,10 +140,11 @@ public class TileWgs84 {
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg);
-        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg);
-        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg);
-        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg);
+
+        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg, this.manager.memSave_terrainElevDatasArray);
+        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg, this.manager.memSave_terrainElevDatasArray);
+        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg, this.manager.memSave_terrainElevDatasArray);
+        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg, this.manager.memSave_terrainElevDatasArray);
 
         vertexLD.position = new Vector3d(minLonDeg, minLatDeg, elevMinLonMinLat);
         vertexRD.position = new Vector3d(maxLonDeg, minLatDeg, elevMaxLonMinLat);
@@ -248,10 +255,10 @@ public class TileWgs84 {
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg);
-        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg);
-        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg);
-        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg);
+        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg, this.manager.memSave_terrainElevDatasArray);
+        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg, this.manager.memSave_terrainElevDatasArray);
+        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg, this.manager.memSave_terrainElevDatasArray);
+        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg, this.manager.memSave_terrainElevDatasArray);
 
         vertexLD.position = new Vector3d(minLonDeg, minLatDeg, elevMinLonMinLat);
         vertexRD.position = new Vector3d(maxLonDeg, minLatDeg, elevMaxLonMinLat);
@@ -593,7 +600,6 @@ public class TileWgs84 {
             return false;
         }
 
-        //TerrainElevationData terrainElevationData = this.manager.terrainElevationData;
         TerrainElevationDataManager terrainElevationDataManager = this.manager.terrainElevationDataManager;
 
 
@@ -603,13 +609,13 @@ public class TileWgs84 {
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
 
-        double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
+        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
         System.out.println("maxDiff : " + maxDiff + " , tileDepth : " + triangle.ownerTile_tileIndices.L);
 
         // fast check.******************************************************************
         // check the barycenter of the triangle.***
         Vector3d barycenter = triangle.getBarycenter();
-        double elevation = terrainElevationDataManager.getElevation(barycenter.x, barycenter.y); // X
+        double elevation = terrainElevationDataManager.getElevation(barycenter.x, barycenter.y, this.manager.memSave_terrainElevDatasArray);
         double planeElevation = barycenter.z;
 
         if(abs(elevation - planeElevation) > maxDiff)
@@ -685,14 +691,15 @@ public class TileWgs84 {
         }
 
         TerrainElevationData terrainElevationData = terrainElevationDataManager.rootTerrainElevationDataQuadTree.getTerrainElevationData(barycenter.x, barycenter.y);
-        Vector2d pixelSizeDeg = new Vector2d(widthDeg / 500.0, heightDeg / 500.0);
+        Vector2d pixelSizeDeg = this.manager.memSave_pixelSizeDegrees;
+        pixelSizeDeg.set(widthDeg / 256.0, heightDeg / 256.0);
         if(terrainElevationData != null)
         {
-            pixelSizeDeg = terrainElevationData.getPixelSizeDegree();
+            terrainElevationData.getPixelSizeDegree(pixelSizeDeg);
         }
 
-        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 500.0);
-        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 500.0);
+        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 256.0);
+        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 256.0);
 
         GaiaPlane plane = triangle.getPlane();
 
@@ -704,13 +711,15 @@ public class TileWgs84 {
 
         boolean intersects = false;
         int counter = 0;
+        ArrayList<GaiaHalfEdge> memSave_hedges = new ArrayList<GaiaHalfEdge>();
+        GaiaLine2D memSave_line = new GaiaLine2D();
         for(int row = 0; row < rowsCount; row++)
         {
             double pos_y = bbox_minY + row * pixelSizeY;
             for(int column = 0; column < columnsCount; column++)
             {
                 double pos_x = bbox_minX + column * pixelSizeX;
-                intersects = triangle.intersectsPointXY(pos_x, pos_y);
+                intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
                 counter++;
 
                 if(!intersects)
@@ -718,7 +727,7 @@ public class TileWgs84 {
                     continue;
                 }
 
-                elevation = terrainElevationDataManager.getElevation(pos_x, pos_y);
+                elevation = terrainElevationDataManager.getElevation(pos_x, pos_y, this.manager.memSave_terrainElevDatasArray);
                 planeElevation = plane.getValueZ(pos_x, pos_y);
 
                 if(elevation > planeElevation)
@@ -729,10 +738,15 @@ public class TileWgs84 {
                 if(abs(elevation - planeElevation) > maxDiff)
                 {
                     System.out.println("SLOW-Check : true" + " , counter : " + counter);
+                    memSave_hedges.clear();
+                    memSave_line.deleteObjects();
                     return true;
                 }
             }
         }
+
+        memSave_hedges.clear();
+        memSave_line.deleteObjects();
 
         System.out.println("SLOW-Check : false");
         triangle.refineChecked = true;
@@ -868,23 +882,21 @@ public class TileWgs84 {
             }
             // end test.----------------------------------------------------------------------------------------------------------------------------
             */
-            if(i == 783)
-            {
-                int hola = 0;
-            }
+
             System.out.println("iteration :" + i);
             if (mustRefineTriangle(triangle)) // X
             {
-                ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager);
+                this.manager.memSave_trianglesArray.clear();
+                mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager, this.manager.memSave_trianglesArray);
 
-                if (splitTriangles.size() > 0)
+                if (this.manager.memSave_trianglesArray.size() > 0)
                 {
                     splitCount++;
                     refined = true;
                 }
+
+                this.manager.memSave_trianglesArray.clear();
             }
-
-
 
         }
 
@@ -916,13 +928,16 @@ public class TileWgs84 {
             }
 
             System.out.println("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
-            ArrayList<GaiaTriangle> splitTriangles = mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager);
+            this.manager.memSave_trianglesArray.clear();
+            mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager, this.manager.memSave_trianglesArray);
 
-            if (splitTriangles.size() > 0) {
+            if (this.manager.memSave_trianglesArray.size() > 0) {
                 splitCount++;
                 refined = true;
             }
         }
+
+        this.manager.memSave_trianglesArray.clear();
 
 
         if(refined)
@@ -986,7 +1001,7 @@ public class TileWgs84 {
         for(int i = 0; i < verticesCount; i++)
         {
             GaiaVertex vertex = verticesOfCurrentTile.get(i);
-            double elevation = terrainElevationDataManager.getElevation(vertex.position.x, vertex.position.y);
+            double elevation = terrainElevationDataManager.getElevation(vertex.position.x, vertex.position.y, this.manager.memSave_terrainElevDatasArray);
             vertex.position.z = elevation;
         }
     }
@@ -1002,7 +1017,7 @@ public class TileWgs84 {
         while(!finished) {
             System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
 
-            if(currTileIndices.L == 10&& splitCount == 2)
+            if(currTileIndices.L == 10 && currTileIndices.X == 1745 && currTileIndices.Y == 725)
             {
                 int hola = 0;
             }

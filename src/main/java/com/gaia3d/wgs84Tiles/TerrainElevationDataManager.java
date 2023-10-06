@@ -1,5 +1,6 @@
 package com.gaia3d.wgs84Tiles;
 
+import com.gaia3d.basic.structure.GaiaTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.CRS;
@@ -20,6 +21,15 @@ public class TerrainElevationDataManager
 
     int quadtreesMaxDepth = 10;
     TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree;
+
+    GaiaGeoTiffManager gaiaGeoTiffManager = null;
+
+    public ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
+
+    boolean memSave_intersects[] = {false};
+
+    ArrayList<String> memSave_geoTiffFileNames = new ArrayList<String>();
+    public ArrayList<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
 
     public TerrainElevationDataManager()
     {
@@ -67,7 +77,7 @@ public class TerrainElevationDataManager
         rootTerrainElevationDataQuadTree = null;
     }
 
-    public double getElevation(double lonDeg, double latDeg) throws TransformException, IOException {
+    public double getElevation(double lonDeg, double latDeg, ArrayList<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
         double resultElevation = 0.0;
 
         if(rootTerrainElevationDataQuadTree == null)
@@ -75,21 +85,21 @@ public class TerrainElevationDataManager
             return resultElevation;
         }
 
-        ArrayList<TerrainElevationData> terrainElevDatasArray = new ArrayList<TerrainElevationData>();
-        rootTerrainElevationDataQuadTree.getTerrainElevationDatasArray(lonDeg, latDeg, terrainElevDatasArray);
+        memSave_terrainElevDatasArray.clear();
+        rootTerrainElevationDataQuadTree.getTerrainElevationDatasArray(lonDeg, latDeg, memSave_terrainElevDatasArray);
 
-        boolean intersects[] = {false};
-        int terrainElevDatasCount = terrainElevDatasArray.size();
+        memSave_intersects[0] = false;
+        int terrainElevDatasCount = memSave_terrainElevDatasArray.size();
         if(terrainElevDatasCount > 1)
         {
             int hola = 0;
         }
         for(int i=0; i<terrainElevDatasCount; i++)
         {
-            TerrainElevationData terrainElevationData = terrainElevDatasArray.get(i);
+            TerrainElevationData terrainElevationData = memSave_terrainElevDatasArray.get(i);
 
-            double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
-            if(intersects[0] == false)
+            double elevation = terrainElevationData.getElevation(lonDeg, latDeg, memSave_intersects);
+            if(memSave_intersects[0] == false)
             {
                 continue;
             }
@@ -108,10 +118,13 @@ public class TerrainElevationDataManager
 
     private void loadAllGeoTiff(String terrainElevationDataFolderPath) throws IOException, FactoryException, TransformException {
         // load all geoTiffFiles.***
-        ArrayList<String> geoTiffFileNames = new ArrayList<String>();
-        com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
+        memSave_geoTiffFileNames.clear();
+        com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", memSave_geoTiffFileNames);
 
-        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        if(gaiaGeoTiffManager == null)
+        {
+            gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        }
         GeometryFactory gf = new GeometryFactory();
 
         if(rootTerrainElevationDataQuadTree == null)
@@ -120,24 +133,33 @@ public class TerrainElevationDataManager
         }
 
         // now load all geotiff and make geotiff geoExtension data.***
-        int geoTiffCount = geoTiffFileNames.size();
+        int geoTiffCount = memSave_geoTiffFileNames.size();
+        GridCoverage2D gridCoverage2D = null;
+        String geoTiffFileName = null;
+        String geoTiffFilePath = null;
+
+        CoordinateReferenceSystem crsTarget = null;
+        CoordinateReferenceSystem crsWgs84 = null;
+        MathTransform targetToWgs = null;
+
         for(int i=0; i<geoTiffCount; i++)
         {
-            String geoTiffFileName = geoTiffFileNames.get(i);
-            String geoTiffFilePath = terrainElevationDataFolderPath + "\\" + geoTiffFileName;
+            geoTiffFileName = memSave_geoTiffFileNames.get(i);
+            geoTiffFilePath = terrainElevationDataFolderPath + "\\" + geoTiffFileName;
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
 
-            GridCoverage2D gridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            gridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
             terrainElevationData.geotiffFilePath = geoTiffFilePath;
 
-            CoordinateReferenceSystem crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
-            CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
-            MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
+            crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
+            crsWgs84 = CRS.decode("EPSG:4326", true);
+            targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
 
             GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, terrainElevationData.geographicExtension);
             terrainElevationData.pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D);
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
+            gridCoverage2D.dispose(true);
             int hola = 0;
         }
 

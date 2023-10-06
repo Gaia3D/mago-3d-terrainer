@@ -30,6 +30,8 @@ import java.util.Map;
 
 public class GaiaGeoTiffManager
 {
+    int memSave_pixel[] = new int[1];
+    double[] memSave_originalUpperLeftCorner = new double[2];
      public GaiaGeoTiffManager()
     {
         System.out.println("GaiaGeoTiffManager.constructor()");
@@ -76,9 +78,8 @@ public class GaiaGeoTiffManager
         double scaleX = gridSpanX / desiredPixelsCountX;
         double scaleY = gridSpanY / desiredPixelsCountY;
 
-        double[] originalUpperLeftCorner = new double[2];
-        originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
-        originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
+        memSave_originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
+        memSave_originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
 
         WritableRaster newRaster = originalImage.getData().createCompatibleWritableRaster(desiredImageWidth, desiredImageHeight);
 
@@ -100,9 +101,8 @@ public class GaiaGeoTiffManager
                 if(originalY >= gridSpanY)
                     originalY = gridSpanY - 1;
 
-                int pixel[] = new int[1];
-                originalImageData.getPixel(originalX, originalY, pixel);
-                newRaster.setPixel(x, y, pixel);
+                originalImageData.getPixel(originalX, originalY, memSave_pixel);
+                newRaster.setPixel(x, y, memSave_pixel);
 
                 int hola = 0;
             }

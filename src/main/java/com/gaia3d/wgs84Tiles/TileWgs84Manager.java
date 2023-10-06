@@ -42,6 +42,8 @@ public class TileWgs84Manager {
     public HashMap<Integer, String> map_depth_geoTiffFolderPath = new HashMap<Integer, String>();
     public HashMap<Integer, Double> map_depth_desiredPixelSizeXinMeters = new HashMap<Integer, Double>();
 
+    public HashMap<Integer, Double> map_depth_maxDiffBetweenGeoTiffSampleAndTrianglePlane = new HashMap<Integer, Double>();
+
     public List<TileWgs84> tileWgs84List = new ArrayList<TileWgs84>();
 
     public String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
@@ -55,6 +57,12 @@ public class TileWgs84Manager {
     boolean originIsLeftUp = false; // false = origin is left-down (Cesium Tile System).***
 
     HashMap<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<Integer, Double>();
+
+    ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
+
+    Vector2d memSave_pixelSizeDegrees = new Vector2d();
+
+    ArrayList<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
 
     // constructor.***
     public TileWgs84Manager()
@@ -150,7 +158,8 @@ public class TileWgs84Manager {
                 }
 
                 tile.makeBigMesh(is1rstGeneration);
-                tileWgs84List.add(tile);
+                //tileWgs84List.add(tile);
+                tile.deleteObjects();
             }
 
             if(depth < maxTileDepth)
@@ -176,6 +185,21 @@ public class TileWgs84Manager {
     public double getMaxTriangleSizeForTileDepth(int depth)
     {
         return maxTriangleSizeForTileDepthMap.get(depth);
+    }
+
+    public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth)
+    {
+        if(map_depth_maxDiffBetweenGeoTiffSampleAndTrianglePlane.containsKey(depth))
+        {
+            return map_depth_maxDiffBetweenGeoTiffSampleAndTrianglePlane.get(depth);
+        }
+        else
+        {
+            double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(depth);
+            map_depth_maxDiffBetweenGeoTiffSampleAndTrianglePlane.put(depth, maxDiff);
+            return map_depth_maxDiffBetweenGeoTiffSampleAndTrianglePlane.get(depth);
+        }
+
     }
     public void makeSimpleTileMeshes_test() throws IOException, TransformException {
 

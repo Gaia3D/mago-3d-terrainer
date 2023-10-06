@@ -298,12 +298,14 @@ public class TileMerger3x3 {
     private ArrayList<GaiaHalfEdge> getHalfEdgesOfTriangles(ArrayList<GaiaTriangle>triangles)
     {
         ArrayList<GaiaHalfEdge> resultHalfEdges = new ArrayList<GaiaHalfEdge>();
+        ArrayList<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
         int triangles_count = triangles.size();
         for(int i=0; i<triangles_count; i++)
         {
             GaiaTriangle triangle = triangles.get(i);
-            ArrayList<GaiaHalfEdge> halfEdgesLoop = triangle.halfEdge.getHalfEdgesLoop();
+            triangle.halfEdge.getHalfEdgesLoop(halfEdgesLoop);
             resultHalfEdges.addAll(halfEdgesLoop);
+            halfEdgesLoop.clear();
         }
         return resultHalfEdges;
     }

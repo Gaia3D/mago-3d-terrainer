@@ -51,6 +51,13 @@ public class TerrainElevationData {
     double minAltitude = Double.MAX_VALUE;
     double maxAltitude = Double.MIN_VALUE;
 
+    double memSave_alt[] = new double[1];
+
+    CoordinateReferenceSystem memSave_wgs84 = DefaultGeographicCRS.WGS84;
+
+    NoDataContainer memSave_noDataContainer = null;
+    DirectPosition2D memSave_posWorld = null; // longitude supplied first
+
     public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
         this.terrainElevDataManager = terrainElevationDataManager;
     }
@@ -58,7 +65,12 @@ public class TerrainElevationData {
     public void deleteCoverage()
     {
         this.pixelSizeMeters = null;
-        this.coverage = null;
+        if(this.coverage != null)
+        {
+            this.coverage.dispose(true);
+            this.coverage = null;
+        }
+
         this.raster = null;
     }
 
@@ -67,8 +79,16 @@ public class TerrainElevationData {
         this.deleteCoverage();
         this.terrainElevDataManager = null;
         this.geotiffFilePath = null;
-        this.geographicExtension.deleteObjects();
-        this.geographicExtension = null;
+        if(this.geographicExtension != null)
+        {
+            this.geographicExtension.deleteObjects();
+            this.geographicExtension = null;
+        }
+
+        memSave_alt = null;
+        memSave_wgs84 = null;
+        memSave_noDataContainer = null;
+        memSave_posWorld = null;
     }
 
     public void loadGeoTiffFile(String geotiffFilePath) throws FactoryException, TransformException {
@@ -96,7 +116,7 @@ public class TerrainElevationData {
         int hola = 0;
     }
 
-    public Vector2d getPixelSizeDegree()
+    public void getPixelSizeDegree(Vector2d resultPixelSize)
     {
         double imageWidth = this.coverage.getRenderedImage().getWidth();
         double imageHeight = this.coverage.getRenderedImage().getHeight();
@@ -104,8 +124,7 @@ public class TerrainElevationData {
         double latitudeRange = this.geographicExtension.getLatitudeRangeDegree();
         double pixelSizeX = longitudeRange / imageWidth;
         double pixelSizeY = latitudeRange / imageHeight;
-        Vector2d pixelSize = new Vector2d(pixelSizeX, pixelSizeY);
-        return pixelSize;
+        resultPixelSize.set(pixelSizeX, pixelSizeY);
     }
 
     public double getGridValue(int x, int y)
@@ -135,23 +154,27 @@ public class TerrainElevationData {
         }
 
         // https://taylor.callsen.me/parsing-geotiff-files-in-java/
-        CoordinateReferenceSystem wgs84 = DefaultGeographicCRS.WGS84;
-        GridGeometry2D gg = coverage.getGridGeometry();
+        memSave_wgs84 = DefaultGeographicCRS.WGS84;
 
-        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-        DirectPosition2D posWorld = new DirectPosition2D(wgs84, lonDeg, latDeg); // longitude supplied first
+        memSave_noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+        //DirectPosition2D posWorld = new DirectPosition2D(memSave_wgs84, lonDeg, latDeg); // longitude supplied first
+        if(memSave_posWorld == null)
+        {
+            memSave_posWorld = new DirectPosition2D(memSave_wgs84, 0.0, 0.0);
+        }
+        memSave_posWorld.x = lonDeg;
+        memSave_posWorld.y = latDeg;
         //GridCoordinates2D posGrid = gg.worldToGrid(posWorld);
 
-        double alt[] = new double[1];
-        alt[0] = 0.0;
+        memSave_alt[0] = 0.0;
         try{
-            coverage.evaluate((DirectPosition) posWorld, alt);
+            coverage.evaluate((DirectPosition) memSave_posWorld, memSave_alt);
             intersects[0] = true;
 
             // check if is NoData.***
-            if(noDataContainer != null) {
-                double nodata = noDataContainer.getAsSingleValue();
-                if (alt[0] == nodata) {
+            if(memSave_noDataContainer != null) {
+                double nodata = memSave_noDataContainer.getAsSingleValue();
+                if (memSave_alt[0] == nodata) {
                     return 0.0;
                 }
             }
@@ -163,7 +186,7 @@ public class TerrainElevationData {
             return resultAltitude;
         }
         // update min, max altitude.***
-        resultAltitude = alt[0];
+        resultAltitude = memSave_alt[0];
         minAltitude = Math.min(minAltitude, resultAltitude);
         maxAltitude = Math.max(maxAltitude, resultAltitude);
 
