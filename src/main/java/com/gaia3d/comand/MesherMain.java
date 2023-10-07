@@ -28,7 +28,7 @@ public class MesherMain {
         String terrainElevationDataFolderPath3 = "D:\\QuantizedMesh_JavaProjects\\ws_geoTiff";
 
         tileWgs84Manager.minTileDepth = 0;
-        tileWgs84Manager.maxTileDepth = 16;
+        tileWgs84Manager.maxTileDepth = 14;
 
         // Set geoTiff resizing folder paths.***
         tileWgs84Manager.tempResizedGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder";
@@ -55,6 +55,9 @@ public class MesherMain {
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(15, tileWgs84Manager.originalGeoTiffFolderPath);
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(16, tileWgs84Manager.originalGeoTiffFolderPath);
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(17, tileWgs84Manager.originalGeoTiffFolderPath);
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(18, tileWgs84Manager.originalGeoTiffFolderPath);
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(19, tileWgs84Manager.originalGeoTiffFolderPath);
+        tileWgs84Manager.map_depth_geoTiffFolderPath.put(20, tileWgs84Manager.originalGeoTiffFolderPath);
 
 
 

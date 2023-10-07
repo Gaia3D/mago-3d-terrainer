@@ -88,12 +88,12 @@ public class GaiaTriangle {
         this.halfEdge.getHalfEdgesLoop(memSave_hedges);
         double error = 1e-8;
         int hedgesCount = memSave_hedges.size();
-
+        GaiaLine2D line2dAux = null;
         for(int i=0; i<hedgesCount; i++)
         {
             GaiaHalfEdge hedge = memSave_hedges.get(i);
-            hedge.getLine2DXY(memSave_line2D);
-            byte relativePosition2D_linePoint = memSave_line2D.relativePositionOfPoint(pos_x, pos_y, error);
+            line2dAux = hedge.getLine2DXY();
+            byte relativePosition2D_linePoint = line2dAux.relativePositionOfPoint(pos_x, pos_y, error);
 
             // relative positions :
             // 0 : point is on the line.

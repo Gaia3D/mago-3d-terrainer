@@ -88,7 +88,7 @@ public class GaiaMesh {
             GaiaVertex vertex = vertices.get(i);
             if(vertex.objectStatus == GaiaObjectStatus.DELETED) {
                 GaiaVertex removedVertex = vertices.remove(i);
-                removedVertex.deleteObjects();
+                //removedVertex.deleteObjects();
                 i--;
                 verticesCount--;
             }
@@ -100,7 +100,7 @@ public class GaiaMesh {
             GaiaTriangle triangle = triangles.get(i);
             if(triangle.objectStatus == GaiaObjectStatus.DELETED) {
                 GaiaTriangle removedTriangle = triangles.remove(i);
-                removedTriangle.deleteObjects();
+                //removedTriangle.deleteObjects();
                 i--;
                 trianglesCount--;
             }
@@ -112,7 +112,7 @@ public class GaiaMesh {
             GaiaHalfEdge halfEdge = halfEdges.get(i);
             if(halfEdge.objectStatus == GaiaObjectStatus.DELETED) {
                 GaiaHalfEdge removedHEdge = halfEdges.remove(i);
-                removedHEdge.deleteObjects();
+                //removedHEdge.deleteObjects();
                 i--;
                 halfEdgesCount--;
             }

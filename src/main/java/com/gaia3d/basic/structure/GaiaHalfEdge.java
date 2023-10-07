@@ -26,12 +26,15 @@ public class GaiaHalfEdge {
     public HalfEdgeType type = HalfEdgeType.UNKNOWN;
     public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
 
+    public GaiaLine2D line2D = null;
+
     public void deleteObjects()
     {
         startVertex = null;
         next = null;
         twin = null;
         triangle = null;
+        line2D = null;
     }
 
     public void setTwin(GaiaHalfEdge twin) {
@@ -118,11 +121,17 @@ public class GaiaHalfEdge {
         return prevHalfEdge;
     }
 
-    public void getLine2DXY(GaiaLine2D line2D)
+    public GaiaLine2D getLine2DXY()
     {
-        Vector3d startPos = this.getStartVertex().position;
-        Vector3d endPos = this.getEndVertex().position;
-        line2D.setBy2Points(startPos.x, startPos.y, endPos.x, endPos.y);
+        if(this.line2D == null)
+        {
+            this.line2D = new GaiaLine2D();
+            Vector3d startPos = this.getStartVertex().position;
+            Vector3d endPos = this.getEndVertex().position;
+            this.line2D.setBy2Points(startPos.x, startPos.y, endPos.x, endPos.y);
+        }
+
+        return this.line2D;
     }
 
     public void getHalfEdgesLoop(ArrayList<GaiaHalfEdge> halfEdgesLoop)

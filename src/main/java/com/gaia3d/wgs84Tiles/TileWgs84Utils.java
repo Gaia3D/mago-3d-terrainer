@@ -27,8 +27,7 @@ public class TileWgs84Utils {
     static public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth)
     {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        // tileSize = 0.1 is small.***
-        return tileSize * 0.3;
+        return tileSize * 0.05;
     }
 
     static public double getMinTriangleSizeForTileDepth(int depth)
@@ -121,10 +120,46 @@ public class TileWgs84Utils {
         int maxY = leftDownTileName.Y; // origin is left-up.
         int minY = rightUpTileName.Y;
 
+        double xMin = -180.0;
+        double yMin = -90.0;
+
+        double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        int xIndexMax = (int) Math.round((maxLon - xMin)/angRange);
+        int yIndexMax = (int) Math.round((maxLat - yMin)/angRange);
+
+        int xIndexMin = (int) Math.round((minLon - xMin)/angRange);
+        int yIndexMin = (int) Math.round((minLat - yMin)/angRange);
+
+
+
         if(!originIsLeftUp)
         {
             maxY = rightUpTileName.Y;
             minY = leftDownTileName.Y;
+        }
+
+        if(maxX < xIndexMax)
+        {
+            maxX = xIndexMax;
+            int hola = 0;
+        }
+
+        if(maxY < yIndexMax)
+        {
+            maxY = yIndexMax;
+            int hola = 0;
+        }
+
+        if(minX > xIndexMin)
+        {
+            minX = xIndexMin;
+            int hola = 0;
+        }
+
+        if(minY > yIndexMin)
+        {
+            minY = yIndexMin;
+            int hola = 0;
         }
 
 

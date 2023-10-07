@@ -105,6 +105,10 @@ public class TileWgs84Manager {
         terrainLayer.bounds[2] = maxLon;
         terrainLayer.bounds[3] = maxLat;
 
+        // test.***
+        TilesRange tilesRangeTest = new TilesRange();
+        ArrayList<TileIndices>  resultTileIndicesArrayTest = TileWgs84Utils.selectTileIndicesArray(14, minLon, maxLon, minLat, maxLat, null, tilesRangeTest, originIsLeftUp);
+
 
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {

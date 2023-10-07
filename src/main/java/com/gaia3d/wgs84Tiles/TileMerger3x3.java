@@ -170,12 +170,15 @@ public class TileMerger3x3 {
             ArrayList<GaiaHalfEdge> L_mesh_right_halfEdges = L_mesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
             ArrayList<GaiaHalfEdge> result_mesh_left_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.LEFT);
 
-            // now, set twins of halfEdges.***
-            this.setTwinsBetweenHalfEdges(L_mesh_right_halfEdges, result_mesh_left_halfEdges);
+            if(result_mesh_left_halfEdges.size() > 0)// the c_tile can be null.***
+            {
+                // now, set twins of halfEdges.***
+                this.setTwinsBetweenHalfEdges(L_mesh_right_halfEdges, result_mesh_left_halfEdges);
 
-            // now, merge the left tile mesh to the result mesh.
-            resultMergedMesh.removeDeletedObjects();
-            resultMergedMesh.mergeMesh(L_mesh);
+                // now, merge the left tile mesh to the result mesh.
+                resultMergedMesh.removeDeletedObjects();
+                resultMergedMesh.mergeMesh(L_mesh);
+            }
         }
 
         // 3rd, merge the right tile mesh to the result mesh.
@@ -193,12 +196,15 @@ public class TileMerger3x3 {
             ArrayList<GaiaHalfEdge> R_mesh_left_halfEdges = R_mesh.getHalfEdgesByType(HalfEdgeType.LEFT);
             ArrayList<GaiaHalfEdge> result_mesh_right_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
 
-            // now, set twins of halfEdges.***
-            this.setTwinsBetweenHalfEdges(R_mesh_left_halfEdges, result_mesh_right_halfEdges);
+            if(result_mesh_right_halfEdges.size() > 0)// the c_tile & left_tile can be null.***
+            {
+                // now, set twins of halfEdges.***
+                this.setTwinsBetweenHalfEdges(R_mesh_left_halfEdges, result_mesh_right_halfEdges);
 
-            // now, merge the right tile mesh to the result mesh.
-            resultMergedMesh.removeDeletedObjects();
-            resultMergedMesh.mergeMesh(R_mesh);
+                // now, merge the right tile mesh to the result mesh.
+                resultMergedMesh.removeDeletedObjects();
+                resultMergedMesh.mergeMesh(R_mesh);
+            }
         }
 
         return resultMergedMesh;

@@ -610,7 +610,7 @@ public class TileWgs84 {
         double heightDeg = bboxTriangle.getLengthY();
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
-        System.out.println("maxDiff : " + maxDiff + " , tileDepth : " + triangle.ownerTile_tileIndices.L);
+        System.out.println("maxDiff : " + maxDiff + " , tileDepth : " + triangle.ownerTile_tileIndices.L+ " , tileX : " + triangle.ownerTile_tileIndices.X + " , tileY : " + triangle.ownerTile_tileIndices.Y);
 
         // fast check.******************************************************************
         // check the barycenter of the triangle.***
@@ -642,11 +642,11 @@ public class TileWgs84 {
 
 
         // Another fast check.*************************************************************
-        if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, this.geographicExtension))
-        {
-            System.out.println("ANOTHER-FAST-Check : true*******************************************");
-            return true;
-        }
+        //if(mustDivideTriangleByMidLongitudeAndMidLatitude(triangle, this.geographicExtension))
+        //{
+        //    System.out.println("ANOTHER-FAST-Check : true*******************************************");
+        //    return true;
+        //}
         // end another fast check.*********************************************************
 
         // if the triangle size is very small, then do not refine.*************************
@@ -732,16 +732,25 @@ public class TileWgs84 {
 
                 if(elevation > planeElevation)
                 {
-                    maxDiff *= 0.5;
+                    if(abs(elevation - planeElevation) > maxDiff*0.5)
+                    {
+                        System.out.println("SLOW-Check : true" + " , counter : " + counter);
+                        memSave_hedges.clear();
+                        memSave_line.deleteObjects();
+                        return true;
+                    }
+                }
+                else {
+                    if(abs(elevation - planeElevation) > maxDiff)
+                    {
+                        System.out.println("SLOW-Check : true" + " , counter : " + counter);
+                        memSave_hedges.clear();
+                        memSave_line.deleteObjects();
+                        return true;
+                    }
                 }
 
-                if(abs(elevation - planeElevation) > maxDiff)
-                {
-                    System.out.println("SLOW-Check : true" + " , counter : " + counter);
-                    memSave_hedges.clear();
-                    memSave_line.deleteObjects();
-                    return true;
-                }
+
             }
         }
 
@@ -1017,7 +1026,7 @@ public class TileWgs84 {
         while(!finished) {
             System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
 
-            if(currTileIndices.L == 10 && currTileIndices.X == 1745 && currTileIndices.Y == 725)
+            if(currTileIndices.L == 11 && currTileIndices.X == 3492 && currTileIndices.Y == 1452)
             {
                 int hola = 0;
             }
