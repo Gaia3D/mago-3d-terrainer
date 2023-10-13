@@ -66,6 +66,16 @@ public class TerrainElevationDataManager
         rootTerrainElevationDataQuadTree.deleteCoverage();
     }
 
+    public void deleteCoverageIfNotIntersects(GeographicExtension geographicExtension)
+    {
+        if(rootTerrainElevationDataQuadTree == null)
+        {
+            return;
+        }
+
+        rootTerrainElevationDataQuadTree.deleteCoverageIfNotIntersects(geographicExtension);
+    }
+
     public void deleteObjects()
     {
         if(rootTerrainElevationDataQuadTree == null)

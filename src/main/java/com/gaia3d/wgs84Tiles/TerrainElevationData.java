@@ -91,31 +91,6 @@ public class TerrainElevationData {
         memSave_posWorld = null;
     }
 
-    public void loadGeoTiffFile(String geotiffFilePath) throws FactoryException, TransformException {
-        // load the geotiff file.***
-        this.geotiffFilePath = geotiffFilePath;
-
-        // create coverage.***
-        GaiaGeoTiffReader reader = new GaiaGeoTiffReader();
-
-        this.coverage = reader.read(this.geotiffFilePath);
-        this.raster = this.coverage.getRenderedImage().getData();
-
-        CoordinateReferenceSystem crsTarget = coverage.getCoordinateReferenceSystem2D();
-        CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
-        GeometryFactory gf = new GeometryFactory();
-        MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
-
-        // 127.1672976210000030,37.6009237940000034
-        // 127.1985472009999967,37.6293537840000027
-
-        GaiaGeoTiffUtils.getGeographicExtension(this.coverage, gf, targetToWgs, this.geographicExtension);
-
-        Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(this.coverage);
-
-        int hola = 0;
-    }
-
     public void getPixelSizeDegree(Vector2d resultPixelSize)
     {
         double imageWidth = this.coverage.getRenderedImage().getWidth();

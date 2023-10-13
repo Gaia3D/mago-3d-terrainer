@@ -58,6 +58,8 @@ public class TileWgs84Manager {
 
     HashMap<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<Integer, Double>();
 
+    public int refinementStrength = 1; // 1 = normal.
+
     ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
 
     Vector2d memSave_pixelSizeDegrees = new Vector2d();
@@ -147,14 +149,10 @@ public class TileWgs84Manager {
 
             for (TileIndices tileIndices : resultTileIndicesArray)
             {
-                //*********************************************************
-                // For each tile, reset the terrainElevationDataManager.***
-                //*********************************************************
-                this.terrainElevationDataManager.deleteCoverage();
-
                 TileWgs84 tile = new TileWgs84(null, this);
                 tile.tileIndices = tileIndices;
                 tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
+                this.terrainElevationDataManager.deleteCoverageIfNotIntersects(tile.geographicExtension); // delete unnecessary coverage to save memory.***
                 boolean is1rstGeneration = false;
                 if(depth == minTileDepth)
                 {
@@ -162,7 +160,6 @@ public class TileWgs84Manager {
                 }
 
                 tile.makeBigMesh(is1rstGeneration);
-                //tileWgs84List.add(tile);
                 tile.deleteObjects();
             }
 
@@ -288,6 +285,7 @@ public class TileWgs84Manager {
         // load each tile, and save the quantized mesh.***
         QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
         HashMap<Integer, TilesRange> tilesRangeMap = terrainLayer.getTilesRangeMap();
+        TileIndices tileIndices = new TileIndices();
         for (Integer tileDepth : tilesRangeMap.keySet())
         {
             TilesRange tilesRange = tilesRangeMap.get(tileDepth);
@@ -305,7 +303,6 @@ public class TileWgs84Manager {
             {
                 for(int y = minY; y <= maxY; y++)
                 {
-                    TileIndices tileIndices = new TileIndices();
                     tileIndices.X = x;
                     tileIndices.Y = y;
                     tileIndices.L = tileDepth;
@@ -326,6 +323,7 @@ public class TileWgs84Manager {
                         FileUtils.deleteFileIfExists(tileFullPath);
 
                         quantizedMesh.saveDataOutputStream(dataOutputStream);
+                        dataOutputStream.close();
                         fileOutputStream.close();
                         int hola = 0;
 

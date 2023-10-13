@@ -169,6 +169,37 @@ public class TerrainElevationDataQuadTree
         }
     }
 
+    public void deleteCoverageIfNotIntersects(GeographicExtension geographicExtension)
+    {
+        if(terrainElevationDataList != null)
+        {
+            int terrainElevationDataCount = terrainElevationDataList.size();
+            for(int i=0; i<terrainElevationDataCount; i++)
+            {
+                TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
+                if(geographicExtension.intersects(terrainElevationData.geographicExtension) == false)
+                {
+                    terrainElevationData.deleteCoverage();
+                }
+            }
+        }
+
+        if(children != null)
+        {
+            for(int i=0; i<4; i++)
+            {
+                if(geographicExtension.intersects(children[i].geographicExtension) == false)
+                {
+                    children[i].deleteCoverage();
+                }
+                else
+                {
+                    children[i].deleteCoverageIfNotIntersects(geographicExtension);
+                }
+            }
+        }
+    }
+
     public void makeQuadTree(int maxDepth)
     {
         calculateGeographicExtension();

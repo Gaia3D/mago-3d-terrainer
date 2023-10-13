@@ -1,42 +1,81 @@
 package com.gaia3d.comand;
 
 
+import com.gaia3d.process.ProcessOptions;
 import com.gaia3d.wgs84Tiles.GaiaGeoTiffManager;
 import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 
 import com.gaia3d.wgs84Tiles.TileWgs84Utils;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 
-public class MesherMain {
-    public static void main(String[] args) throws FactoryException, TransformException, IOException {
+public class MesherMain
+{
+    public static String version = "1.0.1";
+    public static CommandLine command = null;
+    public static void main(String[] args) throws FactoryException, TransformException, IOException
+    {
+        Configurator.initConsoleLogger();
+        Options options = Configurator.createOptions();
+        CommandLineParser parser = new DefaultParser();
 
         // create tileManager & set params.***
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
 
-        String tileTempDirectory = "D:\\QuantizedMesh_JavaProjects\\tileTempFolder";
-        tileWgs84Manager.tileTempDirectory = tileTempDirectory;
+        try
+        {
+            command = parser.parse(options, args);
+            if (command.hasOption(ProcessOptions.INPUT_FOLDER_PATH.getArgName())) {
+                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT_FOLDER_PATH.getArgName());
+            }
 
-        String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
-        tileWgs84Manager.outputDirectory = outputDirectory;
+            if (command.hasOption(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName())) {
+                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName());
+                tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + "\\tileTempFolder";
+                tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + "\\resizedGeoTiffFolder";
+            }
 
-        String terrainElevationDataFolderPath = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m";
-        String terrainElevationDataFolderPath2 = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\10m";
-        String terrainElevationDataFolderPath3 = "D:\\QuantizedMesh_JavaProjects\\ws_geoTiff";
+            if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
+                tileWgs84Manager.minTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName()));
+            }
 
-        tileWgs84Manager.minTileDepth = 0;
-        tileWgs84Manager.maxTileDepth = 14;
+            if (command.hasOption(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
+                tileWgs84Manager.maxTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
+            }
+
+            //if (command.hasOption(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName())) {
+                //tileWgs84Manager.refinementStrength = Integer.parseInt(command.getOptionValue(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName()));
+            //}
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        //String tileTempDirectory = "D:\\QuantizedMesh_JavaProjects\\tileTempFolder";
+        //tileWgs84Manager.tileTempDirectory = tileTempDirectory;
+
+        //String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
+        //tileWgs84Manager.outputDirectory = outputDirectory;
+
+
+        //tileWgs84Manager.minTileDepth = 0;
+        //tileWgs84Manager.maxTileDepth = 17;
 
         // Set geoTiff resizing folder paths.***
-        tileWgs84Manager.tempResizedGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder";
-        tileWgs84Manager.originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m";
-        //tileWgs84Manager.resizeGeotiffSet(terrainElevationDataFolderPath, null);
+        //tileWgs84Manager.tempResizedGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder";
+        //tileWgs84Manager.originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m";
+        tileWgs84Manager.resizeGeotiffSet(tileWgs84Manager.originalGeoTiffFolderPath, null);
 
         // Set geoTiff folder paths directly.***
-
+        /*
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(0, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\0");
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(1, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\1");
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(2, "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\2");
@@ -58,26 +97,12 @@ public class MesherMain {
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(18, tileWgs84Manager.originalGeoTiffFolderPath);
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(19, tileWgs84Manager.originalGeoTiffFolderPath);
         tileWgs84Manager.map_depth_geoTiffFolderPath.put(20, tileWgs84Manager.originalGeoTiffFolderPath);
-
-
-
-
+        */
 
         tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
         // set the terrainElevation data folder path.***
-        tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath("D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder\\0");
+        tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + "\\0");
         tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
-
-
-
-        // do resizing test.**************************************************************************************************************
-        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-        String geoTiffFilePathTest = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m\\33612(표선)\\33612010.tif";
-        String outputFilePathTest = "D:\\QuantizedMesh_JavaProjects\\resizedTiffTest.tif";
-        double desiredPixelSizeXinMeters = 5000.0; // in meters.***
-        double desiredPixelSizeYinMeters = 5000.0; // in meters.***
-        //gaiaGeoTiffManager.resizeGeoTiff(geoTiffFilePathTest, outputFilePathTest, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
-        // End do resizing test.**************************************************************************************************************
 
         // start quantized mesh tiling.***
         tileWgs84Manager.makeTileMeshes(); // original.***

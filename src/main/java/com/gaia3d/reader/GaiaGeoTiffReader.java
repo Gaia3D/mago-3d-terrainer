@@ -25,6 +25,7 @@ public class GaiaGeoTiffReader {
 
             GeoTiffReader reader = new GeoTiffReader(file);
             GridCoverage2D coverage = reader.read(null);
+            reader.dispose();
 
             return coverage;
         } catch (IOException e) {

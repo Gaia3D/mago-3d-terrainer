@@ -27,7 +27,7 @@ public class TileWgs84Utils {
     static public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth)
     {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        return tileSize * 0.05;
+        return tileSize * 0.025;
     }
 
     static public double getMinTriangleSizeForTileDepth(int depth)

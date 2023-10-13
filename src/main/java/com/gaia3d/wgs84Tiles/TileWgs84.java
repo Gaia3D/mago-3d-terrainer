@@ -93,6 +93,7 @@ public class TileWgs84 {
         // save the tile.***
         mesh.saveDataOutputStream(dataOutputStream);
 
+        dataOutputStream.close();
         fileOutputStream.close();
     }
 
@@ -120,7 +121,7 @@ public class TileWgs84 {
 
         this.mesh = new GaiaMesh();
         this.mesh.loadDataInputStream(dataInputStream);
-
+        dataInputStream.close();
         fileInputStream.close();
     }
 

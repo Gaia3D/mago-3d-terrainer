@@ -114,21 +114,6 @@ public class GaiaGeoTiffManager
         return resizedCoverage;
     }
 
-    public void resizeGeoTiff(String inputFilePath, String outputFilePath, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters) throws IOException, IOException {
-        // https://www.javatips.net/api/org.geotools.coverage.processing.operations
-        System.out.println("GeoTiffReader.resizeGeoTiff()");
-        File inputFile = new File(inputFilePath); //path
-        File outputFile = new File(outputFilePath);
-        GeoTiffReader reader = new GeoTiffReader(inputFile);
-        GridCoverage2D coverage = reader.read(null);
-
-        GridCoverage2D newCoverage = getResizedCoverage2D(coverage, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
-
-        this.saveGridCoverage2D(newCoverage, outputFilePath);
-
-        int hola = 0;
-    }
-
     public void saveGridCoverage2D(GridCoverage2D coverage, String outputFilePath) throws IOException {
         // now save the newCoverage as geotiff.***
         File outputFile = new File(outputFilePath);
