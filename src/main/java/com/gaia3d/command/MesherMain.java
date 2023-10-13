@@ -1,12 +1,9 @@
-package com.gaia3d.comand;
+package com.gaia3d.command;
 
 
 import com.gaia3d.process.ProcessOptions;
-import com.gaia3d.wgs84Tiles.GaiaGeoTiffManager;
-import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 
-import com.gaia3d.wgs84Tiles.TileWgs84Utils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -20,7 +17,7 @@ public class MesherMain
 {
     public static String version = "1.0.1";
     public static CommandLine command = null;
-    public static void main(String[] args) throws FactoryException, TransformException, IOException
+    public static void main(String[] args)
     {
         Configurator.initConsoleLogger();
         Options options = Configurator.createOptions();
@@ -72,7 +69,15 @@ public class MesherMain
         // Set geoTiff resizing folder paths.***
         //tileWgs84Manager.tempResizedGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder";
         //tileWgs84Manager.originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m";
-        tileWgs84Manager.resizeGeotiffSet(tileWgs84Manager.originalGeoTiffFolderPath, null);
+        try {
+            tileWgs84Manager.resizeGeotiffSet(tileWgs84Manager.originalGeoTiffFolderPath, null);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (FactoryException e) {
+            throw new RuntimeException(e);
+        } catch (TransformException e) {
+            throw new RuntimeException(e);
+        }
 
         // Set geoTiff folder paths directly.***
         /*
@@ -102,10 +107,26 @@ public class MesherMain
         tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
         // set the terrainElevation data folder path.***
         tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + "\\0");
-        tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
+        try {
+            tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
+        } catch (FactoryException e) {
+            throw new RuntimeException(e);
+        } catch (TransformException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // start quantized mesh tiling.***
-        tileWgs84Manager.makeTileMeshes(); // original.***
+        try {
+            tileWgs84Manager.makeTileMeshes(); // original.***
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (TransformException e) {
+            throw new RuntimeException(e);
+        } catch (FactoryException e) {
+            throw new RuntimeException(e);
+        }
 
 
         int hola2 = 0;

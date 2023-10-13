@@ -1,12 +1,10 @@
-package com.gaia3d.comand;
+package com.gaia3d.command;
 
 import org.junit.jupiter.api.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class MesherMainTest {
 

@@ -1,4 +1,4 @@
-package com.gaia3d.comand;
+package com.gaia3d.command;
 
 import com.gaia3d.reader.GaiaGdalTranslator;
 
