@@ -23,6 +23,13 @@ public class MesherMain
         Options options = Configurator.createOptions();
         CommandLineParser parser = new DefaultParser();
 
+        GeotoolsConfigurator geotoolsConfigurator = new GeotoolsConfigurator();
+        try {
+            geotoolsConfigurator.setEpsg();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         // create tileManager & set params.***
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
 
