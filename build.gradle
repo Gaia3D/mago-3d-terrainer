@@ -113,6 +113,11 @@ shadowJar {
     mergeServiceFiles()
     manifest {
         attributes 'Main-Class': 'com.gaia3d.command.MesherMain'
+        attributes 'Implementation-Title': 'com.sun.media.imageio'
+        attributes 'Implementation-Version': '1.1'
+        attributes 'Implementation-Vendor': 'Sun Microsystems, Inc.'
+        attributes 'Implementation-Vendor-Id': 'com.sun'
+        attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from sourceSets.main.runtimeClasspath
