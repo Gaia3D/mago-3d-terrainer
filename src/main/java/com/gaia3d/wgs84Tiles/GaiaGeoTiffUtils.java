@@ -6,6 +6,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.joml.Vector2d;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -15,7 +16,9 @@ import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.geometry.Envelope;
+import org.opengis.referencing.IdentifiedObject;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.cs.CoordinateSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
@@ -42,43 +45,62 @@ public class GaiaGeoTiffUtils
         return new Vector2d(pixelSizeX, pixelSizeY);
     }
 
+
+
     public static GeographicExtension getGeographicExtension(GridCoverage2D coverage, GeometryFactory gf, MathTransform targetToWgs, GeographicExtension resultGeoExtension) throws TransformException {
         // get geographic extension.***
         GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
         Envelope envelope = coverage.getEnvelope();
 
-        int gridLow0 = gridRange2D.getLow(0);
-        int gridLow1 = gridRange2D.getLow(1);
-        int gridHigh0 = gridRange2D.getHigh(0);
-        int gridHigh1 = gridRange2D.getHigh(1);
+        double minLon = 0.0;
+        double minLat = 0.0;
+        double maxLon = 0.0;
+        double maxLat = 0.0;
 
-        // gridLow0, gridLow1.***
-        Vector2d lonLat_LU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridLow0, gridLow1, gf, targetToWgs);
+        // check if crsTarget is wgs84.***
+        if(targetToWgs.isIdentity())
+        {
+            // The original src is wgs84.***
+            minLon = envelope.getMinimum(0);
+            minLat = envelope.getMinimum(1);
+            maxLon = envelope.getMaximum(0);
+            maxLat = envelope.getMaximum(1);
+        }
+        else
+        {
+            int gridLow0 = gridRange2D.getLow(0);
+            int gridLow1 = gridRange2D.getLow(1);
+            int gridHigh0 = gridRange2D.getHigh(0);
+            int gridHigh1 = gridRange2D.getHigh(1);
 
-        // gridHigh0, gridHigh1.***
-        Vector2d lonLat_RD = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridHigh0, gridHigh1, gf, targetToWgs);
+            // gridLow0, gridLow1.***
+            Vector2d lonLat_LU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridLow0, gridLow1, gf, targetToWgs);
 
-        // gridLow0, gridHigh1.***
-        Vector2d lonLat_LD = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridLow0, gridHigh1, gf, targetToWgs);
+            // gridHigh0, gridHigh1.***
+            Vector2d lonLat_RD = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridHigh0, gridHigh1, gf, targetToWgs);
 
-        // gridHigh0, gridLow1.***
-        Vector2d lonLat_RU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridHigh0, gridLow1, gf, targetToWgs);
+            // gridLow0, gridHigh1.***
+            Vector2d lonLat_LD = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridLow0, gridHigh1, gf, targetToWgs);
 
-        double minLon = Math.min(lonLat_LU.x, lonLat_RD.x);
-        minLon = Math.min(minLon, lonLat_LD.x);
-        minLon = Math.min(minLon, lonLat_RU.x);
+            // gridHigh0, gridLow1.***
+            Vector2d lonLat_RU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridHigh0, gridLow1, gf, targetToWgs);
 
-        double maxLon = Math.max(lonLat_LU.x, lonLat_RD.x);
-        maxLon = Math.max(maxLon, lonLat_LD.x);
-        maxLon = Math.max(maxLon, lonLat_RU.x);
+            minLon = Math.min(lonLat_LU.x, lonLat_RD.x);
+            minLon = Math.min(minLon, lonLat_LD.x);
+            minLon = Math.min(minLon, lonLat_RU.x);
 
-        double minLat = Math.min(lonLat_LU.y, lonLat_RD.y);
-        minLat = Math.min(minLat, lonLat_LD.y);
-        minLat = Math.min(minLat, lonLat_RU.y);
+            maxLon = Math.max(lonLat_LU.x, lonLat_RD.x);
+            maxLon = Math.max(maxLon, lonLat_LD.x);
+            maxLon = Math.max(maxLon, lonLat_RU.x);
 
-        double maxLat = Math.max(lonLat_LU.y, lonLat_RD.y);
-        maxLat = Math.max(maxLat, lonLat_LD.y);
-        maxLat = Math.max(maxLat, lonLat_RU.y);
+            minLat = Math.min(lonLat_LU.y, lonLat_RD.y);
+            minLat = Math.min(minLat, lonLat_LD.y);
+            minLat = Math.min(minLat, lonLat_RU.y);
+
+            maxLat = Math.max(lonLat_LU.y, lonLat_RD.y);
+            maxLat = Math.max(maxLat, lonLat_LD.y);
+            maxLat = Math.max(maxLat, lonLat_RU.y);
+        }
 
         if(resultGeoExtension == null)
             resultGeoExtension = new GeographicExtension();

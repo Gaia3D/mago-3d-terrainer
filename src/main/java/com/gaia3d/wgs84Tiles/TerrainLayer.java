@@ -11,8 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-;
-
 public class TerrainLayer
 {
     String tilejson = null;
@@ -106,7 +104,7 @@ public class TerrainLayer
 
         }
 
-        objectNodeRoot.put("available", objectNodeAvailable);
+        objectNodeRoot.set("available", objectNodeAvailable);
 
         // Save the json index file.***
         try {
