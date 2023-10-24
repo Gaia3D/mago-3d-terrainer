@@ -16,6 +16,7 @@ import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.parameter.GeneralParameterDescriptor;
 import org.opengis.parameter.ParameterValueGroup;
+import org.opengis.referencing.FactoryException;
 
 import javax.media.jai.PlanarImage;
 import java.awt.image.BufferedImage;
@@ -27,6 +28,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.gaia3d.wgs84Tiles.GaiaGeoTiffUtils.getEnvelopeSpanInMetersOfGridCoverage2D;
 
 public class GaiaGeoTiffManager
 {
@@ -56,8 +59,7 @@ public class GaiaGeoTiffManager
         return coverage;
     }
 
-    public GridCoverage2D getResizedCoverage2D(GridCoverage2D originalCoverage, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters)
-    {
+    public GridCoverage2D getResizedCoverage2D(GridCoverage2D originalCoverage, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters) throws FactoryException {
         GridCoverage2D resizedCoverage = null;
 
         GridGeometry originalGridGeometry = originalCoverage.getGridGeometry();
@@ -66,8 +68,10 @@ public class GaiaGeoTiffManager
 
         int gridSpanX = originalGridGeometry.getGridRange().getSpan(0); // num of pixels.***
         int gridSpanY = originalGridGeometry.getGridRange().getSpan(1); // num of pixels.***
-        double envelopeSpanX = envelopeOriginal.getSpan(0); // in meters.***
-        double envelopeSpanY = envelopeOriginal.getSpan(1); // in meters.***
+        double[] envelopeSpanMeters = new double[2];
+        GaiaGeoTiffUtils.getEnvelopeSpanInMetersOfGridCoverage2D(originalCoverage, envelopeSpanMeters);
+        double envelopeSpanX = envelopeSpanMeters[0]; // in meters.***
+        double envelopeSpanY = envelopeSpanMeters[1]; // in meters.***
 
         double desiredPixelsCountX = envelopeSpanX / desiredPixelSizeXinMeters;
         double desiredPixelsCountY = envelopeSpanY / desiredPixelSizeYinMeters;

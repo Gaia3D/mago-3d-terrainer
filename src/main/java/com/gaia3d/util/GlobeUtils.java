@@ -52,6 +52,15 @@ public class GlobeUtils {
         return new Vector3d(result[0], result[1], result[2]);
     }
 
+    public static double getRadiusAtLatitude(double latitude) {
+        double latRad = latitude * degToRadFactor;
+        double cosLat = Math.cos(latRad);
+        double sinLat = Math.sin(latRad);
+        double e2 = firstEccentricitySquared;
+        double v = equatorialRadius / Math.sqrt(1.0 - e2 * sinLat * sinLat);
+        return v;
+    }
+
     public static Matrix4d normalAtCartesianPointWgs84(double x, double y, double z) {
         Vector3d zAxis = new Vector3d(x / equatorialRadiusSquared, y / equatorialRadiusSquared, z / polarRadiusSquared);
         zAxis.normalize();

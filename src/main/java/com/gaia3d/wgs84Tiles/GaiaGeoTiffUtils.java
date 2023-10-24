@@ -1,6 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.util.GlobeUtils;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;
@@ -16,6 +17,7 @@ import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.geometry.Envelope;
+import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.IdentifiedObject;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.cs.CoordinateSystem;
@@ -33,15 +35,57 @@ public class GaiaGeoTiffUtils
         return lonLat;
     }
 
-    public static Vector2d getPixelSizeMeters(GridCoverage2D coverage) {
-        Envelope envelopeOriginal = coverage.getEnvelope();
+    public static boolean isGridCoverage2DWGS84(GridCoverage2D coverage) throws FactoryException {
+        // this function returns true if the coverage is wgs84.***
+        CoordinateReferenceSystem crsTarget = coverage.getCoordinateReferenceSystem2D();
+        CoordinateReferenceSystem crsWgs84 = DefaultGeographicCRS.WGS84;
+        MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
+        if(targetToWgs.isIdentity())
+        {
+            // The original src is wgs84.***
+            return true;
+        }
+        else
+        {
+            // The original src is not wgs84.***
+            return false;
+        }
+    }
+
+    public static void getEnvelopeSpanInMetersOfGridCoverage2D(GridCoverage2D coverage, double[] resultEnvelopeSpanMeters) throws FactoryException
+    {
+        if(isGridCoverage2DWGS84(coverage))
+        {
+            Envelope envelope = coverage.getEnvelope();
+            double minLat = envelope.getMinimum(1);
+            double maxLat = envelope.getMaximum(1);
+            double midLat = (minLat + maxLat) / 2.0;
+            double radius = GlobeUtils.getRadiusAtLatitude(midLat);
+            double degToRadFactor = GlobeUtils.getDegToRadFactor();
+
+            Envelope envelopeOriginal = coverage.getEnvelope();
+            double envelopeSpanX = envelopeOriginal.getSpan(0); // in degrees.***
+            double envelopeSpanY = envelopeOriginal.getSpan(1); // in degrees.***
+            resultEnvelopeSpanMeters[0] = (envelopeSpanX * degToRadFactor) * radius; // in meters.***
+            resultEnvelopeSpanMeters[1] = (envelopeSpanY * degToRadFactor) * radius; // in meters.***
+        }
+        else
+        {
+            Envelope envelopeOriginal = coverage.getEnvelope();
+            resultEnvelopeSpanMeters[0] = envelopeOriginal.getSpan(0); // in meters.***
+            resultEnvelopeSpanMeters[1] = envelopeOriginal.getSpan(1); // in meters.***
+        }
+    }
+
+    public static Vector2d getPixelSizeMeters(GridCoverage2D coverage) throws FactoryException
+    {
+        double envelopeSpanInMeters[] = new double[2];
+        getEnvelopeSpanInMetersOfGridCoverage2D(coverage, envelopeSpanInMeters);
         GridGeometry gridGeometry = coverage.getGridGeometry();
         int gridSpanX = gridGeometry.getGridRange().getSpan(0); // num of pixels.***
         int gridSpanY = gridGeometry.getGridRange().getSpan(1); // num of pixels.***
-        double envelopeSpanX = envelopeOriginal.getSpan(0); // in meters.***
-        double envelopeSpanY = envelopeOriginal.getSpan(1); // in meters.***
-        double pixelSizeX = envelopeSpanX / gridSpanX;
-        double pixelSizeY = envelopeSpanY / gridSpanY;
+        double pixelSizeX = envelopeSpanInMeters[0] / gridSpanX;
+        double pixelSizeY = envelopeSpanInMeters[1] / gridSpanY;
         return new Vector2d(pixelSizeX, pixelSizeY);
     }
 
