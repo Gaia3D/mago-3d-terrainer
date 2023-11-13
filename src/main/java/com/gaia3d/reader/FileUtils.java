@@ -30,6 +30,7 @@ public class FileUtils {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
+        assert listOfFiles != null;
         for (File file : listOfFiles) {
             if (file.isFile()) {
                 String fileName = file.getName();
@@ -45,6 +46,7 @@ public class FileUtils {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
+        assert listOfFiles != null;
         for (File file : listOfFiles) {
             if (file.isDirectory()) {
                 String folderName = file.getName();
