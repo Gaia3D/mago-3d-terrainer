@@ -21,6 +21,7 @@ public class Main {
         options.addOption("input", true, "input folder path");
         options.addOption("output", true, "output folder path");
         options.addOption("inputDataStructurePath", true, "inputDataStructurePath");
+        options.addOption("maxDatesCount", true, "max dates count");
 
         CommandLineParser parser = new DefaultParser();
         CommandLine commandLine = parser.parse(options, args);
@@ -32,8 +33,13 @@ public class Main {
             String inputFolderPath = commandLine.getOptionValue("input");
             String outputFolderPath = commandLine.getOptionValue("output");
             String inputDataStructurePath = commandLine.getOptionValue("inputDataStructurePath");
+            int maxDatesCount = Integer.parseInt(commandLine.getOptionValue("maxDatesCount"));
 
             AirPollutionDataConverter airPollDataConverter = new AirPollutionDataConverter();
+            if(maxDatesCount > 0)
+            {
+                airPollDataConverter.setMaxDatesCount(maxDatesCount);
+            }
             airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
         }
     }

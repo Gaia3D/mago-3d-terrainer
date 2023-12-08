@@ -44,12 +44,15 @@ public class AirPollutionDataConverter
 //  349800.00000 4030300.00000       0.00000   193.10   278.00     0.00   24-HR  ALL       20081824  CART1
     //        ...
     public DataContainer dataContainer = null;
+
+    public int maxDatesAllowed = -1; // if negative value, then no limit.***
     public AirPollutionTimeSeries airPollutionTimeSeries = null;
 
     private void getAllDatesInFile(String filePath, ArrayList<String> resultDatesArray)
     {
         HashMap<String, Integer> mapDates = new HashMap<>();
-        try {
+        try
+        {
             String inputFilePath = filePath;
             File file = new File(inputFilePath);    //creates a new file instance
             FileReader fr = new FileReader(file);   //reads the file
@@ -77,9 +80,8 @@ public class AirPollutionDataConverter
             boolean skipEmptyStrings = true;
             AirPollutionSliceData airPollutionSliceData = new AirPollutionSliceData();
 
-
-
-            while (!finished) {
+            while (!finished)
+            {
                 line = br.readLine();
                 if (line == null) {
                     finished = true;
@@ -105,6 +107,16 @@ public class AirPollutionDataConverter
 
                 String date = vecStrings.get(8);
                 mapDates.put(date, 1);
+
+                // check if maxDatasAllowed is reached.***
+                if(maxDatesAllowed > 0)
+                {
+                    int datesCount = mapDates.size();
+                    if(datesCount >= maxDatesAllowed)
+                    {
+                        break;
+                    }
+                }
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -202,6 +214,17 @@ public class AirPollutionDataConverter
 
                 String dateKey = vecStrings.get(8);
                 currDate = Integer.parseInt(dateKey);
+
+                if(this.maxDatesAllowed > 0)
+                {
+                    // check if currDate exist into the datesArray.***
+                    if(!this.dataContainer.datesArray.contains(dateKey))
+                    {
+                        // here, discard this date.***
+                        continue;
+                    }
+                }
+
                 if(lastDate == 0)
                 {
                     lastDate = currDate;
@@ -305,8 +328,10 @@ public class AirPollutionDataConverter
 
             boolean is1rstPoint = true;
             int currDate = 0;
+            int rowsCount = 0;
 
-            while (!finished) {
+            while (!finished)
+            {
                 line = br.readLine();
                 if (line == null)
                 {
@@ -373,6 +398,8 @@ public class AirPollutionDataConverter
                 }
 
                 is1rstPoint = false;
+
+                rowsCount += 1;
             }
 
             br.close();
@@ -584,5 +611,10 @@ public class AirPollutionDataConverter
         }
 
         int hola = 0;
+    }
+
+    public void setMaxDatesCount(int maxDatesCount)
+    {
+        this.maxDatesAllowed = maxDatesCount;
     }
 }
