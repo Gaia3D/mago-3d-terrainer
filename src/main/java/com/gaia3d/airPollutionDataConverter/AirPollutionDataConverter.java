@@ -215,15 +215,6 @@ public class AirPollutionDataConverter
                 String dateKey = vecStrings.get(8);
                 currDate = Integer.parseInt(dateKey);
 
-                if(this.maxDatesAllowed > 0)
-                {
-                    // check if currDate exist into the datesArray.***
-                    if(!this.dataContainer.datesArray.contains(dateKey))
-                    {
-                        // here, discard this date.***
-                        continue;
-                    }
-                }
 
                 if(lastDate == 0)
                 {
@@ -244,6 +235,17 @@ public class AirPollutionDataConverter
                     airPollutionSliceData = new AirPollutionSliceData(); // reset.***
                     is1rstPoint = true;
                     lastDate = currDate;
+                }
+
+                if(this.maxDatesAllowed > 0)
+                {
+                    // check if currDate exist into the datesArray.***
+                    if(!this.dataContainer.datesArray.contains(dateKey))
+                    {
+                        // here, discard this date.***
+                        //continue;
+                        break;
+                    }
                 }
 
                 // now, transform strings to values.***
@@ -584,6 +586,14 @@ public class AirPollutionDataConverter
             }
 
             AirPollutionSliceData airPollutionSliceData = airPollutionVolume.getOrNewAirPollutionSliceData(altitude);
+
+            File file = new File(tempFilePath);
+            if(!file.exists())
+            {
+                // error.***
+                int hola = 0;
+            }
+
             airPollutionSliceData.loadTempFile(tempFilePath);
 
             int hola = 0;
