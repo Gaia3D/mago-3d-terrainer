@@ -50,7 +50,7 @@ public class TileWgs84Manager {
 
     double vertexCoincidentError = 1e-11; // 1e-12 is good.***
 
-    int triangleRefinementMaxIterations = 4;
+    int triangleRefinementMaxIterations = 5;
 
     TerrainLayer terrainLayer = null;
 

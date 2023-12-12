@@ -75,8 +75,10 @@ public class GaiaGeoTiffManager
 
         double desiredPixelsCountX = envelopeSpanX / desiredPixelSizeXinMeters;
         double desiredPixelsCountY = envelopeSpanY / desiredPixelSizeYinMeters;
-        int desiredImageWidth = Math.max((int)desiredPixelsCountX, 1);
-        int desiredImageHeight = Math.max((int)desiredPixelsCountY, 1);
+        int minXSize = 24;
+        int minYSize = 24;
+        int desiredImageWidth = Math.max((int)desiredPixelsCountX, minXSize);
+        int desiredImageHeight = Math.max((int)desiredPixelsCountY, minYSize);
 
 
         double scaleX = gridSpanX / desiredPixelsCountX;
@@ -85,9 +87,17 @@ public class GaiaGeoTiffManager
         memSave_originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
         memSave_originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
 
-        WritableRaster newRaster = originalImage.getData().createCompatibleWritableRaster(desiredImageWidth, desiredImageHeight);
-
+        WritableRaster newRaster = null;
         Raster originalImageData = originalImage.getData();
+        try {
+            // now resaize the raster.***
+            newRaster = originalImageData.createCompatibleWritableRaster(desiredImageWidth, desiredImageHeight);
+        } catch (Exception e) {
+            e.printStackTrace();  // Imprime la traza de la excepción para depuración.
+            throw new RuntimeException("Error al crear el WritableRaster.", e);
+        }
+
+
 
         for(int y=0; y<desiredImageHeight; y++)
         {

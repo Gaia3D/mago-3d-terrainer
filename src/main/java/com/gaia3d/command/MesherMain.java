@@ -11,6 +11,7 @@ import org.apache.commons.cli.Options;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 
+import java.io.File;
 import java.io.IOException;
 
 public class MesherMain
@@ -42,8 +43,8 @@ public class MesherMain
 
             if (command.hasOption(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName())) {
                 tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName());
-                tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + "\\tileTempFolder";
-                tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + "\\resizedGeoTiffFolder";
+                tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
+                tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
             }
 
             if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {

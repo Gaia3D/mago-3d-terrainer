@@ -62,11 +62,11 @@ public class TileWgs84Utils {
         }
         else if(depth >= 10 && depth < 20)
         {
-            return 2;
+            return 3;
         }
         else
         {
-            return 2;
+            return 3;
         }
 
     }

@@ -7,15 +7,36 @@ import org.opengis.referencing.operation.TransformException;
 import java.io.IOException;
 
 class MesherMainTest {
+    //****************************************************************
+    // Note : the outFolder must be different from the inputFolder.***
+    //****************************************************************
 
     @Test
     void main() throws FactoryException, TransformException, IOException
     {
+        //****************************************************************
+        // Note : the outFolder must be different from the inputFolder.***
+        //****************************************************************
         String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
         String minTileDepth = String.valueOf(0);
         String maxTileDepth = String.valueOf(10);
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\data_geoTiff\\5m";
+
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void main_ws2() throws FactoryException, TransformException, IOException
+    {
+        //****************************************************************
+        // Note : the outFolder must be different from the inputFolder.***
+        //****************************************************************
+        String outputDirectory = "D:\\data\\DEM_output\\output";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(17);
+        String refinementStrength = String.valueOf(1);
+        String originalGeoTiffFolderPath = "D:\\data\\DEM";
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }

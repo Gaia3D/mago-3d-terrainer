@@ -1027,11 +1027,6 @@ public class TileWgs84 {
         while(!finished) {
             System.out.println("iteration : " + splitCount + " : L : " + currTileIndices.L );
 
-            if(currTileIndices.L == 11 && currTileIndices.X == 3492 && currTileIndices.Y == 1452)
-            {
-                int hola = 0;
-            }
-
             if(!this.refineMeshOneIteration(mesh, currTileIndices))
             {
                 finished = true;
