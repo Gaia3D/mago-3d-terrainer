@@ -135,5 +135,6 @@ public class GaiaGeoTiffManager
         GeoTiffWriter writer = new GeoTiffWriter(outputStream);
         writer.write(coverage, null);
         writer.dispose();
+        outputStream.close();
     }
 }

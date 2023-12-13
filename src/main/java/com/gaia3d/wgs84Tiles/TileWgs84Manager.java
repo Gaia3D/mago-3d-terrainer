@@ -109,9 +109,9 @@ public class TileWgs84Manager {
 
         // test.***
         TilesRange tilesRangeTest = new TilesRange();
-        ArrayList<TileIndices>  resultTileIndicesArrayTest = TileWgs84Utils.selectTileIndicesArray(14, minLon, maxLon, minLat, maxLat, null, tilesRangeTest, originIsLeftUp);
+        //ArrayList<TileIndices>  resultTileIndicesArrayTest = TileWgs84Utils.selectTileIndicesArray(14, minLon, maxLon, minLat, maxLat, null, tilesRangeTest, originIsLeftUp);
 
-
+        int counterAux = 0;
         for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
         {
             TilesRange tilesRange = new TilesRange();
@@ -161,6 +161,14 @@ public class TileWgs84Manager {
 
                 tile.makeBigMesh(is1rstGeneration);
                 tile.deleteObjects();
+
+                counterAux++;
+
+                if(counterAux >= 50)
+                {
+                    counterAux = 0;
+                    System.gc();
+                }
             }
 
             if(depth < maxTileDepth)
@@ -177,6 +185,8 @@ public class TileWgs84Manager {
                     tile.deleteObjects();
                 }
             }
+
+            System.gc();
         }
 
         // finally save the terrainLayer.json.***
@@ -516,6 +526,8 @@ public class TileWgs84Manager {
             String folderPath = terrainElevationDataFolderPath + "\\" + folderName;
             resizeGeotiffSet(folderPath, auxFolderPath);
         }
+
+        System.gc();
 
         int hola = 0;
     }
