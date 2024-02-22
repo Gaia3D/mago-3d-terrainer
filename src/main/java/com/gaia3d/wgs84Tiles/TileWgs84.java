@@ -85,7 +85,7 @@ public class TileWgs84 {
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
         FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
 
         // delete the file if exists before save.***
         FileUtils.deleteFileIfExists(filePath);
@@ -104,7 +104,7 @@ public class TileWgs84 {
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
         FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
 
         // delete the file if exists before save.***
         FileUtils.deleteFileIfExists(filePath);
@@ -117,7 +117,7 @@ public class TileWgs84 {
 
     public void loadFile(String filePath) throws IOException {
         FileInputStream fileInputStream = new FileInputStream(filePath);
-        LittleEndianDataInputStream dataInputStream = new LittleEndianDataInputStream(fileInputStream);
+        LittleEndianDataInputStream dataInputStream = new LittleEndianDataInputStream(new BufferedInputStream(fileInputStream));
 
         this.mesh = new GaiaMesh();
         this.mesh.loadDataInputStream(dataInputStream);

@@ -20,6 +20,7 @@ import org.opengis.referencing.crs.GeographicCRS;
 import org.opengis.referencing.crs.ProjectedCRS;
 import org.opengis.referencing.operation.TransformException;
 
+import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -327,7 +328,7 @@ public class TileWgs84Manager {
                         FileUtils.createAllFoldersIfNoExist(tileFolderPath);
 
                         FileOutputStream fileOutputStream = new FileOutputStream(tileFullPath);
-                        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+                        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
 
                         // delete the file if exists before save.***
                         FileUtils.deleteFileIfExists(tileFullPath);
