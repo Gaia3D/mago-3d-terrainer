@@ -2,8 +2,8 @@ package com.gaia3d.basic.structure;
 
 
 
-import com.gaia3d.util.io.LittleEndianDataInputStream;
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.util.io.BigEndianDataInputStream;
+import com.gaia3d.util.io.BigEndianDataOutputStream;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 
@@ -249,7 +249,7 @@ public class GaiaHalfEdge {
         return false;
     }
 
-    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException
+    public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException
     {
         this.id = dataInputStream.readInt();
 
@@ -262,7 +262,7 @@ public class GaiaHalfEdge {
         int hola = 0;
     }
 
-    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
+    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream)
     {
         try {
             // 1rst, save id.***

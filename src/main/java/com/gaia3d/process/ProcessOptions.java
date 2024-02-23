@@ -15,7 +15,6 @@ public enum ProcessOptions
     MAXIMUM_TILE_DEPTH("maximumTileDepth", "maxDepth", "maximumTileDepth", true,"maximum tile depth"),
     MESH_REFINEMENT_STRENGTH("meshRefinementStrength", "refinementStrength", "meshRefinementStrength", false,"mesh refinement strength");
 
-
     private final String longName;
     private final String shortName;
     private final String argName;

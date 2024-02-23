@@ -1,7 +1,7 @@
 package com.gaia3d.basic.structure;
 
-import com.gaia3d.util.io.LittleEndianDataInputStream;
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.util.io.BigEndianDataInputStream;
+import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
 import com.gaia3d.wgs84Tiles.TileIndices;
@@ -990,7 +990,7 @@ public class GaiaMesh {
 
     }
 
-    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException {
+    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) throws IOException {
         this.setObjectsIdInList();
         this.setHalfEdgesStartVertexAsOutingHEdges();// this function is used when the vertices belong to different tiles.***
 
@@ -1044,7 +1044,7 @@ public class GaiaMesh {
         return isOk;
     }
 
-    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException
+    public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException
     {
         this.id = dataInputStream.readInt();
 

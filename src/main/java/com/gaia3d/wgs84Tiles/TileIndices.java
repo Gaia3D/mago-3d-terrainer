@@ -1,7 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
-import com.gaia3d.util.io.LittleEndianDataInputStream;
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.util.io.BigEndianDataInputStream;
+import com.gaia3d.util.io.BigEndianDataOutputStream;
 
 import java.io.IOException;
 
@@ -45,7 +45,7 @@ public class TileIndices {
         return false;
     }
 
-    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream)
+    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream)
     {
         try {
             dataOutputStream.writeInt(X);
@@ -57,7 +57,7 @@ public class TileIndices {
         }
     }
 
-    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException
+    public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException
     {
         X = dataInputStream.readInt();
         Y = dataInputStream.readInt();
