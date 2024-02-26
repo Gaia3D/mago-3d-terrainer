@@ -2,9 +2,10 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.util.io.LittleEndianDataInputStream;
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.util.io.BigEndianDataInputStream;
+import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.reader.FileUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import static java.lang.Math.abs;
 
 
+@Slf4j
 public class TileWgs84 {
     public TileWgs84Manager manager = null;
 
@@ -85,7 +87,7 @@ public class TileWgs84 {
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
         FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
 
         // delete the file if exists before save.***
         FileUtils.deleteFileIfExists(filePath);
@@ -97,14 +99,14 @@ public class TileWgs84 {
         fileOutputStream.close();
     }
 
-    public void saveFileBigMesh(String filePath, GaiaMesh bigMesh) throws IOException {
+    /*public void saveFileBigMesh(String filePath, GaiaMesh bigMesh) throws IOException {
         // this is a temp function.***
         // delete after test.***
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
         FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
 
         // delete the file if exists before save.***
         FileUtils.deleteFileIfExists(filePath);
@@ -113,11 +115,11 @@ public class TileWgs84 {
         bigMesh.saveDataOutputStream(dataOutputStream);
 
         fileOutputStream.close();
-    }
+    }*/
 
     public void loadFile(String filePath) throws IOException {
         FileInputStream fileInputStream = new FileInputStream(filePath);
-        LittleEndianDataInputStream dataInputStream = new LittleEndianDataInputStream(fileInputStream);
+        BigEndianDataInputStream dataInputStream = new BigEndianDataInputStream(new BufferedInputStream(fileInputStream));
 
         this.mesh = new GaiaMesh();
         this.mesh.loadDataInputStream(dataInputStream);

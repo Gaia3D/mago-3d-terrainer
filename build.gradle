@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.gaia3d'
-version = '1.0.0'
+version = '1.1.0'
 project.ext.lwjglVersion = "3.3.2"
 
 switch ( org.gradle.internal.os.OperatingSystem.current() ) {
@@ -18,6 +18,7 @@ switch ( org.gradle.internal.os.OperatingSystem.current() ) {
         project.ext.lwjglNatives = "natives-macos"
         break
 }
+
 
 repositories {
     maven { url "https://repo.osgeo.org/repository/release/"}

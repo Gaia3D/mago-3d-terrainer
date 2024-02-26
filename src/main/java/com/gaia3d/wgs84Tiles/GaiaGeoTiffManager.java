@@ -2,34 +2,20 @@ package com.gaia3d.wgs84Tiles;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
-import org.geotools.coverage.grid.GridGeometry2D;
-import org.geotools.coverage.grid.io.AbstractGridCoverageWriter;
-import org.geotools.coverage.grid.io.AbstractGridFormat;
-import org.geotools.coverage.util.CoverageUtilities;
-import org.geotools.data.DataSourceException;
+import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
-import org.geotools.geometry.Envelope2D;
-import org.opengis.coverage.grid.GridCoverageWriter;
-import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
-import org.opengis.parameter.GeneralParameterDescriptor;
-import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
 
-import javax.media.jai.PlanarImage;
-import java.awt.image.BufferedImage;
+import javax.media.jai.Interpolation;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.gaia3d.wgs84Tiles.GaiaGeoTiffUtils.getEnvelopeSpanInMetersOfGridCoverage2D;
 
 public class GaiaGeoTiffManager
 {
@@ -49,6 +35,8 @@ public class GaiaGeoTiffManager
             File file = new File(geoTiffFilePath);
             GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
+            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
+            coverage = Interpolator2D.create(coverage, interpolation);
             reader.dispose();
         }
         catch (Exception e)
@@ -96,8 +84,6 @@ public class GaiaGeoTiffManager
             e.printStackTrace();  // Imprime la traza de la excepción para depuración.
             throw new RuntimeException("Error al crear el WritableRaster.", e);
         }
-
-
 
         for(int y=0; y<desiredImageHeight; y++)
         {

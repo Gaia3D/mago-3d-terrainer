@@ -20,6 +20,7 @@ import org.opengis.referencing.crs.GeographicCRS;
 import org.opengis.referencing.crs.ProjectedCRS;
 import org.opengis.referencing.operation.TransformException;
 
+import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,7 +96,6 @@ public class TileWgs84Manager {
 
         GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
 
-
         double minLon = geographicExtension.getMinLongitudeDeg();
         double maxLon = geographicExtension.getMaxLongitudeDeg();
         double minLat = geographicExtension.getMinLatitudeDeg();
@@ -165,7 +165,7 @@ public class TileWgs84Manager {
 
                 counterAux++;
 
-                if(counterAux >= 50)
+                if(counterAux >= 200)
                 {
                     counterAux = 0;
                     System.gc();
@@ -213,7 +213,7 @@ public class TileWgs84Manager {
         }
 
     }
-    public void makeSimpleTileMeshes_test() throws IOException, TransformException {
+    /*public void makeSimpleTileMeshes_test() throws IOException, TransformException {
 
         GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
         double minLon = geographicExtension.getMinLongitudeDeg();
@@ -286,7 +286,7 @@ public class TileWgs84Manager {
 
         // finally save the terrainLayer.json.***
         saveQuantizedMeshes();
-    }
+    }*/
 
     public void saveQuantizedMeshes() throws IOException, TransformException {
         // 1rst save terrainLayer.json.***
@@ -328,7 +328,7 @@ public class TileWgs84Manager {
                         FileUtils.createAllFoldersIfNoExist(tileFolderPath);
 
                         FileOutputStream fileOutputStream = new FileOutputStream(tileFullPath);
-                        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(fileOutputStream);
+                        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
 
                         // delete the file if exists before save.***
                         FileUtils.deleteFileIfExists(tileFullPath);
@@ -337,7 +337,6 @@ public class TileWgs84Manager {
                         dataOutputStream.close();
                         fileOutputStream.close();
                         int hola = 0;
-
                     }
                 }
             }
