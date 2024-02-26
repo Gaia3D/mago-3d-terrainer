@@ -81,8 +81,8 @@ public class GaiaGeoTiffManager
         int desiredImageHeight = Math.max((int)desiredPixelsCountY, minYSize);
 
 
-        double scaleX = gridSpanX / desiredPixelsCountX;
-        double scaleY = gridSpanY / desiredPixelsCountY;
+        double scaleX = (double)gridSpanX / desiredPixelsCountX;
+        double scaleY = (double)gridSpanY / desiredPixelsCountY;
 
         memSave_originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
         memSave_originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);

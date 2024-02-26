@@ -1,5 +1,6 @@
 package com.gaia3d.command;
 
+import com.gaia3d.wgs84Tiles.TileWgs84Utils;
 import org.junit.jupiter.api.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
@@ -49,11 +50,19 @@ class MesherMainTest {
         //****************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(17);
+        String maxTileDepth = String.valueOf(15);
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\data\\data_geoTiff\\5m";
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void main_generalTest2() throws FactoryException, TransformException, IOException
+    {
+        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(14);
+        int hola = 0;
+
     }
 
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {

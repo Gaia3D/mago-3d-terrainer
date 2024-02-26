@@ -64,19 +64,6 @@ public class MesherMain
             e.printStackTrace();
         }
 
-        //String tileTempDirectory = "D:\\QuantizedMesh_JavaProjects\\tileTempFolder";
-        //tileWgs84Manager.tileTempDirectory = tileTempDirectory;
-
-        //String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
-        //tileWgs84Manager.outputDirectory = outputDirectory;
-
-
-        //tileWgs84Manager.minTileDepth = 0;
-        //tileWgs84Manager.maxTileDepth = 17;
-
-        // Set geoTiff resizing folder paths.***
-        //tileWgs84Manager.tempResizedGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\resizedGeoTiffFolder";
-        //tileWgs84Manager.originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\output_geoTiff\\5m";
         try {
             tileWgs84Manager.resizeGeotiffSet(tileWgs84Manager.originalGeoTiffFolderPath, null);
         } catch (IOException e) {

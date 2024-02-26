@@ -40,6 +40,7 @@ public class TileWgs84Manager {
 
     // For each depth level, use a different folder.***
     public HashMap<Integer, String> map_depth_geoTiffFolderPath = new HashMap<Integer, String>();
+
     public HashMap<Integer, Double> map_depth_desiredPixelSizeXinMeters = new HashMap<Integer, Double>();
 
     public HashMap<Integer, Double> map_depth_maxDiffBetweenGeoTiffSampleAndTrianglePlane = new HashMap<Integer, Double>();
@@ -481,6 +482,8 @@ public class TileWgs84Manager {
             {
                 double desiredPixelSizeXinMeters = this.map_depth_desiredPixelSizeXinMeters.get(depth);
                 double desiredPixelSizeYinMeters = desiredPixelSizeXinMeters;
+
+                //****************************************************************************************
                 if(desiredPixelSizeXinMeters < pixelSizeMeters.x)
                 {
                     // In this case just assign the originalGeoTiffFolderPath.***
