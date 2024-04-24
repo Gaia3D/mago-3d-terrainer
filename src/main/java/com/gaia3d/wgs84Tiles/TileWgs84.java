@@ -701,8 +701,11 @@ public class TileWgs84 {
             terrainElevationData.getPixelSizeDegree(pixelSizeDeg);
         }
 
-        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 256.0);
-        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 256.0);
+//        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 256.0);
+//        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 256.0);
+
+        double pixelSizeX = widthDeg / 32.0;
+        double pixelSizeY = heightDeg / 32.0;
 
         GaiaPlane plane = triangle.getPlane();
 

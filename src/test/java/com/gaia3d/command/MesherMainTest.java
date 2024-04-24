@@ -28,6 +28,40 @@ class MesherMainTest {
     }
 
     @Test
+    void main_smallMountainForTrees() throws FactoryException, TransformException, IOException
+    {
+        //****************************************************************
+        // Note : the outFolder must be different from the inputFolder.***
+        //****************************************************************
+        String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(17);
+        String refinementStrength = String.valueOf(1);
+        String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\smallDatas";
+
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void main_getElevationTest() throws FactoryException, TransformException, IOException
+    {
+        String outputPath = "D:\\QuantizedMesh_JavaProjects\\output";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(17);
+        String refinementStrength = String.valueOf(1);
+        String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\smallDatas";
+
+        String[] args = new String[]{
+                "-inputFolderPath", originalGeoTiffFolderPath,
+                "-outputFolderPath", outputPath,
+                "-minimumTileDepth", minTileDepth,
+                "-maximumTileDepth", maxTileDepth,
+                "-meshRefinementStrength", refinementStrength
+        };
+        MesherMain.mainTest(args);
+    }
+
+    @Test
     void main_ws2() throws FactoryException, TransformException, IOException
     {
         //****************************************************************

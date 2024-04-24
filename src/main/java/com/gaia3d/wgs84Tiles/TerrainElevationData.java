@@ -114,14 +114,14 @@ public class TerrainElevationData {
         memSave_wgs84 = DefaultGeographicCRS.WGS84;
 
         memSave_noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-        //DirectPosition2D posWorld = new DirectPosition2D(memSave_wgs84, lonDeg, latDeg); // longitude supplied first
+        //note :  DirectPosition2D(memSave_wgs84, lonDeg, latDeg); // longitude supplied first
         if(memSave_posWorld == null)
         {
             memSave_posWorld = new DirectPosition2D(memSave_wgs84, 0.0, 0.0);
         }
         memSave_posWorld.x = lonDeg;
         memSave_posWorld.y = latDeg;
-        //GridCoordinates2D posGrid = gg.worldToGrid(posWorld);
+
 
         memSave_alt[0] = 0.0;
         try{

@@ -5,7 +5,10 @@ import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import org.geotools.geometry.DirectPosition2D;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.coverage.grid.GridGeometry;
+import org.opengis.geometry.DirectPosition;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
 
@@ -37,6 +40,7 @@ public class GaiaGeoTiffManager
             coverage = reader.read(null);
             Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
             coverage = Interpolator2D.create(coverage, interpolation);
+
             reader.dispose();
         }
         catch (Exception e)

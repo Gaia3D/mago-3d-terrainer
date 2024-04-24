@@ -221,19 +221,18 @@ public class TerrainElevationDataQuadTree
             }
         }
 
-
-            if(children != null)
+        if(children != null)
+        {
+            // check children.***
+            for(int j=0; j<4; j++)
             {
-                // check children.***
-                for(int j=0; j<4; j++)
+                if(children[j].geographicExtension.intersects(lonDeg, latDeg))
                 {
-                    if(children[j].geographicExtension.intersects(lonDeg, latDeg))
-                    {
-                        children[j].getTerrainElevationDatasArray(lonDeg, latDeg, resultTerrainElevDataArray);
-                        break;
-                    }
+                    children[j].getTerrainElevationDatasArray(lonDeg, latDeg, resultTerrainElevDataArray);
+                    break;
                 }
             }
+        }
 
     }
 
