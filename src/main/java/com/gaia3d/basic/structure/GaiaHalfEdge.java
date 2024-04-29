@@ -28,6 +28,8 @@ public class GaiaHalfEdge {
 
     public GaiaLine2D line2D = null;
 
+    public GaiaRectangle boundingRect = null;
+
     public void deleteObjects()
     {
         startVertex = null;
@@ -225,6 +227,56 @@ public class GaiaHalfEdge {
         }
     }
 
+    public GaiaRectangle getBoundingRectangle()
+    {
+        if(this.boundingRect == null)
+        {
+            this.boundingRect = new GaiaRectangle();
+            Vector3d startPos = this.getStartVertex().position;
+            Vector3d endPos = this.getEndVertex().position;
+            this.boundingRect.setInit(new Vector2d(startPos.x, startPos.y));
+            this.boundingRect.addPoint(endPos.x, endPos.y);
+        }
+
+        return this.boundingRect;
+    }
+    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error, int axisToCheck)
+    {
+        // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
+        GaiaVertex startPoint_A = this.getStartVertex();
+        GaiaVertex endPoint_A = this.getEndVertex();
+
+        GaiaVertex startPoint_B = halfEdge.getStartVertex();
+        GaiaVertex endPoint_B = halfEdge.getEndVertex();
+
+//        // 1rst do a bounding box check.***
+        GaiaRectangle boundingRect_A = this.getBoundingRectangle();
+        GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
+
+        if(axisToCheck == 0) // x axis
+        {
+            if(!boundingRect_A.intersectsInXAxis(boundingRect_B))
+            {
+                return false;
+            }
+        }
+        else if(axisToCheck == 1) // y axis
+        {
+            if(!boundingRect_A.intersectsInYAxis(boundingRect_B))
+            {
+                return false;
+            }
+        }
+
+        // 2nd compare objects as values.***
+        if(startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error)
     {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
@@ -234,11 +286,14 @@ public class GaiaHalfEdge {
         GaiaVertex startPoint_B = halfEdge.getStartVertex();
         GaiaVertex endPoint_B = halfEdge.getEndVertex();
 
-        // 1rst compare objects as pointers.***
-        //if(startPoint_A.equals(endPoint_B) && startPoint_B.equals(endPoint_A))
-        //{
-        //    return true;
-        //}
+//        // 1rst do a bounding box check.***
+        GaiaRectangle boundingRect_A = this.getBoundingRectangle();
+        GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
+
+        if(!boundingRect_A.intersectsInSomeAxis(boundingRect_B))
+        {
+            return false;
+        }
 
         // 2nd compare objects as values.***
         if(startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error))

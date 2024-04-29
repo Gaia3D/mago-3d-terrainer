@@ -27,13 +27,23 @@ public class TileWgs84Utils {
     static public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth)
     {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        return tileSize * 0.025;
-    }
-
-    static public double getMinTriangleSizeForTileDepth(int depth)
-    {
-        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        return tileSize / 60.0;
+        //return tileSize * 0.025;
+        if(depth < 5)
+        {
+            return tileSize * 0.01;
+        }
+        else if(depth < 8)
+        {
+            return tileSize * 0.03;
+        }
+        else if(depth < 17)
+        {
+            return tileSize * 0.03;
+        }
+        else
+        {
+            return tileSize * 0.04;
+        }
     }
 
     static public double selectTileAngleRangeByDepth(int depth)
@@ -50,23 +60,40 @@ public class TileWgs84Utils {
     static public int getRefinementIterations(int depth)
     {
         if (depth < 0 || depth > 28)
-        { return 3; }
+        { return 5; }
+
+//        if(depth >= 0 && depth < 6)
+//        {
+//            return 4;
+//        }
+//        else if(depth >= 6 && depth < 10)
+//        {
+//            return 3;
+//        }
+//        else if(depth >= 10 && depth < 20)
+//        {
+//            return 2;
+//        }
+//        else
+//        {
+//            return 2;
+//        }
 
         if(depth >= 0 && depth < 6)
         {
-            return 4;
+            return 15;
         }
         else if(depth >= 6 && depth < 10)
         {
-            return 3;
+            return 15;
         }
         else if(depth >= 10 && depth < 20)
         {
-            return 3;
+            return 15;
         }
         else
         {
-            return 3;
+            return 15;
         }
 
     }
@@ -221,6 +248,56 @@ public class TileWgs84Utils {
     {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         return (int) (180.0 / angDeg);
+    }
+
+    static List<TilesRange> subDivideTileRange(TilesRange tilesRange, int maxCol, int maxRow, List<TilesRange> resultSubDividedTilesRanges)
+    {
+        if(resultSubDividedTilesRanges == null)
+        {
+            resultSubDividedTilesRanges = new ArrayList<TilesRange>();
+        }
+
+        int colsCount = tilesRange.maxTileX - tilesRange.minTileX + 1;
+        int rowsCount = tilesRange.maxTileY - tilesRange.minTileY + 1;
+
+        if(colsCount <= maxCol && rowsCount <= maxRow)
+        {
+            resultSubDividedTilesRanges.add(tilesRange);
+            return resultSubDividedTilesRanges;
+        }
+
+        int colsSubDividedCount = 1;
+        int rowsSubDividedCount = 1;
+
+        if(colsCount > maxCol)
+        {
+            colsSubDividedCount = (int) Math.ceil((double)colsCount / (double)maxCol);
+        }
+
+        if(rowsCount > maxRow)
+        {
+            rowsSubDividedCount = (int) Math.ceil((double)rowsCount / (double)maxRow);
+        }
+
+        double colsSubDividedSize = (double)colsCount / (double)colsSubDividedCount;
+        double rowsSubDividedSize = (double)rowsCount / (double)rowsSubDividedCount;
+
+        for(int i = 0; i < colsSubDividedCount; i++)
+        {
+            for(int j = 0; j < rowsSubDividedCount; j++)
+            {
+                TilesRange subDividedTilesRange = new TilesRange();
+                subDividedTilesRange.tileDepth = tilesRange.tileDepth;
+                subDividedTilesRange.minTileX = tilesRange.minTileX + (int)(i * colsSubDividedSize);
+                subDividedTilesRange.maxTileX = tilesRange.minTileX + (int)((i + 1) * colsSubDividedSize) - 1;
+                subDividedTilesRange.minTileY = tilesRange.minTileY + (int)(j * rowsSubDividedSize);
+                subDividedTilesRange.maxTileY = tilesRange.minTileY + (int)((j + 1) * rowsSubDividedSize) - 1;
+
+                resultSubDividedTilesRanges.add(subDividedTilesRange);
+            }
+        }
+
+        return resultSubDividedTilesRanges;
     }
 
     static boolean isValidTileIndices(int L, int X, int Y)

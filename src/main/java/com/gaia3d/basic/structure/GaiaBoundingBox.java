@@ -98,6 +98,40 @@ public class GaiaBoundingBox {
         }
     }
 
+    public boolean intersects(GaiaBoundingBox boundingBox, double errorX, double errorY, double errorZ)
+    {
+        if(maxX < boundingBox.minX - errorX || minX > boundingBox.maxX + errorX)
+        {
+            return false;
+        }
+        if(maxY < boundingBox.minY - errorY || minY > boundingBox.maxY + errorY)
+        {
+            return false;
+        }
+        if(maxZ < boundingBox.minZ - errorZ || minZ > boundingBox.maxZ + errorZ)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean intersects(GaiaBoundingBox boundingBox, double error)
+    {
+        if(maxX < boundingBox.minX - error || minX > boundingBox.maxX + error)
+        {
+            return false;
+        }
+        if(maxY < boundingBox.minY - error || minY > boundingBox.maxY + error)
+        {
+            return false;
+        }
+        if(maxZ < boundingBox.minZ - error || minZ > boundingBox.maxZ + error)
+        {
+            return false;
+        }
+        return true;
+    }
+
     public boolean intersectsPointXY(double pos_x, double pos_y)
     {
         // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis.***

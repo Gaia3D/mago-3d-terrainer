@@ -2,6 +2,8 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GaiaTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
+import lombok.Getter;
+import lombok.Setter;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.CRS;
 import org.joml.Vector2d;
@@ -13,10 +15,14 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TerrainElevationDataManager
 {
     // Inside the folder, there are multiple geoTiff files.***
+    @Setter
+    @Getter
     String terrainElevationDataFolderPath;
 
     int quadtreesMaxDepth = 10;
@@ -31,13 +37,11 @@ public class TerrainElevationDataManager
     ArrayList<String> memSave_geoTiffFileNames = new ArrayList<String>();
     public ArrayList<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
 
+    public Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<String, TileWgs84Raster>();
+
     public TerrainElevationDataManager()
     {
         rootTerrainElevationDataQuadTree = null;
-    }
-
-    public void setTerrainElevationDataFolderPath(String terrainElevationDataFolderPath) {
-        this.terrainElevationDataFolderPath = terrainElevationDataFolderPath;
     }
 
     public void makeTerrainQuadTree() throws FactoryException, TransformException, IOException {
@@ -46,6 +50,32 @@ public class TerrainElevationDataManager
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreesMaxDepth);
         int hola = 0;
     }
+
+    public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
+        TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
+        if(tileWgs84Raster == null)
+        {
+            tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
+            int tileRasterWidth = tileWgs84Manager.tileRasterSize;
+            int tileRasterHeight = tileWgs84Manager.tileRasterSize;
+            tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
+            mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
+        }
+
+        return tileWgs84Raster;
+    }
+
+    public void deleteTileRasters()
+    {
+        for(TileWgs84Raster tileWgs84Raster : mapIndicesTileRaster.values())
+        {
+            tileWgs84Raster.deleteObjects();
+        }
+
+        mapIndicesTileRaster.clear();
+
+    }
+
 
     public GeographicExtension getRootGeographicExtension() {
         if(rootTerrainElevationDataQuadTree == null)
@@ -78,6 +108,7 @@ public class TerrainElevationDataManager
 
     public void deleteObjects()
     {
+        this.deleteTileRasters();
         if(rootTerrainElevationDataQuadTree == null)
         {
             return;

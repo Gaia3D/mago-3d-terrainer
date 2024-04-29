@@ -5,6 +5,7 @@ import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.reader.FileUtils;
+import com.gaia3d.util.io.LittleEndianDataInputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
@@ -86,16 +87,18 @@ public class TileWgs84 {
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
+
         FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
 
-        // delete the file if exists before save.***
-        FileUtils.deleteFileIfExists(filePath);
+        // Crear un BufferedInputStream para mejorar el rendimiento
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
 
-        // save the tile.***
+        // Envolver el BufferedInputStream en un LittleEndianDataInputStream
+        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(bufferedOutputStream);
+
         mesh.saveDataOutputStream(dataOutputStream);
-
         dataOutputStream.close();
+        bufferedOutputStream.close();
         fileOutputStream.close();
     }
 
@@ -119,11 +122,17 @@ public class TileWgs84 {
 
     public void loadFile(String filePath) throws IOException {
         FileInputStream fileInputStream = new FileInputStream(filePath);
-        BigEndianDataInputStream dataInputStream = new BigEndianDataInputStream(new BufferedInputStream(fileInputStream));
+
+        // Crear un BufferedInputStream para mejorar el rendimiento
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+
+        // Envolver el BufferedInputStream en un LittleEndianDataInputStream
+        BigEndianDataInputStream dataInputStream = new BigEndianDataInputStream(bufferedInputStream);
 
         this.mesh = new GaiaMesh();
         this.mesh.loadDataInputStream(dataInputStream);
         dataInputStream.close();
+        bufferedInputStream.close();
         fileInputStream.close();
     }
 
@@ -657,7 +666,7 @@ public class TileWgs84 {
         double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
         double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
         double triangleMaxLengthMeters = triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
-        double minTriangleSizeForDepth = TileWgs84Utils.getMinTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
+        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
         if(triangleMaxLengthMeters < minTriangleSizeForDepth)
         {
             triangle.refineChecked = true;

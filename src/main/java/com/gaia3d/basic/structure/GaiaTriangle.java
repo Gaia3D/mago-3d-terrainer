@@ -1,5 +1,6 @@
 package com.gaia3d.basic.structure;
 
+import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TileIndices;
@@ -53,6 +54,17 @@ public class GaiaTriangle {
         return vertices;
     }
 
+    public ArrayList<Vector3d> getPositions()
+    {
+        ArrayList<GaiaVertex> vertices = this.getVertices();
+        ArrayList<Vector3d> positions = new ArrayList<Vector3d>();
+        for(GaiaVertex vertex : vertices)
+        {
+            positions.add(vertex.position);
+        }
+        return positions;
+    }
+
     public GaiaBoundingBox getBoundingBox()
     {
         if(this.boundingBox == null)
@@ -85,6 +97,12 @@ public class GaiaTriangle {
 
     public boolean intersectsPointXY(double pos_x, double pos_y, ArrayList<GaiaHalfEdge> memSave_hedges, GaiaLine2D memSave_line2D)
     {
+        GaiaBoundingBox boundingBox = this.getBoundingBox();
+        if(!boundingBox.intersectsPointXY(pos_x, pos_y))
+        {
+            return false;
+        }
+
         this.halfEdge.getHalfEdgesLoop(memSave_hedges);
         double error = 1e-8;
         int hedgesCount = memSave_hedges.size();
@@ -171,6 +189,15 @@ public class GaiaTriangle {
         halfEdges.clear();
 
         return longestHalfEdge;
+    }
+
+    public double getTriangleMaxSizeInMeters()
+    {
+        GaiaBoundingBox bboxTriangle = this.getBoundingBox();
+        double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
+        double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
+        double triangleMaxLengthMeters = triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
+        return triangleMaxLengthMeters;
     }
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream)

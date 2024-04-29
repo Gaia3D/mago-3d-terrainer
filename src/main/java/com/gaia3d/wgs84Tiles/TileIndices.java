@@ -2,6 +2,8 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
+import com.gaia3d.util.io.LittleEndianDataInputStream;
+import com.gaia3d.util.io.LittleEndianDataOutputStream;
 
 import java.io.IOException;
 
@@ -21,6 +23,15 @@ public class TileIndices {
     int X = 0;
     int Y = 0;
     int L = 0; // tile depth.
+
+    public TileIndices() {
+    }
+    public TileIndices(int tileDepth, int x, int y)
+    {
+        this.L = tileDepth;
+        this.X = x;
+        this.Y = y;
+    }
 
     public void set(int x, int y, int l) {
         X = x;

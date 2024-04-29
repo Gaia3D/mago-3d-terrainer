@@ -1,16 +1,19 @@
 package com.gaia3d.basic.structure;
 
+import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
 import com.gaia3d.wgs84Tiles.TileIndices;
+import com.gaia3d.wgs84Tiles.TilesRange;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class GaiaMesh {
     public ArrayList<GaiaVertex> vertices = null;
@@ -81,6 +84,42 @@ public class GaiaMesh {
     }
 
     public void removeDeletedObjects()
+    {
+        // 1rst, check vertices.***
+        ArrayList<GaiaVertex> newVertices = new ArrayList<GaiaVertex>();
+        int verticesCount = vertices.size();
+        for(int i=0; i<verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+            if(vertex.objectStatus != GaiaObjectStatus.DELETED) {
+                newVertices.add(vertex);
+            }
+        }
+        vertices = newVertices;
+
+        // 2nd, check triangles.***
+        ArrayList<GaiaTriangle> newTriangles = new ArrayList<GaiaTriangle>();
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            if(triangle.objectStatus != GaiaObjectStatus.DELETED) {
+                newTriangles.add(triangle);
+            }
+        }
+        triangles = newTriangles;
+
+        // 3rd, check halfEdges.***
+        ArrayList<GaiaHalfEdge> newHalfEdges = new ArrayList<GaiaHalfEdge>();
+        int halfEdgesCount = halfEdges.size();
+        for(int i=0; i<halfEdgesCount; i++) {
+            GaiaHalfEdge halfEdge = halfEdges.get(i);
+            if(halfEdge.objectStatus != GaiaObjectStatus.DELETED) {
+                newHalfEdges.add(halfEdge);
+            }
+        }
+        halfEdges = newHalfEdges;
+    }
+
+    public void removeDeletedObjects_original()
     {
         // 1rst, check vertices.***
         int verticesCount = vertices.size();
@@ -892,6 +931,18 @@ public class GaiaMesh {
             nextHEdgeAdjT.objectStatus = GaiaObjectStatus.DELETED;
         }
 
+        // test. Check triangle sizes.***
+        int trianglesCount = resultNewTriangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle newTriangle = resultNewTriangles.get(i);
+            double triangleMaxLengthMeters = newTriangle.getTriangleMaxSizeInMeters();
+
+            if(triangleMaxLengthMeters < 10.0)
+            {
+                int hola = 0;
+            }
+        }
+
     }
 
     public GaiaTriangle getSplittableAdjacentTriangle(GaiaTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager) throws TransformException, IOException {
@@ -988,6 +1039,39 @@ public class GaiaMesh {
             halfEdges.add(halfEdge);
         }
 
+    }
+
+    public void getTrianglesByTilesRange(TilesRange tilesRange, ArrayList<GaiaTriangle> resultTriangles, Map<String, ArrayList<GaiaTriangle>> mapTileIndicesTriangles)
+    {
+        int trianglesCount = triangles.size();
+        for(int i=0; i<trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            if(triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+
+            // check if exist triangle.ownerTile_tileIndices in the map.***
+            if(tilesRange.intersects(triangle.ownerTile_tileIndices))
+            {
+                if(resultTriangles != null)
+                {
+                    resultTriangles.add(triangle);
+                }
+
+                if(mapTileIndicesTriangles != null)
+                {
+                    String tileIndicesKey = triangle.ownerTile_tileIndices.getString();
+                    ArrayList<GaiaTriangle> trianglesList = mapTileIndicesTriangles.get(tileIndicesKey);
+                    if(trianglesList == null)
+                    {
+                        trianglesList = new ArrayList<GaiaTriangle>();
+                        mapTileIndicesTriangles.put(tileIndicesKey, trianglesList);
+                    }
+                    trianglesList.add(triangle);
+
+                }
+            }
+        }
     }
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) throws IOException {

@@ -2,7 +2,9 @@ package com.gaia3d.wgs84Tiles;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
+//import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.coverage.grid.Interpolator2D;
+import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.DirectPosition2D;
@@ -38,8 +40,8 @@ public class GaiaGeoTiffManager
             File file = new File(geoTiffFilePath);
             GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
-            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
-            coverage = Interpolator2D.create(coverage, interpolation);
+//            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
+//            coverage = Interpolator2D.create(coverage, interpolation);
 
             reader.dispose();
         }
@@ -73,6 +75,42 @@ public class GaiaGeoTiffManager
         int desiredImageHeight = Math.max((int)desiredPixelsCountY, minYSize);
 
 
+        double scaleX = (double)desiredImageWidth / (double)gridSpanX;
+        double scaleY = (double)desiredImageHeight / (double)gridSpanY;
+
+        Operations ops = new Operations(null);
+        resizedCoverage =
+                (GridCoverage2D)
+                        ops.scale(originalCoverage, scaleX, scaleY, 0, 0);
+
+        memSave_originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
+        memSave_originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
+
+        return resizedCoverage;
+    }
+
+    public GridCoverage2D getResizedCoverage2D_original(GridCoverage2D originalCoverage, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters) throws FactoryException {
+        GridCoverage2D resizedCoverage = null;
+
+        GridGeometry originalGridGeometry = originalCoverage.getGridGeometry();
+        RenderedImage originalImage = originalCoverage.getRenderedImage();
+        Envelope envelopeOriginal = originalCoverage.getEnvelope();
+
+        int gridSpanX = originalGridGeometry.getGridRange().getSpan(0); // num of pixels.***
+        int gridSpanY = originalGridGeometry.getGridRange().getSpan(1); // num of pixels.***
+        double[] envelopeSpanMeters = new double[2];
+        GaiaGeoTiffUtils.getEnvelopeSpanInMetersOfGridCoverage2D(originalCoverage, envelopeSpanMeters);
+        double envelopeSpanX = envelopeSpanMeters[0]; // in meters.***
+        double envelopeSpanY = envelopeSpanMeters[1]; // in meters.***
+
+        double desiredPixelsCountX = envelopeSpanX / desiredPixelSizeXinMeters;
+        double desiredPixelsCountY = envelopeSpanY / desiredPixelSizeYinMeters;
+        int minXSize = 24;
+        int minYSize = 24;
+        int desiredImageWidth = Math.max((int)desiredPixelsCountX, minXSize);
+        int desiredImageHeight = Math.max((int)desiredPixelsCountY, minYSize);
+
+
         double scaleX = (double)gridSpanX / desiredPixelsCountX;
         double scaleY = (double)gridSpanY / desiredPixelsCountY;
 
@@ -82,7 +120,7 @@ public class GaiaGeoTiffManager
         WritableRaster newRaster = null;
         Raster originalImageData = originalImage.getData();
         try {
-            // now resaize the raster.***
+            // now resize the raster.***
             newRaster = originalImageData.createCompatibleWritableRaster(desiredImageWidth, desiredImageHeight);
         } catch (Exception e) {
             e.printStackTrace();  // Imprime la traza de la excepción para depuración.

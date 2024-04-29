@@ -152,6 +152,21 @@ public class MesherMain
             e.printStackTrace();
         }
 
+//        String outputDirectory = "D:\\data\\DEM_output\\output";
+//        String minTileDepth = String.valueOf(0);
+//        String maxTileDepth = String.valueOf(17);
+//        String refinementStrength = String.valueOf(1);
+//        String originalGeoTiffFolderPath = "D:\\data\\DEM\\sejongDEM";
+//
+//        tileWgs84Manager.originalGeoTiffFolderPath = originalGeoTiffFolderPath;
+//
+//        tileWgs84Manager.outputDirectory = outputDirectory;
+//        tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
+//        tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
+//
+//        tileWgs84Manager.minTileDepth = 0;
+//        tileWgs84Manager.maxTileDepth = 16;
+
         try {
             tileWgs84Manager.resizeGeotiffSet(tileWgs84Manager.originalGeoTiffFolderPath, null);
         } catch (IOException e) {
