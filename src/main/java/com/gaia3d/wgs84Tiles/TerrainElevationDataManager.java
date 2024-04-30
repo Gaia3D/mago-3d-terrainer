@@ -24,7 +24,15 @@ public class TerrainElevationDataManager
     @Setter
     @Getter
     String terrainElevationDataFolderPath;
+    @Setter
+    @Getter
+    int geoTiffFilesCount = 0;
+    @Setter
+    @Getter
+    String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file.***
+    TerrainElevationData uniqueTerrainElevationData = null; // use this if there is only one geoTiff file.***
 
+    // if there are multiple geoTiff files, use this.***
     int quadtreesMaxDepth = 10;
     TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree;
 
@@ -49,6 +57,32 @@ public class TerrainElevationDataManager
         loadAllGeoTiff(terrainElevationDataFolderPath);
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreesMaxDepth);
         int hola = 0;
+    }
+
+    public void MakeUniqueTerrainElevationData() throws FactoryException, TransformException, IOException {
+        if(uniqueGeoTiffFilePath == null)
+        {
+            return;
+        }
+
+        if(gaiaGeoTiffManager == null)
+        {
+            gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        }
+
+        uniqueTerrainElevationData = new TerrainElevationData(this);
+        GridCoverage2D gridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(uniqueGeoTiffFilePath);
+        uniqueTerrainElevationData.geotiffFilePath = uniqueGeoTiffFilePath;
+
+        CoordinateReferenceSystem crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
+        CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
+        MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
+
+        GeometryFactory gf = new GeometryFactory();
+        GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, uniqueTerrainElevationData.geographicExtension);
+        uniqueTerrainElevationData.pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D);
+
+        gridCoverage2D.dispose(true);
     }
 
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
@@ -78,6 +112,16 @@ public class TerrainElevationDataManager
 
 
     public GeographicExtension getRootGeographicExtension() {
+        if(this.geoTiffFilesCount == 1)
+        {
+            if(uniqueTerrainElevationData == null)
+            {
+                return null;
+            }
+
+            return uniqueTerrainElevationData.geographicExtension;
+        }
+
         if(rootTerrainElevationDataQuadTree == null)
         {
             return null;
@@ -121,6 +165,17 @@ public class TerrainElevationDataManager
     public double getElevation(double lonDeg, double latDeg, ArrayList<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
         double resultElevation = 0.0;
 
+        if(this.geoTiffFilesCount == 1)
+        {
+            if(uniqueTerrainElevationData == null)
+            {
+                return resultElevation;
+            }
+
+            resultElevation = uniqueTerrainElevationData.getElevation(lonDeg, latDeg, memSave_intersects);
+            return resultElevation;
+        }
+
         if(rootTerrainElevationDataQuadTree == null)
         {
             return resultElevation;
@@ -131,10 +186,6 @@ public class TerrainElevationDataManager
 
         memSave_intersects[0] = false;
         int terrainElevDatasCount = memSave_terrainElevDatasArray.size();
-        if(terrainElevDatasCount > 1)
-        {
-            int hola = 0;
-        }
         for(int i=0; i<terrainElevDatasCount; i++)
         {
             TerrainElevationData terrainElevationData = memSave_terrainElevDatasArray.get(i);

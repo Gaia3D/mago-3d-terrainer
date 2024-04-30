@@ -882,7 +882,7 @@ public class TileMatrix
                 planeElevation = plane.getValueZ(pos_x, pos_y);
                 if(elevationFloat > planeElevation)
                 {
-                    scaleDiff = 0.5;
+                    scaleDiff = 0.6;
                 }
                 else {
                     scaleDiff = 1.0;
@@ -1152,16 +1152,14 @@ public class TileMatrix
                 continue;
             }
 
-            if(tilesRange.tileDepth >= 15)
-            {
-                int hola = 0;
-            }
-
-            double triangleMaxLengthMeters = triangle.getTriangleMaxSizeInMeters();
-            if(triangleMaxLengthMeters < 20.0)
-            {
-                int hola = 0;
-            }
+//            if(tilesRange.tileDepth >= 16) {
+//
+//                System.out.println("Refinement : L : " + tilesRange.tileDepth + " # i : " + i + " / " + trianglesCount);
+//                if(i==22481)
+//                {
+//                    int hola = 0;
+//                }
+//            }
 
             if (mustRefineTriangle(triangle))
             {
@@ -1196,6 +1194,11 @@ public class TileMatrix
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(tilesRange.tileDepth);
         System.out.println("refineMesh : L : " + tilesRange.tileDepth + " # maxDiff(m) : " + maxDiff);
+
+        if(tilesRange.tileDepth >= 16)
+        {
+            int hola = 0;
+        }
 
         // refine the mesh.***
         boolean finished = false;

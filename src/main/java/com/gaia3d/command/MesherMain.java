@@ -168,7 +168,7 @@ public class MesherMain
 //        tileWgs84Manager.maxTileDepth = 16;
 
         try {
-            tileWgs84Manager.resizeGeotiffSet(tileWgs84Manager.originalGeoTiffFolderPath, null);
+            tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (FactoryException e) {
@@ -206,7 +206,17 @@ public class MesherMain
         // set the terrainElevation data folder path.***
         tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + "\\0");
         try {
-            tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
+            if(tileWgs84Manager.getGeoTiffFilesCount() == 1)
+            {
+                tileWgs84Manager.terrainElevationDataManager.setGeoTiffFilesCount(1);
+                tileWgs84Manager.terrainElevationDataManager.setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
+                tileWgs84Manager.terrainElevationDataManager.MakeUniqueTerrainElevationData();
+            }
+            else
+            {
+                tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
+            }
+
         } catch (FactoryException e) {
             throw new RuntimeException(e);
         } catch (TransformException e) {

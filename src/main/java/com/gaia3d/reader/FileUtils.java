@@ -54,4 +54,21 @@ public class FileUtils {
             }
         }
     }
+
+    public static void getFilePathsByExtension(String folderPath, String extension, ArrayList<String> fileNames, boolean isRecursive) {
+        ArrayList<String> currfileNames = new ArrayList<>();
+        FileUtils.getFileNames(folderPath, extension, currfileNames);
+        for (String fileName : currfileNames) {
+            fileNames.add(folderPath + "\\" + fileName);
+        }
+
+        if(isRecursive) {
+            ArrayList<String> folderNames = new ArrayList<>();
+            FileUtils.getFolderNames(folderPath, folderNames);
+            for (String folderName : folderNames) {
+                String subFolderPath = folderPath + "\\" + folderName;
+                FileUtils.getFilePathsByExtension(subFolderPath, extension, fileNames, isRecursive);
+            }
+        }
+    }
 }

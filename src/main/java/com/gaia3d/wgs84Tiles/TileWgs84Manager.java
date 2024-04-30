@@ -9,6 +9,8 @@ import com.gaia3d.quantizedMesh.QuantizedMesh;
 import com.gaia3d.quantizedMesh.QuantizedMeshManager;
 import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import lombok.Getter;
+import lombok.Setter;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
 import org.joml.Vector2d;
@@ -35,6 +37,13 @@ public class TileWgs84Manager {
     public String tileTempDirectory = null;
     public String outputDirectory = null;
     public TerrainElevationDataManager terrainElevationDataManager = null; // new.***
+
+    @Setter
+    @Getter
+    int geoTiffFilesCount = 0;
+    @Setter
+    @Getter
+    String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file.***
 
     public String originalGeoTiffFolderPath;
     public String tempResizedGeoTiffFolderPath;
@@ -149,12 +158,25 @@ public class TileWgs84Manager {
             }
 
             // Set terrainLayer.available of tileSet json.***
-            terrainLayer.available.add(tilesRange);
+            terrainLayer.available.add(tilesRange); // this is used to save the terrainLayer.json.***
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
-            this.terrainElevationDataManager.deleteObjects();
-            this.terrainElevationDataManager = new TerrainElevationDataManager(); // new.***
-            this.terrainElevationDataManager.terrainElevationDataFolderPath = this.map_depth_geoTiffFolderPath.get(depth);
-            this.terrainElevationDataManager.makeTerrainQuadTree();
+            if(this.geoTiffFilesCount == 1)
+            {
+                if(this.terrainElevationDataManager == null)
+                {
+                    this.terrainElevationDataManager = new TerrainElevationDataManager(); // new.***
+                    this.terrainElevationDataManager.setUniqueGeoTiffFilePath(this.uniqueGeoTiffFilePath);
+                    this.terrainElevationDataManager.MakeUniqueTerrainElevationData();
+                }
+                this.terrainElevationDataManager.deleteObjects(); // here deletes tileRasters.***
+            }
+            else
+            {
+                this.terrainElevationDataManager.deleteObjects();
+                this.terrainElevationDataManager = new TerrainElevationDataManager(); // new.***
+                this.terrainElevationDataManager.terrainElevationDataFolderPath = this.map_depth_geoTiffFolderPath.get(depth);
+                this.terrainElevationDataManager.makeTerrainQuadTree();
+            }
 
             // now, subdivide the tilesRange.***
             int maxCol = 80;
@@ -566,6 +588,30 @@ public class TileWgs84Manager {
         }
 
         return neighborTile;
+    }
+
+
+
+    public void processResizeGeotiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException
+    {
+        // 1rst check geoTiff files count.***
+        ArrayList<String> geoTiffFilePaths = new ArrayList<String>();
+        FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, "tif", geoTiffFilePaths, true);
+
+        int geotiffCount = geoTiffFilePaths.size();
+
+        this.setGeoTiffFilesCount(geotiffCount);
+
+        if(geotiffCount == 1)
+        {
+            this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);
+        }
+        else
+        {
+            // 2nd resize the geotiffs.***
+            resizeGeotiffSet(terrainElevationDataFolderPath, currentFolderPath);
+        }
+
     }
 
     public void resizeGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException {

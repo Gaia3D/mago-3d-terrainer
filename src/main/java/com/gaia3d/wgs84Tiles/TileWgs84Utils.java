@@ -27,22 +27,33 @@ public class TileWgs84Utils {
     static public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth)
     {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        //return tileSize * 0.025;
         if(depth < 5)
         {
             return tileSize * 0.01;
         }
         else if(depth < 8)
         {
-            return tileSize * 0.03;
+            return tileSize * 0.02;
         }
-        else if(depth < 17)
+        else if(depth < 12)
+        {
+            return tileSize * 0.02;
+        }
+        else if(depth < 14)
         {
             return tileSize * 0.03;
+        }
+        else if(depth < 16)
+        {
+            return tileSize * 0.04;
+        }
+        else if(depth < 18)
+        {
+            return tileSize * 0.05;
         }
         else
         {
-            return tileSize * 0.04;
+            return tileSize * 0.08;
         }
     }
 
