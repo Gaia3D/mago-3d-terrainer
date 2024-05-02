@@ -19,7 +19,6 @@ public class MagoMesherMain {
     public static int DEFAULT_MAXIMUM_TILE_DEPTH = 16;
 
     public static void main(String[] args) {
-
         try {
             Options options = Configurator.createOptions();
             CommandLineParser parser = new DefaultParser();
@@ -37,8 +36,11 @@ public class MagoMesherMain {
             if (hasLogPath) {
                 Configurator.initFileLogger(null, command.getOptionValue(ProcessOptions.LOG.getArgName()));
             }
-            Configurator.setLevel(Level.INFO);
-
+            if (command.hasOption(ProcessOptions.DEBUG.getArgName())) {
+                Configurator.setLevel(Level.DEBUG);
+            } else {
+                Configurator.setLevel(Level.INFO);
+            }
             printStart();
 
             if (isHelp) {
@@ -72,14 +74,17 @@ public class MagoMesherMain {
             }
 
             if (command.hasOption(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
-                log.info("Maximum tile depth is set to " + command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
+                tileWgs84Manager.maxTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
             } else {
                 log.info("Maximum tile depth is not set. Default value is " + DEFAULT_MAXIMUM_TILE_DEPTH);
                 tileWgs84Manager.maxTileDepth = DEFAULT_MAXIMUM_TILE_DEPTH;
             }
 
+            log.info("[Resize GeoTiff] Start resizing GeoTiff files.");
             tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);
+            log.info("[Resize GeoTiff] Finished resizing GeoTiff files.");
 
+            log.info("[Make Terrain Elevation Data] Start making terrain elevation data.");
             tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
             tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + "\\0");
             if (tileWgs84Manager.getGeoTiffFilesCount() == 1) {
@@ -89,8 +94,10 @@ public class MagoMesherMain {
             } else {
                 tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
             }
-
+            log.info("[Make Terrain Elevation Data] Finished making terrain elevation data.");
+            log.info("[Make Tile Meshes] Start making tile meshes.");
             tileWgs84Manager.makeTileMeshes();
+            log.info("[Make Tile Meshes] Finished making tile meshes.");
         } catch (FactoryException e) {
             log.error("Failed to set EPSG.", e);
             throw new RuntimeException(e);
@@ -103,12 +110,19 @@ public class MagoMesherMain {
         } catch (IOException e) {
             log.error("Failed to run process, Please check the arguments.", e);
             throw new RuntimeException(e);
+        } finally {
+            log.info("----------------------------------------");
+            log.info("Finished.");
         }
     }
 
     private static void printStart() {
         String programInfo = "Mago Quantized Mesher by Gaia3D, Inc.";
-        log.info("\n" + "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┳┳┓┏┓┏┓┓┏┏┓┳┓\n" + "┃┃┃┣┫┃┓┃┃   ┫┃┃  ┃┃┃┣ ┗┓┣┫┣ ┣┫\n" + "┛ ┗┛┗┗┛┗┛  ┗┛┻┛  ┛ ┗┗┛┗┛┛┗┗┛┛┗\n" + programInfo + "\n" + "----------------------------------------");
-
+        log.info("\n" +
+                "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┳┳┓┏┓┏┓┓┏┏┓┳┓\n" +
+                "┃┃┃┣┫┃┓┃┃   ┫┃┃  ┃┃┃┣ ┗┓┣┫┣ ┣┫\n" +
+                "┛ ┗┛┗┗┛┗┛  ┗┛┻┛  ┛ ┗┗┛┗┛┛┗┗┛┛┗\n" +
+                programInfo + "\n" +
+                "----------------------------------------");
     }
 }

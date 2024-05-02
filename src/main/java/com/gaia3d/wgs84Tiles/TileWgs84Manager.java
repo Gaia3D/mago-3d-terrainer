@@ -1,8 +1,5 @@
 package com.gaia3d.wgs84Tiles;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.gaia3d.basic.structure.GaiaMesh;
 import com.gaia3d.basic.structure.GaiaTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.quantizedMesh.QuantizedMesh;
@@ -11,10 +8,9 @@ import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
 import org.joml.Vector2d;
-import org.joml.Vector3d;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -29,7 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-
+@Slf4j
 public class TileWgs84Manager {
     public int minTileDepth = 0;
     public int maxTileDepth = 15;
@@ -471,14 +467,14 @@ public class TileWgs84Manager {
         TileWgs84 neighborTile = new TileWgs84(null, this);
         if (!FileUtils.isFileExists(neighborFullPath)) {
             // create the Tile.***
-            log.info("Creating tile: CREATE - * - CREATE : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
+            log.debug("Creating tile: CREATE - * - CREATE : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             neighborTile.tileIndices = tileIndices;
             String imageryType = this.imageryType;
             neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
             neighborTile.createInitialMesh();
             if (neighborTile.mesh == null) {
                 // error.***
-                log.info("Error: neighborTile.mesh == null");
+                log.error("Error: neighborTile.mesh == null");
             }
 
             neighborTile.saveFile(neighborTile.mesh, neighborFullPath);

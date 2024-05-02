@@ -2,11 +2,12 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.basic.types.HalfEdgeType;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
+@Slf4j
 public class TileMerger3x3 {
 
     //  +----------+----------+----------+

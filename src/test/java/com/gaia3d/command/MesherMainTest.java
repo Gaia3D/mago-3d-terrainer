@@ -20,11 +20,13 @@ class MesherMainTest {
 
     @Test
     void sample() {
+        String pathName = "sample";
         String[] args = new String[]{
                 "-input", "D:\\dem\\sample-input\\",
-                "-output", "D:\\dem\\sample-output\\",
+                "-output", "D:\\dem\\sample-output\\" + pathName,
                 "-min", "0",
-                "-max", "16",
+                "-max", "15",
+                //"-d",
         };
         MagoMesherMain.main(args);
     }

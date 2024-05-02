@@ -565,7 +565,7 @@ public class TileWgs84 {
 
     public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException, IOException {
         if (triangle.refineChecked) {
-            log.info("SUPER-FAST-Check : false");
+            log.debug("SUPER-FAST-Check : false");
             return false;
         }
 
@@ -579,7 +579,7 @@ public class TileWgs84 {
         double heightDeg = bboxTriangle.getLengthY();
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
-        log.info("maxDiff : " + maxDiff + " , tileDepth : " + triangle.ownerTile_tileIndices.L + " , tileX : " + triangle.ownerTile_tileIndices.X + " , tileY : " + triangle.ownerTile_tileIndices.Y);
+        log.debug("maxDiff : " + maxDiff + " , tileDepth : " + triangle.ownerTile_tileIndices.L + " , tileX : " + triangle.ownerTile_tileIndices.X + " , tileY : " + triangle.ownerTile_tileIndices.Y);
 
         // fast check.******************************************************************
         // check the barycenter of the triangle.***
@@ -588,7 +588,7 @@ public class TileWgs84 {
         double planeElevation = barycenter.z;
 
         if (abs(elevation - planeElevation) > maxDiff) {
-            log.info("FAST-Check : true");
+            log.debug("FAST-Check : true");
             return true;
         }
 
@@ -625,13 +625,13 @@ public class TileWgs84 {
         double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.refineChecked = true;
-            log.info("MIN-TRIANGLE-SIZE-Check : false &*###################-----------------#################");
+            log.debug("MIN-TRIANGLE-SIZE-Check : false &*###################-----------------#################");
             return false;
         }
 
         double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
-            log.info("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
+            log.debug("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
             return true;
         }
 
@@ -644,12 +644,12 @@ public class TileWgs84 {
             for (int i = 0; i < verticesCount; i++) {
                 GaiaVertex vertex = vertices.get(i);
                 if (vertex.position.z > maxDiff) {
-                    log.info("SUPER-FAST-Check : true * true * true * true * true * true * true * ");
+                    log.debug("SUPER-FAST-Check : true * true * true * true * true * true * true * ");
                     return true;
                 }
             }
 
-            log.info("SUPER-FAST-Check : false *----------------------------------------");
+            log.debug("SUPER-FAST-Check : false *----------------------------------------");
             return false;
         }
 
@@ -694,14 +694,14 @@ public class TileWgs84 {
 
                 if (elevation > planeElevation) {
                     if (abs(elevation - planeElevation) > maxDiff * 0.5) {
-                        log.info("SLOW-Check : true" + " , counter : " + counter);
+                        log.debug("SLOW-Check : true" + " , counter : " + counter);
                         memSave_hedges.clear();
                         memSave_line.deleteObjects();
                         return true;
                     }
                 } else {
                     if (abs(elevation - planeElevation) > maxDiff) {
-                        log.info("SLOW-Check : true" + " , counter : " + counter);
+                        log.debug("SLOW-Check : true" + " , counter : " + counter);
                         memSave_hedges.clear();
                         memSave_line.deleteObjects();
                         return true;
@@ -715,7 +715,7 @@ public class TileWgs84 {
         memSave_hedges.clear();
         memSave_line.deleteObjects();
 
-        log.info("SLOW-Check : false");
+        log.debug("SLOW-Check : false");
         triangle.refineChecked = true;
         return false;
     }
@@ -759,7 +759,7 @@ public class TileWgs84 {
                     return !this.manager.existTileFile(downTileIndices);
                 } else {
                     // error.***
-                    log.info("ERROR: mustDivideTriangleByMidLongitudeAndMidLatitude.***");
+                    log.debug("ERROR: mustDivideTriangleByMidLongitudeAndMidLatitude.***");
                 }
 
                 return true;
@@ -781,7 +781,7 @@ public class TileWgs84 {
         boolean refined = false;
         int splitCount = 0;
         int trianglesCount = mesh.triangles.size();
-        log.info("Triangles count : " + trianglesCount);
+        log.debug("Triangles count : " + trianglesCount);
         splitCount = 0;
         for (int i = 0; i < trianglesCount; i++) {
             GaiaTriangle triangle = mesh.triangles.get(i);
@@ -823,7 +823,7 @@ public class TileWgs84 {
             // end test.----------------------------------------------------------------------------------------------------------------------------
             */
 
-            log.info("iteration :" + i);
+            log.debug("iteration :" + i);
             if (mustRefineTriangle(triangle)) // X
             {
                 this.manager.memSave_trianglesArray.clear();
@@ -857,7 +857,7 @@ public class TileWgs84 {
         splitCount = 0;
 
         int trianglesCount = mesh.triangles.size();
-        log.info("Triangles count : " + trianglesCount);
+        log.debug("Triangles count : " + trianglesCount);
         for (int i = 0; i < trianglesCount; i++) {
             GaiaTriangle triangle = mesh.triangles.get(i);
 
@@ -865,7 +865,7 @@ public class TileWgs84 {
                 continue;
             }
 
-            log.info("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
+            log.debug("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
             this.manager.memSave_trianglesArray.clear();
             mesh.splitTriangle(triangle, this.manager.terrainElevationDataManager, this.manager.memSave_trianglesArray);
 
@@ -948,7 +948,7 @@ public class TileWgs84 {
         int splitCount = 0;
         int maxIterations = this.manager.triangleRefinementMaxIterations;
         while (!finished) {
-            log.info("iteration : " + splitCount + " : L : " + currTileIndices.L);
+            log.debug("iteration : " + splitCount + " : L : " + currTileIndices.L);
 
             if (!this.refineMeshOneIteration(mesh, currTileIndices)) {
                 finished = true;
@@ -1039,7 +1039,7 @@ public class TileWgs84 {
                 saveFile(childMesh, childTileFullPath); // original.***
 
             } catch (IOException e) {
-                log.error(e.getMessage());l
+                log.error(e.getMessage());
                 return;
             }
         }
@@ -1091,7 +1091,7 @@ public class TileWgs84 {
                 saveFile(simpleTile.mesh, childTileFullPath);
 
             } catch (IOException e) {
-                log.error(e.getMessage());l
+                log.error(e.getMessage());
                 return;
             }
         }

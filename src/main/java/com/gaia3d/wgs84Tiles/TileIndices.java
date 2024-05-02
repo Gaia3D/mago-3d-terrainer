@@ -62,7 +62,7 @@ public class TileIndices {
             dataOutputStream.writeInt(L);
 
         } catch (Exception e) {
-            log.error(e.getMessage());l
+            log.error(e.getMessage());
         }
     }
 

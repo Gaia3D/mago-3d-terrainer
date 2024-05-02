@@ -29,12 +29,12 @@ public class GaiaGeoTiffManager {
     double[] memSave_originalUpperLeftCorner = new double[2];
 
     public GaiaGeoTiffManager() {
-        log.info("GaiaGeoTiffManager.constructor()");
+        log.debug("GaiaGeoTiffManager.constructor()");
     }
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
         // this function only loads the geotiff coverage.***
-        log.info("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
+        log.debug("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
         GridCoverage2D coverage = null;
         try {
             File file = new File(geoTiffFilePath);

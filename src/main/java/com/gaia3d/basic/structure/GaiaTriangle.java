@@ -4,11 +4,13 @@ import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TileIndices;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
+@Slf4j
 public class GaiaTriangle {
     public GaiaHalfEdge halfEdge = null;
 
@@ -200,7 +202,7 @@ public class GaiaTriangle {
             dataOutputStream.writeInt(splitDepth);
 
         } catch (Exception e) {
-            log.error(e.getMessage());l
+            log.error(e.getMessage());
         }
     }
 
