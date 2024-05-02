@@ -40,12 +40,12 @@ public class MesherMain
         try
         {
             command = parser.parse(options, args);
-            if (command.hasOption(ProcessOptions.INPUT_FOLDER_PATH.getArgName())) {
-                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT_FOLDER_PATH.getArgName());
+            if (command.hasOption(ProcessOptions.INPUT_PATH.getArgName())) {
+                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT_PATH.getArgName());
             }
 
-            if (command.hasOption(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName())) {
-                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName());
+            if (command.hasOption(ProcessOptions.OUTPUT_PATH.getArgName())) {
+                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT_PATH.getArgName());
                 tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
                 tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
             }
@@ -58,9 +58,6 @@ public class MesherMain
                 tileWgs84Manager.maxTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
             }
 
-            //if (command.hasOption(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName())) {
-            //tileWgs84Manager.refinementStrength = Integer.parseInt(command.getOptionValue(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName()));
-            //}
         }
         catch (Exception e)
         {
@@ -125,12 +122,12 @@ public class MesherMain
         try
         {
             command = parser.parse(options, args);
-            if (command.hasOption(ProcessOptions.INPUT_FOLDER_PATH.getArgName())) {
-                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT_FOLDER_PATH.getArgName());
+            if (command.hasOption(ProcessOptions.INPUT_PATH.getArgName())) {
+                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT_PATH.getArgName());
             }
 
-            if (command.hasOption(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName())) {
-                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName());
+            if (command.hasOption(ProcessOptions.OUTPUT_PATH.getArgName())) {
+                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT_PATH.getArgName());
                 tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
                 tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
             }
