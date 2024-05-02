@@ -757,18 +757,17 @@ public class TileMatrix
 
         // check if the triangle must be refined.***
         GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
-        int currL = triangle.ownerTile_tileIndices.L;
-        if(currL == 17)
-        {
-            int hola = 0;
-        }
+        double bboxMaxLength = bboxTriangle.getLongestDistanceXY();
+        double equatorialRadius = GlobeUtils.getEquatorialRadius();
+        double bboxMaxLengthInMeters = Math.toRadians(bboxMaxLength) * equatorialRadius;
 
-        if(currL == 16)
-        {
-            int hola = 0;
-        }
+        int currL = triangle.ownerTile_tileIndices.L;
+
+        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(currL);
+        double scale = bboxMaxLengthInMeters / tileSize;
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
+        maxDiff *= scale; // test.***
 
         TileWgs84Raster tileRaster = terrainElevationDataManager.getTileWgs84Raster(tileIndices, this.manager);
 
@@ -882,7 +881,7 @@ public class TileMatrix
                 planeElevation = plane.getValueZ(pos_x, pos_y);
                 if(elevationFloat > planeElevation)
                 {
-                    scaleDiff = 0.6;
+                    scaleDiff = 0.8;
                 }
                 else {
                     scaleDiff = 1.0;
