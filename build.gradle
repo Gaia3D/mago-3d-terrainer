@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.gaia3d'
-version = '1.1.0'
+version = '1.2.0'
 project.ext.lwjglVersion = "3.3.2"
 
 switch ( org.gradle.internal.os.OperatingSystem.current() ) {
@@ -101,7 +101,7 @@ test {
 jar {
     finalizedBy shadowJar
     manifest {
-        attributes "Main-Class": "com.gaia3d.command.MesherMain"
+        attributes "Main-Class": "com.gaia3d.command.MagoMesherMain"
     }
     from {
         configurations.runtimeClasspath.collect {it.isDirectory() ? it : zipTree(it)}
@@ -112,12 +112,12 @@ jar {
 shadowJar {
     mergeServiceFiles()
     manifest {
-        attributes 'Main-Class': 'com.gaia3d.command.MesherMain'
+        attributes 'Main-Class': 'com.gaia3d.command.MagoMesherMain'
         attributes 'Implementation-Version': project.version
         attributes 'Implementation-Title': '3d-mesher'
         attributes 'Implementation-Vendor': 'Gaia3d, Inc.'
         attributes 'Implementation-Vendor-Id': 'com.gaia3d'
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
-    archiveFileName = "plasma-3d-mesher-${project.version}-${project.ext.lwjglNatives}.jar"
+    archiveFileName = "mago-3d-mesher-${project.version}-${project.ext.lwjglNatives}.jar"
 }
