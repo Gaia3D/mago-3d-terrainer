@@ -29,13 +29,12 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 
-public class GaiaGeoTiffUtils
-{
+public class GaiaGeoTiffUtils {
     public static Vector2d getLongitudeLatitudeDegree(GridCoverage2D coverage, int coordX, int coordY, GeometryFactory gf, MathTransform targetToWgs) throws TransformException {
         GridCoordinates2D coord = new GridCoordinates2D(coordX, coordY);
         DirectPosition p = coverage.getGridGeometry().gridToWorld(coord);
         Point point = gf.createPoint(new Coordinate(p.getOrdinate(0), p.getOrdinate(1)));
-        Geometry wgsP = (Geometry) JTS.transform(point, targetToWgs);
+        Geometry wgsP = JTS.transform(point, targetToWgs);
         Vector2d lonLat = new Vector2d(wgsP.getCentroid().getCoordinate().x, wgsP.getCentroid().getCoordinate().y);
         return lonLat;
     }
@@ -45,22 +44,13 @@ public class GaiaGeoTiffUtils
         CoordinateReferenceSystem crsTarget = coverage.getCoordinateReferenceSystem2D();
         CoordinateReferenceSystem crsWgs84 = DefaultGeographicCRS.WGS84;
         MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
-        if(targetToWgs.isIdentity())
-        {
-            // The original src is wgs84.***
-            return true;
-        }
-        else
-        {
-            // The original src is not wgs84.***
-            return false;
-        }
+        // The original src is wgs84.***
+        // The original src is not wgs84.***
+        return targetToWgs.isIdentity();
     }
 
-    public static void getEnvelopeSpanInMetersOfGridCoverage2D(GridCoverage2D coverage, double[] resultEnvelopeSpanMeters) throws FactoryException
-    {
-        if(isGridCoverage2DWGS84(coverage))
-        {
+    public static void getEnvelopeSpanInMetersOfGridCoverage2D(GridCoverage2D coverage, double[] resultEnvelopeSpanMeters) throws FactoryException {
+        if (isGridCoverage2DWGS84(coverage)) {
             Envelope envelope = coverage.getEnvelope();
             double minLat = envelope.getMinimum(1);
             double maxLat = envelope.getMaximum(1);
@@ -73,18 +63,15 @@ public class GaiaGeoTiffUtils
             double envelopeSpanY = envelopeOriginal.getSpan(1); // in degrees.***
             resultEnvelopeSpanMeters[0] = (envelopeSpanX * degToRadFactor) * radius; // in meters.***
             resultEnvelopeSpanMeters[1] = (envelopeSpanY * degToRadFactor) * radius; // in meters.***
-        }
-        else
-        {
+        } else {
             Envelope envelopeOriginal = coverage.getEnvelope();
             resultEnvelopeSpanMeters[0] = envelopeOriginal.getSpan(0); // in meters.***
             resultEnvelopeSpanMeters[1] = envelopeOriginal.getSpan(1); // in meters.***
         }
     }
 
-    public static Vector2d getPixelSizeMeters(GridCoverage2D coverage) throws FactoryException
-    {
-        double envelopeSpanInMeters[] = new double[2];
+    public static Vector2d getPixelSizeMeters(GridCoverage2D coverage) throws FactoryException {
+        double[] envelopeSpanInMeters = new double[2];
         getEnvelopeSpanInMetersOfGridCoverage2D(coverage, envelopeSpanInMeters);
         GridGeometry gridGeometry = coverage.getGridGeometry();
         int gridSpanX = gridGeometry.getGridRange().getSpan(0); // num of pixels.***
@@ -105,32 +92,29 @@ public class GaiaGeoTiffUtils
         double maxLat = 0.0;
 
         // check if crsTarget is wgs84.***
-        if(targetToWgs.isIdentity())
-        {
+        if (targetToWgs.isIdentity()) {
             // The original src is wgs84.***
             minLon = envelope.getMinimum(0);
             minLat = envelope.getMinimum(1);
             maxLon = envelope.getMaximum(0);
             maxLat = envelope.getMaximum(1);
-        }
-        else
-        {
+        } else {
             GridGeometry originalGridGeometry = coverage.getGridGeometry();
 
             int gridSpanX = originalGridGeometry.getGridRange().getSpan(0); // num of pixels.***
             int gridSpanY = originalGridGeometry.getGridRange().getSpan(1); // num of pixels.***
 
             // gridLow0, gridLow1.***
-            Vector2d lonLat_LU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, 0, gridSpanY-1, gf, targetToWgs);
+            Vector2d lonLat_LU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, 0, gridSpanY - 1, gf, targetToWgs);
 
             // gridHigh0, gridHigh1.***
-            Vector2d lonLat_RD = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridSpanX-1, 0, gf, targetToWgs);
+            Vector2d lonLat_RD = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridSpanX - 1, 0, gf, targetToWgs);
 
             // gridLow0, gridHigh1.***
             Vector2d lonLat_LD = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, 0, 0, gf, targetToWgs);
 
             // gridHigh0, gridLow1.***
-            Vector2d lonLat_RU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridSpanX-1, gridSpanY-1, gf, targetToWgs);
+            Vector2d lonLat_RU = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridSpanX - 1, gridSpanY - 1, gf, targetToWgs);
 
             minLon = Math.min(lonLat_LU.x, lonLat_RD.x);
             minLon = Math.min(minLon, lonLat_LD.x);
@@ -149,8 +133,7 @@ public class GaiaGeoTiffUtils
             maxLat = Math.max(maxLat, lonLat_RU.y);
         }
 
-        if(resultGeoExtension == null)
-            resultGeoExtension = new GeographicExtension();
+        if (resultGeoExtension == null) resultGeoExtension = new GeographicExtension();
 
         resultGeoExtension.setDegrees(minLon, minLat, 0.0, maxLon, maxLat, 0.0);
 
@@ -169,16 +152,13 @@ public class GaiaGeoTiffUtils
         double maxLat = 0.0;
 
         // check if crsTarget is wgs84.***
-        if(targetToWgs.isIdentity())
-        {
+        if (targetToWgs.isIdentity()) {
             // The original src is wgs84.***
             minLon = envelope.getMinimum(0);
             minLat = envelope.getMinimum(1);
             maxLon = envelope.getMaximum(0);
             maxLat = envelope.getMaximum(1);
-        }
-        else
-        {
+        } else {
             int gridLow0 = gridRange2D.getLow(0);
             int gridLow1 = gridRange2D.getLow(1);
             int gridHigh0 = gridRange2D.getHigh(0);
@@ -213,8 +193,7 @@ public class GaiaGeoTiffUtils
             maxLat = Math.max(maxLat, lonLat_RU.y);
         }
 
-        if(resultGeoExtension == null)
-            resultGeoExtension = new GeographicExtension();
+        if (resultGeoExtension == null) resultGeoExtension = new GeographicExtension();
 
         resultGeoExtension.setDegrees(minLon, minLat, 0.0, maxLon, maxLat, 0.0);
 
@@ -230,13 +209,12 @@ public class GaiaGeoTiffUtils
         double latMax = coverage.getEnvelope().getMaximum(1);
 
         Point pointMin = gf.createPoint(new Coordinate(lonMin, latMin));
-        Geometry wgsPMin = (Geometry) JTS.transform(pointMin, targetToWgs);
+        Geometry wgsPMin = JTS.transform(pointMin, targetToWgs);
 
         Point pointMax = gf.createPoint(new Coordinate(lonMax, latMax));
-        Geometry wgsPMax = (Geometry) JTS.transform(pointMax, targetToWgs);
+        Geometry wgsPMax = JTS.transform(pointMax, targetToWgs);
 
-        if(resultGeoExtension == null)
-            resultGeoExtension = new GeographicExtension();
+        if (resultGeoExtension == null) resultGeoExtension = new GeographicExtension();
 
         resultGeoExtension.setDegrees(wgsPMin.getCentroid().getCoordinate().x, wgsPMin.getCentroid().getCoordinate().y, 0.0, wgsPMax.getCentroid().getCoordinate().x, wgsPMax.getCentroid().getCoordinate().y, 0.0);
         return resultGeoExtension;

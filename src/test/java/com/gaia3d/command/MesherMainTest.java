@@ -23,6 +23,8 @@ class MesherMainTest {
         String[] args = new String[]{
                 "-input", "D:\\dem\\sample-input\\",
                 "-output", "D:\\dem\\sample-output\\",
+                "-min", "0",
+                "-max", "16",
         };
         MagoMesherMain.main(args);
     }

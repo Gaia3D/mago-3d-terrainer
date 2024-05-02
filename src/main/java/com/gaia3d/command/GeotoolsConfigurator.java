@@ -28,7 +28,7 @@ public class GeotoolsConfigurator {
         try {
             //log.info("============EPSG:6737 start");
             crs = CRS.decode("EPSG:6737");
-            //System.out.println( crs.toWKT() );
+            //log.info( crs.toWKT() );
         } catch (FactoryException e) {
             throw new RuntimeException(e);
         }
@@ -53,9 +53,9 @@ public class GeotoolsConfigurator {
             try {
                 //log.info("============EPSG:6737 start");
                 crs = CRS.decode("EPSG:6737");
-                //System.out.println( crs.toWKT() );
+                //log.info( crs.toWKT() );
             } catch (FactoryException e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
                 throw new RuntimeException(e);
             }
         }

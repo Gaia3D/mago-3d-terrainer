@@ -4,18 +4,15 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.util.ArrayList;
 
-public class GaiaGdalTranslator
-{
+public class GaiaGdalTranslator {
 
-    public void createGdalCommand_convertImgToGeoTiff(String inputFolderPath, String outputFolderPath, ArrayList<String>commandsList)
-    {
+    public void createGdalCommand_convertImgToGeoTiff(String inputFolderPath, String outputFolderPath, ArrayList<String> commandsList) {
         // find all files *.img.***
         // for each file, create a gdal command.***
         ArrayList<String> fileNames = new ArrayList();
         FileUtils.getFileNames(inputFolderPath, ".img", fileNames);
 
-        for (int i = 0; i < fileNames.size(); i++)
-        {
+        for (int i = 0; i < fileNames.size(); i++) {
             String fileName = fileNames.get(i);
             String rawFileName = FilenameUtils.removeExtension(fileName); // remove extension. (".img"
             String inputFilePath = inputFolderPath + "\\" + fileName;
@@ -29,8 +26,7 @@ public class GaiaGdalTranslator
         ArrayList<String> folderNames = new ArrayList();
         FileUtils.getFolderNames(inputFolderPath, folderNames);
 
-        for (int i = 0; i < folderNames.size(); i++)
-        {
+        for (int i = 0; i < folderNames.size(); i++) {
             String folderName = folderNames.get(i);
             String inputFolderPath2 = inputFolderPath + "/" + folderName;
             String outputFolderPath2 = outputFolderPath + "/" + folderName;

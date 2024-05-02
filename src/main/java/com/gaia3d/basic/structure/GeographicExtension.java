@@ -11,185 +11,114 @@ public class GeographicExtension {
         maxGeographicCoordDeg.set(maxLonDeg, maxLatDeg, maxAlt);
     }
 
-    public void copyFrom(GeographicExtension geographicExtension)
-    {
+    public void copyFrom(GeographicExtension geographicExtension) {
         minGeographicCoordDeg.set(geographicExtension.minGeographicCoordDeg);
         maxGeographicCoordDeg.set(geographicExtension.maxGeographicCoordDeg);
     }
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         minGeographicCoordDeg = null;
         maxGeographicCoordDeg = null;
     }
 
-    public void union(GeographicExtension geographicExtension)
-    {
-        if(geographicExtension.minGeographicCoordDeg.x < minGeographicCoordDeg.x)
-        {
+    public void union(GeographicExtension geographicExtension) {
+        if (geographicExtension.minGeographicCoordDeg.x < minGeographicCoordDeg.x) {
             minGeographicCoordDeg.x = geographicExtension.minGeographicCoordDeg.x;
         }
 
-        if(geographicExtension.minGeographicCoordDeg.y < minGeographicCoordDeg.y)
-        {
+        if (geographicExtension.minGeographicCoordDeg.y < minGeographicCoordDeg.y) {
             minGeographicCoordDeg.y = geographicExtension.minGeographicCoordDeg.y;
         }
 
-        if(geographicExtension.minGeographicCoordDeg.z < minGeographicCoordDeg.z)
-        {
+        if (geographicExtension.minGeographicCoordDeg.z < minGeographicCoordDeg.z) {
             minGeographicCoordDeg.z = geographicExtension.minGeographicCoordDeg.z;
         }
 
-        if(geographicExtension.maxGeographicCoordDeg.x > maxGeographicCoordDeg.x)
-        {
+        if (geographicExtension.maxGeographicCoordDeg.x > maxGeographicCoordDeg.x) {
             maxGeographicCoordDeg.x = geographicExtension.maxGeographicCoordDeg.x;
         }
 
-        if(geographicExtension.maxGeographicCoordDeg.y > maxGeographicCoordDeg.y)
-        {
+        if (geographicExtension.maxGeographicCoordDeg.y > maxGeographicCoordDeg.y) {
             maxGeographicCoordDeg.y = geographicExtension.maxGeographicCoordDeg.y;
         }
 
-        if(geographicExtension.maxGeographicCoordDeg.z > maxGeographicCoordDeg.z)
-        {
+        if (geographicExtension.maxGeographicCoordDeg.z > maxGeographicCoordDeg.z) {
             maxGeographicCoordDeg.z = geographicExtension.maxGeographicCoordDeg.z;
         }
     }
 
-    public double getMaxLongitudeDeg()
-    {
+    public double getMaxLongitudeDeg() {
         return maxGeographicCoordDeg.x;
     }
 
-    public double getMinLongitudeDeg()
-    {
+    public double getMinLongitudeDeg() {
         return minGeographicCoordDeg.x;
     }
 
-    public double getMaxLatitudeDeg()
-    {
+    public double getMaxLatitudeDeg() {
         return maxGeographicCoordDeg.y;
     }
 
-    public double getMinLatitudeDeg()
-    {
+    public double getMinLatitudeDeg() {
         return minGeographicCoordDeg.y;
     }
 
-    public double getMidLongitudeDeg()
-    {
+    public double getMidLongitudeDeg() {
         return (maxGeographicCoordDeg.x + minGeographicCoordDeg.x) / 2.0;
     }
 
-    public double getMidLatitudeDeg()
-    {
+    public double getMidLatitudeDeg() {
         return (maxGeographicCoordDeg.y + minGeographicCoordDeg.y) / 2.0;
     }
 
-    public double getMidAltitude()
-    {
+    public double getMidAltitude() {
         return (maxGeographicCoordDeg.z + minGeographicCoordDeg.z) / 2.0;
     }
 
-    public double getMaxAltitude()
-    {
+    public double getMaxAltitude() {
         return maxGeographicCoordDeg.z;
     }
 
-    public double getMinAltitude()
-    {
+    public double getMinAltitude() {
         return minGeographicCoordDeg.z;
     }
 
-    public double getLongitudeRangeDegree()
-    {
+    public double getLongitudeRangeDegree() {
         return maxGeographicCoordDeg.x - minGeographicCoordDeg.x;
     }
 
-    public double getLatitudeRangeDegree()
-    {
+    public double getLatitudeRangeDegree() {
         return maxGeographicCoordDeg.y - minGeographicCoordDeg.y;
     }
 
-    public double getAltitudeRange()
-    {
+    public double getAltitudeRange() {
         return maxGeographicCoordDeg.z - minGeographicCoordDeg.z;
     }
 
-    public boolean intersects(double lonDeg, double latDeg)
-    {
-        if(lonDeg >= minGeographicCoordDeg.x && lonDeg <= maxGeographicCoordDeg.x &&
-                latDeg >= minGeographicCoordDeg.y && latDeg <= maxGeographicCoordDeg.y)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+    public boolean intersects(double lonDeg, double latDeg) {
+        return lonDeg >= minGeographicCoordDeg.x && lonDeg <= maxGeographicCoordDeg.x && latDeg >= minGeographicCoordDeg.y && latDeg <= maxGeographicCoordDeg.y;
     }
 
-    public boolean intersects(GeographicExtension geographicExtension)
-    {
-        if(geographicExtension.minGeographicCoordDeg.x > this.maxGeographicCoordDeg.x)
-        {
+    public boolean intersects(GeographicExtension geographicExtension) {
+        if (geographicExtension.minGeographicCoordDeg.x > this.maxGeographicCoordDeg.x) {
             return false;
-        }
-        else if(geographicExtension.maxGeographicCoordDeg.x < this.minGeographicCoordDeg.x)
-        {
+        } else if (geographicExtension.maxGeographicCoordDeg.x < this.minGeographicCoordDeg.x) {
             return false;
-        }
-        else if(geographicExtension.minGeographicCoordDeg.y > this.maxGeographicCoordDeg.y)
-        {
+        } else if (geographicExtension.minGeographicCoordDeg.y > this.maxGeographicCoordDeg.y) {
             return false;
-        }
-        else if(geographicExtension.maxGeographicCoordDeg.y < this.minGeographicCoordDeg.y)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        } else return !(geographicExtension.maxGeographicCoordDeg.y < this.minGeographicCoordDeg.y);
 
     }
 
-    public boolean intersectsBBox(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg)
-    {
-        if(minLonDeg >= minGeographicCoordDeg.x && minLonDeg <= maxGeographicCoordDeg.x &&
-                minLatDeg >= minGeographicCoordDeg.y && minLatDeg <= maxGeographicCoordDeg.y &&
-                maxLonDeg >= minGeographicCoordDeg.x && maxLonDeg <= maxGeographicCoordDeg.x &&
-                maxLatDeg >= minGeographicCoordDeg.y && maxLatDeg <= maxGeographicCoordDeg.y)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+    public boolean intersectsBBox(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg) {
+        return minLonDeg >= minGeographicCoordDeg.x && minLonDeg <= maxGeographicCoordDeg.x && minLatDeg >= minGeographicCoordDeg.y && minLatDeg <= maxGeographicCoordDeg.y && maxLonDeg >= minGeographicCoordDeg.x && maxLonDeg <= maxGeographicCoordDeg.x && maxLatDeg >= minGeographicCoordDeg.y && maxLatDeg <= maxGeographicCoordDeg.y;
     }
 
-    public boolean intersectsLongitude(double lonDeg)
-    {
-        if(lonDeg >= minGeographicCoordDeg.x && lonDeg <= maxGeographicCoordDeg.x)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+    public boolean intersectsLongitude(double lonDeg) {
+        return lonDeg >= minGeographicCoordDeg.x && lonDeg <= maxGeographicCoordDeg.x;
     }
 
-    public boolean intersectsLatitude(double latDeg)
-    {
-        if(latDeg >= minGeographicCoordDeg.y && latDeg <= maxGeographicCoordDeg.y)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+    public boolean intersectsLatitude(double latDeg) {
+        return latDeg >= minGeographicCoordDeg.y && latDeg <= maxGeographicCoordDeg.y;
     }
 }

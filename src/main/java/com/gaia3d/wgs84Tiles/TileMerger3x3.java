@@ -1,6 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
+import com.gaia3d.basic.types.HalfEdgeType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,14 +125,14 @@ public class TileMerger3x3 {
             if(halfEdge.twin != null)
             {
                 // this halfEdge has a twin.***
-                System.out.println("Error: halfEdge has a twin.");
+                log.info("Error: halfEdge has a twin.");
                 continue;
             }
 
             if(!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B))
             {
                 // error.!***
-                System.out.println("Error: no twin halfEdge found.");
+                log.info("Error: no twin halfEdge found.");
                 int hola = 0;
             }
         }
@@ -376,7 +377,7 @@ public class TileMerger3x3 {
             else
             {
                 // error.***
-                System.out.println("Error: triangle has not ownerTile_tileIndices.");
+                log.info("Error: triangle has not ownerTile_tileIndices.");
             }
         }
 

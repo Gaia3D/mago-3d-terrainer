@@ -15,9 +15,10 @@ import org.joml.Vector3d;
  * It can be used to calculate the center and volume of the geometry.
  * It can also be used to convert the local bounding box to lonlat bounding box.
  * It can also be used to calculate the longest distance of the geometry.
+ *
  * @auther znkim
- * @since 1.0.0
  * @see GaiaRectangle
+ * @since 1.0.0
  */
 @Slf4j
 @Setter
@@ -67,6 +68,7 @@ public class GaiaBoundingBox {
             maxZ = z;
         }
     }
+
     public void addPoint(Vector3d vector3d) {
         if (isInit) {
             if (vector3d.x < minX) {
@@ -98,104 +100,55 @@ public class GaiaBoundingBox {
         }
     }
 
-    public boolean intersects(GaiaBoundingBox boundingBox, double errorX, double errorY, double errorZ)
-    {
-        if(maxX < boundingBox.minX - errorX || minX > boundingBox.maxX + errorX)
-        {
+    public boolean intersects(GaiaBoundingBox boundingBox, double errorX, double errorY, double errorZ) {
+        if (maxX < boundingBox.minX - errorX || minX > boundingBox.maxX + errorX) {
             return false;
         }
-        if(maxY < boundingBox.minY - errorY || minY > boundingBox.maxY + errorY)
-        {
+        if (maxY < boundingBox.minY - errorY || minY > boundingBox.maxY + errorY) {
             return false;
         }
-        if(maxZ < boundingBox.minZ - errorZ || minZ > boundingBox.maxZ + errorZ)
-        {
-            return false;
-        }
-        return true;
+        return !(maxZ < boundingBox.minZ - errorZ) && !(minZ > boundingBox.maxZ + errorZ);
     }
 
-    public boolean intersects(GaiaBoundingBox boundingBox, double error)
-    {
-        if(maxX < boundingBox.minX - error || minX > boundingBox.maxX + error)
-        {
+    public boolean intersects(GaiaBoundingBox boundingBox, double error) {
+        if (maxX < boundingBox.minX - error || minX > boundingBox.maxX + error) {
             return false;
         }
-        if(maxY < boundingBox.minY - error || minY > boundingBox.maxY + error)
-        {
+        if (maxY < boundingBox.minY - error || minY > boundingBox.maxY + error) {
             return false;
         }
-        if(maxZ < boundingBox.minZ - error || minZ > boundingBox.maxZ + error)
-        {
-            return false;
-        }
-        return true;
+        return !(maxZ < boundingBox.minZ - error) && !(minZ > boundingBox.maxZ + error);
     }
 
-    public boolean intersectsPointXY(double pos_x, double pos_y)
-    {
+    public boolean intersectsPointXY(double pos_x, double pos_y) {
         // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis.***
-        if(pos_x < minX || pos_x > maxX || pos_y < minY || pos_y > maxY)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return !(pos_x < minX) && !(pos_x > maxX) && !(pos_y < minY) && !(pos_y > maxY);
     }
 
-    public boolean intersectsRectangleXY(double min_x, double min_y, double max_x, double max_y)
-    {
+    public boolean intersectsRectangleXY(double min_x, double min_y, double max_x, double max_y) {
         // this function checks if a rectangle2D is intersected by the boundingBox only meaning xAxis and yAxis.***
-        if(max_x < minX || min_x > maxX || max_y < minY || min_y > maxY)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return !(max_x < minX) && !(min_x > maxX) && !(max_y < minY) && !(min_y > maxY);
     }
 
-    public boolean intersectsPointXY_xAxis(double pos_x)
-    {
+    public boolean intersectsPointXY_xAxis(double pos_x) {
         // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis.***
-        if(pos_x < minX || pos_x > maxX)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return !(pos_x < minX) && !(pos_x > maxX);
     }
 
-    public boolean intersectsPointXY_yAxis(double pos_y)
-    {
+    public boolean intersectsPointXY_yAxis(double pos_y) {
         // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis.***
-        if(pos_y < minY || pos_y > maxY)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return !(pos_y < minY) && !(pos_y > maxY);
     }
 
-    public double getLengthX()
-    {
+    public double getLengthX() {
         return maxX - minX;
     }
 
-    public double getLengthY()
-    {
+    public double getLengthY() {
         return maxY - minY;
     }
 
-    public double getLengthZ()
-    {
+    public double getLengthZ() {
         return maxZ - minZ;
     }
 
@@ -256,8 +209,7 @@ public class GaiaBoundingBox {
         return Math.sqrt(volume.x * volume.x + volume.y * volume.y + volume.z * volume.z);
     }
 
-    public double getLongestDistanceXY()
-    {
+    public double getLongestDistanceXY() {
         Vector3d volume = getVolume();
         return Math.sqrt(volume.x * volume.x + volume.y * volume.y);
     }

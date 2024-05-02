@@ -15,8 +15,6 @@ import java.io.IOException;
 @Slf4j
 public class MagoMesherMain {
     public static String version = "1.0.2";
-    public static CommandLine command = null;
-
     public static int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     public static int DEFAULT_MAXIMUM_TILE_DEPTH = 16;
 
@@ -110,12 +108,7 @@ public class MagoMesherMain {
 
     private static void printStart() {
         String programInfo = "Mago Quantized Mesher by Gaia3D, Inc.";
-        log.info("\n" +
-                "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┳┳┓┏┓┏┓┓┏┏┓┳┓\n" +
-                "┃┃┃┣┫┃┓┃┃   ┫┃┃  ┃┃┃┣ ┗┓┣┫┣ ┣┫\n" +
-                "┛ ┗┛┗┗┛┗┛  ┗┛┻┛  ┛ ┗┗┛┗┛┛┗┗┛┛┗\n" +
-                programInfo + "\n" +
-                "----------------------------------------");
+        log.info("\n" + "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┳┳┓┏┓┏┓┓┏┏┓┳┓\n" + "┃┃┃┣┫┃┓┃┃   ┫┃┃  ┃┃┃┣ ┗┓┣┫┣ ┣┫\n" + "┛ ┗┛┗┗┛┗┛  ┗┛┻┛  ┛ ┗┗┛┗┛┛┗┗┛┛┗\n" + programInfo + "\n" + "----------------------------------------");
 
     }
 }

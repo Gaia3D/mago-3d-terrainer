@@ -15,17 +15,13 @@ public class TilesRange {
     public TilesRange() {
     }
 
-    public List<TileIndices> getTileIndices(List<TileIndices> resultTileIndices)
-    {
-        if(resultTileIndices == null)
-        {
+    public List<TileIndices> getTileIndices(List<TileIndices> resultTileIndices) {
+        if (resultTileIndices == null) {
             resultTileIndices = new ArrayList<>();
         }
 
-        for(int y = minTileY; y <= maxTileY; y++)
-        {
-            for(int x = minTileX; x <= maxTileX; x++)
-            {
+        for (int y = minTileY; y <= maxTileY; y++) {
+            for (int x = minTileX; x <= maxTileX; x++) {
                 TileIndices tileIndices = new TileIndices(tileDepth, x, y);
                 resultTileIndices.add(tileIndices);
             }
@@ -34,23 +30,15 @@ public class TilesRange {
         return resultTileIndices;
     }
 
-    public boolean intersects(TileIndices tileIndices)
-    {
-        if(tileIndices.L != tileDepth)
-        {
+    public boolean intersects(TileIndices tileIndices) {
+        if (tileIndices.L != tileDepth) {
             return false;
         }
 
-        if(tileIndices.X < minTileX || tileIndices.X > maxTileX)
-        {
+        if (tileIndices.X < minTileX || tileIndices.X > maxTileX) {
             return false;
         }
 
-        if(tileIndices.Y < minTileY || tileIndices.Y > maxTileY)
-        {
-            return false;
-        }
-
-        return true;
+        return tileIndices.Y >= minTileY && tileIndices.Y <= maxTileY;
     }
 }

@@ -4,8 +4,7 @@ import com.gaia3d.util.io.LittleEndianDataOutputStream;
 
 import java.io.IOException;
 
-public class QuantizedMeshHeader
-{
+public class QuantizedMeshHeader {
     //https://github.com/CesiumGS/quantized-mesh
     // The center of the tile in Earth-centered Fixed coordinates.
     double CenterX = 0.0;
@@ -34,8 +33,7 @@ public class QuantizedMeshHeader
     double HorizonOcclusionPointY = 0.0;
     double HorizonOcclusionPointZ = 0.0;
 
-    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException
-    {
+    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException {
         dataOutputStream.writeDouble(CenterX);
         dataOutputStream.writeDouble(CenterY);
         dataOutputStream.writeDouble(CenterZ);

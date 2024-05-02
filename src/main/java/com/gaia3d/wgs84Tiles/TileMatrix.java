@@ -2,12 +2,14 @@ package com.gaia3d.wgs84Tiles;
 
 
 import com.gaia3d.basic.structure.*;
+import com.gaia3d.basic.types.HalfEdgeType;
 import com.gaia3d.quantizedMesh.QuantizedMesh;
 import com.gaia3d.quantizedMesh.QuantizedMeshManager;
 import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
@@ -16,10 +18,10 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.lang.Math.abs;
 
+@Slf4j
 public class TileMatrix
 {
     public TileWgs84Manager manager = null;
@@ -107,19 +109,19 @@ public class TileMatrix
             if(halfEdge.twin != null)
             {
                 // this halfEdge has a twin.***
-                System.out.println("Error: halfEdge has a twin.");
+                log.info("Error: halfEdge has a twin.");
                 continue;
             }
 
             if(!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B, axisToCheck))
             {
                 // error.!***
-                System.out.println("Error: no twin halfEdge found.");
+                log.info("Error: no twin halfEdge found.");
                 int hola = 0;
 
 //                if(!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B))
 //                {
-//                      System.out.println("Error: no twin halfEdge found.");
+//                      log.info("Error: no twin halfEdge found.");
 //                }
             }
         }
@@ -160,7 +162,7 @@ public class TileMatrix
                 if(counter >= 100)
                 {
                     counter = 0;
-                    System.out.println("Loading tile L : " + tileIndices.L + ", i : " + counterAux + " / " + totalTiles);
+                    log.info("Loading tile L : " + tileIndices.L + ", i : " + counterAux + " / " + totalTiles);
                 }
 
                 tilesListRow.add(tile);
@@ -175,7 +177,7 @@ public class TileMatrix
 
         int rowsCount = tilesMatrixRowCol.size();
         int colsCount = tilesMatrixRowCol.get(0).size();
-        System.out.println("making tile-matrix : columns : " + colsCount + " rows : " + rowsCount);
+        log.info("making tile-matrix : columns : " + colsCount + " rows : " + rowsCount);
 
         List<GaiaMesh> rowMeshesList = new ArrayList<>(); // each mesh is a row.***
         int axisToCheck = 1;
@@ -291,7 +293,7 @@ public class TileMatrix
             }
         }
 
-        System.out.println("end making tile-matrix");
+        log.info("end making tile-matrix");
 
         if(resultMesh != null)
         {
@@ -310,16 +312,16 @@ public class TileMatrix
             // 2- saveQuantizedMeshes()
             // 3- saveSeparatedChildrenTiles()
             //------------------------------------------
-            System.out.println("Saving separated tiles...");
+            log.info("Saving separated tiles...");
             saveSeparatedTiles(separatedMeshes);
 
             // now save quantizedMeshes.***
-            System.out.println("Saving quantized meshes...");
+            log.info("Saving quantized meshes...");
             saveQuantizedMeshes(separatedMeshes);
 
             // finally save the children tiles.***
             // note : the children tiles must be the last saved.***
-            System.out.println("Saving separated children tiles...");
+            log.info("Saving separated children tiles...");
             saveSeparatedChildrenTiles(separatedMeshes);
 
         }
@@ -421,7 +423,7 @@ public class TileMatrix
 //            // Test check meshes.***
 //            if(!TileWgs84Utils.checkTile_test(mesh, this.manager.vertexCoincidentError, this.manager.originIsLeftUp))
 //            {
-//                System.out.println("Error: mesh is not valid.***");
+//                log.info("Error: mesh is not valid.***");
 //            }
 
             GaiaTriangle triangle = mesh.triangles.get(0); // take the first triangle.***
@@ -434,14 +436,14 @@ public class TileMatrix
             if(counter >= 100)
             {
                 counter = 0;
-                System.out.println("Saving separated tiles... L : " + tileIndices.L + " i : " + i + " / " + meshesCount );
+                log.info("Saving separated tiles... L : " + tileIndices.L + " i : " + i + " / " + meshesCount );
             }
 
             try {
                 saveFile(mesh, tileFullPath);
 
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error(e.getMessage());l
                 return false;
             }
 
@@ -470,7 +472,7 @@ public class TileMatrix
             if(counter >= 100)
             {
                 counter = 0;
-                System.out.println("Saving children tiles... L : "+ tileIndices.L +" i : " + i + " / " + meshesCount);
+                log.info("Saving children tiles... L : "+ tileIndices.L +" i : " + i + " / " + meshesCount);
             }
 
             // Save children if necessary.***************************************************************************
@@ -549,7 +551,7 @@ public class TileMatrix
                         saveFile(childMesh, childTileFullPath); // original.***
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage());l
                         return false;
                     }
                 }
@@ -622,7 +624,7 @@ public class TileMatrix
             else
             {
                 // error.***
-                System.out.println("Error: triangle has not ownerTile_tileIndices.");
+                log.info("Error: triangle has not ownerTile_tileIndices.");
             }
         }
 
@@ -732,7 +734,7 @@ public class TileMatrix
         TerrainElevationDataManager terrainElevationDataManager = this.manager.terrainElevationDataManager;
 
         int verticesCount = verticesOfCurrentTile.size();
-        System.out.println("recalculating elevations... vertices count : " + verticesCount);
+        log.info("recalculating elevations... vertices count : " + verticesCount);
         for(int i = 0; i < verticesCount; i++)
         {
             GaiaVertex vertex = verticesOfCurrentTile.get(i);
@@ -1137,7 +1139,7 @@ public class TileMatrix
         boolean refined = false;
         int splitCount = 0;
         int trianglesCount = mesh.triangles.size();
-        System.out.println("Refinement : Triangles count : " + trianglesCount);
+        log.info("Refinement : Triangles count : " + trianglesCount);
         splitCount = 0;
         for (int i = 0; i < trianglesCount; i++) {
             GaiaTriangle triangle = mesh.triangles.get(i);
@@ -1153,7 +1155,7 @@ public class TileMatrix
 
 //            if(tilesRange.tileDepth >= 16) {
 //
-//                System.out.println("Refinement : L : " + tilesRange.tileDepth + " # i : " + i + " / " + trianglesCount);
+//                log.info("Refinement : L : " + tilesRange.tileDepth + " # i : " + i + " / " + trianglesCount);
 //                if(i==22481)
 //                {
 //                    int hola = 0;
@@ -1178,7 +1180,7 @@ public class TileMatrix
 
         if(refined)
         {
-            System.out.println("Removing deleted objects : splited count : " + splitCount);
+            log.info("Removing deleted objects : splited count : " + splitCount);
             mesh.removeDeletedObjects();
             mesh.setObjectsIdInList();
         }
@@ -1192,7 +1194,7 @@ public class TileMatrix
         // Here refine only the triangles of the tiles of TilesRange.***
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(tilesRange.tileDepth);
-        System.out.println("refineMesh : L : " + tilesRange.tileDepth + " # maxDiff(m) : " + maxDiff);
+        log.info("refineMesh : L : " + tilesRange.tileDepth + " # maxDiff(m) : " + maxDiff);
 
         if(tilesRange.tileDepth >= 16)
         {

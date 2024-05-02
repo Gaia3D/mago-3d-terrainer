@@ -4,9 +4,11 @@ import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.util.io.LittleEndianDataInputStream;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
+@Slf4j
 public class TileIndices {
 
     // child tile indices.***
@@ -26,8 +28,8 @@ public class TileIndices {
 
     public TileIndices() {
     }
-    public TileIndices(int tileDepth, int x, int y)
-    {
+
+    public TileIndices(int tileDepth, int x, int y) {
         this.L = tileDepth;
         this.X = x;
         this.Y = y;
@@ -50,44 +52,36 @@ public class TileIndices {
     }
 
     public boolean isCoincident(TileIndices tileIndices) {
-        if (X == tileIndices.X && Y == tileIndices.Y && L == tileIndices.L) {
-            return true;
-        }
-        return false;
+        return X == tileIndices.X && Y == tileIndices.Y && L == tileIndices.L;
     }
 
-    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream)
-    {
+    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
             dataOutputStream.writeInt(X);
             dataOutputStream.writeInt(Y);
             dataOutputStream.writeInt(L);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());l
         }
     }
 
-    public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException
-    {
+    public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException {
         X = dataInputStream.readInt();
         Y = dataInputStream.readInt();
         L = dataInputStream.readInt();
     }
 
-    public boolean isValid()
-    {
+    public boolean isValid() {
         // for each tile depth (L), there are minX & maxX, minY & maxY.***
         return TileWgs84Utils.isValidTileIndices(L, X, Y);
     }
 
     public TileIndices get_LD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X - 1, Y + 1, L);
-        }
-        else {
+        } else {
             tileIndices.set(X - 1, Y - 1, L);
         }
 
@@ -96,11 +90,9 @@ public class TileIndices {
 
     public TileIndices get_D_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X, Y + 1, L);
-        }
-        else {
+        } else {
             tileIndices.set(X, Y - 1, L);
         }
 
@@ -110,11 +102,9 @@ public class TileIndices {
 
     public TileIndices get_RD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X + 1, Y + 1, L);
-        }
-        else {
+        } else {
             tileIndices.set(X + 1, Y - 1, L);
         }
 
@@ -123,11 +113,9 @@ public class TileIndices {
 
     public TileIndices get_R_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X + 1, Y, L);
-        }
-        else {
+        } else {
             tileIndices.set(X + 1, Y, L);
         }
 
@@ -137,11 +125,9 @@ public class TileIndices {
 
     public TileIndices get_RU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X + 1, Y - 1, L);
-        }
-        else {
+        } else {
             tileIndices.set(X + 1, Y + 1, L);
         }
 
@@ -150,11 +136,9 @@ public class TileIndices {
 
     public TileIndices get_U_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X, Y - 1, L);
-        }
-        else {
+        } else {
             tileIndices.set(X, Y + 1, L);
         }
 
@@ -163,11 +147,9 @@ public class TileIndices {
 
     public TileIndices get_LU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X - 1, Y - 1, L);
-        }
-        else {
+        } else {
             tileIndices.set(X - 1, Y + 1, L);
         }
 
@@ -176,11 +158,9 @@ public class TileIndices {
 
     public TileIndices get_L_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X - 1, Y, L);
-        }
-        else {
+        } else {
             tileIndices.set(X - 1, Y, L);
         }
 
@@ -189,11 +169,9 @@ public class TileIndices {
 
     public TileIndices getChild_LU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X * 2, Y * 2, L + 1);
-        }
-        else {
+        } else {
             tileIndices.set(X * 2, Y * 2 + 1, L + 1);
         }
 
@@ -202,11 +180,9 @@ public class TileIndices {
 
     public TileIndices getChild_RU_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X * 2 + 1, Y * 2, L + 1);
-        }
-        else {
+        } else {
             tileIndices.set(X * 2 + 1, Y * 2 + 1, L + 1);
         }
 
@@ -215,11 +191,9 @@ public class TileIndices {
 
     public TileIndices getChild_LD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X * 2, Y * 2 + 1, L + 1);
-        }
-        else {
+        } else {
             tileIndices.set(X * 2, Y * 2, L + 1);
         }
 
@@ -228,11 +202,9 @@ public class TileIndices {
 
     public TileIndices getChild_RD_TileIndices(boolean originIsLeftUp) {
         TileIndices tileIndices = new TileIndices();
-        if(originIsLeftUp)
-        {
+        if (originIsLeftUp) {
             tileIndices.set(X * 2 + 1, Y * 2 + 1, L + 1);
-        }
-        else {
+        } else {
             tileIndices.set(X * 2 + 1, Y * 2, L + 1);
         }
 

@@ -1,5 +1,6 @@
 package com.gaia3d.wgs84Tiles;
 
+import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 //import org.geotools.coverage.grid.Interpolator2D;
@@ -22,21 +23,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class GaiaGeoTiffManager
-{
-    int memSave_pixel[] = new int[1];
+@Slf4j
+public class GaiaGeoTiffManager {
+    int[] memSave_pixel = new int[1];
     double[] memSave_originalUpperLeftCorner = new double[2];
-     public GaiaGeoTiffManager()
-    {
-        System.out.println("GaiaGeoTiffManager.constructor()");
+
+    public GaiaGeoTiffManager() {
+        log.info("GaiaGeoTiffManager.constructor()");
     }
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
-         // this function only loads the geotiff coverage.***
-        System.out.println("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
+        // this function only loads the geotiff coverage.***
+        log.info("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
         GridCoverage2D coverage = null;
-        try
-        {
+        try {
             File file = new File(geoTiffFilePath);
             GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
@@ -44,10 +44,8 @@ public class GaiaGeoTiffManager
 //            coverage = Interpolator2D.create(coverage, interpolation);
 
             reader.dispose();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return coverage;
@@ -71,17 +69,15 @@ public class GaiaGeoTiffManager
         double desiredPixelsCountY = envelopeSpanY / desiredPixelSizeYinMeters;
         int minXSize = 24;
         int minYSize = 24;
-        int desiredImageWidth = Math.max((int)desiredPixelsCountX, minXSize);
-        int desiredImageHeight = Math.max((int)desiredPixelsCountY, minYSize);
+        int desiredImageWidth = Math.max((int) desiredPixelsCountX, minXSize);
+        int desiredImageHeight = Math.max((int) desiredPixelsCountY, minYSize);
 
 
-        double scaleX = (double)desiredImageWidth / (double)gridSpanX;
-        double scaleY = (double)desiredImageHeight / (double)gridSpanY;
+        double scaleX = (double) desiredImageWidth / (double) gridSpanX;
+        double scaleY = (double) desiredImageHeight / (double) gridSpanY;
 
         Operations ops = new Operations(null);
-        resizedCoverage =
-                (GridCoverage2D)
-                        ops.scale(originalCoverage, scaleX, scaleY, 0, 0);
+        resizedCoverage = (GridCoverage2D) ops.scale(originalCoverage, scaleX, scaleY, 0, 0);
 
         memSave_originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
         memSave_originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);

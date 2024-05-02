@@ -5,14 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gaia3d.reader.FileUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class TerrainLayer
-{
+@Slf4j
+public class TerrainLayer {
     String tilejson = null;
     String name = null;
     String description = null;
@@ -28,25 +29,21 @@ public class TerrainLayer
     double[] bounds = null;
     ArrayList<TilesRange> available = new ArrayList<TilesRange>();
 
-    public TerrainLayer()
-    {
+    public TerrainLayer() {
         this.setDefault();
     }
 
-    public HashMap<Integer, TilesRange> getTilesRangeMap()
-    {
+    public HashMap<Integer, TilesRange> getTilesRangeMap() {
         HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<Integer, TilesRange>();
 
-        for (TilesRange tilesRange : this.available)
-        {
+        for (TilesRange tilesRange : this.available) {
             tilesRangeMap.put(tilesRange.tileDepth, tilesRange);
         }
 
         return tilesRangeMap;
     }
 
-    public void setDefault()
-    {
+    public void setDefault() {
         this.tilejson = "2.1.0";
         this.name = "insert name here";
         this.description = "insert description here";
@@ -66,8 +63,7 @@ public class TerrainLayer
         this.bounds[3] = 0.0;
     }
 
-    public void saveJsonFile(String outputDirectory, String tilejsonFileName)
-    {
+    public void saveJsonFile(String outputDirectory, String tilejsonFileName) {
         String fullFileName = outputDirectory + "\\" + tilejsonFileName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
 
@@ -89,8 +85,7 @@ public class TerrainLayer
 
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         HashMap<Integer, TilesRange> tilesRangeMap = this.getTilesRangeMap();
-        for (Integer tileDepth : tilesRangeMap.keySet())
-        {
+        for (Integer tileDepth : tilesRangeMap.keySet()) {
             TilesRange tilesRange = tilesRangeMap.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
@@ -111,7 +106,7 @@ public class TerrainLayer
             JsonNode jsonNode = new ObjectMapper().readTree(objectNodeRoot.toString());
             objectMapper.writeValue(new File(fullFileName), jsonNode);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
