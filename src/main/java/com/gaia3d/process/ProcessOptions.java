@@ -6,14 +6,16 @@ import lombok.Getter;
 @Getter
 public enum ProcessOptions
 {
-    HELP("help", "h", "help", false, "print this message"),
-    VERSION("version", "v", "version", false, "print version"),
+    HELP("help", "h", "help", false, "Print this message"),
+    VERSION("version", "v", "version", false, "Print version"),
 
-    INPUT_PATH("inputFolderPath", "i", "inputFolderPath", true, "input folder path"),
-    OUTPUT_PATH("outputFolderPath", "o", "outputFolderPath", true, "output folder path"),
-    MINIMUM_TILE_DEPTH("minimumTileDepth", "mn", "minimumTileDepth", true,"minimum tile depth"),
-    MAXIMUM_TILE_DEPTH("maximumTileDepth", "mx", "maximumTileDepth", true,"maximum tile depth"),
-    MESH_REFINEMENT_STRENGTH("meshRefinementStrength", "rs", "meshRefinementStrength", false,"mesh refinement strength");
+    INPUT("input", "i", "input", true, "Input folder path"),
+    OUTPUT("output", "o", "output", true, "Output folder path"),
+    LOG("log", "l", "log", false, "Log file path"),
+
+    MINIMUM_TILE_DEPTH("minDepth", "mn", "minimumTileDepth", true,"Minimum tile depth (0 ~ 22)"),
+    MAXIMUM_TILE_DEPTH("maxDepth", "mx", "maximumTileDepth", true,"Maximum tile depth (0 ~ 22)"),
+    MESH_REFINEMENT_STRENGTH("strength", "rs", "meshRefinementStrength", false,"Mesh refinement strength");
 
     private final String longName;
     private final String shortName;

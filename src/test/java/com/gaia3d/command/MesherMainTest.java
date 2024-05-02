@@ -13,8 +13,23 @@ class MesherMainTest {
     //****************************************************************
 
     @Test
-    void main() throws FactoryException, TransformException, IOException
-    {
+    void help() {
+        String[] args = new String[]{"-h"};
+        MagoMesherMain.main(args);
+    }
+
+    @Test
+    void sample() {
+        String[] args = new String[]{
+                "-input", "D:\\dem\\sample-input\\",
+                "-output", "D:\\dem\\sample-output\\",
+        };
+        MagoMesherMain.main(args);
+    }
+
+
+    @Test
+    void main() throws FactoryException, TransformException, IOException {
         //****************************************************************
         // Note : the outFolder must be different from the inputFolder.***
         //****************************************************************
@@ -27,8 +42,7 @@ class MesherMainTest {
     }
 
     @Test
-    void main2() throws FactoryException, TransformException, IOException
-    {
+    void main2() throws FactoryException, TransformException, IOException {
         //****************************************************************
         // Note : the outFolder must be different from the inputFolder.***
         //****************************************************************
@@ -62,14 +76,8 @@ class MesherMainTest {
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\smallDatas";
 
-        String[] args = new String[]{
-                "-inputFolderPath", originalGeoTiffFolderPath,
-                "-outputFolderPath", outputPath,
-                "-minimumTileDepth", minTileDepth,
-                "-maximumTileDepth", maxTileDepth,
-                "-meshRefinementStrength", refinementStrength
-        };
-        MesherMain.mainTest(args);
+        String[] args = new String[]{"-inputFolderPath", originalGeoTiffFolderPath, "-outputFolderPath", outputPath, "-minimumTileDepth", minTileDepth, "-maximumTileDepth", maxTileDepth, "-meshRefinementStrength", refinementStrength};
+        //MagoMesherMain.mainTest(args);
     }
 
     @Test
@@ -122,13 +130,7 @@ class MesherMainTest {
     }
 
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
-        String[] args = new String[]{
-                "-i", inputPath,
-                "-o", outputPath,
-                "-mn", minTileDepth,
-                "-mx", maxTileDepth,
-                "-rs", refinementStrength
-        };
-        MesherMain.main(args);
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-mn", minTileDepth, "-mx", maxTileDepth, "-rs", refinementStrength};
+        MagoMesherMain.main(args);
     }
 }
