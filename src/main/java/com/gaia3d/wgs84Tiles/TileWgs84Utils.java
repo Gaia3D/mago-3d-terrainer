@@ -33,35 +33,35 @@ public class TileWgs84Utils {
         }
         else if(depth < 8)
         {
-            return tileSize * 0.04;
+            return tileSize * 0.05;
         }
         else if(depth <= 12)
         {
-            return tileSize * 0.07;
+            return tileSize * 0.1;
         }
         else if(depth == 13)
         {
-            return tileSize * 0.08;
+            return tileSize * 0.12;
         }
         else if(depth == 14)
         {
-            return tileSize * 0.1;
+            return tileSize * 0.15;
         }
         else if(depth == 15)
         {
-            return tileSize * 0.12;
+            return tileSize * 0.18;
         }
         else if(depth == 16)
         {
-            return tileSize * 0.15;
+            return tileSize * 0.21;
         }
         else if(depth == 17)
         {
-            return tileSize * 0.2;
+            return tileSize * 0.26;
         }
         else if(depth == 18)
         {
-            return tileSize * 0.25;
+            return tileSize * 0.29;
         }
         else
         {

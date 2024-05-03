@@ -602,6 +602,8 @@ public class TileWgs84Manager {
 
         this.setGeoTiffFilesCount(geotiffCount);
 
+        System.out.println("resizing geoTiffs: geoTiffsCount : " + geotiffCount);
+
         if(geotiffCount == 1)
         {
             this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);

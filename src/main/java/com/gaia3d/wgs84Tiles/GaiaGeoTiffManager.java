@@ -33,7 +33,7 @@ public class GaiaGeoTiffManager
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
          // this function only loads the geotiff coverage.***
-        System.out.println("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
+        //System.out.println("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
         GridCoverage2D coverage = null;
         try
         {
