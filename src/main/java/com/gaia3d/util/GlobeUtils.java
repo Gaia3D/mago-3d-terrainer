@@ -9,6 +9,7 @@ import org.locationtech.proj4j.ProjCoordinate;
 
 /**
  * Utility class for converting between geographic and cartesian coordinates.
+ *
  * @author znkim
  * @since 1.0.0
  */
@@ -19,10 +20,8 @@ public class GlobeUtils {
     private static final double polarRadius = 6356752.3142d; // meters.
     private static final double polarRadiusSquared = 40408299984087.05552164d;
     private static final double firstEccentricitySquared = 6.69437999014E-3d;
-
     private static final CRSFactory factory = new CRSFactory();
     private static final CoordinateReferenceSystem wgs84 = factory.createFromParameters("WGS84", "+proj=longlat +datum=WGS84 +no_defs");
-
     public static double getEquatorialRadius() {
         return equatorialRadius;
     }
@@ -99,8 +98,7 @@ public class GlobeUtils {
         return normalAtCartesianPointWgs84(position.x, position.y, position.z);
     }
 
-    public static Vector3d cartesianToGeographicWgs84(double poxX, double posY, double posZ)
-    {
+    public static Vector3d cartesianToGeographicWgs84(double poxX, double posY, double posZ) {
         Vector3d position = new Vector3d(poxX, posY, posZ);
         return cartesianToGeographicWgs84(position);
     }

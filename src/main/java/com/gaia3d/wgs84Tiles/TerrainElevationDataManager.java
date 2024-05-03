@@ -18,8 +18,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TerrainElevationDataManager
-{
+public class TerrainElevationDataManager {
+    public ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
+    public ArrayList<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
+    public Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<String, TileWgs84Raster>();
     // Inside the folder, there are multiple geoTiff files.***
     @Setter
     @Getter
@@ -31,24 +33,14 @@ public class TerrainElevationDataManager
     @Getter
     String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file.***
     TerrainElevationData uniqueTerrainElevationData = null; // use this if there is only one geoTiff file.***
-
     // if there are multiple geoTiff files, use this.***
     int quadtreesMaxDepth = 10;
     TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree;
-
     GaiaGeoTiffManager gaiaGeoTiffManager = null;
-
-    public ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
-
-    boolean memSave_intersects[] = {false};
-
+    boolean[] memSave_intersects = {false};
     ArrayList<String> memSave_geoTiffFileNames = new ArrayList<String>();
-    public ArrayList<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
 
-    public Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<String, TileWgs84Raster>();
-
-    public TerrainElevationDataManager()
-    {
+    public TerrainElevationDataManager() {
         rootTerrainElevationDataQuadTree = null;
     }
 
@@ -60,13 +52,11 @@ public class TerrainElevationDataManager
     }
 
     public void MakeUniqueTerrainElevationData() throws FactoryException, TransformException, IOException {
-        if(uniqueGeoTiffFilePath == null)
-        {
+        if (uniqueGeoTiffFilePath == null) {
             return;
         }
 
-        if(gaiaGeoTiffManager == null)
-        {
+        if (gaiaGeoTiffManager == null) {
             gaiaGeoTiffManager = new GaiaGeoTiffManager();
         }
 
@@ -87,8 +77,7 @@ public class TerrainElevationDataManager
 
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
         TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
-        if(tileWgs84Raster == null)
-        {
+        if (tileWgs84Raster == null) {
             tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
             int tileRasterWidth = tileWgs84Manager.tileRasterSize;
             int tileRasterHeight = tileWgs84Manager.tileRasterSize;
@@ -99,10 +88,8 @@ public class TerrainElevationDataManager
         return tileWgs84Raster;
     }
 
-    public void deleteTileRasters()
-    {
-        for(TileWgs84Raster tileWgs84Raster : mapIndicesTileRaster.values())
-        {
+    public void deleteTileRasters() {
+        for (TileWgs84Raster tileWgs84Raster : mapIndicesTileRaster.values()) {
             tileWgs84Raster.deleteObjects();
         }
 
@@ -112,49 +99,40 @@ public class TerrainElevationDataManager
 
 
     public GeographicExtension getRootGeographicExtension() {
-        if(this.geoTiffFilesCount == 1)
-        {
-            if(uniqueTerrainElevationData == null)
-            {
+        if (this.geoTiffFilesCount == 1) {
+            if (uniqueTerrainElevationData == null) {
                 return null;
             }
 
             return uniqueTerrainElevationData.geographicExtension;
         }
 
-        if(rootTerrainElevationDataQuadTree == null)
-        {
+        if (rootTerrainElevationDataQuadTree == null) {
             return null;
         }
 
         return rootTerrainElevationDataQuadTree.geographicExtension;
     }
 
-    public void deleteCoverage()
-    {
-        if(rootTerrainElevationDataQuadTree == null)
-        {
+    public void deleteCoverage() {
+        if (rootTerrainElevationDataQuadTree == null) {
             return;
         }
 
         rootTerrainElevationDataQuadTree.deleteCoverage();
     }
 
-    public void deleteCoverageIfNotIntersects(GeographicExtension geographicExtension)
-    {
-        if(rootTerrainElevationDataQuadTree == null)
-        {
+    public void deleteCoverageIfNotIntersects(GeographicExtension geographicExtension) {
+        if (rootTerrainElevationDataQuadTree == null) {
             return;
         }
 
         rootTerrainElevationDataQuadTree.deleteCoverageIfNotIntersects(geographicExtension);
     }
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         this.deleteTileRasters();
-        if(rootTerrainElevationDataQuadTree == null)
-        {
+        if (rootTerrainElevationDataQuadTree == null) {
             return;
         }
 
@@ -165,10 +143,8 @@ public class TerrainElevationDataManager
     public double getElevation(double lonDeg, double latDeg, ArrayList<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
         double resultElevation = 0.0;
 
-        if(this.geoTiffFilesCount == 1)
-        {
-            if(uniqueTerrainElevationData == null)
-            {
+        if (this.geoTiffFilesCount == 1) {
+            if (uniqueTerrainElevationData == null) {
                 return resultElevation;
             }
 
@@ -176,8 +152,7 @@ public class TerrainElevationDataManager
             return resultElevation;
         }
 
-        if(rootTerrainElevationDataQuadTree == null)
-        {
+        if (rootTerrainElevationDataQuadTree == null) {
             return resultElevation;
         }
 
@@ -186,18 +161,15 @@ public class TerrainElevationDataManager
 
         memSave_intersects[0] = false;
         int terrainElevDatasCount = memSave_terrainElevDatasArray.size();
-        for(int i=0; i<terrainElevDatasCount; i++)
-        {
+        for (int i = 0; i < terrainElevDatasCount; i++) {
             TerrainElevationData terrainElevationData = memSave_terrainElevDatasArray.get(i);
 
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, memSave_intersects);
-            if(memSave_intersects[0] == false)
-            {
+            if (!memSave_intersects[0]) {
                 continue;
             }
 
-            if(elevation < 0.0)
-            {
+            if (elevation < 0.0) {
                 elevation = 0.0;
             }
 
@@ -213,14 +185,12 @@ public class TerrainElevationDataManager
         memSave_geoTiffFileNames.clear();
         com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", memSave_geoTiffFileNames);
 
-        if(gaiaGeoTiffManager == null)
-        {
+        if (gaiaGeoTiffManager == null) {
             gaiaGeoTiffManager = new GaiaGeoTiffManager();
         }
         GeometryFactory gf = new GeometryFactory();
 
-        if(rootTerrainElevationDataQuadTree == null)
-        {
+        if (rootTerrainElevationDataQuadTree == null) {
             rootTerrainElevationDataQuadTree = new TerrainElevationDataQuadTree(null);
         }
 
@@ -234,8 +204,7 @@ public class TerrainElevationDataManager
         CoordinateReferenceSystem crsWgs84 = null;
         MathTransform targetToWgs = null;
 
-        for(int i=0; i<geoTiffCount; i++)
-        {
+        for (int i = 0; i < geoTiffCount; i++) {
             geoTiffFileName = memSave_geoTiffFileNames.get(i);
             geoTiffFilePath = terrainElevationDataFolderPath + "\\" + geoTiffFileName;
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
@@ -259,8 +228,7 @@ public class TerrainElevationDataManager
         ArrayList<String> folderNames = new ArrayList<String>();
         com.gaia3d.reader.FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
         int folderCount = folderNames.size();
-        for(int i=0; i<folderCount; i++)
-        {
+        for (int i = 0; i < folderCount; i++) {
             String folderName = folderNames.get(i);
             String folderPath = terrainElevationDataFolderPath + "\\" + folderName;
             loadAllGeoTiff(folderPath);
@@ -268,7 +236,6 @@ public class TerrainElevationDataManager
 
         int hola = 0;
     }
-
 
 
 }

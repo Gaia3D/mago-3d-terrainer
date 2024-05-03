@@ -6,8 +6,7 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 
-public class TileWgs84Raster
-{
+public class TileWgs84Raster {
     public TileWgs84Manager manager = null;
     public TileIndices tileIndices = null;
 
@@ -22,8 +21,7 @@ public class TileWgs84Raster
     @Getter
     private double deltaLatDeg = 0;
 
-    public TileWgs84Raster(TileIndices tileIndices, TileWgs84Manager manager)
-    {
+    public TileWgs84Raster(TileIndices tileIndices, TileWgs84Manager manager) {
         this.tileIndices = tileIndices;
         this.manager = manager;
 
@@ -32,36 +30,30 @@ public class TileWgs84Raster
         this.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
     }
 
-    public int getColumn(double lonDeg)
-    {
+    public int getColumn(double lonDeg) {
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
 
-        if(lonDeg < minLonDeg || lonDeg > maxLonDeg)
-        {
+        if (lonDeg < minLonDeg || lonDeg > maxLonDeg) {
             return -1;
         }
 
-        return (int)((lonDeg - minLonDeg) / deltaLonDeg);
+        return (int) ((lonDeg - minLonDeg) / deltaLonDeg);
     }
 
-    public int getRow(double latDeg)
-    {
+    public int getRow(double latDeg) {
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        if(latDeg < minLatDeg || latDeg > maxLatDeg)
-        {
+        if (latDeg < minLatDeg || latDeg > maxLatDeg) {
             return -1;
         }
 
-        return (int)((latDeg - minLatDeg) / deltaLatDeg);
+        return (int) ((latDeg - minLatDeg) / deltaLatDeg);
     }
 
-    public float getElevation(int col, int row)
-    {
-        if(col < 0 || col >= rasterWidth || row < 0 || row >= rasterHeight)
-        {
+    public float getElevation(int col, int row) {
+        if (col < 0 || col >= rasterWidth || row < 0 || row >= rasterHeight) {
             return Float.NaN;
         }
 
@@ -69,8 +61,7 @@ public class TileWgs84Raster
         return elevations[idx];
     }
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         this.geographicExtension = null;
         this.elevations = null;
     }
@@ -93,14 +84,12 @@ public class TileWgs84Raster
 
         boolean[] intersects = new boolean[1];
 
-        for(int col = 0; col < rasterWidth; col++)
-        {
+        for (int col = 0; col < rasterWidth; col++) {
             double lonDeg = minLonDeg + col * deltaLonDeg;
-            for(int row = 0; row < rasterHeight; row++)
-            {
+            for (int row = 0; row < rasterHeight; row++) {
                 double latDeg = minLatDeg + row * deltaLatDeg;
                 int idx = row * rasterWidth + col;
-                elevations[idx] = (float)terrainElevationDataManager.getElevation(lonDeg, latDeg, this.manager.memSave_terrainElevDatasArray);
+                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, this.manager.memSave_terrainElevDatasArray);
             }
         }
     }

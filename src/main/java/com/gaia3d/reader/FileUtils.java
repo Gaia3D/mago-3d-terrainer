@@ -25,8 +25,7 @@ public class FileUtils {
         return file.delete();
     }
 
-    public static void getFileNames(String folderPath, String extension, ArrayList<String> fileNames)
-    {
+    public static void getFileNames(String folderPath, String extension, ArrayList<String> fileNames) {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
@@ -41,8 +40,7 @@ public class FileUtils {
         }
     }
 
-    public static void getFolderNames(String folderPath, ArrayList<String> folderNames)
-    {
+    public static void getFolderNames(String folderPath, ArrayList<String> folderNames) {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
@@ -62,7 +60,7 @@ public class FileUtils {
             fileNames.add(folderPath + "\\" + fileName);
         }
 
-        if(isRecursive) {
+        if (isRecursive) {
             ArrayList<String> folderNames = new ArrayList<>();
             FileUtils.getFolderNames(folderPath, folderNames);
             for (String folderName : folderNames) {

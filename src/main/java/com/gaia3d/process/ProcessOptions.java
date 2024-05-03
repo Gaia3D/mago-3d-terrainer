@@ -6,14 +6,17 @@ import lombok.Getter;
 @Getter
 public enum ProcessOptions
 {
-    HELP("help", "h", "help", false, "print this message"),
-    VERSION("version", "v", "version", false, "print version"),
+    HELP("help", "h", "help", false, "Print this message"),
+    VERSION("version", "v", "version", false, "Print version"),
 
-    INPUT_FOLDER_PATH("inputFolderPath", "in", "inputFolderPath", true, "input folder path"),
-    OUTPUT_FOLDER_PATH("outputFolderPath", "out", "outputFolderPath", true, "output folder path"),
-    MINIMUM_TILE_DEPTH("minimumTileDepth", "min", "minimumTileDepth", true,"minimum tile depth"),
-    MAXIMUM_TILE_DEPTH("maximumTileDepth", "max", "maximumTileDepth", true,"maximum tile depth"),
-    MESH_REFINEMENT_STRENGTH("meshRefinementStrength", "refinementStrength", "meshRefinementStrength", false,"mesh refinement strength");
+    INPUT("input", "i", "input", true, "Input folder path"),
+    OUTPUT("output", "o", "output", true, "Output folder path"),
+    LOG("log", "l", "log", false, "Log file path"),
+    DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
+
+    MINIMUM_TILE_DEPTH("minDepth", "mn", "minDepth", true,"Minimum tile depth (0 ~ 22)"),
+    MAXIMUM_TILE_DEPTH("maxDepth", "mx", "maxDepth", true,"Maximum tile depth (0 ~ 22)"),
+    MESH_REFINEMENT_STRENGTH("strength", "rs", "meshRefinementStrength", false,"Mesh refinement strength");
 
     private final String longName;
     private final String shortName;

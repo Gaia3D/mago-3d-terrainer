@@ -1,15 +1,17 @@
 package com.gaia3d.basic.structure;
 
 
-
+import com.gaia3d.basic.types.HalfEdgeType;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
+@Slf4j
 public class GaiaHalfEdge {
     public GaiaVertex startVertex = null;
     public GaiaHalfEdge next = null;
@@ -30,8 +32,7 @@ public class GaiaHalfEdge {
 
     public GaiaRectangle boundingRect = null;
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         startVertex = null;
         next = null;
         twin = null;
@@ -41,8 +42,7 @@ public class GaiaHalfEdge {
 
     public void setTwin(GaiaHalfEdge twin) {
         this.twin = twin;
-        if(twin != null)
-        {
+        if (twin != null) {
             twin.twin = this;
         }
     }
@@ -52,15 +52,17 @@ public class GaiaHalfEdge {
         triangle.halfEdge = this;
     }
 
-    public void setTriangleToHEdgesLoop(GaiaTriangle triangle)
-    {
+    public void setTriangleToHEdgesLoop(GaiaTriangle triangle) {
         ArrayList<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
         this.getHalfEdgesLoop(halfEdgesLoop);
-        for(GaiaHalfEdge halfEdge : halfEdgesLoop)
-        {
+        for (GaiaHalfEdge halfEdge : halfEdgesLoop) {
             halfEdge.setTriangle(triangle);
         }
         halfEdgesLoop.clear();
+    }
+
+    public GaiaVertex getStartVertex() {
+        return startVertex;
     }
 
     public void setStartVertex(GaiaVertex startVertex) {
@@ -68,25 +70,14 @@ public class GaiaHalfEdge {
         startVertex.outingHEdge = this;
     }
 
-    public GaiaVertex getStartVertex() {
-        return startVertex;
-    }
-
-    public GaiaVertex getEndVertex()
-    {
-        if(next != null)
-        {
+    public GaiaVertex getEndVertex() {
+        if (next != null) {
             return next.getStartVertex();
-        }
-        else
-        {
+        } else {
             // check if exist twin.***
-            if(twin != null)
-            {
+            if (twin != null) {
                 return twin.getStartVertex();
-            }
-            else
-            {
+            } else {
                 return null;
             }
         }
@@ -101,21 +92,16 @@ public class GaiaHalfEdge {
         GaiaHalfEdge currHalfEdge = this;
         GaiaHalfEdge prevHalfEdge = null;
         boolean finished = false;
-        while (!finished)
-        {
+        while (!finished) {
             GaiaHalfEdge nextHalfEdge = currHalfEdge.next;
-            if(nextHalfEdge == null)
-            {
+            if (nextHalfEdge == null) {
                 return null;
             }
 
-            if(nextHalfEdge == thisHalfEdge)
-            {
+            if (nextHalfEdge == thisHalfEdge) {
                 finished = true;
                 prevHalfEdge = currHalfEdge;
-            }
-            else
-            {
+            } else {
                 currHalfEdge = nextHalfEdge;
             }
         }
@@ -123,10 +109,8 @@ public class GaiaHalfEdge {
         return prevHalfEdge;
     }
 
-    public GaiaLine2D getLine2DXY()
-    {
-        if(this.line2D == null)
-        {
+    public GaiaLine2D getLine2DXY() {
+        if (this.line2D == null) {
             this.line2D = new GaiaLine2D();
             Vector3d startPos = this.getStartVertex().position;
             Vector3d endPos = this.getEndVertex().position;
@@ -136,26 +120,20 @@ public class GaiaHalfEdge {
         return this.line2D;
     }
 
-    public void getHalfEdgesLoop(ArrayList<GaiaHalfEdge> halfEdgesLoop)
-    {
+    public void getHalfEdgesLoop(ArrayList<GaiaHalfEdge> halfEdgesLoop) {
         GaiaHalfEdge currHalfEdge = this;
         GaiaHalfEdge firstHalfEdge = this;
         halfEdgesLoop.add(currHalfEdge);
         boolean finished = false;
         int testDebugCounter = 0;
-        while (!finished)
-        {
+        while (!finished) {
             GaiaHalfEdge nextHalfEdge = currHalfEdge.next;
-            if(nextHalfEdge == null)
-            {
+            if (nextHalfEdge == null) {
                 finished = true;
                 break;
-            }
-            else
-            {
+            } else {
                 currHalfEdge = nextHalfEdge;
-                if(currHalfEdge == firstHalfEdge)
-                {
+                if (currHalfEdge == firstHalfEdge) {
                     finished = true;
                     break;
                 }
@@ -164,23 +142,20 @@ public class GaiaHalfEdge {
 
             testDebugCounter++;
 
-            if(testDebugCounter > 10)
-            {
+            if (testDebugCounter > 10) {
                 int hola = 0;
             }
         }
     }
 
-    public double getSquaredLength()
-    {
+    public double getSquaredLength() {
         Vector3d startPos = this.getStartVertex().position;
         Vector3d endPos = this.getEndVertex().position;
         double squaredLength = startPos.distanceSquared(endPos);
         return squaredLength;
     }
 
-    public double getSquaredLengthXY()
-    {
+    public double getSquaredLengthXY() {
         Vector3d startPos = this.getStartVertex().position;
         Vector3d endPos = this.getEndVertex().position;
         Vector2d startPosXY = new Vector2d(startPos.x, startPos.y);
@@ -189,8 +164,7 @@ public class GaiaHalfEdge {
         return squaredLength;
     }
 
-    public Vector3d getMidPosition()
-    {
+    public Vector3d getMidPosition() {
         Vector3d startPos = this.getStartVertex().position;
         Vector3d endPos = this.getEndVertex().position;
         Vector3d midPos = new Vector3d();
@@ -199,8 +173,7 @@ public class GaiaHalfEdge {
         return midPos;
     }
 
-    public Vector3d getDirection()
-    {
+    public Vector3d getDirection() {
         Vector3d startPos = this.getStartVertex().position;
         Vector3d endPos = this.getEndVertex().position;
         Vector3d dir = new Vector3d();
@@ -209,8 +182,7 @@ public class GaiaHalfEdge {
         return dir;
     }
 
-    public void getInterpolatedPositions(ArrayList<Vector3d> resultPositions, int numPositions)
-    {
+    public void getInterpolatedPositions(ArrayList<Vector3d> resultPositions, int numPositions) {
         // this function returns the interpolated positions of this halfEdge.***
         // resultPositions must be initialized.***
         resultPositions.clear();
@@ -219,18 +191,15 @@ public class GaiaHalfEdge {
         Vector3d dir = getDirection();
         double length = startPos.distance(endPos);
         double step = length / (numPositions - 1);
-        for(int i=0; i<numPositions; i++)
-        {
+        for (int i = 0; i < numPositions; i++) {
             Vector3d pos = new Vector3d();
             pos.add(startPos).add(dir.mul(step * i));
             resultPositions.add(pos);
         }
     }
 
-    public GaiaRectangle getBoundingRectangle()
-    {
-        if(this.boundingRect == null)
-        {
+    public GaiaRectangle getBoundingRectangle() {
+        if (this.boundingRect == null) {
             this.boundingRect = new GaiaRectangle();
             Vector3d startPos = this.getStartVertex().position;
             Vector3d endPos = this.getEndVertex().position;
@@ -240,8 +209,8 @@ public class GaiaHalfEdge {
 
         return this.boundingRect;
     }
-    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error, int axisToCheck)
-    {
+
+    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error, int axisToCheck) {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
         GaiaVertex startPoint_A = this.getStartVertex();
         GaiaVertex endPoint_A = this.getEndVertex();
@@ -253,32 +222,23 @@ public class GaiaHalfEdge {
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
         GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
 
-        if(axisToCheck == 0) // x axis
+        if (axisToCheck == 0) // x axis
         {
-            if(!boundingRect_A.intersectsInXAxis(boundingRect_B))
-            {
+            if (!boundingRect_A.intersectsInXAxis(boundingRect_B)) {
                 return false;
             }
-        }
-        else if(axisToCheck == 1) // y axis
+        } else if (axisToCheck == 1) // y axis
         {
-            if(!boundingRect_A.intersectsInYAxis(boundingRect_B))
-            {
+            if (!boundingRect_A.intersectsInYAxis(boundingRect_B)) {
                 return false;
             }
         }
 
         // 2nd compare objects as values.***
-        if(startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error))
-        {
-            return true;
-        }
-
-        return false;
+        return startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error);
     }
 
-    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error)
-    {
+    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error) {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
         GaiaVertex startPoint_A = this.getStartVertex();
         GaiaVertex endPoint_A = this.getEndVertex();
@@ -290,76 +250,56 @@ public class GaiaHalfEdge {
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
         GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
 
-        if(!boundingRect_A.intersectsInSomeAxis(boundingRect_B))
-        {
+        if (!boundingRect_A.intersectsInSomeAxis(boundingRect_B)) {
             return false;
         }
 
         // 2nd compare objects as values.***
-        if(startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error))
-        {
-            return true;
-        }
-
-        return false;
+        return startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error);
     }
 
-    public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException
-    {
+    public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException {
         this.id = dataInputStream.readInt();
 
         this.startVertexId = dataInputStream.readInt();
         this.nextId = dataInputStream.readInt();
         this.twinId = dataInputStream.readInt();
         this.triangleId = dataInputStream.readInt();
-        int typeValue= dataInputStream.readInt();
+        int typeValue = dataInputStream.readInt();
         this.type = HalfEdgeType.fromValue(typeValue);
         int hola = 0;
     }
 
-    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream)
-    {
+    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
             // 1rst, save id.***
             dataOutputStream.writeInt(id);
 
             // 2nd, save startVertex.***
-            if(startVertex != null)
-            {
+            if (startVertex != null) {
                 dataOutputStream.writeInt(startVertex.id);
-            }
-            else
-            {
+            } else {
                 dataOutputStream.writeInt(-1);
             }
 
             // 3rd, save next.***
-            if(next != null)
-            {
+            if (next != null) {
                 dataOutputStream.writeInt(next.id);
-            }
-            else
-            {
+            } else {
                 dataOutputStream.writeInt(-1);
             }
 
             // 4th, save twin.***
-            if(twin != null)
-            {
+            if (twin != null) {
                 dataOutputStream.writeInt(twin.id);
-            }
-            else
-            {
+            } else {
                 dataOutputStream.writeInt(-1);
             }
 
             // 5th, save triangle.***
-            if(triangle != null)
-            {
+            if (triangle != null) {
                 dataOutputStream.writeInt(triangle.id);
-            }
-            else
-            {
+            } else {
                 dataOutputStream.writeInt(-1);
             }
             int type_int = type.getValue();
@@ -367,7 +307,7 @@ public class GaiaHalfEdge {
 
             int hola = 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 

@@ -15,7 +15,6 @@ import java.awt.image.Raster;
 import java.io.IOException;
 
 
-
 public class TerrainElevationData {
 
     // the terrain elevation data is stored in a geotiff file.***
@@ -33,7 +32,7 @@ public class TerrainElevationData {
     double minAltitude = Double.MAX_VALUE;
     double maxAltitude = Double.MIN_VALUE;
 
-    double memSave_alt[] = new double[1];
+    double[] memSave_alt = new double[1];
 
     CoordinateReferenceSystem memSave_wgs84 = DefaultGeographicCRS.WGS84;
 
@@ -44,11 +43,9 @@ public class TerrainElevationData {
         this.terrainElevDataManager = terrainElevationDataManager;
     }
 
-    public void deleteCoverage()
-    {
+    public void deleteCoverage() {
         this.pixelSizeMeters = null;
-        if(this.coverage != null)
-        {
+        if (this.coverage != null) {
             this.coverage.dispose(true);
             this.coverage = null;
         }
@@ -56,13 +53,11 @@ public class TerrainElevationData {
         this.raster = null;
     }
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         this.deleteCoverage();
         this.terrainElevDataManager = null;
         this.geotiffFilePath = null;
-        if(this.geographicExtension != null)
-        {
+        if (this.geographicExtension != null) {
             this.geographicExtension.deleteObjects();
             this.geographicExtension = null;
         }
@@ -73,8 +68,7 @@ public class TerrainElevationData {
         memSave_posWorld = null;
     }
 
-    public void getPixelSizeDegree(Vector2d resultPixelSize)
-    {
+    public void getPixelSizeDegree(Vector2d resultPixelSize) {
         double imageWidth = this.coverage.getRenderedImage().getWidth();
         double imageHeight = this.coverage.getRenderedImage().getHeight();
         double longitudeRange = this.geographicExtension.getLongitudeRangeDegree();
@@ -84,11 +78,9 @@ public class TerrainElevationData {
         resultPixelSize.set(pixelSizeX, pixelSizeY);
     }
 
-    public double getGridValue(int x, int y)
-    {
+    public double getGridValue(int x, int y) {
         double value = 0.0;
-        if (raster != null)
-        {
+        if (raster != null) {
             value = raster.getSampleDouble(x, y, 0);
         }
         return value;
@@ -98,14 +90,12 @@ public class TerrainElevationData {
         double resultAltitude = 0.0;
 
         // 1rst check if lon, lat intersects with geoExtension.***
-        if(!this.geographicExtension.intersects(lonDeg, latDeg))
-        {
+        if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
             intersects[0] = false;
             return resultAltitude;
         }
 
-        if(this.coverage == null)
-        {
+        if (this.coverage == null) {
             GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
             this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
         }
@@ -115,8 +105,7 @@ public class TerrainElevationData {
 
         memSave_noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
         //note :  DirectPosition2D(memSave_wgs84, lonDeg, latDeg); // longitude supplied first
-        if(memSave_posWorld == null)
-        {
+        if (memSave_posWorld == null) {
             memSave_posWorld = new DirectPosition2D(memSave_wgs84, 0.0, 0.0);
         }
         memSave_posWorld.x = lonDeg;
@@ -124,21 +113,19 @@ public class TerrainElevationData {
 
 
         memSave_alt[0] = 0.0;
-        try{
+        try {
             coverage.evaluate((DirectPosition) memSave_posWorld, memSave_alt);
             intersects[0] = true;
 
             // check if is NoData.***
-            if(memSave_noDataContainer != null) {
+            if (memSave_noDataContainer != null) {
                 double nodata = memSave_noDataContainer.getAsSingleValue();
                 if (memSave_alt[0] == nodata) {
                     return 0.0;
                 }
             }
-        }
-        catch (Exception e)
-        {
-            //e.printStackTrace();
+        } catch (Exception e) {
+            //log.error(e.getMessage());l
             intersects[0] = false;
             return resultAltitude;
         }

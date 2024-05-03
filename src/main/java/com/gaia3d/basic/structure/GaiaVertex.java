@@ -2,11 +2,13 @@ package com.gaia3d.basic.structure;
 
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
+@Slf4j
 public class GaiaVertex {
     public GaiaHalfEdge outingHEdge = null;
     public Vector3d position = new Vector3d();
@@ -17,16 +19,13 @@ public class GaiaVertex {
 
     public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         outingHEdge = null;
         position = null;
     }
 
-    public boolean isCoincidentVertex(GaiaVertex vertex, double error)
-    {
-        if(vertex == null)
-        {
+    public boolean isCoincidentVertex(GaiaVertex vertex, double error) {
+        if (vertex == null) {
             return false;
         }
 
@@ -36,48 +35,33 @@ public class GaiaVertex {
         double zDiff = Math.abs(this.position.z - vertex.position.z);
         // end test debug.***
 
-        if(Math.abs(this.position.x - vertex.position.x) < error &&
-                Math.abs(this.position.y - vertex.position.y) < error &&
-                Math.abs(this.position.z - vertex.position.z) < error)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return Math.abs(this.position.x - vertex.position.x) < error && Math.abs(this.position.y - vertex.position.y) < error && Math.abs(this.position.z - vertex.position.z) < error;
     }
 
-    public void avoidOutingHalfEdge(GaiaHalfEdge avoidOutingHalfEdge)
-    {
+    public void avoidOutingHalfEdge(GaiaHalfEdge avoidOutingHalfEdge) {
         // if this outingHEdge is the avoidOutingHalfEdge, then must change it.***
-        if(this.outingHEdge != avoidOutingHalfEdge)
-        {
+        if (this.outingHEdge != avoidOutingHalfEdge) {
             return;
         }
 
         ArrayList<GaiaHalfEdge> allOutingHalfEdges = this.getAllOutingHalfEdges();
-        for(GaiaHalfEdge outingHalfEdge : allOutingHalfEdges)
-        {
-            if(outingHalfEdge != avoidOutingHalfEdge)
-            {
+        for (GaiaHalfEdge outingHalfEdge : allOutingHalfEdges) {
+            if (outingHalfEdge != avoidOutingHalfEdge) {
                 this.outingHEdge = outingHalfEdge;
                 break;
             }
         }
     }
 
-    public ArrayList<GaiaHalfEdge> getAllOutingHalfEdges()
-    {
+    public ArrayList<GaiaHalfEdge> getAllOutingHalfEdges() {
         ArrayList<GaiaHalfEdge> outingHalfEdges = new ArrayList<GaiaHalfEdge>();
 
         // there are 2 cases: this vertex is interior vertex or boundary vertex, but we dont know.***
         // 1- interior vertex.***
         // 2- boundary vertex.***
-        if(this.outingHEdge == null)
-        {
+        if (this.outingHEdge == null) {
             // error.***
-            System.out.println("Error: this.outingHEdge == null");
+            log.info("Error: this.outingHEdge == null");
         }
 
         GaiaHalfEdge firstHalfEdge = this.outingHEdge;
@@ -85,24 +69,19 @@ public class GaiaVertex {
         outingHalfEdges.add(this.outingHEdge); // put the first halfEdge.***
         boolean finished = false;
         boolean isInteriorVertex = true;
-        while(!finished)
-        {
+        while (!finished) {
             GaiaHalfEdge twinHalfEdge = currHalfEdge.twin;
-            if(twinHalfEdge == null)
-            {
+            if (twinHalfEdge == null) {
                 finished = true;
                 isInteriorVertex = false;
                 break;
             }
             GaiaHalfEdge nextHalfEdge = twinHalfEdge.next;
-            if(nextHalfEdge == null)
-            {
+            if (nextHalfEdge == null) {
                 finished = true;
                 isInteriorVertex = false;
                 break;
-            }
-            else if(nextHalfEdge == firstHalfEdge)
-            {
+            } else if (nextHalfEdge == firstHalfEdge) {
                 finished = true;
                 break;
             }
@@ -112,17 +91,14 @@ public class GaiaVertex {
         }
 
         // if this vertex is NO interior vertex, then must check if there are more outing halfEdges.***
-        if(!isInteriorVertex)
-        {
+        if (!isInteriorVertex) {
             // check if there are more outing halfEdges.***
             currHalfEdge = this.outingHEdge;
             finished = false;
-            while(!finished)
-            {
+            while (!finished) {
                 GaiaHalfEdge prevHalfEdge = currHalfEdge.getPrev();
                 GaiaHalfEdge twinHalfEdge = prevHalfEdge.twin;
-                if(twinHalfEdge == null)
-                {
+                if (twinHalfEdge == null) {
                     finished = true;
                     break;
                 }
@@ -138,8 +114,7 @@ public class GaiaVertex {
     }
 
 
-    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream)
-    {
+    public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
             // 1rst, save id.***
             dataOutputStream.writeInt(id);
@@ -148,16 +123,13 @@ public class GaiaVertex {
             dataOutputStream.writeDouble(position.z);
 
             // 2nd, save outingHEdge.***
-            if(outingHEdge != null)
-            {
+            if (outingHEdge != null) {
                 dataOutputStream.writeInt(outingHEdge.id);
-            }
-            else
-            {
+            } else {
                 dataOutputStream.writeInt(-1);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 

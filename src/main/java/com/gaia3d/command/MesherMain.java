@@ -39,12 +39,12 @@ public class MesherMain
         try
         {
             command = parser.parse(options, args);
-            if (command.hasOption(ProcessOptions.INPUT_FOLDER_PATH.getArgName())) {
-                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT_FOLDER_PATH.getArgName());
+            if (command.hasOption(ProcessOptions.INPUT.getArgName())) {
+                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT.getArgName());
             }
 
-            if (command.hasOption(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName())) {
-                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT_FOLDER_PATH.getArgName());
+            if (command.hasOption(ProcessOptions.OUTPUT.getArgName())) {
+                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT.getArgName());
                 tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
                 tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
             }
