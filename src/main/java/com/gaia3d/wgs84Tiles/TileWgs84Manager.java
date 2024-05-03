@@ -19,6 +19,7 @@ import org.opengis.referencing.crs.ProjectedCRS;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -177,21 +178,21 @@ public class TileWgs84Manager {
     public String getTilePath(TileIndices tileIndices) {
         String tileTempDirectory = this.tileTempDirectory;
         String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
-        String tileFullPath = tileTempDirectory + "\\" + neighborFilePath;
+        String tileFullPath = tileTempDirectory + File.separator + neighborFilePath;
         return tileFullPath;
     }
 
     public String getQuantizedMeshTileFolderPath(TileIndices tileIndices) {
         String outputDirectory = this.outputDirectory;
-        String neighborFolderPath = tileIndices.L + "\\" + tileIndices.X;
-        String tileFullPath = outputDirectory + "\\" + neighborFolderPath;
+        String neighborFolderPath = tileIndices.L + File.separator + tileIndices.X;
+        String tileFullPath = outputDirectory + File.separator + neighborFolderPath;
         return tileFullPath;
     }
 
     public String getQuantizedMeshTilePath(TileIndices tileIndices) {
         String outputDirectory = this.outputDirectory;
-        String neighborFilePath = tileIndices.L + "\\" + tileIndices.X + "\\" + tileIndices.Y;
-        String tileFullPath = outputDirectory + "\\" + neighborFilePath + ".terrain";
+        String neighborFilePath = tileIndices.L + File.separator + tileIndices.X + File.separator + tileIndices.Y;
+        String tileFullPath = outputDirectory + File.separator + neighborFilePath + ".terrain";
         return tileFullPath;
     }
 
@@ -241,8 +242,10 @@ public class TileWgs84Manager {
         String neighborFullPath = getTilePath(tileIndices);
         TileWgs84 neighborTile = null;
         if (!FileUtils.isFileExists(neighborFullPath)) {
+            //log.error("Error: neighborFullPath is not exist: " + neighborFullPath);
             return null;
         } else {
+            log.debug("Loading tile: LOAD - * - LOAD : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             // load the Tile.***
             neighborTile = new TileWgs84(null, this);
             neighborTile.tileIndices = tileIndices;
@@ -291,7 +294,7 @@ public class TileWgs84Manager {
         int geoTiffCount = geoTiffFileNames.size();
         for (int i = 0; i < geoTiffCount; i++) {
             String geoTiffFileName = geoTiffFileNames.get(i);
-            String geoTiffFilePath = terrainElevationDataFolderPath + "\\" + geoTiffFileName;
+            String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
 
             GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
 
@@ -317,13 +320,13 @@ public class TileWgs84Manager {
                 }
 
                 String depthStr = String.valueOf(depth);
-                String resizedGeoTiffFolderPath = this.tempResizedGeoTiffFolderPath + "\\" + depthStr + "\\" + currentFolderPath;
-                String resizedGeoTiffFilePath = resizedGeoTiffFolderPath + "\\" + geoTiffFileName;
+                String resizedGeoTiffFolderPath = this.tempResizedGeoTiffFolderPath + File.separator + depthStr + File.separator + currentFolderPath;
+                String resizedGeoTiffFilePath = resizedGeoTiffFolderPath + File.separator + geoTiffFileName;
 
                 // check if exist the file.***
                 if (com.gaia3d.reader.FileUtils.isFileExists(resizedGeoTiffFilePath)) {
                     // in this case, just assign the resizedGeoTiffFolderPath.***
-                    String resizedGeoTiffSETFolderPath_forThisDepth = this.tempResizedGeoTiffFolderPath + "\\" + depthStr;
+                    String resizedGeoTiffSETFolderPath_forThisDepth = this.tempResizedGeoTiffFolderPath + File.separator + depthStr;
                     this.map_depth_geoTiffFolderPath.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
                     continue;
                 }
@@ -334,7 +337,7 @@ public class TileWgs84Manager {
                 com.gaia3d.reader.FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
 
-                String resizedGeoTiffSETFolderPath_forThisDepth = this.tempResizedGeoTiffFolderPath + "\\" + depthStr;
+                String resizedGeoTiffSETFolderPath_forThisDepth = this.tempResizedGeoTiffFolderPath + File.separator + depthStr;
                 this.map_depth_geoTiffFolderPath.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
             }
 
@@ -348,8 +351,8 @@ public class TileWgs84Manager {
         String auxFolderPath = currentFolderPath;
         for (int i = 0; i < folderCount; i++) {
             String folderName = folderNames.get(i);
-            auxFolderPath = currentFolderPath + "\\" + folderName;
-            String folderPath = terrainElevationDataFolderPath + "\\" + folderName;
+            auxFolderPath = currentFolderPath + File.separator + folderName;
+            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
             resizeGeotiffSet(folderPath, auxFolderPath);
         }
 

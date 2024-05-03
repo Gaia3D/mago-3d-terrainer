@@ -4,6 +4,7 @@ import com.gaia3d.basic.structure.GaiaTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.CRS;
 import org.joml.Vector2d;
@@ -13,11 +14,13 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class TerrainElevationDataManager {
     public ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
     public ArrayList<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
@@ -52,9 +55,13 @@ public class TerrainElevationDataManager {
     }
 
     public void MakeUniqueTerrainElevationData() throws FactoryException, TransformException, IOException {
+        log.info("MakeUniqueTerrainElevationData() started.***");
+
         if (uniqueGeoTiffFilePath == null) {
             return;
         }
+
+
 
         if (gaiaGeoTiffManager == null) {
             gaiaGeoTiffManager = new GaiaGeoTiffManager();
@@ -73,6 +80,7 @@ public class TerrainElevationDataManager {
         uniqueTerrainElevationData.pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D);
 
         gridCoverage2D.dispose(true);
+        log.info("MakeUniqueTerrainElevationData() ended.***");
     }
 
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
@@ -206,7 +214,7 @@ public class TerrainElevationDataManager {
 
         for (int i = 0; i < geoTiffCount; i++) {
             geoTiffFileName = memSave_geoTiffFileNames.get(i);
-            geoTiffFilePath = terrainElevationDataFolderPath + "\\" + geoTiffFileName;
+            geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
 
             gridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
@@ -230,7 +238,7 @@ public class TerrainElevationDataManager {
         int folderCount = folderNames.size();
         for (int i = 0; i < folderCount; i++) {
             String folderName = folderNames.get(i);
-            String folderPath = terrainElevationDataFolderPath + "\\" + folderName;
+            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
             loadAllGeoTiff(folderPath);
         }
 

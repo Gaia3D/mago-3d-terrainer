@@ -57,14 +57,14 @@ public class FileUtils {
         ArrayList<String> currfileNames = new ArrayList<>();
         FileUtils.getFileNames(folderPath, extension, currfileNames);
         for (String fileName : currfileNames) {
-            fileNames.add(folderPath + "\\" + fileName);
+            fileNames.add(folderPath + File.separator + fileName);
         }
 
         if (isRecursive) {
             ArrayList<String> folderNames = new ArrayList<>();
             FileUtils.getFolderNames(folderPath, folderNames);
             for (String folderName : folderNames) {
-                String subFolderPath = folderPath + "\\" + folderName;
+                String subFolderPath = folderPath + File.separator + folderName;
                 FileUtils.getFilePathsByExtension(subFolderPath, extension, fileNames, isRecursive);
             }
         }

@@ -481,7 +481,7 @@ public class TileWgs84 {
         String tileTempDirectory = this.manager.tileTempDirectory;
         String outputDirectory = this.manager.outputDirectory;
         String bigMeshFilePath = TileWgs84Utils.getTileFileName(curr_TileIndices.X, curr_TileIndices.Y, curr_TileIndices.L) + "bigMesh.til";
-        String bigMeshFullPath = tileTempDirectory + "\\" + bigMeshFilePath;
+        String bigMeshFullPath = tileTempDirectory + File.separator + bigMeshFilePath;
         this.saveFileBigMesh(bigMeshFullPath, bigMesh);
         */
 
@@ -505,7 +505,7 @@ public class TileWgs84 {
             String tileTempDirectory = this.manager.tileTempDirectory;
             String outputDirectory = this.manager.outputDirectory;
             String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
-            String tileFullPath = tileTempDirectory + "\\" + tileFilePath;
+            String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             try {
                 saveFile(mesh, tileFullPath);
@@ -1033,7 +1033,7 @@ public class TileWgs84 {
             String tileTempDirectory = this.manager.tileTempDirectory;
             String outputDirectory = this.manager.outputDirectory;
             String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.X, childTileIndices.Y, childTileIndices.L);
-            String childTileFullPath = tileTempDirectory + "\\" + childTileFilePath;
+            String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
             try {
                 saveFile(childMesh, childTileFullPath); // original.***
@@ -1081,7 +1081,7 @@ public class TileWgs84 {
                 String tileTempDirectory = this.manager.tileTempDirectory;
                 String outputDirectory = this.manager.outputDirectory;
                 String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.X, childTileIndices.Y, childTileIndices.L);
-                String childTileFullPath = tileTempDirectory + "\\" + childTileFilePath;
+                String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
                 // Test. save a simple tile.****************************************
                 TileWgs84 simpleTile = new TileWgs84(null, this.manager);

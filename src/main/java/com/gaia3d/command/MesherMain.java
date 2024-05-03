@@ -2,9 +2,8 @@ package com.gaia3d.command;
 
 
 import com.gaia3d.process.ProcessOptions;
-import com.gaia3d.wgs84Tiles.TerrainElevationData;
 import com.gaia3d.wgs84Tiles.TileWgs84Manager;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -14,8 +13,8 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
+@Slf4j
 public class MesherMain
 {
     public static String version = "1.0.1";
@@ -61,9 +60,8 @@ public class MesherMain
                 //tileWgs84Manager.refinementStrength = Integer.parseInt(command.getOptionValue(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName()));
             //}
         }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+        catch (Exception e) {
+            log.error("Error parsing command line arguments: " + e.getMessage());
         }
 
 //        String outputDirectory = "D:\\data\\DEM_output\\output";
@@ -84,6 +82,7 @@ public class MesherMain
         try {
             tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);
         } catch (IOException e) {
+
             throw new RuntimeException(e);
         } catch (FactoryException e) {
             throw new RuntimeException(e);
@@ -93,7 +92,7 @@ public class MesherMain
 
         tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
         // set the terrainElevation data folder path.***
-        tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + "\\0");
+        tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + File.separator + "0");
         try {
             if(tileWgs84Manager.getGeoTiffFilesCount() == 1)
             {

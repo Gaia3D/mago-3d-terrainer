@@ -44,7 +44,7 @@ public class GaiaGeoTiffManager {
             coverage = reader.read(null);
 //            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
 //            coverage = Interpolator2D.create(coverage, interpolation);
-
+            log.debug("coverage: " + coverage);
             reader.dispose();
         } catch (Exception e) {
             log.error(e.getMessage());

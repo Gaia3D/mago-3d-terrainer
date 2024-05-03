@@ -6,6 +6,7 @@ import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
 import com.gaia3d.wgs84Tiles.TileIndices;
 import com.gaia3d.wgs84Tiles.TilesRange;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class GaiaMesh {
     public ArrayList<GaiaVertex> vertices = null;
     public ArrayList<GaiaTriangle> triangles = null;
@@ -942,7 +944,6 @@ public class GaiaMesh {
             int hola = 0;
         }
 
-
         GaiaTriangle splitableTriangle = null;
 
 
@@ -1012,7 +1013,6 @@ public class GaiaMesh {
         int verticesCount = vertices.size();
         // save vertices count.***
         dataOutputStream.writeInt(verticesCount);
-
         for (int i = 0; i < verticesCount; i++) {
             GaiaVertex vertex = vertices.get(i);
             vertex.saveDataOutputStream(dataOutputStream);
@@ -1037,7 +1037,6 @@ public class GaiaMesh {
             GaiaHalfEdge halfEdge = halfEdges.get(i);
             halfEdge.saveDataOutputStream(dataOutputStream);
         }
-
     }
 
     public boolean checkHalfEdges() {
