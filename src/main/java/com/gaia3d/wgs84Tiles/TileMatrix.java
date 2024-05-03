@@ -678,7 +678,7 @@ public class TileMatrix {
         double scale = bboxMaxLengthInMeters / tileSize;
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
-        maxDiff *= scale; // test.***
+        maxDiff *= scale; // scale the maxDiff.***
 
         TileWgs84Raster tileRaster = terrainElevationDataManager.getTileWgs84Raster(tileIndices, this.manager);
 
@@ -778,13 +778,13 @@ public class TileMatrix {
                 float elevationFloat = tileRaster.getElevation(col, row);
 
                 planeElevation = plane.getValueZ(pos_x, pos_y);
-                if (elevationFloat > planeElevation) {
-                    scaleDiff = 0.8;
-                } else {
-                    scaleDiff = 1.0;
-                }
+//                if (elevationFloat > planeElevation) {
+//                    scaleDiff = 1.0;
+//                } else {
+//                    scaleDiff = 1.0;
+//                }
 
-                if (abs(elevationFloat - planeElevation) > maxDiff * scaleDiff) {
+                if (abs(elevationFloat - planeElevation) > maxDiff) {
                     intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
 
                     if (!intersects) {

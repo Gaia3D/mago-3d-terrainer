@@ -33,37 +33,45 @@ public class TileWgs84Utils {
         {
             return tileSize * 0.05;
         }
-        else if(depth <= 12)
-        {
-            return tileSize * 0.1;
-        }
-        else if(depth == 13)
+        else if(depth <= 10)
         {
             return tileSize * 0.12;
         }
-        else if(depth == 14)
+        else if(depth == 11)
         {
-            return tileSize * 0.15;
+            return tileSize * 0.14;
         }
-        else if(depth == 15)
+        else if(depth == 12)
+        {
+            return tileSize * 0.16;
+        }
+        else if(depth == 13)
         {
             return tileSize * 0.18;
         }
-        else if(depth == 16)
+        else if(depth == 14)
         {
             return tileSize * 0.21;
         }
+        else if(depth == 15)
+        {
+            return tileSize * 0.23;
+        }
+        else if(depth == 16)
+        {
+            return tileSize * 0.25;
+        }
         else if(depth == 17)
         {
-            return tileSize * 0.26;
+            return tileSize * 0.28;
         }
         else if(depth == 18)
         {
-            return tileSize * 0.29;
+            return tileSize * 0.3;
         }
         else
         {
-            return tileSize * 0.3;
+            return tileSize * 0.35;
         }
     }
 
@@ -141,7 +149,7 @@ public class TileWgs84Utils {
         return resultTileIndices;
     }
 
-    static public ArrayList<TileIndices> selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, ArrayList<TileIndices> resultTileIndicesArray, TilesRange tilesRange, boolean originIsLeftUp) {
+    static public void selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, TilesRange tilesRange, boolean originIsLeftUp) {
         // Given a geographic rectangle (minLon, minLat, maxLon, maxLat) & a depth, this function returns all
         // tilesIndices intersected by the rectangle for the specific depth.**
         TileIndices leftDownTileName = TileWgs84Utils.selectTileIndices(depth, minLon, minLat, null, originIsLeftUp);
@@ -199,19 +207,19 @@ public class TileWgs84Utils {
             tilesRange.maxTileY = maxY;
         }
 
-        if (resultTileIndicesArray == null) {
-            resultTileIndicesArray = new ArrayList<TileIndices>();
-        }
-
-        for (var x = minX; x <= maxX; x++) {
-            for (var y = minY; y <= maxY; y++) {
-                TileIndices tileIndices = new TileIndices();
-                tileIndices.set(x, y, depth);
-                resultTileIndicesArray.add(tileIndices);
-            }
-        }
-
-        return resultTileIndicesArray;
+//        if (resultTileIndicesArray == null) {
+//            resultTileIndicesArray = new ArrayList<TileIndices>();
+//        }
+//
+//        for (var x = minX; x <= maxX; x++) {
+//            for (var y = minY; y <= maxY; y++) {
+//                TileIndices tileIndices = new TileIndices();
+//                tileIndices.set(x, y, depth);
+//                resultTileIndicesArray.add(tileIndices);
+//            }
+//        }
+//
+//        return resultTileIndicesArray;
     }
 
     static public String getTileFileName(int X, int Y, int L) {

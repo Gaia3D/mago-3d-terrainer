@@ -46,6 +46,32 @@ class MesherMainTest {
     }
 
     @Test
+    void main_korea() throws FactoryException, TransformException, IOException {
+        //****************************************************************
+        // Note : the outFolder must be different from the inputFolder.***
+        //****************************************************************
+        String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\data_geoTiff\\5m";
+        String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output\\";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(16);
+        String refinementStrength = String.valueOf(1);
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void main_earth() throws FactoryException, TransformException, IOException {
+        //****************************************************************
+        // Note : the outFolder must be different from the inputFolder.***
+        //****************************************************************
+        String originalGeoTiffFolderPath = "D:\\data\\DEM\\wholeEarth";
+        String outputDirectory = "D:\\data\\DEM_output\\output\\";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(6);
+        String refinementStrength = String.valueOf(1);
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
     void main2() throws FactoryException, TransformException, IOException {
         //****************************************************************
         // Note : the outFolder must be different from the inputFolder.***
@@ -119,7 +145,7 @@ class MesherMainTest {
         //****************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(15);
+        String maxTileDepth = String.valueOf(16);
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\data\\data_geoTiff\\5m";
 
@@ -134,7 +160,7 @@ class MesherMainTest {
     }
 
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
-        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-mn", minTileDepth, "-mx", maxTileDepth, "-rs", refinementStrength};
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-mn", minTileDepth, "-mx", maxTileDepth, "-rs", refinementStrength, "-d"};
         MagoMesherMain.main(args);
     }
 }

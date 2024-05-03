@@ -102,32 +102,18 @@ public class TileWgs84Manager {
         terrainLayer.bounds[2] = maxLon;
         terrainLayer.bounds[3] = maxLat;
 
-        // test.***
-        TilesRange tilesRangeTest = new TilesRange();
-        ArrayList<TileIndices> resultTileIndicesArrayTest = TileWgs84Utils.selectTileIndicesArray(15, minLon, maxLon, minLat, maxLat, null, tilesRangeTest, originIsLeftUp);
-
-
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             TilesRange tilesRange = new TilesRange();
-            ArrayList<TileIndices> resultTileIndicesArray = null;
 
             if (depth == 0) {
                 // in this case, the tile is the world. L0X0Y0 & L0X1Y0.***
-                TileIndices tileIndices = new TileIndices();
-                tileIndices.set(0, 0, 0);
-                resultTileIndicesArray = new ArrayList<TileIndices>();
-                resultTileIndicesArray.add(tileIndices);
-
-                tileIndices = new TileIndices();
-                tileIndices.set(1, 0, 0);
-                resultTileIndicesArray.add(tileIndices);
-
                 tilesRange.minTileX = 0;
                 tilesRange.maxTileX = 1;
                 tilesRange.minTileY = 0;
                 tilesRange.maxTileY = 0;
-            } else {
-                resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange, originIsLeftUp);
+            }
+            else {
+                TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
             }
 
             // Set terrainLayer.available of tileSet json.***
@@ -151,22 +137,6 @@ public class TileWgs84Manager {
             int maxCol = 80;
             int maxRow = 80;
             List<TilesRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, maxCol, maxRow, null);
-//            old.***
-//            for (TileIndices tileIndices : resultTileIndicesArray)
-//            {
-//                TileWgs84 tile = new TileWgs84(null, this);
-//                tile.tileIndices = tileIndices;
-//                tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
-//                this.terrainElevationDataManager.deleteCoverageIfNotIntersects(tile.geographicExtension); // delete unnecessary coverage to save memory.***
-//                boolean is1rstGeneration = false;
-//                if(depth == minTileDepth)
-//                {
-//                    is1rstGeneration = true;
-//                }
-//
-//                tile.makeBigMesh(is1rstGeneration);
-//                tile.deleteObjects();
-//            }
 
             int subDividedRangesCount = subDividedTilesRanges.size();
             for (int i = 0; i < subDividedRangesCount; i++) {
@@ -178,115 +148,10 @@ public class TileWgs84Manager {
                 int hola = 0;
             }
 
-//            if(depth < maxTileDepth)
-//            {
-//                // once finished the current depth, make initial tiles of the children.***
-//                for (TileIndices tileIndices : resultTileIndicesArray)
-//                {
-//                    // for each tile, load the tile, make 4 children, and save the children.***
-//                    TileWgs84 tile = new TileWgs84(null, this);
-//                    tile.tileIndices = tileIndices;
-//                    tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
-//
-//                    tile.loadTileAndSave4Children(tileIndices);
-//                    tile.deleteObjects();
-//                }
-//            }
         }
 
         // finally save the terrainLayer.json.***
         terrainLayer.saveJsonFile(outputDirectory, "layer.json");
-        //saveQuantizedMeshes();
-    }
-
-    public void makeTileMeshes_original() throws IOException, TransformException, FactoryException {
-
-        GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
-
-        double minLon = geographicExtension.getMinLongitudeDeg();
-        double maxLon = geographicExtension.getMaxLongitudeDeg();
-        double minLat = geographicExtension.getMinLatitudeDeg();
-        double maxLat = geographicExtension.getMaxLatitudeDeg();
-
-        // create the terrainLayer.***
-        terrainLayer = new TerrainLayer();
-        terrainLayer.bounds[0] = minLon;
-        terrainLayer.bounds[1] = minLat;
-        terrainLayer.bounds[2] = maxLon;
-        terrainLayer.bounds[3] = maxLat;
-
-        // test.***
-        TilesRange tilesRangeTest = new TilesRange();
-        //ArrayList<TileIndices>  resultTileIndicesArrayTest = TileWgs84Utils.selectTileIndicesArray(14, minLon, maxLon, minLat, maxLat, null, tilesRangeTest, originIsLeftUp);
-
-        int counterAux = 0;
-        for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
-            TilesRange tilesRange = new TilesRange();
-            ArrayList<TileIndices> resultTileIndicesArray = null;
-
-            if (depth == 0) {
-                // in this case, the tile is the world. L0X0Y0 & L0X1Y0.***
-                TileIndices tileIndices = new TileIndices();
-                tileIndices.set(0, 0, 0);
-                resultTileIndicesArray = new ArrayList<TileIndices>();
-                resultTileIndicesArray.add(tileIndices);
-
-                tileIndices = new TileIndices();
-                tileIndices.set(1, 0, 0);
-                resultTileIndicesArray.add(tileIndices);
-
-                tilesRange.minTileX = 0;
-                tilesRange.maxTileX = 1;
-                tilesRange.minTileY = 0;
-                tilesRange.maxTileY = 0;
-            } else {
-                resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange, originIsLeftUp);
-            }
-
-            // Set terrainLayer.available of tileSet json.***
-            terrainLayer.available.add(tilesRange);
-            this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
-            this.terrainElevationDataManager.deleteObjects();
-            this.terrainElevationDataManager = new TerrainElevationDataManager(); // new.***
-            this.terrainElevationDataManager.terrainElevationDataFolderPath = this.map_depth_geoTiffFolderPath.get(depth);
-            this.terrainElevationDataManager.makeTerrainQuadTree();
-
-            for (TileIndices tileIndices : resultTileIndicesArray) {
-                TileWgs84 tile = new TileWgs84(null, this);
-                tile.tileIndices = tileIndices;
-                tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
-                this.terrainElevationDataManager.deleteCoverageIfNotIntersects(tile.geographicExtension); // delete unnecessary coverage to save memory.***
-                boolean is1rstGeneration = depth == minTileDepth;
-
-                tile.makeBigMesh(is1rstGeneration);
-                tile.deleteObjects();
-
-                counterAux++;
-
-                if (counterAux >= 200) {
-                    counterAux = 0;
-                    System.gc();
-                }
-            }
-
-            if (depth < maxTileDepth) {
-                // once finished the current depth, make initial tiles of the children.***
-                for (TileIndices tileIndices : resultTileIndicesArray) {
-                    // for each tile, load the tile, make 4 children, and save the children.***
-                    TileWgs84 tile = new TileWgs84(null, this);
-                    tile.tileIndices = tileIndices;
-                    tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
-
-                    tile.loadTileAndSave4Children(tileIndices);
-                    tile.deleteObjects();
-                }
-            }
-
-            System.gc();
-        }
-
-        // finally save the terrainLayer.json.***
-        saveQuantizedMeshes();
     }
 
     public double getMaxTriangleSizeForTileDepth(int depth) {
@@ -307,132 +172,7 @@ public class TileWgs84Manager {
         }
 
     }
-    /*public void makeSimpleTileMeshes_test() throws IOException, TransformException {
 
-        GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
-        double minLon = geographicExtension.getMinLongitudeDeg();
-        double maxLon = geographicExtension.getMaxLongitudeDeg();
-        double minLat = geographicExtension.getMinLatitudeDeg();
-        double maxLat = geographicExtension.getMaxLatitudeDeg();
-
-        // create the terrainLayer.***
-        terrainLayer = new TerrainLayer();
-        terrainLayer.bounds[0] = minLon;
-        terrainLayer.bounds[1] = minLat;
-        terrainLayer.bounds[2] = maxLon;
-        terrainLayer.bounds[3] = maxLat;
-
-
-
-        for(int depth = minTileDepth; depth <= maxTileDepth; depth += 1)
-        {
-            TilesRange tilesRange = new TilesRange();
-            ArrayList<TileIndices> resultTileIndicesArray = TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, null, tilesRange, originIsLeftUp);
-            terrainLayer.available.add(tilesRange);
-
-            this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
-
-            if(depth == minTileDepth) {
-                for (TileIndices tileIndices : resultTileIndicesArray) {
-                    TileWgs84 tile = new TileWgs84(null, this);
-                    tile.tileIndices = tileIndices;
-                    tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
-                    boolean is1rstGeneration = false;
-                    if (depth == minTileDepth) {
-                        is1rstGeneration = true;
-                    }
-                    //tile.makeBigMesh(is1rstGeneration); // no.
-                    // save a simple mesh.***
-                    String tileTempDirectory = this.tileTempDirectory;
-                    String outputDirectory = this.outputDirectory;
-                    String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
-                    String tileFullPath = tileTempDirectory + "\\" + tileFilePath;
-
-                    try {
-                        TileWgs84 simpleTile = new TileWgs84(null, this);
-                        simpleTile.tileIndices = tileIndices;
-                        simpleTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, this.imageryType, this.originIsLeftUp);
-                        simpleTile.createInitialMesh_test();
-                        simpleTile.saveFile(simpleTile.mesh, tileFullPath);
-
-                    } catch (IOException e) {
-                        log.error(e.getMessage());l
-                    }
-
-                    tileWgs84List.add(tile);
-                }
-            }
-
-            if(depth < maxTileDepth)
-            {
-                // once finished the current depth, make initial tiles of the children.***
-                for (TileIndices tileIndices : resultTileIndicesArray)
-                {
-                    // for each tile, load the tile, make 4 children, and save the children.***
-                    TileWgs84 tile = new TileWgs84(null, this);
-                    tile.tileIndices = tileIndices;
-                    tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
-
-                    tile.save4Children_test(tileIndices);
-                }
-            }
-        }
-
-        // finally save the terrainLayer.json.***
-        saveQuantizedMeshes();
-    }*/
-
-    public void saveQuantizedMeshes() throws IOException, TransformException {
-        // 1rst save terrainLayer.json.***
-        terrainLayer.saveJsonFile(outputDirectory, "layer.json");
-
-        // 2nd save the quantized meshes.***
-        // load each tile, and save the quantized mesh.***
-        QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
-        HashMap<Integer, TilesRange> tilesRangeMap = terrainLayer.getTilesRangeMap();
-        TileIndices tileIndices = new TileIndices();
-        for (Integer tileDepth : tilesRangeMap.keySet()) {
-            TilesRange tilesRange = tilesRangeMap.get(tileDepth);
-            int minX = tilesRange.minTileX;
-            int maxX = tilesRange.maxTileX;
-            int minY = tilesRange.minTileY;
-            int maxY = tilesRange.maxTileY;
-
-            if (tileDepth >= 12) {
-                int hola = 0;
-            }
-
-            for (int x = minX; x <= maxX; x++) {
-                for (int y = minY; y <= maxY; y++) {
-                    tileIndices.X = x;
-                    tileIndices.Y = y;
-                    tileIndices.L = tileDepth;
-
-                    TileWgs84 tile = loadTileWgs84(tileIndices);
-                    if (tile != null) {
-                        // save the quantizedMesh.***
-                        QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile);
-                        String tileFullPath = getQuantizedMeshTilePath(tileIndices);
-                        String tileFolderPath = getQuantizedMeshTileFolderPath(tileIndices);
-                        FileUtils.createAllFoldersIfNoExist(tileFolderPath);
-
-                        FileOutputStream fileOutputStream = new FileOutputStream(tileFullPath);
-                        LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(fileOutputStream));
-
-                        // delete the file if exists before save.***
-                        FileUtils.deleteFileIfExists(tileFullPath);
-
-                        quantizedMesh.saveDataOutputStream(dataOutputStream);
-                        dataOutputStream.close();
-                        fileOutputStream.close();
-                        int hola = 0;
-                    }
-                }
-            }
-
-        }
-
-    }
 
     public String getTilePath(TileIndices tileIndices) {
         String tileTempDirectory = this.tileTempDirectory;
