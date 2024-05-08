@@ -90,7 +90,7 @@ public class MagoMesherMain {
 
             log.info("[Make Terrain Elevation Data] Start making terrain elevation data.");
             tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
-            tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + "\\0");
+            tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + File.separator + "0");
             if (tileWgs84Manager.getGeoTiffFilesCount() == 1) {
                 tileWgs84Manager.terrainElevationDataManager.setGeoTiffFilesCount(1);
                 tileWgs84Manager.terrainElevationDataManager.setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());

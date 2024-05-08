@@ -128,6 +128,7 @@ public class TileMatrix {
         // It is verified in the TileWgs84Manager.***
 
         int totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
+
         int counter = 0;
         int counterAux = 0;
         for (int Y = minTileY; Y <= maxTileY; Y++) {
@@ -297,6 +298,8 @@ public class TileMatrix {
             log.debug("Saving separated children tiles...");
             saveSeparatedChildrenTiles(separatedMeshes);
 
+        } else {
+            log.error("Error: resultMesh is null.");
         }
     }
 
@@ -334,7 +337,7 @@ public class TileMatrix {
 
             // Envolver el BufferedOutputStream en un LittleEndianDataOutputStream
             LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(bufferedOutputStream);
-
+            
             // save the tile.***
             quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);
 
@@ -348,7 +351,8 @@ public class TileMatrix {
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
-        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        File file = new File(filePath);
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
 
         // Crear un BufferedOutputStream para mejorar el rendimiento
         BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
@@ -357,7 +361,7 @@ public class TileMatrix {
         BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(bufferedOutputStream);
 
         // delete the file if exists before save.***
-        FileUtils.deleteFileIfExists(filePath);
+        //FileUtils.deleteFileIfExists(filePath);
 
         // save the tile.***
         mesh.saveDataOutputStream(dataOutputStream);
@@ -385,7 +389,7 @@ public class TileMatrix {
             String tileTempDirectory = this.manager.tileTempDirectory;
             String outputDirectory = this.manager.outputDirectory;
             String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
-            String tileFullPath = tileTempDirectory + "\\" + tileFilePath;
+            String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             if (counter >= 100) {
                 counter = 0;
@@ -418,7 +422,7 @@ public class TileMatrix {
 //            String tileTempDirectory = this.manager.tileTempDirectory;
 //            String outputDirectory = this.manager.outputDirectory;
 //            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
-//            String tileFullPath = tileTempDirectory + "\\" + tileFilePath;
+//            String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             if (counter >= 100) {
                 counter = 0;
@@ -482,11 +486,11 @@ public class TileMatrix {
                     String tileTempDirectory = this.manager.tileTempDirectory;
                     String outputDirectory = this.manager.outputDirectory;
                     String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.X, childTileIndices.Y, childTileIndices.L);
-                    String childTileFullPath = tileTempDirectory + "\\" + childTileFilePath;
+                    String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
                     try {
+                        log.debug("Saving children tiles... L : " + childTileIndices.L + " i : " + j + " / " + childMeshesCount);
                         saveFile(childMesh, childTileFullPath); // original.***
-
                     } catch (IOException e) {
                         log.error(e.getMessage());
                         return false;

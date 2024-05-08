@@ -70,7 +70,7 @@ public class TerrainLayer {
     }
 
     public void saveJsonFile(String outputDirectory, String tilejsonFileName) {
-        String fullFileName = outputDirectory + "\\" + tilejsonFileName;
+        String fullFileName = outputDirectory + File.separator + tilejsonFileName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
 
         ObjectMapper objectMapper = new ObjectMapper();

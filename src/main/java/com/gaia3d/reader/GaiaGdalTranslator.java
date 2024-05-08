@@ -2,6 +2,7 @@ package com.gaia3d.reader;
 
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class GaiaGdalTranslator {
@@ -15,8 +16,8 @@ public class GaiaGdalTranslator {
         for (int i = 0; i < fileNames.size(); i++) {
             String fileName = fileNames.get(i);
             String rawFileName = FilenameUtils.removeExtension(fileName); // remove extension. (".img"
-            String inputFilePath = inputFolderPath + "\\" + fileName;
-            String outputFilePath = outputFolderPath + "\\" + rawFileName + ".tif";
+            String inputFilePath = inputFolderPath + File.separator + fileName;
+            String outputFilePath = outputFolderPath + File.separator + rawFileName + ".tif";
 
             String command = "gdal_translate -of GTiff " + inputFilePath + " " + outputFilePath;
             commandsList.add(command);

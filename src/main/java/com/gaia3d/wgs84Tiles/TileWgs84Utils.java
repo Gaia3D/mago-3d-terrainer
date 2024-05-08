@@ -8,6 +8,7 @@ import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.GlobeUtils;
 import org.joml.Vector2d;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -235,7 +236,7 @@ public class TileWgs84Utils {
     }
 
     static public String getTileFilePath(int X, int Y, int L) {
-        return getTileFolderName_L(L) + "\\" + getTileFolderName_X(X) + "\\" + getTileFileName(X, Y, L);
+        return getTileFolderName_L(L) + File.separator + getTileFolderName_X(X) + File.separator + getTileFileName(X, Y, L);
     }
 
     static public int getTileIndiceMaxX(int depth) {
