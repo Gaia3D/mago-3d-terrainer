@@ -160,7 +160,7 @@ class MesherMainTest {
     }
 
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
-        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-mn", minTileDepth, "-mx", maxTileDepth, "-rs", refinementStrength, "-d"};
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-mn", minTileDepth, "-mx", maxTileDepth, "-rs", refinementStrength, "-d", "-cn"};
         MagoMesherMain.main(args);
     }
 }

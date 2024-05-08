@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 @Slf4j
 public class TerrainLayer {
@@ -23,6 +24,7 @@ public class TerrainLayer {
     String template = null;
     String legend = null;
     String scheme = null;
+    List<String> extensions = null;
     String[] tiles = null;
 
     String projection = null;
@@ -56,6 +58,10 @@ public class TerrainLayer {
         this.tiles = new String[1];
         this.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
         this.projection = "EPSG:4326";
+        this.extensions = new ArrayList<String>();
+//        this.extensions.add("octvertexnormals");
+//        this.extensions.add("metadata");
+//        this.extensions.add("watermask");
         this.bounds = new double[4];
         this.bounds[0] = 0.0;
         this.bounds[1] = 0.0;
@@ -82,6 +88,14 @@ public class TerrainLayer {
         objectNodeRoot.put("projection", this.projection);
         objectNodeRoot.putArray("tiles").add(this.tiles[0]);
         objectNodeRoot.putArray("bounds").add(this.bounds[0]).add(this.bounds[1]).add(this.bounds[2]).add(this.bounds[3]);
+
+        if(this.extensions != null && this.extensions.size() > 0) {
+            ArrayNode objectNodeExtensions = objectMapper.createArrayNode();
+            for (String extension : this.extensions) {
+                objectNodeExtensions.add(extension);
+            }
+            objectNodeRoot.set("extensions", objectNodeExtensions);
+        }
 
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         HashMap<Integer, TilesRange> tilesRangeMap = this.getTilesRangeMap();

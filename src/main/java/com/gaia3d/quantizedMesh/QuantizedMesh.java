@@ -1,5 +1,6 @@
 package com.gaia3d.quantizedMesh;
 
+import com.gaia3d.basic.structure.GaiaVertex;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 
 import java.io.IOException;
@@ -26,6 +27,11 @@ public class QuantizedMesh {
 
     int northVertexCount;
     int[] northIndices = null;
+
+    // normals data.***
+    byte extensionId = 0;
+    int extensionLength = 0;
+    byte[] octEncodedNormals = null; // 2 bytes per normal.***
 
     public short zigZagEncode(int n) {
         return (short) ((n << 1) ^ (n >> 31));
@@ -105,7 +111,7 @@ public class QuantizedMesh {
         }
     }
 
-    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException {
+    public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream, boolean saveNormals) throws IOException {
         // 1rst save the header.***
         header.saveDataOutputStream(dataOutputStream);
 
@@ -216,6 +222,14 @@ public class QuantizedMesh {
             for (int i = 0; i < northVertexCount; i++) {
                 dataOutputStream.writeShort(northIndices[i]);
             }
+        }
+
+        // check if save normals.***
+        if (saveNormals) {
+            // save normals.***
+            dataOutputStream.writeByte(extensionId);
+            dataOutputStream.writeInt(extensionLength);
+            dataOutputStream.write(octEncodedNormals);
         }
 
         int hola = 0;

@@ -6,6 +6,7 @@ import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TileIndices;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,6 +18,8 @@ public class GaiaTriangle {
     public int id = -1;
 
     public int halfEdgeId = -1;
+
+    public Vector3f normal = null;
 
     // this triangle belongs to a tile.***
     public TileIndices ownerTile_tileIndices = new TileIndices();
@@ -215,5 +218,29 @@ public class GaiaTriangle {
         this.ownerTile_tileIndices.loadDataInputStream(dataInputStream);
 
         this.splitDepth = dataInputStream.readInt();
+    }
+
+    public void calculateNormal() {
+        ArrayList<GaiaVertex> vertices = this.getVertices();
+        Vector3d p0 = vertices.get(0).position;
+        Vector3d p1 = vertices.get(1).position;
+        Vector3d p2 = vertices.get(2).position;
+
+        // the positions are in longitudeDeg, latitudeDeg, heightMeters.***
+        // so must transform positions to local coords in meters.***
+        // must know the triangle's barycenter latitudeDeg.***
+        Vector3d barycenter = this.getBarycenter();
+        double latDeg = barycenter.y;
+        double lonDegToMetersFactor = GlobeUtils.getLonDegToMetersFactor(latDeg);
+        double latDegToMetersFactor = GlobeUtils.getLatDegToMetersFactor();
+
+        // consider p0 as origin.***
+        Vector3f p0Local = new Vector3f(0, 0, 0);
+        Vector3f p1Local = new Vector3f((float) ((p1.x - p0.x) * lonDegToMetersFactor), (float) ((p1.y - p0.y) * latDegToMetersFactor), (float) (p1.z - p0.z));
+        Vector3f p2Local = new Vector3f((float) ((p2.x - p0.x) * lonDegToMetersFactor), (float) ((p2.y - p0.y) * latDegToMetersFactor), (float) (p2.z - p0.z));
+
+        Vector3f v1 = new Vector3f(p1Local).sub(p0Local);
+        Vector3f v2 = new Vector3f(p2Local).sub(p0Local);
+        this.normal = new Vector3f(v1).cross(v2).normalize();
     }
 }

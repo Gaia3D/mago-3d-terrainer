@@ -520,6 +520,31 @@ public class GaiaMesh {
         return true;
     }
 
+    public void calculateNormals()
+    {
+        // here we calculate the normals of the triangles and the vertices.***
+        int trianglesCount = triangles.size();
+        for (int i = 0; i < trianglesCount; i++) {
+            GaiaTriangle triangle = triangles.get(i);
+            if (triangle.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+
+            triangle.calculateNormal();
+        }
+
+        // once all triangles have their normals calculated, we can calculate the normals of the vertices
+        int verticesCount = vertices.size();
+        for (int i = 0; i < verticesCount; i++) {
+            GaiaVertex vertex = vertices.get(i);
+            if (vertex.objectStatus == GaiaObjectStatus.DELETED) {
+                continue;
+            }
+
+            vertex.calculateNormal();
+        }
+    }
+
 
     public void splitTriangle(GaiaTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, ArrayList<GaiaTriangle> resultNewTriangles) throws TransformException, IOException {
         // A triangle is split by the longest edge.***

@@ -270,6 +270,12 @@ public class TileMatrix {
 
             this.refineMesh(resultMesh, tilesRange);
 
+            // check if you must calculate normals.***
+            if(this.manager.calculateNormals)
+            {
+                resultMesh.calculateNormals();
+            }
+
             // now save the 9 tiles.***
             ArrayList<GaiaMesh> separatedMeshes = new ArrayList<GaiaMesh>();
             this.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
@@ -296,6 +302,8 @@ public class TileMatrix {
 
     public void saveQuantizedMeshes(ArrayList<GaiaMesh> separatedMeshes) throws IOException {
         boolean originIsLeftUp = this.manager.originIsLeftUp;
+        boolean calculateNormals = this.manager.calculateNormals;
+
         int meshesCount = separatedMeshes.size();
         for (int i = 0; i < meshesCount; i++) {
             GaiaMesh mesh = separatedMeshes.get(i);
@@ -310,7 +318,7 @@ public class TileMatrix {
             tile.mesh = mesh;
 
             QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
-            QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile);
+            QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile, calculateNormals);
             String tileFullPath = this.manager.getQuantizedMeshTilePath(tileIndices);
             String tileFolderPath = this.manager.getQuantizedMeshTileFolderPath(tileIndices);
             FileUtils.createAllFoldersIfNoExist(tileFolderPath);
@@ -327,23 +335,12 @@ public class TileMatrix {
             // Envolver el BufferedOutputStream en un LittleEndianDataOutputStream
             LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(bufferedOutputStream);
 
-            // delete the file if exists before save.***
-            FileUtils.deleteFileIfExists(tileFullPath);
-
             // save the tile.***
-            quantizedMesh.saveDataOutputStream(dataOutputStream);
+            quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);
 
             dataOutputStream.close();
             bufferedOutputStream.close();
             fileOutputStream.close();
-            //---------------------------------------------------------------------------------------------------
-
-//            // delete the file if exists before save.***
-//            FileUtils.deleteFileIfExists(tileFullPath);
-//
-//            quantizedMesh.saveDataOutputStream(dataOutputStream);
-//            dataOutputStream.close();
-//            fileOutputStream.close();
         }
     }
 
@@ -677,6 +674,9 @@ public class TileMatrix {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(currL);
         double scale = bboxMaxLengthInMeters / tileSize;
 
+        // Y = 0.8X + 0.2.
+        scale = 0.9 * scale + 0.1;
+
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
         maxDiff *= scale; // scale the maxDiff.***
 
@@ -776,15 +776,19 @@ public class TileMatrix {
                 pos_y = startLatDeg + rowAux * deltaLatDeg;
 
                 float elevationFloat = tileRaster.getElevation(col, row);
+                //double distToPlane = plane.evaluatePoint(pos_x, pos_y, elevationFloat);
 
                 planeElevation = plane.getValueZ(pos_x, pos_y);
+
 //                if (elevationFloat > planeElevation) {
 //                    scaleDiff = 1.0;
 //                } else {
 //                    scaleDiff = 1.0;
 //                }
 
-                if (abs(elevationFloat - planeElevation) > maxDiff) {
+                if (abs(elevationFloat - planeElevation) > maxDiff) // original.***
+                //if (abs(distToPlane) > maxDiff)
+                {
                     intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
 
                     if (!intersects) {

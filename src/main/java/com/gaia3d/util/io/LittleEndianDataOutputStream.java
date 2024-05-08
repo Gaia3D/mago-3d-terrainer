@@ -30,6 +30,8 @@ public class LittleEndianDataOutputStream extends FilterOutputStream implements 
 
     @Override
     public void writeByte(int v) throws IOException {
+//        byte[] b = new byte[1];
+//        b[0] = (byte) v;
         out.write(v);
     }
 

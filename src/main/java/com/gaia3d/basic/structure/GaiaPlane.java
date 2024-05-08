@@ -33,4 +33,11 @@ public class GaiaPlane {
     public double getValueZ(double x, double y) {
         return -(a * x + b * y + d) / c;
     }
+
+    public double evaluatePoint(double x, double y, double z) {
+        // if the result is positive, the point is over the plane.***
+        // else if the result is negative, the point is under the plane.***
+        return a * x + b * y + c * z + d;
+    }
+
 }

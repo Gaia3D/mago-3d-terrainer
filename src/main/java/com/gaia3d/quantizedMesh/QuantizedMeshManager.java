@@ -3,7 +3,10 @@ package com.gaia3d.quantizedMesh;
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.wgs84Tiles.TileWgs84;
+import org.joml.Vector2d;
+import org.joml.Vector2f;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,7 +14,80 @@ import java.util.Collections;
 public class QuantizedMeshManager {
     //https://github.com/CesiumGS/cesium/blob/master/Source/Core/CesiumTerrainProvider.js#L327
 
-    public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile) {
+    private Vector2f signNotZero(Vector2f value) {
+        return new Vector2f(value.x >= 0 ? 1 : -1, value.y >= 0 ? 1 : -1);
+    }
+
+    private Vector2f float32x3ToOct(Vector3f normal) {
+        float x = normal.x;
+        float y = normal.y;
+        float z = normal.z;
+
+        float u = x / (Math.abs(x) + Math.abs(y) + Math.abs(z));
+        float v = y / (Math.abs(x) + Math.abs(y) + Math.abs(z));
+
+        // Reflect the folds of the lower hemisphere over the diagonals
+        if (z < 0) {
+            float uOld = u;
+            u = (float) ((1.0 - Math.abs(v)) * signNotZero(new Vector2f(u, v)).x);
+            v = (float) ((1.0 - Math.abs(uOld)) * signNotZero(new Vector2f(uOld, v)).y);
+        }
+
+        return new Vector2f(u, v);
+    }
+
+    private Vector3f octToFloat32x3(Vector2f e) {
+        Vector3f v = new Vector3f(e.x, e.y, 1.0f - Math.abs(e.x) - Math.abs(e.y));
+        if(v.z < 0) {
+            Vector2f temp = new Vector2f(v.x, v.y);
+            v.x = (1.0f - Math.abs(v.y)) * signNotZero(temp).x;
+            v.y = (1.0f - Math.abs(temp.x)) * signNotZero(temp).y;
+        }
+        return v.normalize();
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private float dot(Vector3f a, Vector3f b) {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
+    private Vector2f float32x3ToOctnPrecise(Vector3f normal, int n) {
+        Vector2f s = float32x3ToOct(normal);// Remap to the square
+        // Each snorm’s max value interpreted as an integer,
+        // e.g., 127.0 for snorm8
+
+        float M = (float) ((1 << (n/2 - 1)) - 1);
+        // Remap components to snorm(n/2) precision...with floor instead
+        // of round (see equation 1)
+        s.x = (float) (Math.floor(clamp(s.x, -1.0f, 1.0f) * M) * (1.0f / M));
+        s.y = (float) (Math.floor(clamp(s.y, -1.0f, 1.0f) * M) * (1.0f / M));
+
+        Vector2f bestRepresentation = s;
+        float highestCosine = dot(octToFloat32x3(s), normal);
+
+        // Test all combinations of floor and ceil and keep the best.
+        // Note that at +/- 1, this will exit the square... but that
+        // will be a worse encoding and never win.
+        for (int i = 0; i <= 1; ++i)
+            for (int j = 0; j <= 1; ++j)
+                // This branch will be evaluated at compile time
+                if ((i != 0) || (j != 0)) {
+
+                    Vector2f candidate = new Vector2f(i * (1.0f/M) + s.x, j * (1.0f/M) + s.y);
+                    float cosine = dot(octToFloat32x3(candidate), normal);
+                    if (cosine > highestCosine) {
+                        highestCosine = cosine;
+                        bestRepresentation = candidate;
+                    }
+                }
+
+        return bestRepresentation;
+    }
+
+    public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile, boolean calculateNormals) {
         // 1rst get the quantized mesh header.***
         QuantizedMeshHeader header = new QuantizedMeshHeader();
         GaiaMesh mesh = tile.mesh;
@@ -100,6 +176,9 @@ public class QuantizedMeshManager {
 
         for (int i = 0; i < vertexCount; i++) {
             GaiaVertex vertex = vertices.get(i);
+            if(vertex.objectStatus == GaiaObjectStatus.DELETED) {
+                int hola = 0;
+            }
             double lonDeg = vertex.position.x;
             double latDeg = vertex.position.y;
             double height = vertex.position.z;
@@ -152,6 +231,32 @@ public class QuantizedMeshManager {
         quantizedMesh.northVertexCount = northVerticesCount;
         for (int i = 0; i < northVerticesCount; i++) {
             quantizedMesh.northIndices[i] = northVertices.get(i).id;
+        }
+
+        // check if save normals.***
+        if(calculateNormals) {
+            // Calculate the normals.***
+            quantizedMesh.octEncodedNormals = new byte[vertexCount * 2];
+            for (int i = 0; i < vertexCount; i++) {
+                GaiaVertex vertex = vertices.get(i);
+                Vector3f normal = vertex.normal;
+                if(normal == null)
+                {
+                    normal = new Vector3f(0, 0, 1);
+                }
+                Vector2f octNormal = float32x3ToOct(normal);
+                //Vector2f octNormalPrecise = float32x3ToOctnPrecise(normal, 8);
+
+                quantizedMesh.octEncodedNormals[i * 2] = (byte) (octNormal.x * 255);
+                quantizedMesh.octEncodedNormals[i * 2 + 1] = (byte) (octNormal.y * 255);
+            }
+
+            // Terrain Lighting
+            // Name: Oct-Encoded Per-Vertex Normals
+            // extension Id: 1
+            quantizedMesh.extensionId = 1; // byte.***
+            // the size in bytes of "quantizedMesh.octEncodedNormals" is vertexCount * 2.***
+            quantizedMesh.extensionLength = vertexCount * 2; // int.***
         }
 
         return quantizedMesh;

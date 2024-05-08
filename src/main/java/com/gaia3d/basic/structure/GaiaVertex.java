@@ -4,6 +4,7 @@ import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 public class GaiaVertex {
     public GaiaHalfEdge outingHEdge = null;
     public Vector3d position = new Vector3d();
+
+    public Vector3f normal = null;
 
     public int id = -1;
 
@@ -51,6 +54,30 @@ public class GaiaVertex {
                 break;
             }
         }
+    }
+
+    public void calculateNormal() {
+        if (this.normal == null) {
+            this.normal = new Vector3f();
+        }
+
+        this.normal.set(0, 0, 0);
+        ArrayList<GaiaHalfEdge> outingHalfEdges = this.getAllOutingHalfEdges();
+        for (GaiaHalfEdge outingHalfEdge : outingHalfEdges) {
+            GaiaTriangle triangle = outingHalfEdge.triangle;
+            if (triangle == null) {
+                continue;
+            }
+
+            Vector3f normal = triangle.normal;
+            if (normal == null) {
+                continue;
+            }
+
+            this.normal.add(normal);
+        }
+
+        this.normal.normalize();
     }
 
     public ArrayList<GaiaHalfEdge> getAllOutingHalfEdges() {
@@ -97,6 +124,7 @@ public class GaiaVertex {
             finished = false;
             while (!finished) {
                 GaiaHalfEdge prevHalfEdge = currHalfEdge.getPrev();
+
                 GaiaHalfEdge twinHalfEdge = prevHalfEdge.twin;
                 if (twinHalfEdge == null) {
                     finished = true;
@@ -104,6 +132,12 @@ public class GaiaVertex {
                 }
 
                 outingHalfEdges.add(twinHalfEdge);
+
+                if(outingHalfEdges.size() > 4)
+                {
+                    int hola = 0;
+                    break;
+                }
 
                 currHalfEdge = twinHalfEdge;
             }

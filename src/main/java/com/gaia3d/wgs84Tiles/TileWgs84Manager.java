@@ -56,6 +56,9 @@ public class TileWgs84Manager {
     boolean originIsLeftUp = false; // false = origin is left-down (Cesium Tile System).***
     HashMap<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<Integer, Double>();
     HashMap<Integer, Double> minTriangleSizeForTileDepthMap = new HashMap<Integer, Double>();
+    @Setter
+    @Getter
+    boolean calculateNormals = true;
     ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
 
     Vector2d memSave_pixelSizeDegrees = new Vector2d();
@@ -101,6 +104,11 @@ public class TileWgs84Manager {
         terrainLayer.bounds[1] = minLat;
         terrainLayer.bounds[2] = maxLon;
         terrainLayer.bounds[3] = maxLat;
+
+        if(this.calculateNormals)
+        {
+            terrainLayer.extensions.add("octvertexnormals");
+        }
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             TilesRange tilesRange = new TilesRange();

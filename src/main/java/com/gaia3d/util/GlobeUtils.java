@@ -188,4 +188,16 @@ public class GlobeUtils {
         transformer.transform(coordinate, result);
         return result;
     }
+
+    public static double getLonDegToMetersFactor(double latDeg) {
+        // given a latitude degree, this function returns the factor to convert longitude degree to meters.
+        double latRad = latDeg * degToRadFactor;
+        double cosLat = Math.cos(latRad);
+        double lonDegToMetersFactor = equatorialRadius * degToRadFactor * cosLat;
+        return lonDegToMetersFactor;
+    }
+
+    public static double getLatDegToMetersFactor() {
+        return equatorialRadius * degToRadFactor;
+    }
 }

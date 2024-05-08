@@ -80,6 +80,10 @@ public class MagoMesherMain {
                 tileWgs84Manager.maxTileDepth = DEFAULT_MAXIMUM_TILE_DEPTH;
             }
 
+            if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
+                tileWgs84Manager.setCalculateNormals(true);
+            }
+
             log.info("[Resize GeoTiff] Start resizing GeoTiff files.");
             tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);
             log.info("[Resize GeoTiff] Finished resizing GeoTiff files.");

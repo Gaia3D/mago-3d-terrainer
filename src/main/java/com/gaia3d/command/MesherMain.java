@@ -57,6 +57,11 @@ public class MesherMain
                 tileWgs84Manager.maxTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
             }
 
+            // check calculate normals.***
+            if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
+                tileWgs84Manager.setCalculateNormals(true);
+            }
+
             //if (command.hasOption(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName())) {
                 //tileWgs84Manager.refinementStrength = Integer.parseInt(command.getOptionValue(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName()));
             //}
@@ -65,21 +70,6 @@ public class MesherMain
         {
             e.printStackTrace();
         }
-
-//        String outputDirectory = "D:\\data\\DEM_output\\output";
-//        String minTileDepth = String.valueOf(0);
-//        String maxTileDepth = String.valueOf(17);
-//        String refinementStrength = String.valueOf(1);
-//        String originalGeoTiffFolderPath = "D:\\data\\DEM\\sejongDEM";
-//
-//        tileWgs84Manager.originalGeoTiffFolderPath = originalGeoTiffFolderPath;
-//
-//        tileWgs84Manager.outputDirectory = outputDirectory;
-//        tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
-//        tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
-//
-//        tileWgs84Manager.minTileDepth = 0;
-//        tileWgs84Manager.maxTileDepth = 16;
 
         try {
             tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);

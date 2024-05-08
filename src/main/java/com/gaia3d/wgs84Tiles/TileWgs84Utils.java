@@ -31,47 +31,47 @@ public class TileWgs84Utils {
         }
         else if(depth < 8)
         {
-            return tileSize * 0.05;
+            return tileSize * 0.01;
         }
         else if(depth <= 10)
         {
-            return tileSize * 0.12;
+            return tileSize * 0.01;
         }
         else if(depth == 11)
         {
-            return tileSize * 0.14;
+            return tileSize * 0.02;
         }
         else if(depth == 12)
         {
-            return tileSize * 0.16;
+            return tileSize * 0.04;
         }
         else if(depth == 13)
         {
-            return tileSize * 0.18;
+            return tileSize * 0.06;
         }
         else if(depth == 14)
         {
-            return tileSize * 0.21;
+            return tileSize * 0.08;
         }
         else if(depth == 15)
         {
-            return tileSize * 0.23;
+            return tileSize * 0.1;
         }
         else if(depth == 16)
         {
-            return tileSize * 0.25;
+            return tileSize * 0.12;
         }
         else if(depth == 17)
         {
-            return tileSize * 0.28;
+            return tileSize * 0.16;
         }
         else if(depth == 18)
         {
-            return tileSize * 0.3;
+            return tileSize * 0.18;
         }
         else
         {
-            return tileSize * 0.35;
+            return tileSize * 0.2;
         }
     }
 
