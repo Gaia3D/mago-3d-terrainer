@@ -125,7 +125,7 @@ public class TerrainElevationData {
                 }
             }
         } catch (Exception e) {
-            //log.error(e.getMessage());l
+            //log.error(e.getMessage());
             intersects[0] = false;
             return resultAltitude;
         }
