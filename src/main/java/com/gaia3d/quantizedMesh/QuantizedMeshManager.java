@@ -23,17 +23,19 @@ public class QuantizedMeshManager {
         float y = normal.y;
         float z = normal.z;
 
-        float u = x / (Math.abs(x) + Math.abs(y) + Math.abs(z));
-        float v = y / (Math.abs(x) + Math.abs(y) + Math.abs(z));
+        float den = Math.abs(x) + Math.abs(y) + Math.abs(z);
+        float u = x / den;
+        float v = y / den;
+        Vector2f p = new Vector2f(u, v);
 
         // Reflect the folds of the lower hemisphere over the diagonals
-        if (z < 0) {
-            float uOld = u;
-            u = (float) ((1.0 - Math.abs(v)) * signNotZero(new Vector2f(u, v)).x);
-            v = (float) ((1.0 - Math.abs(uOld)) * signNotZero(new Vector2f(uOld, v)).y);
+        if (z <= 0) {
+            u = (float) ((1.0 - Math.abs(p.y)) * signNotZero(p).x);
+            v = (float) ((1.0 - Math.abs(p.x)) * signNotZero(p).y);
+            p = new Vector2f(u, v);
         }
 
-        return new Vector2f(u, v);
+        return p;
     }
 
     private Vector3f octToFloat32x3(Vector2f e) {
@@ -244,11 +246,26 @@ public class QuantizedMeshManager {
                 {
                     normal = new Vector3f(0, 0, 1);
                 }
+
+                // the float32x3ToOct has problems when the normal = (0, 0, 1).***
+                if(Math.abs(normal.x) < 1e-2 && Math.abs(normal.y) < 1e-2) {
+                    if(normal.y < 0.0)
+                    {
+                        normal.set(0.0f, -0.01f, 1.0f);
+                    }
+                    else {
+                        normal.set(0.0f, 0.01f, 1.0f);
+                    }
+                    normal.normalize();
+                }
+
                 Vector2f octNormal = float32x3ToOct(normal);
                 //Vector2f octNormalPrecise = float32x3ToOctnPrecise(normal, 8);
 
+
                 quantizedMesh.octEncodedNormals[i * 2] = (byte) (octNormal.x * 255);
                 quantizedMesh.octEncodedNormals[i * 2 + 1] = (byte) (octNormal.y * 255);
+
             }
 
             // Terrain Lighting
@@ -257,6 +274,7 @@ public class QuantizedMeshManager {
             quantizedMesh.extensionId = 1; // byte.***
             // the size in bytes of "quantizedMesh.octEncodedNormals" is vertexCount * 2.***
             quantizedMesh.extensionLength = vertexCount * 2; // int.***
+
         }
 
         return quantizedMesh;

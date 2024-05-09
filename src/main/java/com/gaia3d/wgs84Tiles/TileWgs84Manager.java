@@ -108,7 +108,7 @@ public class TileWgs84Manager {
 
         if(this.calculateNormals)
         {
-            terrainLayer.extensions.add("octvertexnormals");
+            terrainLayer.addExtension("octvertexnormals");
         }
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {

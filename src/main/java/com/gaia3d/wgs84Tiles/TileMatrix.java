@@ -274,6 +274,15 @@ public class TileMatrix {
             // check if you must calculate normals.***
             if(this.manager.calculateNormals)
             {
+                if(tilesRange.tileDepth == 3)
+                {
+                    int hola = 0;
+                }
+
+                if(tilesRange.tileDepth == 4)
+                {
+                    int hola = 0;
+                }
                 resultMesh.calculateNormals();
             }
 
@@ -337,7 +346,7 @@ public class TileMatrix {
 
             // Envolver el BufferedOutputStream en un LittleEndianDataOutputStream
             LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(bufferedOutputStream);
-            
+
             // save the tile.***
             quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);
 

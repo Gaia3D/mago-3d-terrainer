@@ -41,6 +41,10 @@ public class TileIndices {
         L = l;
     }
 
+    public int getL() {
+        return L;
+    }
+
     //*************************************************
     // note : the origin of the tile system is left-up.
     //*************************************************

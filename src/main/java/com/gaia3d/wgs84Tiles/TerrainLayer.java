@@ -69,6 +69,13 @@ public class TerrainLayer {
         this.bounds[3] = 0.0;
     }
 
+    public void addExtension(String extension) {
+        if(this.extensions == null) {
+            this.extensions = new ArrayList<String>();
+        }
+        this.extensions.add(extension);
+    }
+
     public void saveJsonFile(String outputDirectory, String tilejsonFileName) {
         String fullFileName = outputDirectory + File.separator + tilejsonFileName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
