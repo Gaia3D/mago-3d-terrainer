@@ -71,18 +71,6 @@ class MesherMainTest {
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
-    @Test
-    void main2() throws FactoryException, TransformException, IOException {
-        //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
-        //****************************************************************
-        String originalGeoTiffFolderPath = "D:\\dem\\input";
-        String outputDirectory = "D:\\dem\\output2\\";
-        String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(18);
-        String refinementStrength = String.valueOf(1);
-        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
-    }
 
     //@Test
     void main_smallMountainForTrees() throws FactoryException, TransformException, IOException {
@@ -98,17 +86,6 @@ class MesherMainTest {
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
-    //@Test
-    void main_getElevationTest() throws FactoryException, TransformException, IOException {
-        String outputPath = "D:\\QuantizedMesh_JavaProjects\\output";
-        String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(17);
-        String refinementStrength = String.valueOf(1);
-        String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\smallDatas";
-
-        String[] args = new String[]{"-inputFolderPath", originalGeoTiffFolderPath, "-outputFolderPath", outputPath, "-minimumTileDepth", minTileDepth, "-maximumTileDepth", maxTileDepth, "-meshRefinementStrength", refinementStrength};
-        //MagoMesherMain.mainTest(args);
-    }
 
     @Test
     void main_ws2() throws FactoryException, TransformException, IOException {
@@ -134,6 +111,20 @@ class MesherMainTest {
         String maxTileDepth = String.valueOf(16);
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\data\\DEM\\sejongDEM";
+
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void main_sejongCompressedGeoTiff() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder.***
+        //*******************************************************************
+        String outputDirectory = "D:\\data\\DEM_output\\output";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(16);
+        String refinementStrength = String.valueOf(1);
+        String originalGeoTiffFolderPath = "D:\\data\\DEM\\sejongCompressedGeoTiff";
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }

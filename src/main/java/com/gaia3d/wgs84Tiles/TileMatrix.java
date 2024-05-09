@@ -269,20 +269,17 @@ public class TileMatrix {
 
             this.recalculateElevation(resultMesh, tilesRange);
 
+            if(tilesRange.tileDepth == 2)
+            {
+                int hola = 0;
+            }
+
             this.refineMesh(resultMesh, tilesRange);
 
             // check if you must calculate normals.***
             if(this.manager.calculateNormals)
             {
-                if(tilesRange.tileDepth == 3)
-                {
-                    int hola = 0;
-                }
 
-                if(tilesRange.tileDepth == 4)
-                {
-                    int hola = 0;
-                }
                 resultMesh.calculateNormals();
             }
 
