@@ -279,7 +279,6 @@ public class TileMatrix {
             // check if you must calculate normals.***
             if(this.manager.calculateNormals)
             {
-
                 resultMesh.calculateNormals();
             }
 

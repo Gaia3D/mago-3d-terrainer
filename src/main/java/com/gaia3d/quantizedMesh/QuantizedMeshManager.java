@@ -3,11 +3,9 @@ package com.gaia3d.quantizedMesh;
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.wgs84Tiles.TileWgs84;
-import org.joml.Vector2d;
-import org.joml.Vector2f;
-import org.joml.Vector3d;
-import org.joml.Vector3f;
+import org.joml.*;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -36,6 +34,33 @@ public class QuantizedMeshManager {
         }
 
         return p;
+    }
+
+    public byte[] guardarOctEncodedNormal(Vector3f normal) {
+        float x = normal.x;
+        float y = normal.y;
+        float z = normal.z;
+
+        // Proyectar el vector tridimensional en coordenadas octogonales
+        float pX = x * (1.0f / (Math.abs(x) + Math.abs(y) + Math.abs(z)));
+        float pY = y * (1.0f / (Math.abs(x) + Math.abs(y) + Math.abs(z)));
+
+        // Determinar si es necesario reflejar los pliegues de la mitad inferior
+        boolean reflejar = z <= 0.0f;
+
+        // Calcular los valores de los bytes
+        int bX = Math.round(pX * 127) & 0xFF; // Convertir de [-1, 1] a [0, 254]
+        int bY = Math.round(pY * 127) & 0xFF; // Convertir de [-1, 1] a [0, 254]
+
+        if (reflejar) {
+            bX = 254 - bX; // Reflejar sobre la diagonal
+            bY = 254 - bY; // Reflejar sobre la diagonal
+        }
+
+        // Guardar los valores de los bytes en un arreglo
+        byte[] resultado = {(byte) bX, (byte) bY};
+
+        return resultado;
     }
 
     private Vector3f octToFloat32x3(Vector2f e) {
@@ -237,6 +262,13 @@ public class QuantizedMeshManager {
 
         // check if save normals.***
         if(calculateNormals) {
+            Matrix4d tMat = GlobeUtils.normalAtCartesianPointWgs84(cartesianWC[0], cartesianWC[1], cartesianWC[2]);
+            Matrix3d rotMat = new Matrix3d();
+            tMat.get3x3(rotMat);
+
+            Matrix3d rotMatInv = new Matrix3d();
+            rotMatInv.invert(rotMat);
+
             // Calculate the normals.***
             quantizedMesh.octEncodedNormals = new byte[vertexCount * 2];
             for (int i = 0; i < vertexCount; i++) {
@@ -247,25 +279,14 @@ public class QuantizedMeshManager {
                     normal = new Vector3f(0, 0, 1);
                 }
 
-                // the float32x3ToOct has problems when the normal = (0, 0, 1).***
-                if(Math.abs(normal.x) < 1e-2 && Math.abs(normal.y) < 1e-2) {
-                    if(normal.y < 0.0)
-                    {
-                        normal.set(0.0f, -0.01f, 1.0f);
-                    }
-                    else {
-                        normal.set(0.0f, 0.01f, 1.0f);
-                    }
-                    normal.normalize();
-                }
+                // rotate normal.***
+                Vector3f normalRotated = new Vector3f(normal.x, normal.z, -normal.y); // best result (-90 in xAxis).***
+                rotMatInv.transform(normalRotated); // test.***
 
-                Vector2f octNormal = float32x3ToOct(normal);
-                //Vector2f octNormalPrecise = float32x3ToOctnPrecise(normal, 8);
+                Vector2f octNormal = float32x3ToOct(normalRotated);
 
-
-                quantizedMesh.octEncodedNormals[i * 2] = (byte) (octNormal.x * 255);
-                quantizedMesh.octEncodedNormals[i * 2 + 1] = (byte) (octNormal.y * 255);
-
+                quantizedMesh.octEncodedNormals[i * 2] = (byte) (octNormal.x * 254);
+                quantizedMesh.octEncodedNormals[i * 2 + 1] = (byte) (octNormal.y * 254);
             }
 
             // Terrain Lighting
