@@ -108,7 +108,7 @@ class MesherMainTest {
         //*******************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(18);
+        String maxTileDepth = String.valueOf(17);
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\data\\DEM\\sejongDEM";
 

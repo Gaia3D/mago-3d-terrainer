@@ -60,7 +60,7 @@ public class TileWgs84Utils {
         }
         else if(depth == 16)
         {
-            return tileSize * 0.12;
+            return tileSize * 0.09;
         }
         else if(depth == 17)
         {
@@ -68,11 +68,11 @@ public class TileWgs84Utils {
         }
         else if(depth == 18)
         {
-            return tileSize * 0.22;
+            return tileSize * 0.23;
         }
         else
         {
-            return tileSize * 0.24;
+            return tileSize * 0.25;
         }
     }
 
