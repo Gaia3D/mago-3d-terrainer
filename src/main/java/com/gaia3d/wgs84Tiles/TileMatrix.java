@@ -12,6 +12,7 @@ import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.*;
@@ -494,7 +495,7 @@ public class TileMatrix {
                     String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
                     try {
-                        log.debug("Saving children tiles... L : " + childTileIndices.L + " i : " + j + " / " + childMeshesCount);
+                        //log.debug("Saving children tiles... L : " + childTileIndices.L + " i : " + j + " / " + childMeshesCount);
                         saveFile(childMesh, childTileFullPath); // original.***
                     } catch (IOException e) {
                         log.error(e.getMessage());
@@ -684,7 +685,7 @@ public class TileMatrix {
         double scale = bboxMaxLengthInMeters / tileSize;
 
         // Y = 0.8X + 0.2.
-        scale = 0.9 * scale + 0.1;
+        scale = 0.8 * scale + 0.2;
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
         maxDiff *= scale; // scale the maxDiff.***
@@ -728,6 +729,26 @@ public class TileMatrix {
             return false;
         }
 
+        // check with tileRaster.***
+        if (tileRaster == null) {
+            return false;
+        }
+
+        // calculate the angle between triangleNormalWC with the normal at cartesian of the center of the tile.***
+        float cosAng = 1.0f;
+        if(tileIndices.L > 10) {
+
+            Vector3f triangleNormalWC = triangle.getNormal(); // this is normalWC.***
+            Vector3d triangleNornalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
+            GeographicExtension geographicExtension = tileRaster.getGeographicExtension();
+            Vector3d centerGeoCoord = geographicExtension.getMidPoint();
+            double[] centerCartesian = GlobeUtils.geographicToCartesianWgs84(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z);
+            Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPointWgs84(centerCartesian[0], centerCartesian[1], centerCartesian[2]);
+
+            double angRad = triangleNornalDouble.angle(normalAtCartesian);
+            cosAng = (float) Math.cos(angRad);
+        }
+
         // check the barycenter of the triangle.***
         Vector3d barycenter = triangle.getBarycenter();
         int colIdx = tileRaster.getColumn(barycenter.x);
@@ -735,14 +756,12 @@ public class TileMatrix {
         double elevation = tileRaster.getElevation(colIdx, rowIdx);
         double planeElevation = barycenter.z;
 
-        if (abs(elevation - planeElevation) > maxDiff) {
+        double distToPlane = abs(elevation - planeElevation) * cosAng;
+
+        if (distToPlane > maxDiff)
+        {
+            log.debug("Baricenter : L : " + tileIndices.L + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
             return true;
-        }
-
-        // check with tileRaster.***
-
-        if (tileRaster == null) {
-            return false;
         }
 
         int startCol = tileRaster.getColumn(bboxTriangle.getMinX());
@@ -753,15 +772,13 @@ public class TileMatrix {
         int colsCount = endCol - startCol + 1;
         int rowsCount = endRow - startRow + 1;
 
-        if (colsCount < 4 || rowsCount < 4) {
+        if (colsCount < 6 || rowsCount < 6) {
             triangle.refineChecked = true;
             return false;
         }
 
         double startLonDeg = bboxTriangle.getMinX();
         double startLatDeg = bboxTriangle.getMinY();
-        double widthDeg = bboxTriangle.getLengthX();
-        double heightDeg = bboxTriangle.getLengthY();
 
         double deltaLonDeg = tileRaster.getDeltaLonDeg();
         double deltaLatDeg = tileRaster.getDeltaLatDeg();
@@ -771,8 +788,9 @@ public class TileMatrix {
         GaiaPlane plane = triangle.getPlane();
         int colAux = 0;
         int rowAux = 0;
-//        startLonDeg += deltaLonDeg * 0.5; // center of the pixel.***
-//        startLatDeg += deltaLatDeg * 0.5; // center of the pixel.***
+        startLonDeg += deltaLonDeg * 0.5; // center of the pixel.***
+        startLatDeg += deltaLatDeg * 0.5; // center of the pixel.***
+
         boolean intersects = false;
         ArrayList<GaiaHalfEdge> memSave_hedges = new ArrayList<GaiaHalfEdge>();
         GaiaLine2D memSave_line = new GaiaLine2D();
@@ -782,26 +800,47 @@ public class TileMatrix {
             rowAux = 0;
             pos_x = startLonDeg + colAux * deltaLonDeg;
             for (int row = startRow; row <= endRow; row++) {
+
+                // skip the 4 corners of the tile.***
+                if (col == startCol && row == startRow) {
+                    rowAux++;
+                    continue;
+                }
+                else if (col == startCol && row == endRow) {
+                    rowAux++;
+                    continue;
+                }
+                else if (col == endCol && row == startRow) {
+                    rowAux++;
+                    continue;
+                }
+                else if (col == endCol && row == endRow) {
+                    rowAux++;
+                    continue;
+                }
                 pos_y = startLatDeg + rowAux * deltaLatDeg;
 
                 float elevationFloat = tileRaster.getElevation(col, row);
-                //double distToPlane = plane.evaluatePoint(pos_x, pos_y, elevationFloat);
 
                 planeElevation = plane.getValueZ(pos_x, pos_y);
 
-//                if (elevationFloat > planeElevation) {
-//                    scaleDiff = 1.0;
-//                } else {
-//                    scaleDiff = 1.0;
-//                }
-
-                if (abs(elevationFloat - planeElevation) > maxDiff) // original.***
-                //if (abs(distToPlane) > maxDiff)
+                distToPlane = abs(elevationFloat - planeElevation) * cosAng;
+                if (distToPlane > maxDiff) // original.***
                 {
                     intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
 
                     if (!intersects) {
                         continue;
+                    }
+
+                    if(tileIndices.L == 18)
+                    {
+                        if(cosAng < 0.3)
+                        {
+                            int hola = 0;
+                            log.debug("RasterTile : L : " + tileIndices.L + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount);
+                        }
+                        int hola = 0;
                     }
 
                     memSave_hedges.clear();
@@ -880,145 +919,6 @@ public class TileMatrix {
         return false;
     }
 
-    public boolean mustRefineTriangle_original(GaiaTriangle triangle) throws TransformException, IOException {
-        if (triangle.refineChecked) {
-            return false;
-        }
-
-        TerrainElevationDataManager terrainElevationDataManager = this.manager.terrainElevationDataManager;
-        TileIndices tileIndices = triangle.ownerTile_tileIndices;
-
-
-        // check if the triangle must be refined.***
-        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
-
-        double widthDeg = bboxTriangle.getLengthX();
-        double heightDeg = bboxTriangle.getLengthY();
-
-        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.ownerTile_tileIndices.L);
-
-        //maxDiff *= 0.5; // TEST : reduce the maxDiff.***
-
-        // fast check.******************************************************************
-        // check the barycenter of the triangle.***
-        Vector3d barycenter = triangle.getBarycenter();
-        double elevation = terrainElevationDataManager.getElevation(barycenter.x, barycenter.y, this.manager.memSave_terrainElevDatasArray);
-        double planeElevation = barycenter.z;
-
-        if (abs(elevation - planeElevation) > maxDiff) {
-            return true;
-        }
-
-        // more fast check.***
-        /*
-        int numInterpolation = 5;
-        ArrayList<Vector3d> perimeterPositions = triangle.getPerimeterPositions(numInterpolation);
-        for(Vector3d perimeterPosition : perimeterPositions)
-        {
-            elevation = terrainElevationData.getElevation(perimeterPosition.x, perimeterPosition.y);
-            planeElevation = perimeterPosition.z;
-
-            if(abs(elevation - planeElevation) > maxDiff)
-            {
-                return true;
-            }
-        }*/
-        // end check the barycenter of the triangle.***************************************
-
-
-        // if the triangle size is very small, then do not refine.*************************
-        // Calculate the maxLength of the triangle in meters.***
-        double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
-        double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
-        double triangleMaxLengthMeters = triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
-        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
-        if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
-            triangle.refineChecked = true;
-            return false;
-        }
-
-        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.ownerTile_tileIndices.L);
-        if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
-            return true;
-        }
-
-        // check if the triangle intersects the terrainData.***
-        GeographicExtension rootGeographicExtension = terrainElevationDataManager.getRootGeographicExtension();
-        if (rootGeographicExtension == null) {
-            int hola = 0;
-        }
-        if (!rootGeographicExtension.intersectsBBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY())) {
-            // Need check only the 3 vertex of the triangle.***
-            ArrayList<GaiaVertex> vertices = triangle.getVertices();
-            int verticesCount = vertices.size();
-            for (int i = 0; i < verticesCount; i++) {
-                GaiaVertex vertex = vertices.get(i);
-                if (vertex.position.z > maxDiff) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        TerrainElevationData terrainElevationData = terrainElevationDataManager.rootTerrainElevationDataQuadTree.getTerrainElevationData(barycenter.x, barycenter.y);
-        Vector2d pixelSizeDeg = this.manager.memSave_pixelSizeDegrees;
-        pixelSizeDeg.set(widthDeg / 256.0, heightDeg / 256.0);
-        if (terrainElevationData != null) {
-            terrainElevationData.getPixelSizeDegree(pixelSizeDeg);
-        }
-
-        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 256.0);
-        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 256.0);
-
-        GaiaPlane plane = triangle.getPlane();
-
-        int columnsCount = (int) (widthDeg / pixelSizeX);
-        int rowsCount = (int) (heightDeg / pixelSizeY);
-
-        double bbox_minX = bboxTriangle.getMinX();
-        double bbox_minY = bboxTriangle.getMinY();
-
-        boolean intersects = false;
-        int counter = 0;
-        ArrayList<GaiaHalfEdge> memSave_hedges = new ArrayList<GaiaHalfEdge>();
-        GaiaLine2D memSave_line = new GaiaLine2D();
-        for (int row = 0; row < rowsCount; row++) {
-            double pos_y = bbox_minY + row * pixelSizeY;
-            for (int column = 0; column < columnsCount; column++) {
-                double pos_x = bbox_minX + column * pixelSizeX;
-                intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
-                counter++;
-
-                if (!intersects) {
-                    continue;
-                }
-
-                elevation = terrainElevationDataManager.getElevation(pos_x, pos_y, this.manager.memSave_terrainElevDatasArray);
-                planeElevation = plane.getValueZ(pos_x, pos_y);
-
-                if (elevation > planeElevation) {
-                    if (abs(elevation - planeElevation) > maxDiff) {
-                        memSave_hedges.clear();
-                        memSave_line.deleteObjects();
-                        return true;
-                    }
-                } else {
-                    if (abs(elevation - planeElevation) > maxDiff) {
-                        memSave_hedges.clear();
-                        memSave_line.deleteObjects();
-                        return true;
-                    }
-                }
-            }
-        }
-
-        memSave_hedges.clear();
-        memSave_line.deleteObjects();
-
-        triangle.refineChecked = true;
-        return false;
-    }
 
     private boolean refineMeshOneIteration(GaiaMesh mesh, TilesRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of 9 different tiles.***

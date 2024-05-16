@@ -245,22 +245,31 @@ public class GaiaTriangle {
         calculateNormalWC();
     }
 
+    public Vector3f getNormal() {
+        if(this.normal == null) {
+            calculateNormalWC();
+        }
+        return this.normal;
+    }
+
     public void calculateNormalWC()
     {
-        ArrayList<GaiaVertex> vertices = this.getVertices();
-        Vector3d p0 = vertices.get(0).position;
-        Vector3d p1 = vertices.get(1).position;
-        Vector3d p2 = vertices.get(2).position;
+        if(this.normal == null) {
 
-        Vector3d p0WC = GlobeUtils.geographicToCartesianWgs84(p0);
-        Vector3d p1WC = GlobeUtils.geographicToCartesianWgs84(p1);
-        Vector3d p2WC = GlobeUtils.geographicToCartesianWgs84(p2);
+            ArrayList<GaiaVertex> vertices = this.getVertices();
+            Vector3d p0 = vertices.get(0).position;
+            Vector3d p1 = vertices.get(1).position;
+            Vector3d p2 = vertices.get(2).position;
 
-        Vector3d v1 = new Vector3d(p1WC).sub(p0WC);
-        Vector3d v2 = new Vector3d(p2WC).sub(p0WC);
-        Vector3d normald = new Vector3d(v1).cross(v2).normalize();
+            Vector3d p0WC = GlobeUtils.geographicToCartesianWgs84(p0);
+            Vector3d p1WC = GlobeUtils.geographicToCartesianWgs84(p1);
+            Vector3d p2WC = GlobeUtils.geographicToCartesianWgs84(p2);
 
-        this.normal = new Vector3f((float)normald.x, (float)normald.y, (float)normald.z);
+            Vector3d v1 = new Vector3d(p1WC).sub(p0WC);
+            Vector3d v2 = new Vector3d(p2WC).sub(p0WC);
+            Vector3d normald = new Vector3d(v1).cross(v2).normalize();
 
+            this.normal = new Vector3f((float) normald.x, (float) normald.y, (float) normald.z);
+        }
     }
 }

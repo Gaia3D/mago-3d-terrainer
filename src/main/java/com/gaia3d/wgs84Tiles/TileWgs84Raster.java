@@ -82,15 +82,22 @@ public class TileWgs84Raster {
         deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth);
         deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight);
 
+        double semiDeltaLonDeg = deltaLonDeg * 0.5;
+        double semiDeltaLatDeg = deltaLatDeg * 0.5;
+
         boolean[] intersects = new boolean[1];
 
         for (int col = 0; col < rasterWidth; col++) {
-            double lonDeg = minLonDeg + col * deltaLonDeg;
+            double lonDeg = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;
             for (int row = 0; row < rasterHeight; row++) {
-                double latDeg = minLatDeg + row * deltaLatDeg;
+                double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
                 int idx = row * rasterWidth + col;
-                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, this.manager.memSave_terrainElevDatasArray);
+                elevations[idx] = (float) terrainElevationDataManager.getElevationNearest(lonDeg, latDeg, this.manager.memSave_terrainElevDatasArray);
             }
         }
+    }
+
+    public GeographicExtension getGeographicExtension() {
+        return this.geographicExtension;
     }
 }

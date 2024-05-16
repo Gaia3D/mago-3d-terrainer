@@ -60,7 +60,14 @@ public class GlobeUtils {
         return v;
     }
 
-    public static Matrix4d normalAtCartesianPointWgs84(double x, double y, double z) {
+    public static Vector3d normalAtCartesianPointWgs84(double x, double y, double z) {
+        Vector3d zAxis = new Vector3d(x / equatorialRadiusSquared, y / equatorialRadiusSquared, z / polarRadiusSquared);
+        zAxis.normalize();
+
+        return zAxis;
+    }
+
+    public static Matrix4d transformMatrixAtCartesianPointWgs84(double x, double y, double z) {
         Vector3d zAxis = new Vector3d(x / equatorialRadiusSquared, y / equatorialRadiusSquared, z / polarRadiusSquared);
         zAxis.normalize();
         Vector3d xAxis = new Vector3d(-y, +x, 0.0);
@@ -94,8 +101,8 @@ public class GlobeUtils {
         return transfromMatrix;
     }
 
-    public static Matrix4d normalAtCartesianPointWgs84(Vector3d position) {
-        return normalAtCartesianPointWgs84(position.x, position.y, position.z);
+    public static Matrix4d transformMatrixAtCartesianPointWgs84(Vector3d position) {
+        return transformMatrixAtCartesianPointWgs84(position.x, position.y, position.z);
     }
 
     public static Vector3d cartesianToGeographicWgs84(double poxX, double posY, double posZ) {

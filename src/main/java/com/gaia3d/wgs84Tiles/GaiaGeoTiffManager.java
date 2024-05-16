@@ -42,8 +42,8 @@ public class GaiaGeoTiffManager {
             File file = new File(geoTiffFilePath);
             GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
-//            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
-//            coverage = Interpolator2D.create(coverage, interpolation);
+            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
+            coverage = Interpolator2D.create(coverage, interpolation);
             log.debug("coverage: " + coverage);
             reader.dispose();
         } catch (Exception e) {
@@ -86,7 +86,6 @@ public class GaiaGeoTiffManager {
 
         return resizedCoverage;
     }
-
 
     public void saveGridCoverage2D(GridCoverage2D coverage, String outputFilePath) throws IOException {
         // now save the newCoverage as geotiff.***

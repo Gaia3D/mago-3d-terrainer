@@ -7,7 +7,6 @@ import org.joml.*;
 
 import java.lang.Math;
 import java.util.ArrayList;
-import java.util.Collections;
 
 public class QuantizedMeshManager {
     //https://github.com/CesiumGS/cesium/blob/master/Source/Core/CesiumTerrainProvider.js#L327
@@ -262,7 +261,7 @@ public class QuantizedMeshManager {
 
         // check if save normals.***
         if(calculateNormals) {
-            Matrix4d tMat = GlobeUtils.normalAtCartesianPointWgs84(cartesianWC[0], cartesianWC[1], cartesianWC[2]);
+            Matrix4d tMat = GlobeUtils.transformMatrixAtCartesianPointWgs84(cartesianWC[0], cartesianWC[1], cartesianWC[2]);
             Matrix3d rotMat = new Matrix3d();
             tMat.get3x3(rotMat);
 

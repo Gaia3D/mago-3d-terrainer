@@ -3,6 +3,7 @@ package com.gaia3d.wgs84Tiles;
 import com.gaia3d.basic.structure.GeographicExtension;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -11,6 +12,7 @@ import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
+import javax.media.jai.Interpolation;
 import java.awt.image.Raster;
 import java.io.IOException;
 
@@ -26,6 +28,7 @@ public class TerrainElevationData {
     public Vector2d pixelSizeMeters = null;
 
     GridCoverage2D coverage = null;
+    GridCoverage2D coverageNearest = null;
 
     Raster raster = null;
 
@@ -86,6 +89,61 @@ public class TerrainElevationData {
         return value;
     }
 
+    public double getElevationNearest(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
+        double resultAltitude = 0.0;
+
+        // 1rst check if lon, lat intersects with geoExtension.***
+        if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
+            intersects[0] = false;
+            return resultAltitude;
+        }
+
+        if (this.coverage == null) {
+            GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
+            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
+        }
+
+        if(this.coverageNearest == null) {
+            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
+            this.coverageNearest = Interpolator2D.create(this.coverage, interpolation);
+        }
+
+        // https://taylor.callsen.me/parsing-geotiff-files-in-java/
+        memSave_wgs84 = DefaultGeographicCRS.WGS84;
+
+        memSave_noDataContainer = CoverageUtilities.getNoDataProperty(coverageNearest);
+        //note :  DirectPosition2D(memSave_wgs84, lonDeg, latDeg); // longitude supplied first
+        if (memSave_posWorld == null) {
+            memSave_posWorld = new DirectPosition2D(memSave_wgs84, 0.0, 0.0);
+        }
+        memSave_posWorld.x = lonDeg;
+        memSave_posWorld.y = latDeg;
+
+        memSave_alt[0] = 0.0;
+        try {
+            coverageNearest.evaluate((DirectPosition) memSave_posWorld, memSave_alt);
+            intersects[0] = true;
+
+            // check if is NoData.***
+            if (memSave_noDataContainer != null) {
+                double nodata = memSave_noDataContainer.getAsSingleValue();
+                if (memSave_alt[0] == nodata) {
+                    return 0.0;
+                }
+            }
+        } catch (Exception e) {
+            //log.error(e.getMessage());
+            intersects[0] = false;
+            return resultAltitude;
+        }
+        // update min, max altitude.***
+        resultAltitude = memSave_alt[0];
+        minAltitude = Math.min(minAltitude, resultAltitude);
+        maxAltitude = Math.max(maxAltitude, resultAltitude);
+
+        return resultAltitude;
+    }
+
     public double getElevation(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
         double resultAltitude = 0.0;
 
@@ -135,43 +193,6 @@ public class TerrainElevationData {
         maxAltitude = Math.max(maxAltitude, resultAltitude);
 
         return resultAltitude;
-        /*
-        //double altDouble = altitude.
-
-        int coverageW = coverage.getRenderedImage().getWidth();
-        int coverageH = coverage.getRenderedImage().getHeight();
-        int pixelX = (int)((lonDeg - this.geographicExtension.getMinLongitudeDeg())/(this.geographicExtension.getLongitudeRangeDegree())*coverageW);
-        int pixelY = (int)((latDeg - this.geographicExtension.getMinLatitudeDeg())/(this.geographicExtension.getLatitudeRangeDegree())*coverageH);
-
-        // invert y.***
-        pixelY = coverageH - pixelY - 1;
-
-        // sample tiff data with at pixel coordinate
-        double[] rasterData = new double[1];
-        if(this.raster == null)
-        {
-            this.raster = this.coverage.getRenderedImage().getData();
-        }
-        this.raster.getPixel(pixelX, pixelY, rasterData);
-
-        if(noDataContainer != null)
-        {
-            double nodata = noDataContainer.getAsSingleValue();
-            if(rasterData[0] == nodata)
-            {
-                return resultAltitude;
-            }
-        }
-
-        resultAltitude = rasterData[0];
-
-        // update min, max altitude.***
-        minAltitude = Math.min(minAltitude, resultAltitude);
-        maxAltitude = Math.max(maxAltitude, resultAltitude);
-
-        return resultAltitude;
-
-         */
     }
 
 }

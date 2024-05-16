@@ -188,6 +188,46 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
+    public double getElevationNearest(double lonDeg, double latDeg, ArrayList<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
+        double resultElevation = 0.0;
+
+        if (this.geoTiffFilesCount == 1) {
+            if (uniqueTerrainElevationData == null) {
+                return resultElevation;
+            }
+
+            resultElevation = uniqueTerrainElevationData.getElevationNearest(lonDeg, latDeg, memSave_intersects);
+            return resultElevation;
+        }
+
+        if (rootTerrainElevationDataQuadTree == null) {
+            return resultElevation;
+        }
+
+        memSave_terrainElevDatasArray.clear();
+        rootTerrainElevationDataQuadTree.getTerrainElevationDatasArray(lonDeg, latDeg, memSave_terrainElevDatasArray);
+
+        memSave_intersects[0] = false;
+        int terrainElevDatasCount = memSave_terrainElevDatasArray.size();
+        for (int i = 0; i < terrainElevDatasCount; i++) {
+            TerrainElevationData terrainElevationData = memSave_terrainElevDatasArray.get(i);
+
+            double elevation = terrainElevationData.getElevationNearest(lonDeg, latDeg, memSave_intersects);
+            if (!memSave_intersects[0]) {
+                continue;
+            }
+
+            if (elevation < 0.0) {
+                elevation = 0.0;
+            }
+
+            resultElevation = elevation;
+            break;
+        }
+
+        return resultElevation;
+    }
+
     private void loadAllGeoTiff(String terrainElevationDataFolderPath) throws IOException, FactoryException, TransformException {
         // load all geoTiffFiles.***
         memSave_geoTiffFileNames.clear();

@@ -95,6 +95,10 @@ public class GeographicExtension {
         return maxGeographicCoordDeg.z - minGeographicCoordDeg.z;
     }
 
+    public Vector3d getMidPoint() {
+        return new Vector3d((maxGeographicCoordDeg.x + minGeographicCoordDeg.x) / 2.0, (maxGeographicCoordDeg.y + minGeographicCoordDeg.y) / 2.0, (maxGeographicCoordDeg.z + minGeographicCoordDeg.z) / 2.0);
+    }
+
     public boolean intersects(double lonDeg, double latDeg) {
         return lonDeg >= minGeographicCoordDeg.x && lonDeg <= maxGeographicCoordDeg.x && latDeg >= minGeographicCoordDeg.y && latDeg <= maxGeographicCoordDeg.y;
     }

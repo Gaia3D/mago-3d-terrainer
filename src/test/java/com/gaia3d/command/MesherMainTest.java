@@ -53,7 +53,7 @@ class MesherMainTest {
         String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\data_geoTiff\\5m";
         String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output\\";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(16);
+        String maxTileDepth = String.valueOf(18);
         String refinementStrength = String.valueOf(1);
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
@@ -108,7 +108,7 @@ class MesherMainTest {
         //*******************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(16);
+        String maxTileDepth = String.valueOf(18);
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\data\\DEM\\sejongDEM";
 
