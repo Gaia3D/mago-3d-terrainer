@@ -750,17 +750,21 @@ public class TileMatrix {
         }
 
         // check the barycenter of the triangle.***
+        GaiaPlane plane = triangle.getPlane();
         Vector3d barycenter = triangle.getBarycenter();
         int colIdx = tileRaster.getColumn(barycenter.x);
         int rowIdx = tileRaster.getRow(barycenter.y);
+        double baricenterLonDeg = tileRaster.getLonDeg(colIdx);
+        double baricenterLatDeg = tileRaster.getLatDeg(rowIdx);
+
         double elevation = tileRaster.getElevation(colIdx, rowIdx);
-        double planeElevation = barycenter.z;
+        double planeElevation = plane.getValueZ(baricenterLonDeg, baricenterLatDeg);
 
         double distToPlane = abs(elevation - planeElevation) * cosAng;
 
         if (distToPlane > maxDiff)
         {
-            log.debug("Baricenter : L : " + tileIndices.L + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+            log.debug("Filtered by Baricenter : L : " + tileIndices.L + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
             return true;
         }
 
@@ -777,31 +781,28 @@ public class TileMatrix {
             return false;
         }
 
-        double startLonDeg = bboxTriangle.getMinX();
-        double startLatDeg = bboxTriangle.getMinY();
+        double startLonDeg = tileRaster.getLonDeg(startCol); // here contains the semiDeltaLonDeg, for the pixel center.***
+        double startLatDeg = tileRaster.getLatDeg(startRow); // here contains the semiDeltaLatDeg, for the pixel center.***
 
         double deltaLonDeg = tileRaster.getDeltaLonDeg();
         double deltaLatDeg = tileRaster.getDeltaLatDeg();
 
         double pos_x;
         double pos_y;
-        GaiaPlane plane = triangle.getPlane();
+
         int colAux = 0;
         int rowAux = 0;
-        startLonDeg += deltaLonDeg * 0.5; // center of the pixel.***
-        startLatDeg += deltaLatDeg * 0.5; // center of the pixel.***
 
         boolean intersects = false;
         ArrayList<GaiaHalfEdge> memSave_hedges = new ArrayList<GaiaHalfEdge>();
         GaiaLine2D memSave_line = new GaiaLine2D();
-        double elevationFromTiff;
-        double scaleDiff = 1.0;
+
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
             pos_x = startLonDeg + colAux * deltaLonDeg;
             for (int row = startRow; row <= endRow; row++) {
 
-                // skip the 4 corners of the tile.***
+                // skip the 4 corners of the triangle's bounding rectangle.***
                 if (col == startCol && row == startRow) {
                     rowAux++;
                     continue;
@@ -833,15 +834,8 @@ public class TileMatrix {
                         continue;
                     }
 
-                    if(tileIndices.L == 18)
-                    {
-                        if(cosAng < 0.3)
-                        {
-                            int hola = 0;
-                            log.debug("RasterTile : L : " + tileIndices.L + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount);
-                        }
-                        int hola = 0;
-                    }
+                    log.debug("Filtered by RasterTile : L : " + tileIndices.L + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+
 
                     memSave_hedges.clear();
                     memSave_line.deleteObjects();
@@ -852,66 +846,6 @@ public class TileMatrix {
             colAux++;
         }
 
-//        TerrainElevationData terrainElevationData = terrainElevationDataManager.rootTerrainElevationDataQuadTree.getTerrainElevationData(barycenter.x, barycenter.y);
-//        Vector2d pixelSizeDeg = this.manager.memSave_pixelSizeDegrees;
-//        pixelSizeDeg.set(widthDeg / 256.0, heightDeg / 256.0);
-//        if(terrainElevationData != null)
-//        {
-//            terrainElevationData.getPixelSizeDegree(pixelSizeDeg);
-//        }
-//
-//        double pixelSizeX = Math.max(pixelSizeDeg.x, widthDeg / 256.0);
-//        double pixelSizeY = Math.max(pixelSizeDeg.y, heightDeg / 256.0);
-//
-//        GaiaPlane plane = triangle.getPlane();
-//
-//        int columnsCount = (int)(widthDeg / pixelSizeX);
-//        int rowsCount = (int)(heightDeg / pixelSizeY);
-//
-//        double bbox_minX = bboxTriangle.getMinX();
-//        double bbox_minY = bboxTriangle.getMinY();
-//
-//        boolean intersects = false;
-//        int counter = 0;
-//        ArrayList<GaiaHalfEdge> memSave_hedges = new ArrayList<GaiaHalfEdge>();
-//        GaiaLine2D memSave_line = new GaiaLine2D();
-//        for(int row = 0; row < rowsCount; row++)
-//        {
-//            double pos_y = bbox_minY + row * pixelSizeY;
-//            for(int column = 0; column < columnsCount; column++)
-//            {
-//                double pos_x = bbox_minX + column * pixelSizeX;
-//                intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
-//                counter++;
-//
-//                if(!intersects)
-//                {
-//                    continue;
-//                }
-//
-//                elevation = terrainElevationDataManager.getElevation(pos_x, pos_y, this.manager.memSave_terrainElevDatasArray);
-//                planeElevation = plane.getValueZ(pos_x, pos_y);
-//
-//                if(elevation > planeElevation)
-//                {
-//                    if(abs(elevation - planeElevation) > maxDiff)
-//                    {
-//                        memSave_hedges.clear();
-//                        memSave_line.deleteObjects();
-//                        return true;
-//                    }
-//                }
-//                else {
-//                    if(abs(elevation - planeElevation) > maxDiff)
-//                    {
-//                        memSave_hedges.clear();
-//                        memSave_line.deleteObjects();
-//                        return true;
-//                    }
-//                }
-//            }
-//        }
-//
         memSave_hedges.clear();
         memSave_line.deleteObjects();
 

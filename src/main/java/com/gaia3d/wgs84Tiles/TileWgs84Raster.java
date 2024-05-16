@@ -52,6 +52,16 @@ public class TileWgs84Raster {
         return (int) ((latDeg - minLatDeg) / deltaLatDeg);
     }
 
+    public double getLonDeg(int col) {
+        double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
+        return minLonDeg + col * deltaLonDeg + deltaLonDeg * 0.5;
+    }
+
+    public double getLatDeg(int row) {
+        double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
+        return minLatDeg + row * deltaLatDeg + deltaLatDeg * 0.5;
+    }
+
     public float getElevation(int col, int row) {
         if (col < 0 || col >= rasterWidth || row < 0 || row >= rasterHeight) {
             return Float.NaN;
