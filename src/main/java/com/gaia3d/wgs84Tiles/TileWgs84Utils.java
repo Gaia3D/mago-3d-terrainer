@@ -34,12 +34,15 @@ public class TileWgs84Utils {
         else if(depth == 11) return tileSize * 0.03;
         else if(depth == 12) return tileSize * 0.04;
         else if(depth == 13) return tileSize * 0.05;
-        else if(depth == 14) return tileSize * 0.06;
+        else if(depth == 14) return tileSize * 0.05; // 0.06 -> 0.05 : 20240517_1414.***
         else if(depth == 15) return tileSize * 0.06;
         else if(depth == 16) return tileSize * 0.07;
         else if(depth == 17) return tileSize * 0.14;
         else if(depth == 18) return tileSize * 0.24;
-        else return tileSize * 0.26;
+        else if(depth == 19) return tileSize * 0.3; // 0.24 -> 0.3 : 20240522_1431.***
+        else if(depth == 20) return tileSize * 0.36; // 0.24 -> 0.36 : 20240522_1431.***
+        else if(depth == 21) return tileSize * 0.4; // 0.24 -> 0.4 : 20240522_1431.***
+        else return tileSize * 0.5;
     }
 
     static public double selectTileAngleRangeByDepth(int depth) {
