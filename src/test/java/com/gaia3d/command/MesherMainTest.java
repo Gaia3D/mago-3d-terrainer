@@ -24,8 +24,9 @@ class MesherMainTest {
         String[] args = new String[]{
                 "-input", "D:\\dem\\sample-input\\",
                 "-output", "D:\\dem\\sample-output\\" + pathName,
+                "-log", "D:\\dem\\sample-output\\" + pathName + "\\log.txt",
                 "-min", "0",
-                "-max", "15",
+                "-max", "10",
                 //"-d",
         };
         MagoMesherMain.main(args);

@@ -11,7 +11,7 @@ public enum ProcessOptions
 
     INPUT("input", "i", "input", true, "Input folder path"),
     OUTPUT("output", "o", "output", true, "Output folder path"),
-    LOG("log", "l", "log", false, "Log file path"),
+    LOG("log", "l", "log", true, "Log file path"),
     DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
 
     MINIMUM_TILE_DEPTH("minDepth", "mn", "minDepth", true,"Minimum tile depth (0 ~ 22)"),
