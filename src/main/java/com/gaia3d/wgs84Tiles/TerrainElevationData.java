@@ -2,6 +2,7 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
 import it.geosolutions.jaiext.range.NoDataContainer;
+import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.coverage.util.CoverageUtilities;
@@ -16,7 +17,7 @@ import javax.media.jai.Interpolation;
 import java.awt.image.Raster;
 import java.io.IOException;
 
-
+@Slf4j
 public class TerrainElevationData {
 
     // the terrain elevation data is stored in a geotiff file.***
@@ -132,7 +133,7 @@ public class TerrainElevationData {
                 }
             }
         } catch (Exception e) {
-            //log.error(e.getMessage());
+            log.error("Error : {}", e.getMessage());
             intersects[0] = false;
             return resultAltitude;
         }
@@ -183,7 +184,7 @@ public class TerrainElevationData {
                 }
             }
         } catch (Exception e) {
-            //log.error(e.getMessage());
+            log.error(e.getMessage());
             intersects[0] = false;
             return resultAltitude;
         }

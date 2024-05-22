@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 
 @Slf4j
+@Deprecated
 public class MesherMain
 {
     public static String version = "1.0.1";
@@ -29,6 +30,7 @@ public class MesherMain
         try {
             geotoolsConfigurator.setEpsg();
         } catch (IOException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -72,11 +74,13 @@ public class MesherMain
         try {
             tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);
         } catch (IOException e) {
-
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         } catch (FactoryException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         } catch (TransformException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -97,10 +101,13 @@ public class MesherMain
             }
 
         } catch (FactoryException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         } catch (TransformException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         } catch (IOException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -108,10 +115,13 @@ public class MesherMain
         try {
             tileWgs84Manager.makeTileMeshes(); // original.***
         } catch (IOException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         } catch (TransformException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         } catch (FactoryException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         }
 

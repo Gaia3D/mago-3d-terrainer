@@ -26,10 +26,9 @@ public class GeotoolsConfigurator {
 
         CoordinateReferenceSystem crs = null;
         try {
-            //log.info("============EPSG:6737 start");
             crs = CRS.decode("EPSG:6737");
-            //log.info( crs.toWKT() );
         } catch (FactoryException e) {
+            log.error("Error : {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -37,7 +36,6 @@ public class GeotoolsConfigurator {
             ReferencingFactoryContainer referencingFactoryContainer = ReferencingFactoryContainer.instance(hints);
             PropertyAuthorityFactory factory = new PropertyAuthorityFactory(referencingFactoryContainer, Citations.fromName("EPSG"), epsg);
 
-            //ReferencingFactoryFinder.addAuthorityFactory(factory);
             ReferencingFactoryFinder.scanForPlugins();
 
             Set<CRSAuthorityFactory> factories = ReferencingFactoryFinder.getCRSAuthorityFactories(hints);
@@ -46,16 +44,11 @@ public class GeotoolsConfigurator {
                 log.info("{}", f);
             });
 
-
-            //log.info("============EPSG properties loaded from {}", epsg);
-
             crs = null;
             try {
-                //log.info("============EPSG:6737 start");
                 crs = CRS.decode("EPSG:6737");
-                //log.info( crs.toWKT() );
             } catch (FactoryException e) {
-                log.error(e.getMessage());
+                log.error("Error : {}", e.getMessage());
                 throw new RuntimeException(e);
             }
         }

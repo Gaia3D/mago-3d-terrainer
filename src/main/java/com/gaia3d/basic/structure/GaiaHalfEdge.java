@@ -307,7 +307,7 @@ public class GaiaHalfEdge {
 
             int hola = 0;
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Error : {}", e.getMessage());
         }
     }
 
