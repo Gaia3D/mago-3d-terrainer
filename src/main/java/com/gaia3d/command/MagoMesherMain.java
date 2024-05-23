@@ -30,17 +30,23 @@ public class MagoMesherMain {
             GeotoolsConfigurator geotoolsConfigurator = new GeotoolsConfigurator();
             TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
             geotoolsConfigurator.setEpsg();
-            tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT.getArgName());
+            tileWgs84Manager.setOriginalGeoTiffFolderPath(command.getOptionValue(ProcessOptions.INPUT.getArgName()));
 
-            Configurator.initConsoleLogger();
-            if (hasLogPath) {
-                Configurator.initFileLogger(null, command.getOptionValue(ProcessOptions.LOG.getArgName()));
-            }
             if (command.hasOption(ProcessOptions.DEBUG.getArgName())) {
+                Configurator.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
+                if (hasLogPath) {
+                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(ProcessOptions.LOG.getArgName()));
+                }
                 Configurator.setLevel(Level.DEBUG);
             } else {
+                Configurator.initConsoleLogger();
+                if (hasLogPath) {
+                    Configurator.initFileLogger(null, command.getOptionValue(ProcessOptions.LOG.getArgName()));
+                }
                 Configurator.setLevel(Level.INFO);
             }
+
+
             printStart();
 
             if (isHelp) {
@@ -53,52 +59,55 @@ public class MagoMesherMain {
             }
 
             if (command.hasOption(ProcessOptions.INPUT.getArgName())) {
-                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT.getArgName());
+                tileWgs84Manager.setOriginalGeoTiffFolderPath(command.getOptionValue(ProcessOptions.INPUT.getArgName()));
             } else {
                 throw new RuntimeException("Input folder path is required.");
             }
 
             if (command.hasOption(ProcessOptions.OUTPUT.getArgName())) {
-                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT.getArgName());
-                tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
-                tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
+                tileWgs84Manager.setOutputDirectory(command.getOptionValue(ProcessOptions.OUTPUT.getArgName()));
+                tileWgs84Manager.setTileTempDirectory(tileWgs84Manager.getOutputDirectory() + File.separator + "TileTemp");
+                tileWgs84Manager.setTempResizedGeoTiffFolderPath(tileWgs84Manager.getOutputDirectory() + File.separator + "ResizedGeoTiff");
             } else {
                 throw new RuntimeException("Output folder path is required.");
             }
 
             if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
-                tileWgs84Manager.minTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName()));
+                tileWgs84Manager.setMinTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())));
             } else {
                 log.info("Minimum tile depth is not set. Default value is " + DEFAULT_MINIMUM_TILE_DEPTH);
-                tileWgs84Manager.minTileDepth = DEFAULT_MINIMUM_TILE_DEPTH;
+                tileWgs84Manager.setMinTileDepth(DEFAULT_MINIMUM_TILE_DEPTH);
             }
 
             if (command.hasOption(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
-                tileWgs84Manager.maxTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
+                tileWgs84Manager.setMaxTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())));
             } else {
                 log.info("Maximum tile depth is not set. Default value is " + DEFAULT_MAXIMUM_TILE_DEPTH);
-                tileWgs84Manager.maxTileDepth = DEFAULT_MAXIMUM_TILE_DEPTH;
+                tileWgs84Manager.setMaxTileDepth(DEFAULT_MAXIMUM_TILE_DEPTH);
             }
+
+            GlobalOptions.init(command);
 
             if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
                 tileWgs84Manager.setCalculateNormals(true);
             }
 
             log.info("[Resize GeoTiff] Start resizing GeoTiff files.");
-            tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);
+            tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.getOriginalGeoTiffFolderPath(), null);
             log.info("[Resize GeoTiff] Finished resizing GeoTiff files.");
 
             log.info("[Make Terrain Elevation Data] Start making terrain elevation data.");
-            tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
-            tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + File.separator + "0");
+            tileWgs84Manager.setTerrainElevationDataManager(new com.gaia3d.wgs84Tiles.TerrainElevationDataManager());
+            tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(tileWgs84Manager.getTempResizedGeoTiffFolderPath() + File.separator + "0");
             if (tileWgs84Manager.getGeoTiffFilesCount() == 1) {
-                tileWgs84Manager.terrainElevationDataManager.setGeoTiffFilesCount(1);
-                tileWgs84Manager.terrainElevationDataManager.setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
-                tileWgs84Manager.terrainElevationDataManager.MakeUniqueTerrainElevationData();
+                tileWgs84Manager.getTerrainElevationDataManager().setGeoTiffFilesCount(1);
+                tileWgs84Manager.getTerrainElevationDataManager().setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
+                tileWgs84Manager.getTerrainElevationDataManager().MakeUniqueTerrainElevationData();
             } else {
-                tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
+                tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree();
             }
             log.info("[Make Terrain Elevation Data] Finished making terrain elevation data.");
+
             log.info("[Make Tile Meshes] Start making tile meshes.");
             tileWgs84Manager.makeTileMeshes();
             log.info("[Make Tile Meshes] Finished making tile meshes.");

@@ -2,12 +2,12 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GaiaTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.reader.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.CRS;
-import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -18,14 +18,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
 public class TerrainElevationDataManager {
-    public ArrayList<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
-    public ArrayList<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
+    public List<TerrainElevationData> memSave_terrainElevDatasArray = new ArrayList<TerrainElevationData>();
+    public List<GaiaTriangle> memSave_trianglesArray = new ArrayList<GaiaTriangle>();
     public Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<String, TileWgs84Raster>();
-    // Inside the folder, there are multiple geoTiff files.***
+    // Inside the folder, there are multiple geoTiff files
     @Setter
     @Getter
     String terrainElevationDataFolderPath;
@@ -34,33 +35,31 @@ public class TerrainElevationDataManager {
     int geoTiffFilesCount = 0;
     @Setter
     @Getter
-    String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file.***
-    TerrainElevationData uniqueTerrainElevationData = null; // use this if there is only one geoTiff file.***
-    // if there are multiple geoTiff files, use this.***
+    String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file
+    TerrainElevationData uniqueTerrainElevationData = null; // use this if there is only one geoTiff file
+    // if there are multiple geoTiff files, use this
     int quadtreesMaxDepth = 10;
     TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree;
     GaiaGeoTiffManager gaiaGeoTiffManager = null;
     boolean[] memSave_intersects = {false};
-    ArrayList<String> memSave_geoTiffFileNames = new ArrayList<String>();
+    List<String> memSave_geoTiffFileNames = new ArrayList<String>();
 
     public TerrainElevationDataManager() {
         rootTerrainElevationDataQuadTree = null;
     }
 
     public void makeTerrainQuadTree() throws FactoryException, TransformException, IOException {
-        // load all geoTiffFiles & make a quadTree.***
+        // load all geoTiffFiles & make a quadTree
         loadAllGeoTiff(terrainElevationDataFolderPath);
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreesMaxDepth);
-        int hola = 0;
     }
 
     public void MakeUniqueTerrainElevationData() throws FactoryException, TransformException, IOException {
-        log.info("MakeUniqueTerrainElevationData() started.***");
+        log.info("MakeUniqueTerrainElevationData() started");
 
         if (uniqueGeoTiffFilePath == null) {
             return;
         }
-
 
 
         if (gaiaGeoTiffManager == null) {
@@ -80,15 +79,15 @@ public class TerrainElevationDataManager {
         uniqueTerrainElevationData.pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D);
 
         gridCoverage2D.dispose(true);
-        log.info("MakeUniqueTerrainElevationData() ended.***");
+        log.info("MakeUniqueTerrainElevationData() ended");
     }
 
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
         TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
         if (tileWgs84Raster == null) {
             tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
-            int tileRasterWidth = tileWgs84Manager.tileRasterSize;
-            int tileRasterHeight = tileWgs84Manager.tileRasterSize;
+            int tileRasterWidth = tileWgs84Manager.getTileRasterSize();
+            int tileRasterHeight = tileWgs84Manager.getTileRasterSize();
             tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
             mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
         }
@@ -148,7 +147,7 @@ public class TerrainElevationDataManager {
         rootTerrainElevationDataQuadTree = null;
     }
 
-    public double getElevation(double lonDeg, double latDeg, ArrayList<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
+    public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
         double resultElevation = 0.0;
 
         if (this.geoTiffFilesCount == 1) {
@@ -168,10 +167,7 @@ public class TerrainElevationDataManager {
         rootTerrainElevationDataQuadTree.getTerrainElevationDatasArray(lonDeg, latDeg, memSave_terrainElevDatasArray);
 
         memSave_intersects[0] = false;
-        int terrainElevDatasCount = memSave_terrainElevDatasArray.size();
-        for (int i = 0; i < terrainElevDatasCount; i++) {
-            TerrainElevationData terrainElevationData = memSave_terrainElevDatasArray.get(i);
-
+        for (TerrainElevationData terrainElevationData : memSave_terrainElevDatasArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, memSave_intersects);
             if (!memSave_intersects[0]) {
                 continue;
@@ -188,7 +184,7 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
-    public double getElevationNearest(double lonDeg, double latDeg, ArrayList<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
+    public double getElevationNearest(double lonDeg, double latDeg, List<TerrainElevationData> memSave_terrainElevDatasArray) throws TransformException, IOException {
         double resultElevation = 0.0;
 
         if (this.geoTiffFilesCount == 1) {
@@ -208,10 +204,7 @@ public class TerrainElevationDataManager {
         rootTerrainElevationDataQuadTree.getTerrainElevationDatasArray(lonDeg, latDeg, memSave_terrainElevDatasArray);
 
         memSave_intersects[0] = false;
-        int terrainElevDatasCount = memSave_terrainElevDatasArray.size();
-        for (int i = 0; i < terrainElevDatasCount; i++) {
-            TerrainElevationData terrainElevationData = memSave_terrainElevDatasArray.get(i);
-
+        for (TerrainElevationData terrainElevationData : memSave_terrainElevDatasArray) {
             double elevation = terrainElevationData.getElevationNearest(lonDeg, latDeg, memSave_intersects);
             if (!memSave_intersects[0]) {
                 continue;
@@ -229,7 +222,7 @@ public class TerrainElevationDataManager {
     }
 
     private void loadAllGeoTiff(String terrainElevationDataFolderPath) throws IOException, FactoryException, TransformException {
-        // load all geoTiffFiles.***
+        // load all geoTiffFiles
         memSave_geoTiffFileNames.clear();
         com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", memSave_geoTiffFileNames);
 
@@ -242,8 +235,7 @@ public class TerrainElevationDataManager {
             rootTerrainElevationDataQuadTree = new TerrainElevationDataQuadTree(null);
         }
 
-        // now load all geotiff and make geotiff geoExtension data.***
-        int geoTiffCount = memSave_geoTiffFileNames.size();
+        // now load all geotiff and make geotiff geoExtension data
         GridCoverage2D gridCoverage2D = null;
         String geoTiffFileName = null;
         String geoTiffFilePath = null;
@@ -252,8 +244,8 @@ public class TerrainElevationDataManager {
         CoordinateReferenceSystem crsWgs84 = null;
         MathTransform targetToWgs = null;
 
-        for (int i = 0; i < geoTiffCount; i++) {
-            geoTiffFileName = memSave_geoTiffFileNames.get(i);
+        for (String memSaveGeoTiffFileName : memSave_geoTiffFileNames) {
+            geoTiffFileName = memSaveGeoTiffFileName;
             geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
 
@@ -269,21 +261,16 @@ public class TerrainElevationDataManager {
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
             gridCoverage2D.dispose(true);
-            int hola = 0;
+
         }
 
-        // now check if exist folders inside the terrainElevationDataFolderPath.***
-        ArrayList<String> folderNames = new ArrayList<String>();
-        com.gaia3d.reader.FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
+        // now check if exist folders inside the terrainElevationDataFolderPath
+        List<String> folderNames = new ArrayList<>();
+        FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
         int folderCount = folderNames.size();
-        for (int i = 0; i < folderCount; i++) {
-            String folderName = folderNames.get(i);
+        for (String folderName : folderNames) {
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
             loadAllGeoTiff(folderPath);
         }
-
-        int hola = 0;
     }
-
-
 }

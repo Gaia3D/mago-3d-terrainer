@@ -23,7 +23,7 @@ public enum HalfEdgeType {
     DOWN(3),
     INTERIOR(4);
 
-    private int value;
+    private final int value;
 
     public static HalfEdgeType fromValue(int value) {
         for (HalfEdgeType type : HalfEdgeType.values()) {

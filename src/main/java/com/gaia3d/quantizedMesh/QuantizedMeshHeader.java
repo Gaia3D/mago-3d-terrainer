@@ -51,6 +51,6 @@ public class QuantizedMeshHeader {
         dataOutputStream.writeDouble(HorizonOcclusionPointZ);
 
 
-        int hola = 0;
+        
     }
 }

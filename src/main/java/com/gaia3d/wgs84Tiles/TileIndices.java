@@ -2,8 +2,6 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
-import com.gaia3d.util.io.LittleEndianDataInputStream;
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -11,7 +9,7 @@ import java.io.IOException;
 @Slf4j
 public class TileIndices {
 
-    // child tile indices.***
+    // child tile indices
     //    +--------+--------+
     //    |        |        |
     //    |   LU   |   RU   |
@@ -77,7 +75,7 @@ public class TileIndices {
     }
 
     public boolean isValid() {
-        // for each tile depth (L), there are minX & maxX, minY & maxY.***
+        // for each tile depth (L), there are minX & maxX, minY & maxY
         return TileWgs84Utils.isValidTileIndices(L, X, Y);
     }
 

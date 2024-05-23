@@ -1,10 +1,14 @@
 package com.gaia3d.basic.structure;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.joml.Vector3d;
 
+@Getter
+@Setter
 public class GeographicExtension {
-    public Vector3d minGeographicCoordDeg = new Vector3d();
-    public Vector3d maxGeographicCoordDeg = new Vector3d();
+    private Vector3d minGeographicCoordDeg = new Vector3d();
+    private Vector3d maxGeographicCoordDeg = new Vector3d();
 
     public void setDegrees(double minLonDeg, double minLatDeg, double minAlt, double maxLonDeg, double maxLatDeg, double maxAlt) {
         minGeographicCoordDeg.set(minLonDeg, minLatDeg, minAlt);

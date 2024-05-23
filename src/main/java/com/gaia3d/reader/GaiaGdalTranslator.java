@@ -4,17 +4,17 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 public class GaiaGdalTranslator {
 
-    public void createGdalCommand_convertImgToGeoTiff(String inputFolderPath, String outputFolderPath, ArrayList<String> commandsList) {
-        // find all files *.img.***
-        // for each file, create a gdal command.***
-        ArrayList<String> fileNames = new ArrayList();
+    public void createGdalCommand_convertImgToGeoTiff(String inputFolderPath, String outputFolderPath, List<String> commandsList) {
+        // find all files *.img
+        // for each file, create a gdal command
+        List<String> fileNames = new ArrayList<>();
         FileUtils.getFileNames(inputFolderPath, ".img", fileNames);
 
-        for (int i = 0; i < fileNames.size(); i++) {
-            String fileName = fileNames.get(i);
+        for (String fileName : fileNames) {
             String rawFileName = FilenameUtils.removeExtension(fileName); // remove extension. (".img"
             String inputFilePath = inputFolderPath + File.separator + fileName;
             String outputFilePath = outputFolderPath + File.separator + rawFileName + ".tif";
@@ -23,12 +23,11 @@ public class GaiaGdalTranslator {
             commandsList.add(command);
         }
 
-        // now, check if exist folders.***
-        ArrayList<String> folderNames = new ArrayList();
+        // now, check if exist folders
+        List<String> folderNames = new ArrayList<>();
         FileUtils.getFolderNames(inputFolderPath, folderNames);
 
-        for (int i = 0; i < folderNames.size(); i++) {
-            String folderName = folderNames.get(i);
+        for (String folderName : folderNames) {
             String inputFolderPath2 = inputFolderPath + "/" + folderName;
             String outputFolderPath2 = outputFolderPath + "/" + folderName;
 

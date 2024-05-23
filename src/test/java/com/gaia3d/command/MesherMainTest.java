@@ -9,7 +9,7 @@ import java.io.IOException;
 
 class MesherMainTest {
     //****************************************************************
-    // Note : the outFolder must be different from the inputFolder.***
+    // Note : the outFolder must be different from the inputFolder
     //****************************************************************
 
     @Test
@@ -27,7 +27,7 @@ class MesherMainTest {
                 "-log", "D:\\dem\\sample-output\\" + pathName + "\\log.txt",
                 "-min", "0",
                 "-max", "10",
-                //"-d",
+                "-d",
         };
         MagoMesherMain.main(args);
     }
@@ -36,7 +36,7 @@ class MesherMainTest {
     @Test
     void main() throws FactoryException, TransformException, IOException {
         //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
+        // Note : the outFolder must be different from the inputFolder
         //****************************************************************
         String originalGeoTiffFolderPath = "D:\\dem\\input";
         String outputDirectory = "D:\\dem\\korea-3m\\";
@@ -49,7 +49,7 @@ class MesherMainTest {
     @Test
     void main_korea() throws FactoryException, TransformException, IOException {
         //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
+        // Note : the outFolder must be different from the inputFolder
         //****************************************************************
         String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\data_geoTiff\\5m";
         String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output\\";
@@ -62,7 +62,7 @@ class MesherMainTest {
     @Test
     void main_earth() throws FactoryException, TransformException, IOException {
         //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
+        // Note : the outFolder must be different from the inputFolder
         //****************************************************************
         String originalGeoTiffFolderPath = "D:\\data\\DEM\\wholeEarth";
         String outputDirectory = "D:\\data\\DEM_output\\output\\";
@@ -76,7 +76,7 @@ class MesherMainTest {
     //@Test
     void main_smallMountainForTrees() throws FactoryException, TransformException, IOException {
         //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
+        // Note : the outFolder must be different from the inputFolder
         //****************************************************************
         String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output";
         String minTileDepth = String.valueOf(0);
@@ -91,7 +91,7 @@ class MesherMainTest {
     @Test
     void main_ws2() throws FactoryException, TransformException, IOException {
         //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
+        // Note : the outFolder must be different from the inputFolder
         //****************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
@@ -105,7 +105,7 @@ class MesherMainTest {
     @Test
     void main_sejong() throws FactoryException, TransformException, IOException {
         //*******************************************************************
-        // Note : the outputFolder must be different from the inputFolder.***
+        // Note : the outputFolder must be different from the inputFolder
         //*******************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
@@ -119,7 +119,7 @@ class MesherMainTest {
     @Test
     void main_sejongCompressedGeoTiff() throws FactoryException, TransformException, IOException {
         //*******************************************************************
-        // Note : the outputFolder must be different from the inputFolder.***
+        // Note : the outputFolder must be different from the inputFolder
         //*******************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
@@ -133,7 +133,7 @@ class MesherMainTest {
     //@Test
     void main_generalTest() throws FactoryException, TransformException, IOException {
         //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
+        // Note : the outFolder must be different from the inputFolder
         //****************************************************************
         String outputDirectory = "D:\\data\\DEM_output\\output";
         String minTileDepth = String.valueOf(0);
@@ -147,7 +147,7 @@ class MesherMainTest {
     //@Test
     void main_generalTest2() throws FactoryException, TransformException, IOException {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(14);
-        int hola = 0;
+        
 
     }
 

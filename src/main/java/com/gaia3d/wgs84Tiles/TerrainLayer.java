@@ -29,7 +29,7 @@ public class TerrainLayer {
 
     String projection = null;
     double[] bounds = null;
-    ArrayList<TilesRange> available = new ArrayList<TilesRange>();
+    List<TilesRange> available = new ArrayList<TilesRange>();
 
     public TerrainLayer() {
         this.setDefault();
@@ -70,7 +70,7 @@ public class TerrainLayer {
     }
 
     public void addExtension(String extension) {
-        if(this.extensions == null) {
+        if (this.extensions == null) {
             this.extensions = new ArrayList<String>();
         }
         this.extensions.add(extension);
@@ -96,7 +96,7 @@ public class TerrainLayer {
         objectNodeRoot.putArray("tiles").add(this.tiles[0]);
         objectNodeRoot.putArray("bounds").add(this.bounds[0]).add(this.bounds[1]).add(this.bounds[2]).add(this.bounds[3]);
 
-        if(this.extensions != null && this.extensions.size() > 0) {
+        if (this.extensions != null && this.extensions.size() > 0) {
             ArrayNode objectNodeExtensions = objectMapper.createArrayNode();
             for (String extension : this.extensions) {
                 objectNodeExtensions.add(extension);
@@ -122,7 +122,7 @@ public class TerrainLayer {
 
         objectNodeRoot.set("available", objectNodeAvailable);
 
-        // Save the json index file.***
+        // Save the json index file
         try {
             JsonNode jsonNode = new ObjectMapper().readTree(objectNodeRoot.toString());
             objectMapper.writeValue(new File(fullFileName), jsonNode);

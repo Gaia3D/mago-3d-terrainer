@@ -4,12 +4,9 @@ import com.gaia3d.basic.structure.GaiaBoundingBox;
 import com.gaia3d.basic.structure.GaiaMesh;
 import com.gaia3d.basic.structure.GaiaVertex;
 import com.gaia3d.basic.structure.GeographicExtension;
-import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.GlobeUtils;
-import org.joml.Vector2d;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,35 +14,34 @@ import static java.lang.Math.abs;
 
 public class TileWgs84Utils {
 
-    static public double getTileSizeInMetersByDepth(int depth) {
+    public static double getTileSizeInMetersByDepth(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         double angRad = angDeg * Math.PI / 180.0;
         double equatorialRadius = GlobeUtils.getEquatorialRadius();
-        double tileSizeInMeters = angRad * equatorialRadius;
-        return tileSizeInMeters;
+        return angRad * equatorialRadius;
     }
 
-    static public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
+    public static double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
         if (depth < 5) return tileSize * 0.01;
-        else if(depth <= 8) return tileSize * 0.01;
-        else if(depth == 9) return tileSize * 0.01;
-        else if(depth == 10) return tileSize * 0.02;
-        else if(depth == 11) return tileSize * 0.03;
-        else if(depth == 12) return tileSize * 0.04;
-        else if(depth == 13) return tileSize * 0.05;
-        else if(depth == 14) return tileSize * 0.05; // 0.06 -> 0.05 : 20240517_1414.***
-        else if(depth == 15) return tileSize * 0.06;
-        else if(depth == 16) return tileSize * 0.07;
-        else if(depth == 17) return tileSize * 0.14;
-        else if(depth == 18) return tileSize * 0.24;
-        else if(depth == 19) return tileSize * 0.3; // 0.24 -> 0.3 : 20240522_1431.***
-        else if(depth == 20) return tileSize * 0.36; // 0.24 -> 0.36 : 20240522_1431.***
-        else if(depth == 21) return tileSize * 0.4; // 0.24 -> 0.4 : 20240522_1431.***
+        else if (depth <= 8) return tileSize * 0.01;
+        else if (depth == 9) return tileSize * 0.01;
+        else if (depth == 10) return tileSize * 0.02;
+        else if (depth == 11) return tileSize * 0.03;
+        else if (depth == 12) return tileSize * 0.04;
+        else if (depth == 13) return tileSize * 0.05;
+        else if (depth == 14) return tileSize * 0.05; // 0.06 -> 0.05 : 20240517_1414
+        else if (depth == 15) return tileSize * 0.06;
+        else if (depth == 16) return tileSize * 0.07;
+        else if (depth == 17) return tileSize * 0.14;
+        else if (depth == 18) return tileSize * 0.24;
+        else if (depth == 19) return tileSize * 0.3; // 0.24 -> 0.3 : 20240522_1431
+        else if (depth == 20) return tileSize * 0.36; // 0.24 -> 0.36 : 20240522_1431
+        else if (depth == 21) return tileSize * 0.4; // 0.24 -> 0.4 : 20240522_1431
         else return tileSize * 0.5;
     }
 
-    static public double selectTileAngleRangeByDepth(int depth) {
+    public static double selectTileAngleRangeByDepth(int depth) {
         // given tile depth, this function returns the latitude angle range of the tile
         if (depth < 0 || depth > 28) {
             return -1.0;
@@ -55,42 +51,24 @@ public class TileWgs84Utils {
     }
 
 
-    static public int getRefinementIterations(int depth) {
+    public static int getRefinementIterations(int depth) {
         if (depth < 0 || depth > 28) {
             return 5;
         }
 
-//        if(depth >= 0 && depth < 6)
-//        {
-//            return 4;
-//        }
-//        else if(depth >= 6 && depth < 10)
-//        {
-//            return 3;
-//        }
-//        else if(depth >= 10 && depth < 20)
-//        {
-//            return 2;
-//        }
-//        else
-//        {
-//            return 2;
-//        }
-
-        if (depth >= 0 && depth < 6) {
+        if (depth < 6) {
             return 15;
-        } else if (depth >= 6 && depth < 10) {
+        } else if (depth < 10) {
             return 15;
-        } else if (depth >= 10 && depth < 20) {
+        } else if (depth < 20) {
             return 15;
         } else {
             return 15;
         }
-
     }
 
 
-    static public TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices, boolean originIsLeftUp) {
+    public static TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices, boolean originIsLeftUp) {
         // Given a geographic point (longitude, latitude) & a depth, this function returns the tileIndices for the specific depth.**
         double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
 
@@ -119,7 +97,7 @@ public class TileWgs84Utils {
         return resultTileIndices;
     }
 
-    static public void selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, TilesRange tilesRange, boolean originIsLeftUp) {
+    public static void selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, TilesRange tilesRange, boolean originIsLeftUp) {
         // Given a geographic rectangle (minLon, minLat, maxLon, maxLat) & a depth, this function returns all
         // tilesIndices intersected by the rectangle for the specific depth.**
         TileIndices leftDownTileName = TileWgs84Utils.selectTileIndices(depth, minLon, minLat, null, originIsLeftUp);
@@ -149,26 +127,21 @@ public class TileWgs84Utils {
 
         if (maxX < xIndexMax) {
             maxX = xIndexMax;
-            int hola = 0;
         }
 
         if (maxY < yIndexMax) {
             maxY = yIndexMax;
-            int hola = 0;
         }
 
         if (minX > xIndexMin) {
             minX = xIndexMin;
-            int hola = 0;
         }
 
         if (minY > yIndexMin) {
             minY = yIndexMin;
-            int hola = 0;
         }
 
-
-        // the "tilesRange" is optional.***
+        // the "tilesRange" is optional
         if (tilesRange != null) {
             tilesRange.tileDepth = depth;
             tilesRange.minTileX = minX;
@@ -176,44 +149,30 @@ public class TileWgs84Utils {
             tilesRange.minTileY = minY;
             tilesRange.maxTileY = maxY;
         }
-
-//        if (resultTileIndicesArray == null) {
-//            resultTileIndicesArray = new ArrayList<TileIndices>();
-//        }
-//
-//        for (var x = minX; x <= maxX; x++) {
-//            for (var y = minY; y <= maxY; y++) {
-//                TileIndices tileIndices = new TileIndices();
-//                tileIndices.set(x, y, depth);
-//                resultTileIndicesArray.add(tileIndices);
-//            }
-//        }
-//
-//        return resultTileIndicesArray;
     }
 
-    static public String getTileFileName(int X, int Y, int L) {
+    public static String getTileFileName(int X, int Y, int L) {
         return "L" + L + "_X" + X + "_Y" + Y + ".til";
     }
 
-    static public String getTileFolderName_L(int L) {
+    public static String getTileFolderName_L(int L) {
         return "L" + L;
     }
 
-    static public String getTileFolderName_X(int X) {
+    public static String getTileFolderName_X(int X) {
         return "X" + X;
     }
 
-    static public String getTileFilePath(int X, int Y, int L) {
+    public static String getTileFilePath(int X, int Y, int L) {
         return getTileFolderName_L(L) + File.separator + getTileFolderName_X(X) + File.separator + getTileFileName(X, Y, L);
     }
 
-    static public int getTileIndiceMaxX(int depth) {
+    public static int getTileIndiceMaxX(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         return (int) (360.0 / angDeg);
     }
 
-    static public int getTileIndiceMaxY(int depth) {
+    public static int getTileIndiceMaxY(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         return (int) (180.0 / angDeg);
     }
@@ -262,10 +221,10 @@ public class TileWgs84Utils {
     }
 
     static boolean isValidTileIndices(int L, int X, int Y) {
-        // calculate the minX & minY, maxX & maxY for the tile depth(L).***
+        // calculate the minX & minY, maxX & maxY for the tile depth(L)
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(L);
 
-        // in longitude, the range is (-180, 180).***
+        // in longitude, the range is (-180, 180)
         int numTilesX = (int) (360.0 / angDeg);
         int numTilesY = (int) (180.0 / angDeg);
 
@@ -276,17 +235,17 @@ public class TileWgs84Utils {
         return Y >= 0 && Y < numTilesY;
     }
 
-    static public boolean checkTile_test(GaiaMesh mesh, double error, boolean originIsLeftUp) {
-        ArrayList<GaiaVertex> resultVertices = new ArrayList<GaiaVertex>();
+    public static boolean checkTile_test(GaiaMesh mesh, double error, boolean originIsLeftUp) {
+        List<GaiaVertex> resultVertices = new ArrayList<GaiaVertex>();
         mesh.getVerticesByTriangles(resultVertices);
 
         if (resultVertices.size() != mesh.vertices.size()) {
             return false;
         }
 
-        // check the boundingBox of the tile.***
+        // check the boundingBox of the tile
         GaiaBoundingBox bbox = mesh.getBoundingBox();
-        TileIndices tileIndices = mesh.triangles.get(0).ownerTile_tileIndices;
+        TileIndices tileIndices = mesh.triangles.get(0).getOwnerTileIndices();
         GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, "CRS84", originIsLeftUp);
         double minX = bbox.getMinX();
         double minY = bbox.getMinY();
@@ -308,12 +267,12 @@ public class TileWgs84Utils {
         return !(abs(maxY - geographicExtension.getMaxLatitudeDeg()) > error);
     }
 
-    static public GeographicExtension getGeographicExtentOfTileLXY(int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType, boolean originIsLeftUp) {
+    public static GeographicExtension getGeographicExtentOfTileLXY(int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType, boolean originIsLeftUp) {
         if (resultGeoExtend == null) {
             resultGeoExtend = new GeographicExtension();
         }
 
-        if (imageryType == "CRS84") {
+        if (imageryType.equals("CRS84")) {
             double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(L);
             double minLon = angRange * (double) X - 180.0;
             double maxLon = angRange * ((double) X + 1.0) - 180.0;
@@ -327,17 +286,17 @@ public class TileWgs84Utils {
 
             resultGeoExtend.setDegrees(minLon, minLat, 0, maxLon, maxLat, 0);
             return resultGeoExtend;
-        } else if (imageryType == "WEB_MERCATOR") {
+        } else if (imageryType.equals("WEB_MERCATOR")) {
             double webMercatorMaxLatRad = 1.4844222297453324; // = 2*Math.atan(Math.pow(Math.E, Math.PI)) - (Math.PI/2);
 
-            // 1rst, must know how many colums & rows there are in depth "L".***
+            // 1rst, must know how many colums & rows there are in depth "L"
             double numCols = Math.pow(2, L);
             double numRows = numCols;
 
             // calculate the angles of the tiles.
-            double lonAngDegRange = 360.0 / numCols; // the longitude are lineal.***
+            double lonAngDegRange = 360.0 / numCols; // the longitude are lineal
 
-            // In depth L=0, the latitude range is (-webMercatorMaxLatRad, webMercatorMaxLatRad).***
+            // In depth L=0, the latitude range is (-webMercatorMaxLatRad, webMercatorMaxLatRad)
             double M_PI = Math.PI;
             double M_E = Math.E;
             double maxMercatorY = M_PI;
@@ -351,33 +310,33 @@ public class TileWgs84Utils {
             boolean finished = false;
             while (!finished && currL <= 22) {
                 if (currL == L) {
-                    double min_longitude = lonAngDegRange * (double) X - 180.0;
-                    double max_longitude = min_longitude + lonAngDegRange;
-                    double min_latitude = minLadRad * 180.0 / M_PI;
-                    double max_latitude = maxLadRad * 180.0 / M_PI;
+                    double minLongitude = lonAngDegRange * (double) X - 180.0;
+                    double maxLongitude = minLongitude + lonAngDegRange;
+                    double minLatitude = minLadRad * 180.0 / M_PI;
+                    double maxLatitude = maxLadRad * 180.0 / M_PI;
 
-                    resultGeoExtend.setDegrees(min_longitude, min_latitude, 0, max_longitude, max_latitude, 0);
+                    resultGeoExtend.setDegrees(minLongitude, minLatitude, 0, maxLongitude, maxLatitude, 0);
                     finished = true;
                 } else {
                     double midMercatorY = (maxMercatorY + minMercatorY) / 2.0;
                     midLatRad = 2.0 * Math.atan(Math.pow(M_E, midMercatorY)) - M_PI / 2.0;
                     double midLatRatio = (M_PI - midMercatorY) / (M_PI - (-M_PI));
 
-                    // must choice : the up_side of midLatRadMercator, or the down_side.***
+                    // must choice : the up_side of midLatRadMercator, or the down_side
                     if (midLatRatio > y_ratio) {
-                        // choice the up_side of midLatRadMercator.***
-                        // maxLatRad no changes.***
+                        // choice the up_side of midLatRadMercator
+                        // maxLatRad no changes
                         minLadRad = midLatRad;
                         minMercatorY = midMercatorY;
                     } else {
-                        // choice the down_side of midLatRadMercator.***
+                        // choice the down_side of midLatRadMercator
                         maxLadRad = midLatRad;
                         maxMercatorY = midMercatorY;
-                        // minLadRad no changes.***
+                        // minLadRad no changes
                     }
                 }
 
-                // Code to debug.************************************
+                // Code to debug*********************************
                 //double min_longitude = lonAngDegRange * X - 180.0;
                 //double max_longitude = min_longitude + lonAngDegRange;
 

@@ -1,9 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TilesRange {
     int tileDepth;

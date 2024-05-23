@@ -121,22 +121,22 @@ public class GaiaBoundingBox {
     }
 
     public boolean intersectsPointXY(double pos_x, double pos_y) {
-        // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis.***
+        // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis
         return !(pos_x < minX) && !(pos_x > maxX) && !(pos_y < minY) && !(pos_y > maxY);
     }
 
     public boolean intersectsRectangleXY(double min_x, double min_y, double max_x, double max_y) {
-        // this function checks if a rectangle2D is intersected by the boundingBox only meaning xAxis and yAxis.***
+        // this function checks if a rectangle2D is intersected by the boundingBox only meaning xAxis and yAxis
         return !(max_x < minX) && !(min_x > maxX) && !(max_y < minY) && !(min_y > maxY);
     }
 
     public boolean intersectsPointXY_xAxis(double pos_x) {
-        // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis.***
+        // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis
         return !(pos_x < minX) && !(pos_x > maxX);
     }
 
     public boolean intersectsPointXY_yAxis(double pos_y) {
-        // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis.***
+        // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis
         return !(pos_y < minY) && !(pos_y > maxY);
     }
 
@@ -188,13 +188,13 @@ public class GaiaBoundingBox {
         Matrix4d transformMatrix = GlobeUtils.transformMatrixAtCartesianPointWgs84(centerWorldCoordinate);
 
         Vector3d minLocalCoordinate = new Vector3d(minX, minY, minZ);
-        Matrix4d minTransfromMatrix = transformMatrix.translate(minLocalCoordinate, new Matrix4d());
-        Vector3d minWorldCoordinate = new Vector3d(minTransfromMatrix.m30(), minTransfromMatrix.m31(), minTransfromMatrix.m32());
+        Matrix4d minTransformMatrix = transformMatrix.translate(minLocalCoordinate, new Matrix4d());
+        Vector3d minWorldCoordinate = new Vector3d(minTransformMatrix.m30(), minTransformMatrix.m31(), minTransformMatrix.m32());
         minWorldCoordinate = GlobeUtils.cartesianToGeographicWgs84(minWorldCoordinate);
 
         Vector3d maxLocalCoordinate = new Vector3d(maxX, maxY, maxZ);
-        Matrix4d maxTransfromMatrix = transformMatrix.translate(maxLocalCoordinate, new Matrix4d());
-        Vector3d maxWorldCoordinate = new Vector3d(maxTransfromMatrix.m30(), maxTransfromMatrix.m31(), maxTransfromMatrix.m32());
+        Matrix4d maxTransformMatrix = transformMatrix.translate(maxLocalCoordinate, new Matrix4d());
+        Vector3d maxWorldCoordinate = new Vector3d(maxTransformMatrix.m30(), maxTransformMatrix.m31(), maxTransformMatrix.m32());
         maxWorldCoordinate = GlobeUtils.cartesianToGeographicWgs84(maxWorldCoordinate);
 
         GaiaBoundingBox result = new GaiaBoundingBox();

@@ -10,6 +10,7 @@ public class TileWgs84Raster {
     public TileWgs84Manager manager = null;
     public TileIndices tileIndices = null;
 
+    @Getter
     public GeographicExtension geographicExtension = null;
 
     public float[] elevations = null;
@@ -25,8 +26,8 @@ public class TileWgs84Raster {
         this.tileIndices = tileIndices;
         this.manager = manager;
 
-        String imageryType = manager.imageryType;
-        boolean originIsLeftUp = manager.originIsLeftUp;
+        String imageryType = manager.getImageryType();
+        boolean originIsLeftUp = manager.isOriginIsLeftUp();
         this.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
     }
 
@@ -102,12 +103,9 @@ public class TileWgs84Raster {
             for (int row = 0; row < rasterHeight; row++) {
                 double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
                 int idx = row * rasterWidth + col;
-                elevations[idx] = (float) terrainElevationDataManager.getElevationNearest(lonDeg, latDeg, this.manager.memSave_terrainElevDatasArray);
+                elevations[idx] = (float) terrainElevationDataManager.getElevationNearest(lonDeg, latDeg, this.manager.getMemSaveTerrainElevDataArray());
             }
         }
     }
 
-    public GeographicExtension getGeographicExtension() {
-        return this.geographicExtension;
-    }
 }

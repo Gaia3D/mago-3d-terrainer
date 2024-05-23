@@ -1,18 +1,15 @@
 package com.gaia3d.basic.structure;
 
-import org.joml.Vector2d;
+import lombok.NoArgsConstructor;
 
 import static java.lang.Math.abs;
 
+@NoArgsConstructor
 public class GaiaLine2D {
-
-    double posX;
-    double posY;
-    double dirX;
-    double dirY;
-
-    public GaiaLine2D() {
-    }
+    private double posX;
+    private double posY;
+    private double dirX;
+    private double dirY;
 
     public void deleteObjects() {
         // nothing to do.

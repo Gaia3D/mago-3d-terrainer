@@ -20,7 +20,7 @@ import java.io.IOException;
 @Slf4j
 public class TerrainElevationData {
 
-    // the terrain elevation data is stored in a geotiff file.***
+    // the terrain elevation data is stored in a geotiff file
     public TerrainElevationDataManager terrainElevDataManager = null;
     public String geotiffFilePath = "";
 
@@ -93,7 +93,7 @@ public class TerrainElevationData {
     public double getElevationNearest(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
         double resultAltitude = 0.0;
 
-        // 1rst check if lon, lat intersects with geoExtension.***
+        // 1rst check if lon, lat intersects with geoExtension
         if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
             intersects[0] = false;
             return resultAltitude;
@@ -104,7 +104,7 @@ public class TerrainElevationData {
             this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
         }
 
-        if(this.coverageNearest == null) {
+        if (this.coverageNearest == null) {
             Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
             this.coverageNearest = Interpolator2D.create(this.coverage, interpolation);
         }
@@ -125,7 +125,7 @@ public class TerrainElevationData {
             coverageNearest.evaluate((DirectPosition) memSave_posWorld, memSave_alt);
             intersects[0] = true;
 
-            // check if is NoData.***
+            // check if is NoData
             if (memSave_noDataContainer != null) {
                 double nodata = memSave_noDataContainer.getAsSingleValue();
                 if (memSave_alt[0] == nodata) {
@@ -137,7 +137,7 @@ public class TerrainElevationData {
             intersects[0] = false;
             return resultAltitude;
         }
-        // update min, max altitude.***
+        // update min, max altitude
         resultAltitude = memSave_alt[0];
         minAltitude = Math.min(minAltitude, resultAltitude);
         maxAltitude = Math.max(maxAltitude, resultAltitude);
@@ -148,7 +148,7 @@ public class TerrainElevationData {
     public double getElevation(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
         double resultAltitude = 0.0;
 
-        // 1rst check if lon, lat intersects with geoExtension.***
+        // 1rst check if lon, lat intersects with geoExtension
         if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
             intersects[0] = false;
             return resultAltitude;
@@ -176,7 +176,7 @@ public class TerrainElevationData {
             coverage.evaluate((DirectPosition) memSave_posWorld, memSave_alt);
             intersects[0] = true;
 
-            // check if is NoData.***
+            // check if is NoData
             if (memSave_noDataContainer != null) {
                 double nodata = memSave_noDataContainer.getAsSingleValue();
                 if (memSave_alt[0] == nodata) {
@@ -188,7 +188,7 @@ public class TerrainElevationData {
             intersects[0] = false;
             return resultAltitude;
         }
-        // update min, max altitude.***
+        // update min, max altitude
         resultAltitude = memSave_alt[0];
         minAltitude = Math.min(minAltitude, resultAltitude);
         maxAltitude = Math.max(maxAltitude, resultAltitude);

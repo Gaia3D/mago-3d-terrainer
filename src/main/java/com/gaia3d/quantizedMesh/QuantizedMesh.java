@@ -1,6 +1,5 @@
 package com.gaia3d.quantizedMesh;
 
-import com.gaia3d.basic.structure.GaiaVertex;
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
 
 import java.io.IOException;
@@ -15,7 +14,7 @@ public class QuantizedMesh {
     short[] heightBuffer = null;
     int[] triangleIndices = null;
 
-    // edgesData.***
+    // edgesData
     int westVertexCount;
     int[] westIndices = null;
 
@@ -28,10 +27,10 @@ public class QuantizedMesh {
     int northVertexCount;
     int[] northIndices = null;
 
-    // normals data.***
+    // normals data
     byte extensionId = 0;
     int extensionLength = 0;
-    byte[] octEncodedNormals = null; // 2 bytes per normal.***
+    byte[] octEncodedNormals = null; // 2 bytes per normal
 
     public short zigZagEncode(int n) {
         return (short) ((n << 1) ^ (n >> 31));
@@ -112,13 +111,13 @@ public class QuantizedMesh {
     }
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream, boolean saveNormals) throws IOException {
-        // 1rst save the header.***
+        // 1rst save the header
         header.saveDataOutputStream(dataOutputStream);
 
-        // 2nd save the vertexCount.***
+        // 2nd save the vertexCount
         dataOutputStream.writeInt(vertexCount);
 
-        // save uBuffer.***
+        // save uBuffer
         short uPrev = 0;
         for (int i = 0; i < vertexCount; i++) {
             short uCurr = uBuffer[i];
@@ -128,7 +127,7 @@ public class QuantizedMesh {
             uPrev = uCurr;
         }
 
-        // save vBuffer.***
+        // save vBuffer
         short vPrev = 0;
         for (int i = 0; i < vertexCount; i++) {
             short vCurr = vBuffer[i];
@@ -138,7 +137,7 @@ public class QuantizedMesh {
             vPrev = vCurr;
         }
 
-        // save heightBuffer.***
+        // save heightBuffer
         short heightPrev = 0;
         for (int i = 0; i < vertexCount; i++) {
             short heightCurr = heightBuffer[i];
@@ -148,21 +147,21 @@ public class QuantizedMesh {
             heightPrev = heightCurr;
         }
 
-        // save triangleCount.***
+        // save triangleCount
         dataOutputStream.writeInt(triangleCount);
 
 
         int indicesCount = triangleCount * 3;
-        // if vertexCount > 65536, then save the triangleIndices as int.***
+        // if vertexCount > 65536, then save the triangleIndices as int
         if (vertexCount > 65536) {
-            // save IndexData32.***
+            // save IndexData32
             int[] encodedIndices = new int[indicesCount];
             getEncodedIndices32(triangleIndices, indicesCount, encodedIndices);
             for (int i = 0; i < indicesCount; i++) {
                 dataOutputStream.writeInt(encodedIndices[i]);
             }
         } else {
-            // save IndexData16.***
+            // save IndexData16
             short[] encodedIndices = new short[indicesCount];
             getEncodedIndices16(triangleIndices, indicesCount, encodedIndices);
 
@@ -171,68 +170,68 @@ public class QuantizedMesh {
             }
         }
 
-        // now save EdgeIndices.***
+        // now save EdgeIndices
         if (vertexCount > 65536) {
-            // save EdgeIndices32.***
-            // westIndices.***
+            // save EdgeIndices32
+            // westIndices
             dataOutputStream.writeInt(westVertexCount);
             for (int i = 0; i < westVertexCount; i++) {
                 dataOutputStream.writeInt(westIndices[i]);
             }
 
-            // southIndices.***
+            // southIndices
             dataOutputStream.writeInt(southVertexCount);
             for (int i = 0; i < southVertexCount; i++) {
                 dataOutputStream.writeInt(southIndices[i]);
             }
 
-            // eastIndices.***
+            // eastIndices
             dataOutputStream.writeInt(eastVertexCount);
             for (int i = 0; i < eastVertexCount; i++) {
                 dataOutputStream.writeInt(eastIndices[i]);
             }
 
-            // northIndices.***
+            // northIndices
             dataOutputStream.writeInt(northVertexCount);
             for (int i = 0; i < northVertexCount; i++) {
                 dataOutputStream.writeInt(northIndices[i]);
             }
         } else {
-            // save EdgeIndices16.***
-            // westIndices.***
+            // save EdgeIndices16
+            // westIndices
             dataOutputStream.writeInt(westVertexCount);
             for (int i = 0; i < westVertexCount; i++) {
                 dataOutputStream.writeShort(westIndices[i]);
             }
 
-            // southIndices.***
+            // southIndices
             dataOutputStream.writeInt(southVertexCount);
             for (int i = 0; i < southVertexCount; i++) {
                 dataOutputStream.writeShort(southIndices[i]);
             }
 
-            // eastIndices.***
+            // eastIndices
             dataOutputStream.writeInt(eastVertexCount);
             for (int i = 0; i < eastVertexCount; i++) {
                 dataOutputStream.writeShort(eastIndices[i]);
             }
 
-            // northIndices.***
+            // northIndices
             dataOutputStream.writeInt(northVertexCount);
             for (int i = 0; i < northVertexCount; i++) {
                 dataOutputStream.writeShort(northIndices[i]);
             }
         }
 
-        // check if save normals.***
+        // check if save normals
         if (saveNormals) {
-            // save normals.***
+            // save normals
             dataOutputStream.writeByte(extensionId);
             dataOutputStream.writeInt(extensionLength);
             dataOutputStream.write(octEncodedNormals);
         }
 
-        int hola = 0;
+        
     }
 
 }

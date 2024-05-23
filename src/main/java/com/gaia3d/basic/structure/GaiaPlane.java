@@ -4,10 +4,10 @@ import org.joml.Vector3d;
 
 public class GaiaPlane {
     // plane : ax + by + cz + d = 0
-    public double a;
-    public double b;
-    public double c;
-    public double d;
+    private double a;
+    private double b;
+    private double c;
+    private double d;
 
     public GaiaPlane() {
         a = 0;
@@ -35,8 +35,8 @@ public class GaiaPlane {
     }
 
     public double evaluatePoint(double x, double y, double z) {
-        // if the result is positive, the point is over the plane.***
-        // else if the result is negative, the point is under the plane.***
+        // if the result is positive, the point is over the plane
+        // else if the result is negative, the point is under the plane
         return a * x + b * y + c * z + d;
     }
 

@@ -13,11 +13,14 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * LittleEndianDataOutputStream
+ *
  * @author znkim
- * @since 1.0.0
  * @see FilterOutputStream
+ * @since 1.0.0
  */
 public class LittleEndianDataOutputStream extends FilterOutputStream implements DataOutput {
+
+    private final byte[] writeBuffer = new byte[8];
 
     public LittleEndianDataOutputStream(OutputStream out) {
         super(out);
@@ -56,7 +59,7 @@ public class LittleEndianDataOutputStream extends FilterOutputStream implements 
     @Override
     public void writeInt(int v) throws IOException {
         out.write(v & 0xFF);
-        out.write((v >>>  8) & 0xFF);
+        out.write((v >>> 8) & 0xFF);
         out.write((v >>> 16) & 0xFF);
         out.write((v >>> 24) & 0xFF);
     }
@@ -67,17 +70,16 @@ public class LittleEndianDataOutputStream extends FilterOutputStream implements 
         }
     }
 
-    private final byte[] writeBuffer = new byte[8];
     @Override
     public void writeLong(long v) throws IOException {
-        writeBuffer[0] = (byte)(v);
-        writeBuffer[1] = (byte)(v >>>  8);
-        writeBuffer[2] = (byte)(v >>> 16);
-        writeBuffer[3] = (byte)(v >>> 24);
-        writeBuffer[4] = (byte)(v >>> 32);
-        writeBuffer[5] = (byte)(v >>> 40);
-        writeBuffer[6] = (byte)(v >>> 48);
-        writeBuffer[7] = (byte)(v >>> 56);
+        writeBuffer[0] = (byte) (v);
+        writeBuffer[1] = (byte) (v >>> 8);
+        writeBuffer[2] = (byte) (v >>> 16);
+        writeBuffer[3] = (byte) (v >>> 24);
+        writeBuffer[4] = (byte) (v >>> 32);
+        writeBuffer[5] = (byte) (v >>> 40);
+        writeBuffer[6] = (byte) (v >>> 48);
+        writeBuffer[7] = (byte) (v >>> 56);
         out.write(writeBuffer, 0, 8);
     }
 
@@ -107,7 +109,7 @@ public class LittleEndianDataOutputStream extends FilterOutputStream implements 
     public void writeChars(String s) throws IOException {
         //out.write(s.getBytes());
         int len = s.length();
-        for (int i = 0 ; i < len ; i++) {
+        for (int i = 0; i < len; i++) {
             int v = s.charAt(i);
             out.write((v) & 0xFF);
             out.write((v >>> 8) & 0xFF);
