@@ -39,6 +39,7 @@ public class GaiaGeoTiffManager {
 
             InterpolationType interpolationType = globalOptions.getInterpolationType();
             Interpolation interpolation = Interpolation.getInstance(interpolationType.getInterpolation());
+
             coverage = Interpolator2D.create(coverage, interpolation);
             reader.dispose();
         } catch (Exception e) {

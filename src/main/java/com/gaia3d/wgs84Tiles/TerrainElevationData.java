@@ -1,8 +1,6 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
-import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.command.InterpolationType;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
@@ -80,59 +78,6 @@ public class TerrainElevationData {
             value = raster.getSampleDouble(x, y, 0);
         }
         return value;
-    }
-
-    public double getElevationNearest(double lonDeg, double latDeg, boolean[] intersects) {
-        GlobalOptions globalOptions = GlobalOptions.getInstance();
-        InterpolationType interpolationType = globalOptions.getInterpolationType();
-
-        double resultAltitude = 0.0;
-
-        // 1rst check if lon, lat intersects with geoExtension
-        if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
-            intersects[0] = false;
-            return resultAltitude;
-        }
-
-        if (this.coverage == null) {
-            GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
-        }
-
-        // https://taylor.callsen.me/parsing-geotiff-files-in-java/
-        memSaveWgs84 = DefaultGeographicCRS.WGS84;
-
-        memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-        //note :  DirectPosition2D(memSavewgs84, lonDeg, latDeg); // longitude supplied first
-        if (memSavePosWorld == null) {
-            memSavePosWorld = new DirectPosition2D(memSaveWgs84, 0.0, 0.0);
-        }
-        memSavePosWorld.x = lonDeg;
-        memSavePosWorld.y = latDeg;
-
-        memSaveAlt[0] = 0.0;
-        try {
-            coverage.evaluate((DirectPosition) memSavePosWorld, memSaveAlt);
-            intersects[0] = true;
-
-            // check if is NoData
-            if (memSaveNoDataContainer != null) {
-                double nodata = memSaveNoDataContainer.getAsSingleValue();
-                if (memSaveAlt[0] == nodata) {
-                    return 0.0;
-                }
-            }
-        } catch (RuntimeException e) {
-            // out of bounds coverage coordinates
-            intersects[0] = false;
-            return resultAltitude;
-        }
-        // update min, max altitude
-        resultAltitude = memSaveAlt[0];
-        minAltitude = Math.min(minAltitude, resultAltitude);
-        maxAltitude = Math.max(maxAltitude, resultAltitude);
-
-        return resultAltitude;
     }
 
     public double getElevation(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {

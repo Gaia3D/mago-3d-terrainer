@@ -51,7 +51,7 @@ public class TerrainElevationDataManager {
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreeMaxDepth);
     }
 
-    public void MakeUniqueTerrainElevationData() throws FactoryException, TransformException, IOException {
+    public void MakeUniqueTerrainElevationData() throws IOException, FactoryException, TransformException {
         log.info("MakeUniqueTerrainElevationData() started");
 
         if (uniqueGeoTiffFilePath == null) {
@@ -187,7 +187,7 @@ public class TerrainElevationDataManager {
                 return resultElevation;
             }
 
-            resultElevation = uniqueTerrainElevationData.getElevationNearest(lonDeg, latDeg, memSaveIntersects);
+            resultElevation = uniqueTerrainElevationData.getElevation(lonDeg, latDeg, memSaveIntersects);
             return resultElevation;
         }
 
@@ -200,7 +200,7 @@ public class TerrainElevationDataManager {
 
         memSaveIntersects[0] = false;
         for (TerrainElevationData terrainElevationData : memSaveTerrainElevDatasArray) {
-            double elevation = terrainElevationData.getElevationNearest(lonDeg, latDeg, memSaveIntersects);
+            double elevation = terrainElevationData.getElevation(lonDeg, latDeg, memSaveIntersects);
             if (!memSaveIntersects[0]) {
                 continue;
             }

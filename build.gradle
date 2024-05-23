@@ -9,6 +9,7 @@ plugins {
 group = 'com.gaia3d'
 version = '1.3.1'
 project.ext.lwjglVersion = "3.3.2"
+project.ext.geotoolsVersion = "31.0"
 
 switch ( OperatingSystem.current() ) {
     case OperatingSystem.WINDOWS:
@@ -58,6 +59,7 @@ dependencies {
     // proj4j (java projection library)
     implementation "org.locationtech.proj4j:proj4j:1.2.3"
     implementation "org.locationtech.proj4j:proj4j-epsg:1.2.3"
+
 
     // geotools (java geospatial library)
     implementation "org.geotools:gt-geotiff:26.5"

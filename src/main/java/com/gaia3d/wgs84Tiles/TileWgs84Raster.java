@@ -100,7 +100,7 @@ public class TileWgs84Raster {
             for (int row = 0; row < rasterHeight; row++) {
                 double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
                 int idx = row * rasterWidth + col;
-                elevations[idx] = (float) terrainElevationDataManager.getElevationNearest(lonDeg, latDeg, this.manager.getMemSaveTerrainElevDataArray());
+                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, this.manager.getMemSaveTerrainElevDataArray());
             }
         }
     }
