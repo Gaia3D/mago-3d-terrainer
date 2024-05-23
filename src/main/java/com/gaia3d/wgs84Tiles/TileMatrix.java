@@ -18,6 +18,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -123,10 +124,10 @@ public class TileMatrix {
         // 1rst, load or create all the of the matrix
         // Must load from mintile-1 to maxtile+1
         tilesMatrixRowCol.clear();
-        int minTileX = tilesRange.minTileX - 1;
-        int maxTileX = tilesRange.maxTileX + 1;
-        int minTileY = tilesRange.minTileY - 1;
-        int maxTileY = tilesRange.maxTileY + 1;
+        int minTileX = tilesRange.getMinTileX() - 1;
+        int maxTileX = tilesRange.getMaxTileX() + 1;
+        int minTileY = tilesRange.getMinTileY() - 1;
+        int maxTileY = tilesRange.getMaxTileY() + 1;
         // Note : the minTileX, minTileY, maxTileX, maxTileY are no necessary to verify if the values are out of the limits
         // It is verified in the TileWgs84Manager
 
@@ -137,7 +138,7 @@ public class TileMatrix {
         for (int Y = minTileY; Y <= maxTileY; Y++) {
             List<TileWgs84> tilesListRow = new ArrayList<>();
             for (int X = minTileX; X <= maxTileX; X++) {
-                tileIndices.set(X, Y, tilesRange.tileDepth);
+                tileIndices.set(X, Y, tilesRange.getTileDepth());
                 TileWgs84 tile = null;
                 if (is1rstGeneration) {
                     tile = this.manager.loadOrCreateTileWgs84(tileIndices);
@@ -146,7 +147,7 @@ public class TileMatrix {
                 }
                 if (counter >= 100) {
                     counter = 0;
-                    log.debug("Loading tile L : " + tileIndices.L + ", i : " + counterAux + " / " + totalTiles);
+                    log.debug("Loading tile L : " + tileIndices.getL() + ", i : " + counterAux + " / " + totalTiles);
                 }
 
                 tilesListRow.add(tile);
@@ -171,7 +172,7 @@ public class TileMatrix {
             for (int j = 0; j < colsCount; j++) {
                 TileWgs84 tile = rowTilesArray.get(j);
                 if (tile != null) {
-                    GaiaMesh tileMesh = tile.mesh;
+                    GaiaMesh tileMesh = tile.getMesh();
                     if (rowMesh == null) {
                         rowMesh = tileMesh;
                     } else {
@@ -272,10 +273,6 @@ public class TileMatrix {
 
             this.recalculateElevation(resultMesh, tilesRange);
 
-            if (tilesRange.tileDepth == 2) {
-                
-            }
-
             this.refineMesh(resultMesh, tilesRange);
 
             // check if you must calculate normals
@@ -313,18 +310,15 @@ public class TileMatrix {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         boolean calculateNormals = this.manager.isCalculateNormals();
 
-        int meshesCount = separatedMeshes.size();
-        for (int i = 0; i < meshesCount; i++) {
-            GaiaMesh mesh = separatedMeshes.get(i);
-
+        for (GaiaMesh mesh : separatedMeshes) {
             GaiaTriangle triangle = mesh.triangles.get(0); // take the first triangle
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
             TileWgs84 tile = new TileWgs84(null, this.manager);
-            tile.tileIndices = tileIndices;
+            tile.setTileIndices(tileIndices);
             String imageryType = this.manager.getImageryType();
-            tile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
-            tile.mesh = mesh;
+            tile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
+            tile.setMesh(mesh);
 
             QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
             QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile, calculateNormals);
@@ -358,23 +352,13 @@ public class TileMatrix {
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
         File file = new File(filePath);
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        Files.deleteIfExists(file.toPath());
 
-        // Crear un BufferedOutputStream para mejorar el rendimiento
-        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-
-        // Envolver el BufferedOutputStream en un LittleEndianDataOutputStream
-        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(bufferedOutputStream);
-
-        // delete the file if exists before save
-        //FileUtils.deleteFileIfExists(filePath);
-
+        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
         // save the tile
         mesh.saveDataOutputStream(dataOutputStream);
 
         dataOutputStream.close();
-        bufferedOutputStream.close();
-        fileOutputStream.close();
     }
 
     public boolean saveSeparatedTiles(List<GaiaMesh> separatedMeshes) {
@@ -394,17 +378,16 @@ public class TileMatrix {
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             String tileTempDirectory = this.manager.getTileTempDirectory();
             String outputDirectory = this.manager.getOutputDirectory();
-            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
+            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
             String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             if (counter >= 100) {
                 counter = 0;
-                log.debug("Saving separated tiles... L : " + tileIndices.L + " i : " + i + " / " + meshesCount);
+                log.debug("Saving separated tiles... L : " + tileIndices.getL() + " i : " + i + " / " + meshesCount);
             }
 
             try {
                 saveFile(mesh, tileFullPath);
-
             } catch (IOException e) {
                 log.error(e.getMessage());
                 return false;
@@ -427,16 +410,16 @@ public class TileMatrix {
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 //            String tileTempDirectory = this.manager.tileTempDirectory;
 //            String outputDirectory = this.manager.outputDirectory;
-//            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
+//            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
 //            String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             if (counter >= 100) {
                 counter = 0;
-                log.debug("Saving children tiles... L : " + tileIndices.L + " i : " + i + " / " + meshesCount);
+                log.debug("Saving children tiles... L : " + tileIndices.getL() + " i : " + i + " / " + meshesCount);
             }
 
             // Save children if necessary************************************************************************
-            if (tileIndices.L < this.manager.getMaxTileDepth()) {
+            if (tileIndices.getL() < this.manager.getMaxTileDepth()) {
                 // 1rst, mark triangles with the children tile indices
                 boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
                 String imageryType = this.manager.getImageryType();
@@ -448,13 +431,12 @@ public class TileMatrix {
                 TileIndices child_RD_TileIndices = tileIndices.getChild_RD_TileIndices(originIsLeftUp);
 
                 // 1rst, classify the triangles of the tile
-                GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
+                GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
                 double midLonDeg = geoExtension.getMidLongitudeDeg();
                 double midLatDeg = geoExtension.getMidLatitudeDeg();
                 List<GaiaTriangle> triangles = mesh.triangles;
-                int trianglesCount = triangles.size();
-                for (int j = 0; j < trianglesCount; j++) {
-                    triangle = triangles.get(j);
+                for (GaiaTriangle gaiaTriangle : triangles) {
+                    triangle = gaiaTriangle;
 
                     if (triangle.getObjectStatus() == GaiaObjectStatus.DELETED) {
                         continue;
@@ -485,17 +467,16 @@ public class TileMatrix {
 
                 // 3- save the 4 children
                 int childMeshesCount = childMeshes.size();
-                for (int j = 0; j < childMeshesCount; j++) {
-                    GaiaMesh childMesh = childMeshes.get(j);
+                for (GaiaMesh childMesh : childMeshes) {
                     triangle = childMesh.triangles.get(0); // take the first triangle
                     TileIndices childTileIndices = triangle.getOwnerTileIndices();
                     String tileTempDirectory = this.manager.getTileTempDirectory();
                     String outputDirectory = this.manager.getOutputDirectory();
-                    String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.X, childTileIndices.Y, childTileIndices.L);
+                    String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
                     String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
                     try {
-                        //log.debug("Saving children tiles... L : " + childTileIndices.L + " i : " + j + " / " + childMeshesCount);
+                        //log.debug("Saving children tiles... L : " + childTileIndices.getL() + " i : " + j + " / " + childMeshesCount);
                         saveFile(childMesh, childTileFullPath); // original
                     } catch (IOException e) {
                         log.error(e.getMessage());
@@ -661,7 +642,7 @@ public class TileMatrix {
         double equatorialRadius = GlobeUtils.getEquatorialRadius();
         double bboxMaxLengthInMeters = Math.toRadians(bboxMaxLength) * equatorialRadius;
 
-        int currL = triangle.getOwnerTileIndices().L;
+        int currL = triangle.getOwnerTileIndices().getL();
 
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(currL);
         double scale = bboxMaxLengthInMeters / tileSize;
@@ -669,7 +650,7 @@ public class TileMatrix {
         // Y = 0.8X + 0.2.
         scale = 0.8 * scale + 0.2;
 
-        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.getOwnerTileIndices().L);
+        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.getOwnerTileIndices().getL());
         maxDiff *= scale; // scale the maxDiff
 
         TileWgs84Raster tileRaster = terrainElevationDataManager.getTileWgs84Raster(tileIndices, this.manager);
@@ -678,7 +659,7 @@ public class TileMatrix {
         // if the triangle size is very small, then do not refine**********************
         // Calculate the maxLength of the triangle in meters
         double triangleMaxLengthMeters = triangle.getTriangleMaxSizeInMeters();
-        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.getOwnerTileIndices().L);
+        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
 
 
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
@@ -687,7 +668,7 @@ public class TileMatrix {
         }
 
 
-        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.getOwnerTileIndices().L);
+        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
             return true;
         }
@@ -714,7 +695,7 @@ public class TileMatrix {
 
         // calculate the angle between triangleNormalWC with the normal at cartesian of the center of the tile
         float cosAng = 1.0f;
-        if (tileIndices.L > 10) {
+        if (tileIndices.getL() > 10) {
 
             Vector3f triangleNormalWC = triangle.getNormal(); // this is normalWC
             Vector3d triangleNornalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
@@ -741,7 +722,7 @@ public class TileMatrix {
         double distToPlane = abs(elevation - planeElevation) * cosAng;
 
         if (distToPlane > maxDiff) {
-            log.debug("Filtered by Baricenter : L : " + tileIndices.L + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+            log.debug("Filtered by Baricenter : L : " + tileIndices.getL() + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
             return true;
         }
 
@@ -771,8 +752,8 @@ public class TileMatrix {
         int rowAux = 0;
 
         boolean intersects = false;
-        List<GaiaHalfEdge> memSave_hedges = new ArrayList<>();
-        GaiaLine2D memSave_line = new GaiaLine2D();
+        List<GaiaHalfEdge> memSavehedges = new ArrayList<>();
+        GaiaLine2D memSaveline = new GaiaLine2D();
 
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
@@ -802,17 +783,17 @@ public class TileMatrix {
                 distToPlane = abs(elevationFloat - planeElevation) * cosAng;
                 if (distToPlane > maxDiff) // original
                 {
-                    intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
+                    intersects = triangle.intersectsPointXY(pos_x, pos_y, memSavehedges, memSaveline);
 
                     if (!intersects) {
                         continue;
                     }
 
-                    log.debug("Filtered by RasterTile : L : " + tileIndices.L + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+                    log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
 
 
-                    memSave_hedges.clear();
-                    memSave_line.deleteObjects();
+                    memSavehedges.clear();
+                    memSaveline.deleteObjects();
                     return true;
                 }
                 rowAux++;
@@ -820,8 +801,8 @@ public class TileMatrix {
             colAux++;
         }
 
-        memSave_hedges.clear();
-        memSave_line.deleteObjects();
+        memSavehedges.clear();
+        memSaveline.deleteObjects();
 
         triangle.setRefineChecked(true);
         return false;
@@ -886,12 +867,8 @@ public class TileMatrix {
         // Inside the mesh, there are triangles of n different tiles
         // Here refine only the triangles of the tiles of TilesRange
 
-        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(tilesRange.tileDepth);
-        log.info("RefineMesh : L : " + tilesRange.tileDepth + " # maxDiff(m) : " + maxDiff);
-
-        if (tilesRange.tileDepth >= 16) {
-            
-        }
+        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(tilesRange.getTileDepth());
+        log.info("RefineMesh : L : " + tilesRange.getTileDepth() + " # maxDiff(m) : " + maxDiff);
 
         // refine the mesh
         boolean finished = false;

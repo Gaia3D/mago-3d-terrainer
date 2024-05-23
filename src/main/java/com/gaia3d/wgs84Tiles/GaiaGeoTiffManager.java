@@ -1,5 +1,10 @@
 package com.gaia3d.wgs84Tiles;
 
+import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.command.InterpolationType;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.Interpolator2D;
@@ -11,33 +16,30 @@ import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
 
 import javax.media.jai.Interpolation;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Slf4j
 public class GaiaGeoTiffManager {
-    int[] memSave_pixel = new int[1];
-    double[] memSave_originalUpperLeftCorner = new double[2];
-
-    public GaiaGeoTiffManager() {
-        log.debug("GaiaGeoTiffManager.constructor()");
-    }
+    private int[] memSavePixel = new int[1];
+    private double[] memSaveOriginalUpperLeftCorner = new double[2];
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
-
-        // this function only loads the geotiff coverage
-        //System.out.println("GaiaGeoTiffManager.loadGeoTiffCoverage2D()" + geoTiffFilePath);
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         GridCoverage2D coverage = null;
         try {
             File file = new File(geoTiffFilePath);
             GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
-            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
+
+            InterpolationType interpolationType = globalOptions.getInterpolationType();
+            Interpolation interpolation = Interpolation.getInstance(interpolationType.getInterpolation());
             coverage = Interpolator2D.create(coverage, interpolation);
-            log.debug("coverage: " + coverage);
             reader.dispose();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -50,7 +52,6 @@ public class GaiaGeoTiffManager {
         GridCoverage2D resizedCoverage = null;
 
         GridGeometry originalGridGeometry = originalCoverage.getGridGeometry();
-        RenderedImage originalImage = originalCoverage.getRenderedImage();
         Envelope envelopeOriginal = originalCoverage.getEnvelope();
 
         int gridSpanX = originalGridGeometry.getGridRange().getSpan(0); // num of pixels
@@ -74,8 +75,8 @@ public class GaiaGeoTiffManager {
         Operations ops = new Operations(null);
         resizedCoverage = (GridCoverage2D) ops.scale(originalCoverage, scaleX, scaleY, 0, 0);
 
-        memSave_originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
-        memSave_originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
+        memSaveOriginalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
+        memSaveOriginalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
 
         return resizedCoverage;
     }

@@ -2,11 +2,19 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
+@Getter
+@Setter
 @Slf4j
+@AllArgsConstructor
+@NoArgsConstructor
 public class TileIndices {
 
     // child tile indices
@@ -20,27 +28,14 @@ public class TileIndices {
     //    |        |        |
     //    +--------+--------+
 
-    int X = 0;
-    int Y = 0;
-    int L = 0; // tile depth.
-
-    public TileIndices() {
-    }
-
-    public TileIndices(int tileDepth, int x, int y) {
-        this.L = tileDepth;
-        this.X = x;
-        this.Y = y;
-    }
+    private int X = 0;
+    private int Y = 0;
+    private int L = 0; // tile depth.
 
     public void set(int x, int y, int l) {
         X = x;
         Y = y;
         L = l;
-    }
-
-    public int getL() {
-        return L;
     }
 
     //*************************************************

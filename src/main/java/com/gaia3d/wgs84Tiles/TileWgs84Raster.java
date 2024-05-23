@@ -2,24 +2,21 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
 import lombok.Getter;
+import lombok.Setter;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
 
+@Getter
+@Setter
 public class TileWgs84Raster {
-    public TileWgs84Manager manager = null;
-    public TileIndices tileIndices = null;
-
-    @Getter
-    public GeographicExtension geographicExtension = null;
-
-    public float[] elevations = null;
-    public int rasterWidth = 0;
-    public int rasterHeight = 0;
-
-    @Getter
+    private TileWgs84Manager manager = null;
+    private TileIndices tileIndices = null;
+    private GeographicExtension geographicExtension = null;
+    private float[] elevations = null;
+    private int rasterWidth = 0;
+    private int rasterHeight = 0;
     private double deltaLonDeg = 0;
-    @Getter
     private double deltaLatDeg = 0;
 
     public TileWgs84Raster(TileIndices tileIndices, TileWgs84Manager manager) {
@@ -28,7 +25,7 @@ public class TileWgs84Raster {
 
         String imageryType = manager.getImageryType();
         boolean originIsLeftUp = manager.isOriginIsLeftUp();
-        this.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
+        this.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
     }
 
     public int getColumn(double lonDeg) {

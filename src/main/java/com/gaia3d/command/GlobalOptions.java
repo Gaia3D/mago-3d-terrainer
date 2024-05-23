@@ -24,9 +24,16 @@ public class GlobalOptions {
     /* singleton */
     private static final GlobalOptions instance = new GlobalOptions();
 
-    private final String DEFAULT_INTERPOLATION_TYPE = "bilinear";
-    private final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    private final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
+    private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
+    private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
+    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 12;
+
+    private String version;
+    private String javaVersionInfo;
+    private String programInfo;
+
+    private long startTime = 0;
+    private long endTime = 0;
 
     private String inputPath;
     private String outputPath;
@@ -36,8 +43,15 @@ public class GlobalOptions {
     private String logPath;
     private int minimumTileDepth;
     private int maximumTileDepth;
-    private String interpolationType;
+    private InterpolationType interpolationType;
     private boolean calculateNormals;
+
+    public static GlobalOptions getInstance() {
+        if (instance.javaVersionInfo == null) {
+            initVersionInfo();
+        }
+        return instance;
+    }
 
     public static void init(CommandLine command) throws IOException {
         if (command.hasOption(ProcessOptions.INPUT.getArgName())) {
@@ -65,19 +79,21 @@ public class GlobalOptions {
         if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
             instance.setMinimumTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())));
         } else {
-            instance.setMinimumTileDepth(instance.DEFAULT_MINIMUM_TILE_DEPTH);
+            instance.setMinimumTileDepth(DEFAULT_MINIMUM_TILE_DEPTH);
         }
 
         if (command.hasOption(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
             instance.setMaximumTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())));
         } else {
-            instance.setMaximumTileDepth(instance.DEFAULT_MAXIMUM_TILE_DEPTH);
+            instance.setMaximumTileDepth(DEFAULT_MAXIMUM_TILE_DEPTH);
         }
 
         if (command.hasOption(ProcessOptions.INTERPOLATION_TYPE.getArgName())) {
-            instance.setInterpolationType(command.getOptionValue(ProcessOptions.INTERPOLATION_TYPE.getArgName()));
+            String interpolationType = command.getOptionValue(ProcessOptions.INTERPOLATION_TYPE.getArgName());
+            InterpolationType type = InterpolationType.fromString(interpolationType);
+            instance.setInterpolationType(type);
         } else {
-            instance.setInterpolationType(instance.DEFAULT_INTERPOLATION_TYPE);
+            instance.setInterpolationType(DEFAULT_INTERPOLATION_TYPE);
         }
 
         instance.setCalculateNormals(command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName()));
@@ -86,7 +102,6 @@ public class GlobalOptions {
     }
 
     protected static void printGlobalOptions() {
-        log.info("----------------------------------------");
         log.info("Input Path: {}", instance.getInputPath());
         log.info("Output Path: {}", instance.getOutputPath());
         log.info("Log Path: {}", instance.getLogPath());
@@ -120,5 +135,22 @@ public class GlobalOptions {
         } else if (!output.canWrite()) {
             throw new IOException(String.format("%s path is not writable.", path));
         }
+    }
+
+    private static void initVersionInfo() {
+        String javaVersion = System.getProperty("java.version");
+        String javaVendor = System.getProperty("java.vendor");
+        String javaVersionInfo = "JAVA Version : " + javaVersion + " (" + javaVendor + ") ";
+        String version = MagoMesherMain.class.getPackage().getImplementationVersion();
+        String title = MagoMesherMain.class.getPackage().getImplementationTitle();
+        String vendor = MagoMesherMain.class.getPackage().getImplementationVendor();
+        version = version == null ? "dev-version" : version;
+        title = title == null ? "3d-mesher" : title;
+        vendor = vendor == null ? "Gaia3D, Inc." : vendor;
+        String programInfo = title + "(" + version + ") by " + vendor;
+
+        instance.setStartTime(System.currentTimeMillis());
+        instance.setProgramInfo(programInfo);
+        instance.setJavaVersionInfo(javaVersionInfo);
     }
 }

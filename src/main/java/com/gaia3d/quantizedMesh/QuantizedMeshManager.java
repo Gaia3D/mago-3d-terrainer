@@ -114,7 +114,7 @@ public class QuantizedMeshManager {
     public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile, boolean calculateNormals) {
         // 1rst get the quantized mesh header
         QuantizedMeshHeader header = new QuantizedMeshHeader();
-        GaiaMesh mesh = tile.mesh;
+        GaiaMesh mesh = tile.getMesh();
 
         if (mesh == null) return null;
 
@@ -141,7 +141,7 @@ public class QuantizedMeshManager {
         double midHeight = (minimumHeight + maximumHeight) / 2.0;
 
         // Calculate the center of the tile in Earth-centered Fixed coordinates
-        GeographicExtension geographicExtension = tile.geographicExtension;
+        GeographicExtension geographicExtension = tile.getGeographicExtension();
         double midLonDeg = geographicExtension.getMidLongitudeDeg();
         double midLatDeg = geographicExtension.getMidLatitudeDeg();
 

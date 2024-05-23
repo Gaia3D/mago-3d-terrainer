@@ -448,7 +448,7 @@ public class GaiaMesh {
             Vector3d midPosition = longestHEdge.getMidPosition();
 
             // now determine the elevation of the midPoint
-            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.memSave_terrainElevDatasArray);
+            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
 
             midPosition.z = elevation;
             GaiaVertex midVertex = newVertex();
@@ -605,7 +605,7 @@ public class GaiaMesh {
             GaiaVertex midVertex = newVertex();
 
             // now determine the elevation of the midPoint
-            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.memSave_terrainElevDatasArray);
+            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
             midPosition.z = elevation;
 
             midVertex.setPosition(midPosition);
@@ -797,21 +797,21 @@ public class GaiaMesh {
             // here is error
         } else {
             // first split the adjacentTriangle;
-            terrainElevationDataManager.memSave_trianglesArray.clear();
-            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.memSave_trianglesArray);
+            terrainElevationDataManager.getMemSaveTrianglesArray().clear();
+            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getMemSaveTrianglesArray());
 
             // now search the new adjacentTriangle for the targetTriangle
 
-            int newTrianglesCount = terrainElevationDataManager.memSave_trianglesArray.size();
+            int newTrianglesCount = terrainElevationDataManager.getMemSaveTrianglesArray().size();
             for (int i = 0; i < newTrianglesCount; i++) {
-                GaiaTriangle newTriangle = terrainElevationDataManager.memSave_trianglesArray.get(i);
+                GaiaTriangle newTriangle = terrainElevationDataManager.getMemSaveTrianglesArray().get(i);
                 GaiaHalfEdge longestHEdgeOfNewTriangle = newTriangle.getLongestHalfEdge();
                 if (longestHEdgeOfNewTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError)) {
-                    terrainElevationDataManager.memSave_trianglesArray.clear();
+                    terrainElevationDataManager.getMemSaveTrianglesArray().clear();
                     return newTriangle;
                 }
             }
-            terrainElevationDataManager.memSave_trianglesArray.clear();
+            terrainElevationDataManager.getMemSaveTrianglesArray().clear();
             // if not found, then is error.!!!
         }
 

@@ -11,19 +11,20 @@ public class FileUtils {
         return file.exists();
     }
 
-    public static boolean createAllFoldersIfNoExist(String filePath) {
+    public static void createAllFoldersIfNoExist(String filePath) {
         File file = new File(filePath);
-        return file.mkdirs();
+        if (file.exists() && file.isDirectory()) {
+            return;
+        } else {
+            if (!file.mkdirs()) {
+                throw new RuntimeException("Failed to create folder: " + filePath);
+            }
+        }
     }
 
     public static String removeFileNameFromPath(String filePath) {
         File file = new File(filePath);
         return file.getParent();
-    }
-
-    public static boolean deleteFileIfExists(String filePath) {
-        File file = new File(filePath);
-        return file.delete();
     }
 
     public static void getFileNames(String folderPath, String extension, List<String> fileNames) {

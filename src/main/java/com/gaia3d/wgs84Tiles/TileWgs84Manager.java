@@ -93,10 +93,11 @@ public class TileWgs84Manager {
 
         // create the terrainLayer
         terrainLayer = new TerrainLayer();
-        terrainLayer.bounds[0] = minLon;
-        terrainLayer.bounds[1] = minLat;
-        terrainLayer.bounds[2] = maxLon;
-        terrainLayer.bounds[3] = maxLat;
+        double[] bounds = terrainLayer.getBounds();
+        bounds[0] = minLon;
+        bounds[1] = minLat;
+        bounds[2] = maxLon;
+        bounds[3] = maxLat;
 
         if (this.calculateNormals) {
             terrainLayer.addExtension("octvertexnormals");
@@ -107,16 +108,16 @@ public class TileWgs84Manager {
 
             if (depth == 0) {
                 // in this case, the tile is the world. L0X0Y0 & L0X1Y0
-                tilesRange.minTileX = 0;
-                tilesRange.maxTileX = 1;
-                tilesRange.minTileY = 0;
-                tilesRange.maxTileY = 0;
+                tilesRange.setMinTileX(0);
+                tilesRange.setMaxTileX(1);
+                tilesRange.setMinTileY(0);
+                tilesRange.setMaxTileY(0);
             } else {
                 TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
             }
 
             // Set terrainLayer.available of tileSet json
-            terrainLayer.available.add(tilesRange); // this is used to save the terrainLayer.json
+            terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
             if (this.geoTiffFilesCount == 1) {
                 if (this.terrainElevationDataManager == null) {
@@ -128,7 +129,7 @@ public class TileWgs84Manager {
             } else {
                 this.terrainElevationDataManager.deleteObjects();
                 this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
-                this.terrainElevationDataManager.terrainElevationDataFolderPath = this.mapDepthGeoTiffFolderPath.get(depth);
+                this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.mapDepthGeoTiffFolderPath.get(depth));
                 this.terrainElevationDataManager.makeTerrainQuadTree();
             }
 
@@ -137,13 +138,12 @@ public class TileWgs84Manager {
             int maxRow = 80;
             List<TilesRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, maxCol, maxRow, null);
 
-            int subDividedRangesCount = subDividedTilesRanges.size();
             for (TilesRange subDividedTilesRange : subDividedTilesRanges) {
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
                 boolean is1rstGeneration = depth == minTileDepth;
 
                 tileMatrix.makeMatrixMesh(is1rstGeneration);
-                
+
             }
 
         }
@@ -174,19 +174,19 @@ public class TileWgs84Manager {
 
     public String getTilePath(TileIndices tileIndices) {
         String tileTempDirectory = this.tileTempDirectory;
-        String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
+        String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
         return tileTempDirectory + File.separator + neighborFilePath;
     }
 
     public String getQuantizedMeshTileFolderPath(TileIndices tileIndices) {
         String outputDirectory = this.outputDirectory;
-        String neighborFolderPath = tileIndices.L + File.separator + tileIndices.X;
+        String neighborFolderPath = tileIndices.getL() + File.separator + tileIndices.getX();
         return outputDirectory + File.separator + neighborFolderPath;
     }
 
     public String getQuantizedMeshTilePath(TileIndices tileIndices) {
         String outputDirectory = this.outputDirectory;
-        String neighborFilePath = tileIndices.L + File.separator + tileIndices.X + File.separator + tileIndices.Y;
+        String neighborFilePath = tileIndices.getL() + File.separator + tileIndices.getX() + File.separator + tileIndices.getY();
         return outputDirectory + File.separator + neighborFilePath + ".terrain";
     }
 
@@ -201,20 +201,20 @@ public class TileWgs84Manager {
         String neighborFullPath = getTilePath(tileIndices);
         TileWgs84 neighborTile = new TileWgs84(null, this);
         if (!FileUtils.isFileExists(neighborFullPath)) {
-            log.debug("Creating tile: CREATE - * - CREATE : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
-            neighborTile.tileIndices = tileIndices;
+            log.debug("Creating tile: CREATE - * - CREATE : " + tileIndices.getX() + ", " + tileIndices.getY() + ", " + tileIndices.getL());
+            neighborTile.setTileIndices(tileIndices);
             String imageryType = this.imageryType;
-            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
+            neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
             neighborTile.createInitialMesh();
-            if (neighborTile.mesh == null) {
+            if (neighborTile.getMesh() == null) {
                 log.error("Error: neighborTile.mesh == null");
             }
 
-            neighborTile.saveFile(neighborTile.mesh, neighborFullPath);
+            neighborTile.saveFile(neighborTile.getMesh(), neighborFullPath);
         } else {
             // load the Tile
-            neighborTile.tileIndices = tileIndices;
-            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
+            neighborTile.setTileIndices(tileIndices);
+            neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
             neighborTile.loadFile(neighborFullPath);
         }
 
@@ -237,11 +237,11 @@ public class TileWgs84Manager {
             //log.error("Error: neighborFullPath is not exist: " + neighborFullPath);
             return null;
         } else {
-            log.debug("Loading tile: LOAD - * - LOAD : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
+            log.debug("Loading tile: LOAD - * - LOAD : " + tileIndices.getX() + ", " + tileIndices.getY() + ", " + tileIndices.getL());
             // load the Tile
             neighborTile = new TileWgs84(null, this);
-            neighborTile.tileIndices = tileIndices;
-            neighborTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, imageryType, originIsLeftUp);
+            neighborTile.setTileIndices(tileIndices);
+            neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
             neighborTile.loadFile(neighborFullPath);
         }
 
@@ -258,7 +258,7 @@ public class TileWgs84Manager {
 
         this.setGeoTiffFilesCount(geotiffCount);
 
-        System.out.println("resizing geoTiffs: geoTiffsCount : " + geotiffCount);
+        log.info("resizing geoTiffs: geoTiffsCount : " + geotiffCount);
 
         if (geotiffCount == 1) {
             this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);
@@ -329,7 +329,7 @@ public class TileWgs84Manager {
                 this.mapDepthGeoTiffFolderPath.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
             }
 
-            
+
         }
 
         // now check if exist folders inside the terrainElevationDataFolderPath

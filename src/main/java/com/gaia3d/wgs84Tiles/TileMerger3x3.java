@@ -2,12 +2,14 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.basic.types.HalfEdgeType;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+@NoArgsConstructor
 @Slf4j
 public class TileMerger3x3 {
 
@@ -24,22 +26,19 @@ public class TileMerger3x3 {
     //  | LD_Tile  | D_Tile   | RD_Tile  |
     //  |          |          |          |
     //  +----------+----------+----------+
-    TileWgs84 center_tile = null;
-    TileWgs84 left_tile = null;
-    TileWgs84 right_tile = null;
-    TileWgs84 up_tile = null;
-    TileWgs84 down_tile = null;
+    private TileWgs84 center_tile = null;
+    private TileWgs84 left_tile = null;
+    private TileWgs84 right_tile = null;
+    private TileWgs84 up_tile = null;
+    private TileWgs84 down_tile = null;
 
-    TileWgs84 left_up_tile = null;
-    TileWgs84 right_up_tile = null;
-    TileWgs84 left_down_tile = null;
-    TileWgs84 right_down_tile = null;
+    private TileWgs84 left_up_tile = null;
+    private TileWgs84 right_up_tile = null;
+    private TileWgs84 left_down_tile = null;
+    private TileWgs84 right_down_tile = null;
 
-    double vertexCoincidentError = 0.0000000000001;
+    private double vertexCoincidentError = 0.0000000000001;
 
-    public TileMerger3x3() {
-
-    }
 
     public TileMerger3x3(TileWgs84 center_tile, TileWgs84 left_tile, TileWgs84 right_tile, TileWgs84 up_tile, TileWgs84 down_tile, TileWgs84 left_up_tile, TileWgs84 right_up_tile, TileWgs84 left_down_tile, TileWgs84 right_down_tile) {
         this.center_tile = center_tile;
@@ -129,7 +128,7 @@ public class TileMerger3x3 {
 
         GaiaMesh resultMergedMesh = null;
         if (C_Tile != null) {
-            resultMergedMesh = C_Tile.mesh;
+            resultMergedMesh = C_Tile.getMesh();
         }
 
         if (resultMergedMesh == null) {
@@ -144,7 +143,7 @@ public class TileMerger3x3 {
             //  +----------+----------+
 
             // in this case, join halfEdges of the right side of the left tile with the left side of the result mesh.
-            GaiaMesh L_mesh = L_Tile.mesh;
+            GaiaMesh L_mesh = L_Tile.getMesh();
             List<GaiaHalfEdge> L_mesh_right_halfEdges = L_mesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
             List<GaiaHalfEdge> result_mesh_left_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.LEFT);
 
@@ -169,7 +168,7 @@ public class TileMerger3x3 {
             //  +---------------------+----------+
 
             // in this case, join halfEdges of the left side of the right tile with the right side of the result mesh.
-            GaiaMesh R_mesh = R_Tile.mesh;
+            GaiaMesh R_mesh = R_Tile.getMesh();
             List<GaiaHalfEdge> R_mesh_left_halfEdges = R_mesh.getHalfEdgesByType(HalfEdgeType.LEFT);
             List<GaiaHalfEdge> result_mesh_right_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
 

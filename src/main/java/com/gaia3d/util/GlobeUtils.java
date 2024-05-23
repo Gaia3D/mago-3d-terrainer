@@ -182,13 +182,6 @@ public class GlobeUtils {
         return new Vector3d(factor * lambda, factor * phi, h);
     }
 
-    /*public static ProjCoordinate transform(CoordinateReferenceSystem source, CoordinateReferenceSystem target, ProjCoordinate coordinate) {
-        BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, target);
-        ProjCoordinate result = new ProjCoordinate();
-        transformer.transform(coordinate, result);
-        return result;
-    }*/
-
     public static ProjCoordinate transform(CoordinateReferenceSystem source, ProjCoordinate coordinate) {
         BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, wgs84);
         ProjCoordinate result = new ProjCoordinate();

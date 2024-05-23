@@ -6,6 +6,8 @@ import com.gaia3d.reader.FileUtils;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
@@ -19,17 +21,19 @@ import java.util.Map;
 
 import static java.lang.Math.abs;
 
+@Getter
+@Setter
 @Slf4j
 public class TileWgs84 {
-    public TileWgs84Manager manager = null;
+    private TileWgs84Manager manager = null;
 
-    public TileWgs84 parentTile = null;
+    private TileWgs84 parentTile = null;
     // if parentTile == null, then this is the root tile.
-    public TileIndices tileIndices = null;
+    private TileIndices tileIndices = null;
 
-    public GeographicExtension geographicExtension = null;
+    private GeographicExtension geographicExtension = null;
 
-    public GaiaMesh mesh = null;
+    private GaiaMesh mesh = null;
 
     // for current tile, create the 8 neighbor tiles.
     //  +----------+----------+----------+
@@ -46,7 +50,7 @@ public class TileWgs84 {
     //  |          |          |          |
     //  +----------+----------+----------+
 
-    public TileWgs84[] neighborTiles = new TileWgs84[8];
+    private TileWgs84[] neighborTiles = new TileWgs84[8];
     // neighborTiles[0] = LD_Tile
     // neighborTiles[1] = D_Tile
     // neighborTiles[2] = RD_Tile
@@ -57,7 +61,7 @@ public class TileWgs84 {
     // neighborTiles[7] = L_Tile
 
 
-    public TileWgs84[] childTiles = new TileWgs84[4];
+    private TileWgs84[] childTiles = new TileWgs84[4];
 
     public TileWgs84(TileWgs84 parentTile, TileWgs84Manager manager) {
         this.parentTile = parentTile;
@@ -361,7 +365,6 @@ public class TileWgs84 {
 
     }
 
-
     public void makeBigMesh(boolean is1rstGeneration) throws IOException, TransformException {
 
         // make a bigMesh
@@ -480,7 +483,7 @@ public class TileWgs84 {
         /*
         String tileTempDirectory = this.manager.tileTempDirectory;
         String outputDirectory = this.manager.outputDirectory;
-        String bigMeshFilePath = TileWgs84Utils.getTileFileName(curr_TileIndices.X, curr_TileIndices.Y, curr_TileIndices.L) + "bigMesh.til";
+        String bigMeshFilePath = TileWgs84Utils.getTileFileName(curr_TileIndices.getX(), curr_TileIndices.getY(), curr_TileIndices.L) + "bigMesh.til";
         String bigMeshFullPath = tileTempDirectory + File.separator + bigMeshFilePath;
         this.saveFileBigMesh(bigMeshFullPath, bigMesh);
         */
@@ -490,10 +493,7 @@ public class TileWgs84 {
 
     public boolean saveSeparatedTiles(List<GaiaMesh> separatedMeshes) {
         // save the 9 tiles
-        int meshesCount = separatedMeshes.size();
-        for (int i = 0; i < meshesCount; i++) {
-            GaiaMesh mesh = separatedMeshes.get(i);
-
+        for (GaiaMesh mesh : separatedMeshes) {
             // Test check meshes
             if (!TileWgs84Utils.checkTile_test(mesh, this.manager.getVertexCoincidentError(), this.manager.isOriginIsLeftUp())) {
                 log.info("Error: mesh is not valid");
@@ -504,7 +504,7 @@ public class TileWgs84 {
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             String tileTempDirectory = this.manager.getTileTempDirectory();
             String outputDirectory = this.manager.getOutputDirectory();
-            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.X, tileIndices.Y, tileIndices.L);
+            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
             String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             try {
@@ -521,7 +521,6 @@ public class TileWgs84 {
 
     private boolean triangleIntersectsLongitudeOrLatitude(GaiaTriangle triangle, double midLonDeg, double midLatDeg) {
         List<GaiaVertex> vertices = triangle.getVertices();
-        int verticesCount = vertices.size();
         int vertexLeftSideCount = 0;
         int vertexRightSideCount = 0;
         int vertexUpsideCount = 0;
@@ -529,8 +528,7 @@ public class TileWgs84 {
         int vertexCoincidentCount = 0;
         double vertexCoincidentError = this.manager.getVertexCoincidentError();
 
-        for (int i = 0; i < verticesCount; i++) {
-            GaiaVertex vertex = vertices.get(i);
+        for (GaiaVertex vertex : vertices) {
             double diffX = Math.abs(vertex.getPosition().x - midLonDeg);
             double diffY = Math.abs(vertex.getPosition().y - midLatDeg);
             if (diffX < vertexCoincidentError || diffY < vertexCoincidentError) {
@@ -578,8 +576,8 @@ public class TileWgs84 {
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
 
-        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.getOwnerTileIndices().L);
-        log.debug("maxDiff : " + maxDiff + " , tileDepth : " + triangle.getOwnerTileIndices().L + " , tileX : " + triangle.getOwnerTileIndices().X + " , tileY : " + triangle.getOwnerTileIndices().Y);
+        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.getOwnerTileIndices().getL());
+        log.debug("maxDiff : " + maxDiff + " , tileDepth : " + triangle.getOwnerTileIndices().getL() + " , tileX : " + triangle.getOwnerTileIndices().getX() + " , tileY : " + triangle.getOwnerTileIndices().getY());
 
         // fast check***************************************************************
         // check the barycenter of the triangle
@@ -622,14 +620,14 @@ public class TileWgs84 {
         double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
         double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
         double triangleMaxLengthMeters = triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
-        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.getOwnerTileIndices().L);
+        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.setRefineChecked(true);
             log.debug("MIN-TRIANGLE-SIZE-Check : false &*###################-----------------#################");
             return false;
         }
 
-        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.getOwnerTileIndices().L);
+        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
             log.debug("FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH*** --- *** --- ***");
             return true;
@@ -652,7 +650,7 @@ public class TileWgs84 {
             return false;
         }
 
-        TerrainElevationData terrainElevationData = terrainElevationDataManager.rootTerrainElevationDataQuadTree.getTerrainElevationData(barycenter.x, barycenter.y);
+        TerrainElevationData terrainElevationData = terrainElevationDataManager.getRootTerrainElevationDataQuadTree().getTerrainElevationData(barycenter.x, barycenter.y);
         Vector2d pixelSizeDeg = this.manager.getMemSavePixelSizeDegrees();
         pixelSizeDeg.set(widthDeg / 256.0, heightDeg / 256.0);
         if (terrainElevationData != null) {
@@ -673,15 +671,14 @@ public class TileWgs84 {
         double bbox_minX = bboxTriangle.getMinX();
         double bbox_minY = bboxTriangle.getMinY();
 
-        boolean intersects = false;
         int counter = 0;
-        List<GaiaHalfEdge> memSave_hedges = new ArrayList<GaiaHalfEdge>();
-        GaiaLine2D memSave_line = new GaiaLine2D();
+        List<GaiaHalfEdge> memSaveHedges = new ArrayList<>();
+        GaiaLine2D memSaveline = new GaiaLine2D();
         for (int row = 0; row < rowsCount; row++) {
             double pos_y = bbox_minY + row * pixelSizeY;
             for (int column = 0; column < columnsCount; column++) {
                 double pos_x = bbox_minX + column * pixelSizeX;
-                intersects = triangle.intersectsPointXY(pos_x, pos_y, memSave_hedges, memSave_line);
+                boolean intersects = triangle.intersectsPointXY(pos_x, pos_y, memSaveHedges, memSaveline);
                 counter++;
 
                 if (!intersects) {
@@ -694,15 +691,15 @@ public class TileWgs84 {
                 if (elevation > planeElevation) {
                     if (abs(elevation - planeElevation) > maxDiff * 0.5) {
                         log.debug("SLOW-Check : true" + " , counter : " + counter);
-                        memSave_hedges.clear();
-                        memSave_line.deleteObjects();
+                        memSaveHedges.clear();
+                        memSaveline.deleteObjects();
                         return true;
                     }
                 } else {
                     if (abs(elevation - planeElevation) > maxDiff) {
                         log.debug("SLOW-Check : true" + " , counter : " + counter);
-                        memSave_hedges.clear();
-                        memSave_line.deleteObjects();
+                        memSaveHedges.clear();
+                        memSaveline.deleteObjects();
                         return true;
                     }
                 }
@@ -711,8 +708,8 @@ public class TileWgs84 {
             }
         }
 
-        memSave_hedges.clear();
-        memSave_line.deleteObjects();
+        memSaveHedges.clear();
+        memSaveline.deleteObjects();
 
         log.debug("SLOW-Check : false");
         triangle.setRefineChecked(true);
@@ -781,7 +778,6 @@ public class TileWgs84 {
         int splitCount = 0;
         int trianglesCount = mesh.triangles.size();
         log.debug("Triangles count : " + trianglesCount);
-        splitCount = 0;
         for (int i = 0; i < trianglesCount; i++) {
             GaiaTriangle triangle = mesh.triangles.get(i);
 
@@ -853,8 +849,6 @@ public class TileWgs84 {
         boolean refined = false;
         int splitCount = 0;
 
-        splitCount = 0;
-
         int trianglesCount = mesh.triangles.size();
         log.debug("Triangles count : " + trianglesCount);
         for (int i = 0; i < trianglesCount; i++) {
@@ -890,7 +884,7 @@ public class TileWgs84 {
         boolean finished = false;
         int splitCount = 0;
         int maxIterations = 3;
-        if (this.tileIndices.L < 10) {
+        if (this.tileIndices.getL() < 10) {
             maxIterations = 4;
         }
 
@@ -940,7 +934,7 @@ public class TileWgs84 {
         int splitCount = 0;
         int maxIterations = this.manager.getTriangleRefinementMaxIterations();
         while (!finished) {
-            log.debug("iteration : " + splitCount + " : L : " + currTileIndices.L);
+            log.debug("iteration : " + splitCount + " : L : " + currTileIndices.getL());
 
             if (!this.refineMeshOneIteration(mesh, currTileIndices)) {
                 finished = true;
@@ -951,10 +945,7 @@ public class TileWgs84 {
             if (splitCount >= maxIterations) {
                 finished = true;
             }
-
         }
-
-        
     }
 
     public void loadTileAndSave4Children(TileIndices tileIndices) throws IOException, TransformException {
@@ -984,10 +975,7 @@ public class TileWgs84 {
         double midLonDeg = this.geographicExtension.getMidLongitudeDeg();
         double midLatDeg = this.geographicExtension.getMidLatitudeDeg();
         List<GaiaTriangle> triangles = this.mesh.triangles;
-        int trianglesCount = triangles.size();
-        for (int i = 0; i < trianglesCount; i++) {
-            GaiaTriangle triangle = triangles.get(i);
-
+        for (GaiaTriangle triangle : triangles) {
             if (triangle.getObjectStatus() == GaiaObjectStatus.DELETED) {
                 continue;
             }
@@ -1018,13 +1006,12 @@ public class TileWgs84 {
 
         // 3- save the 4 children
         int childMeshesCount = childMeshes.size();
-        for (int i = 0; i < childMeshesCount; i++) {
-            GaiaMesh childMesh = childMeshes.get(i);
+        for (GaiaMesh childMesh : childMeshes) {
             GaiaTriangle triangle = childMesh.triangles.get(0); // take the first triangle
             TileIndices childTileIndices = triangle.getOwnerTileIndices();
             String tileTempDirectory = this.manager.getTileTempDirectory();
             String outputDirectory = this.manager.getOutputDirectory();
-            String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.X, childTileIndices.Y, childTileIndices.L);
+            String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
             String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
             try {
@@ -1072,13 +1059,13 @@ public class TileWgs84 {
                 TileIndices childTileIndices = tileIndicesArray.get(i);
                 String tileTempDirectory = this.manager.getTileTempDirectory();
                 String outputDirectory = this.manager.getOutputDirectory();
-                String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.X, childTileIndices.Y, childTileIndices.L);
+                String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
                 String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
                 // Test. save a simple tile*************************************
                 TileWgs84 simpleTile = new TileWgs84(null, this.manager);
                 simpleTile.tileIndices = childTileIndices;
-                simpleTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(childTileIndices.L, childTileIndices.X, childTileIndices.Y, null, this.manager.getImageryType(), this.manager.isOriginIsLeftUp());
+                simpleTile.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(childTileIndices.getL(), childTileIndices.getX(), childTileIndices.getY(), null, this.manager.getImageryType(), this.manager.isOriginIsLeftUp());
                 simpleTile.createInitialMesh_test();
                 saveFile(simpleTile.mesh, childTileFullPath);
 

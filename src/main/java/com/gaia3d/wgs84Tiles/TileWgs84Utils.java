@@ -104,10 +104,10 @@ public class TileWgs84Utils {
         TileIndices rightDownTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, minLat, null, originIsLeftUp);
         TileIndices rightUpTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, maxLat, null, originIsLeftUp);
 
-        int minX = leftDownTileName.X;
-        int maxX = rightDownTileName.X;
-        int maxY = leftDownTileName.Y; // origin is left-up.
-        int minY = rightUpTileName.Y;
+        int minX = leftDownTileName.getX();
+        int maxX = rightDownTileName.getX();
+        int maxY = leftDownTileName.getY(); // origin is left-up.
+        int minY = rightUpTileName.getY();
 
         double xMin = -180.0;
         double yMin = -90.0;
@@ -121,8 +121,8 @@ public class TileWgs84Utils {
 
 
         if (!originIsLeftUp) {
-            maxY = rightUpTileName.Y;
-            minY = leftDownTileName.Y;
+            maxY = rightUpTileName.getY();
+            minY = leftDownTileName.getY();
         }
 
         if (maxX < xIndexMax) {
@@ -143,11 +143,11 @@ public class TileWgs84Utils {
 
         // the "tilesRange" is optional
         if (tilesRange != null) {
-            tilesRange.tileDepth = depth;
-            tilesRange.minTileX = minX;
-            tilesRange.maxTileX = maxX;
-            tilesRange.minTileY = minY;
-            tilesRange.maxTileY = maxY;
+            tilesRange.setTileDepth(depth);
+            tilesRange.setMinTileX(minX);
+            tilesRange.setMaxTileX(maxX);
+            tilesRange.setMinTileY(minY);
+            tilesRange.setMaxTileY(maxY);
         }
     }
 
@@ -182,8 +182,8 @@ public class TileWgs84Utils {
             resultSubDividedTilesRanges = new ArrayList<TilesRange>();
         }
 
-        int colsCount = tilesRange.maxTileX - tilesRange.minTileX + 1;
-        int rowsCount = tilesRange.maxTileY - tilesRange.minTileY + 1;
+        int colsCount = tilesRange.getMaxTileX() - tilesRange.getMinTileX() + 1;
+        int rowsCount = tilesRange.getMaxTileY() - tilesRange.getMinTileY() + 1;
 
         if (colsCount <= maxCol && rowsCount <= maxRow) {
             resultSubDividedTilesRanges.add(tilesRange);
@@ -207,11 +207,11 @@ public class TileWgs84Utils {
         for (int i = 0; i < colsSubDividedCount; i++) {
             for (int j = 0; j < rowsSubDividedCount; j++) {
                 TilesRange subDividedTilesRange = new TilesRange();
-                subDividedTilesRange.tileDepth = tilesRange.tileDepth;
-                subDividedTilesRange.minTileX = tilesRange.minTileX + (int) (i * colsSubDividedSize);
-                subDividedTilesRange.maxTileX = tilesRange.minTileX + (int) ((i + 1) * colsSubDividedSize) - 1;
-                subDividedTilesRange.minTileY = tilesRange.minTileY + (int) (j * rowsSubDividedSize);
-                subDividedTilesRange.maxTileY = tilesRange.minTileY + (int) ((j + 1) * rowsSubDividedSize) - 1;
+                subDividedTilesRange.setTileDepth(tilesRange.getTileDepth());
+                subDividedTilesRange.setMinTileX(tilesRange.getMinTileX() + (int) (i * colsSubDividedSize));
+                subDividedTilesRange.setMaxTileX(tilesRange.getMinTileX() + (int) ((i + 1) * colsSubDividedSize) - 1);
+                subDividedTilesRange.setMinTileY(tilesRange.getMinTileY() + (int) (j * rowsSubDividedSize));
+                subDividedTilesRange.setMaxTileY(tilesRange.getMinTileY() + (int) ((j + 1) * rowsSubDividedSize) - 1);
 
                 resultSubDividedTilesRanges.add(subDividedTilesRange);
             }
@@ -246,7 +246,7 @@ public class TileWgs84Utils {
         // check the boundingBox of the tile
         GaiaBoundingBox bbox = mesh.getBoundingBox();
         TileIndices tileIndices = mesh.triangles.get(0).getOwnerTileIndices();
-        GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.L, tileIndices.X, tileIndices.Y, null, "CRS84", originIsLeftUp);
+        GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, "CRS84", originIsLeftUp);
         double minX = bbox.getMinX();
         double minY = bbox.getMinY();
         double maxX = bbox.getMaxX();
