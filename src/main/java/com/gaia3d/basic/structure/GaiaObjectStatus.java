@@ -18,5 +18,4 @@ public enum GaiaObjectStatus {
         }
         return UNKNOWN;
     }
-
 }

@@ -17,8 +17,7 @@ public class TileWgs84Utils {
     public static double getTileSizeInMetersByDepth(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         double angRad = angDeg * Math.PI / 180.0;
-        double equatorialRadius = GlobeUtils.getEquatorialRadius();
-        return angRad * equatorialRadius;
+        return angRad * GlobeUtils.EQUATORIAL_RADIUS;
     }
 
     public static double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
@@ -155,31 +154,31 @@ public class TileWgs84Utils {
         return "L" + L + "_X" + X + "_Y" + Y + ".til";
     }
 
-    public static String getTileFolderName_L(int L) {
+    public static String getTileFolderNameL(int L) {
         return "L" + L;
     }
 
-    public static String getTileFolderName_X(int X) {
+    public static String getTileFolderNameX(int X) {
         return "X" + X;
     }
 
     public static String getTileFilePath(int X, int Y, int L) {
-        return getTileFolderName_L(L) + File.separator + getTileFolderName_X(X) + File.separator + getTileFileName(X, Y, L);
+        return getTileFolderNameL(L) + File.separator + getTileFolderNameX(X) + File.separator + getTileFileName(X, Y, L);
     }
 
-    public static int getTileIndiceMaxX(int depth) {
+    public static int getTileIndicesMaxX(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         return (int) (360.0 / angDeg);
     }
 
-    public static int getTileIndiceMaxY(int depth) {
+    public static int getTileIndicesMaxY(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         return (int) (180.0 / angDeg);
     }
 
     static List<TilesRange> subDivideTileRange(TilesRange tilesRange, int maxCol, int maxRow, List<TilesRange> resultSubDividedTilesRanges) {
         if (resultSubDividedTilesRanges == null) {
-            resultSubDividedTilesRanges = new ArrayList<TilesRange>();
+            resultSubDividedTilesRanges = new ArrayList<>();
         }
 
         int colsCount = tilesRange.getMaxTileX() - tilesRange.getMinTileX() + 1;
@@ -235,8 +234,8 @@ public class TileWgs84Utils {
         return Y >= 0 && Y < numTilesY;
     }
 
-    public static boolean checkTile_test(GaiaMesh mesh, double error, boolean originIsLeftUp) {
-        List<GaiaVertex> resultVertices = new ArrayList<GaiaVertex>();
+    public static boolean checkTileTest(GaiaMesh mesh, double error, boolean originIsLeftUp) {
+        List<GaiaVertex> resultVertices = new ArrayList<>();
         mesh.getVerticesByTriangles(resultVertices);
 
         if (resultVertices.size() != mesh.vertices.size()) {

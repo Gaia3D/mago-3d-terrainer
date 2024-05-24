@@ -9,37 +9,29 @@ import org.locationtech.proj4j.ProjCoordinate;
 
 /**
  * Utility class for converting between geographic and cartesian coordinates.
- *
  * @author znkim
  * @since 1.0.0
  */
 public class GlobeUtils {
-    private static final double degToRadFactor = 0.017453292519943296d; // 3.141592653589793 / 180.0;
-    private static final double equatorialRadius = 6378137.0d; // meters.
-    private static final double equatorialRadiusSquared = 40680631590769.0d;
-    private static final double polarRadius = 6356752.3142d; // meters.
-    private static final double polarRadiusSquared = 40408299984087.05552164d;
-    private static final double firstEccentricitySquared = 6.69437999014E-3d;
-    private static final CRSFactory factory = new CRSFactory();
-    private static final CoordinateReferenceSystem wgs84 = factory.createFromParameters("WGS84", "+proj=longlat +datum=WGS84 +no_defs");
-    public static double getEquatorialRadius() {
-        return equatorialRadius;
-    }
+    public static final double DEG_TO_RADIAN_FACTOR = 0.017453292519943296d; // 3.141592653589793 / 180.0;
+    public static final double EQUATORIAL_RADIUS = 6378137.0d; // meters
+    private static final double EQUATORIAL_RADIUS_SQUARED = 40680631590769.0d;
+    private static final double POLAR_RADIUS = 6356752.3142d; // meters
+    private static final double POLAR_RADIUS_SQUARED = 40408299984087.05552164d;
+    private static final double FIRST_ECCENTRICITY_SQUARED = 6.69437999014E-3d;
 
-    public static double getDegToRadFactor() {
-        return degToRadFactor;
-    }
+    private static final CoordinateReferenceSystem WGS84 = new CRSFactory().createFromParameters("WGS84", "+proj=longlat +datum=WGS84 +no_defs");
 
     public static double[] geographicToCartesianWgs84(double longitude, double latitude, double altitude) {
         double[] result = new double[3];
-        double lonRad = longitude * degToRadFactor;
-        double latRad = latitude * degToRadFactor;
+        double lonRad = longitude * DEG_TO_RADIAN_FACTOR;
+        double latRad = latitude * DEG_TO_RADIAN_FACTOR;
         double cosLon = Math.cos(lonRad);
         double cosLat = Math.cos(latRad);
         double sinLon = Math.sin(lonRad);
         double sinLat = Math.sin(latRad);
-        double e2 = firstEccentricitySquared;
-        double v = equatorialRadius / Math.sqrt(1.0 - e2 * sinLat * sinLat);
+        double e2 = FIRST_ECCENTRICITY_SQUARED;
+        double v = EQUATORIAL_RADIUS / Math.sqrt(1.0 - e2 * sinLat * sinLat);
         result[0] = (v + altitude) * cosLat * cosLon;
         result[1] = (v + altitude) * cosLat * sinLon;
         result[2] = (v * (1.0 - e2) + altitude) * sinLat;
@@ -52,23 +44,22 @@ public class GlobeUtils {
     }
 
     public static double getRadiusAtLatitude(double latitude) {
-        double latRad = latitude * degToRadFactor;
+        double latRad = latitude * DEG_TO_RADIAN_FACTOR;
         double cosLat = Math.cos(latRad);
         double sinLat = Math.sin(latRad);
-        double e2 = firstEccentricitySquared;
-        double v = equatorialRadius / Math.sqrt(1.0 - e2 * sinLat * sinLat);
-        return v;
+        double e2 = FIRST_ECCENTRICITY_SQUARED;
+        return EQUATORIAL_RADIUS / Math.sqrt(1.0 - e2 * sinLat * sinLat);
     }
 
     public static Vector3d normalAtCartesianPointWgs84(double x, double y, double z) {
-        Vector3d zAxis = new Vector3d(x / equatorialRadiusSquared, y / equatorialRadiusSquared, z / polarRadiusSquared);
+        Vector3d zAxis = new Vector3d(x / EQUATORIAL_RADIUS_SQUARED, y / EQUATORIAL_RADIUS_SQUARED, z / POLAR_RADIUS_SQUARED);
         zAxis.normalize();
 
         return zAxis;
     }
 
     public static Matrix4d transformMatrixAtCartesianPointWgs84(double x, double y, double z) {
-        Vector3d zAxis = new Vector3d(x / equatorialRadiusSquared, y / equatorialRadiusSquared, z / polarRadiusSquared);
+        Vector3d zAxis = new Vector3d(x / EQUATORIAL_RADIUS_SQUARED, y / EQUATORIAL_RADIUS_SQUARED, z / POLAR_RADIUS_SQUARED);
         zAxis.normalize();
         Vector3d xAxis = new Vector3d(-y, +x, 0.0);
         xAxis.normalize();
@@ -115,19 +106,18 @@ public class GlobeUtils {
         double y = position.y;
         double z = position.z;
 
-        double xxpyy = x * x + y * y;
+        double xx = x * x;
+        double yy = y * y;
+        double xxpyy = xx + yy;
         double sqrtXXpYY = Math.sqrt(xxpyy);
-        double a = equatorialRadius;
+        double a = EQUATORIAL_RADIUS;
         double ra2 = 1.0 / (a * a);
-        double e2 = firstEccentricitySquared;
+        double e2 = FIRST_ECCENTRICITY_SQUARED;
         double e4 = e2 * e2;
         double p = xxpyy * ra2;
         double q = z * z * (1.0 - e2) * ra2;
         double r = (p + q - e4) / 6.0;
-
-        //double r = 1.0 / 6.0 * (p - q - e4);
         double evoluteBorderTest = 8 * r * r * r + e4 * p * q;
-
         double h, phi, u, v, w, k, D, sqrtDDpZZ, e, lambda, s2, rad1, rad2, rad3, atan;
 
         if (evoluteBorderTest > 0.0 || q != 0.0) {
@@ -175,15 +165,11 @@ public class GlobeUtils {
         }
 
         double factor = 180.0 / Math.PI;
-        /*double[] result = new double[3];
-        result[0] = factor * lambda;
-        result[1] = factor * phi;
-        result[2] = h;*/
         return new Vector3d(factor * lambda, factor * phi, h);
     }
 
     public static ProjCoordinate transform(CoordinateReferenceSystem source, ProjCoordinate coordinate) {
-        BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, wgs84);
+        BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, WGS84);
         ProjCoordinate result = new ProjCoordinate();
         transformer.transform(coordinate, result);
         return result;
@@ -191,13 +177,12 @@ public class GlobeUtils {
 
     public static double getLonDegToMetersFactor(double latDeg) {
         // given a latitude degree, this function returns the factor to convert longitude degree to meters.
-        double latRad = latDeg * degToRadFactor;
+        double latRad = latDeg * DEG_TO_RADIAN_FACTOR;
         double cosLat = Math.cos(latRad);
-        double lonDegToMetersFactor = equatorialRadius * degToRadFactor * cosLat;
-        return lonDegToMetersFactor;
+        return EQUATORIAL_RADIUS * DEG_TO_RADIAN_FACTOR * cosLat;
     }
 
     public static double getLatDegToMetersFactor() {
-        return equatorialRadius * degToRadFactor;
+        return EQUATORIAL_RADIUS * DEG_TO_RADIAN_FACTOR;
     }
 }

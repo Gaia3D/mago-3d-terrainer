@@ -174,7 +174,7 @@ public class GaiaTriangle {
         GaiaBoundingBox bboxTriangle = this.getBoundingBox();
         double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
         double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
-        return triangleMaxLegthRad * GlobeUtils.getEquatorialRadius();
+        return triangleMaxLegthRad * GlobeUtils.EQUATORIAL_RADIUS;
     }
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
@@ -202,7 +202,7 @@ public class GaiaTriangle {
             dataOutputStream.writeInt(splitDepth);
 
         } catch (Exception e) {
-            log.error("Error : {}", e.getMessage());
+            log.error("{}", e.getMessage());
         }
     }
 

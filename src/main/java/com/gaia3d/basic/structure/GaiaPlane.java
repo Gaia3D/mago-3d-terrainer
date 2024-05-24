@@ -1,20 +1,15 @@
 package com.gaia3d.basic.structure;
 
+import lombok.NoArgsConstructor;
 import org.joml.Vector3d;
 
+@NoArgsConstructor
 public class GaiaPlane {
     // plane : ax + by + cz + d = 0
-    private double a;
-    private double b;
-    private double c;
-    private double d;
-
-    public GaiaPlane() {
-        a = 0;
-        b = 0;
-        c = 0;
-        d = 0;
-    }
+    private double a = 0;
+    private double b = 0;
+    private double c = 0;
+    private double d = 0;
 
     public GaiaPlane(Vector3d p0, Vector3d p1, Vector3d p2) {
         this.set3Points(p0, p1, p2);

@@ -18,8 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-public class Configurator
-{
+public class Configurator {
     public static final Level LEVEL = Level.ALL;
     private static final String DEFAULT_PATTERN = "%message%n";
 

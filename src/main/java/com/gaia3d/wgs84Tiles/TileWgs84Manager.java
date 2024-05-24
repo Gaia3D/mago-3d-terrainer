@@ -2,6 +2,7 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GaiaTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.reader.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,22 +26,18 @@ import java.util.Map;
 @Setter
 @Slf4j
 public class TileWgs84Manager {
-    private int minTileDepth = 0;
-    private int maxTileDepth = 15;
+    private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
 
-    private String tileTempDirectory = null;
-    private String outputDirectory = null;
-    private TerrainElevationDataManager terrainElevationDataManager = null; // new
-    private String originalGeoTiffFolderPath;
-    private String tempResizedGeoTiffFolderPath;
+    private TerrainElevationDataManager terrainElevationDataManager = null;
     // For each depth level, use a different folder
-    private Map<Integer, String> mapDepthGeoTiffFolderPath = new HashMap<>();
-    private Map<Integer, Double> mapDepthDesiredPixelSizeXinMeters = new HashMap<>();
-    private Map<Integer, Double> mapDepthMaxDiffBetweenGeoTiffSampleAndTrianglePlane = new HashMap<>();
-    private List<TileWgs84> tileWgs84List = new ArrayList<>();
+    private final Map<Integer, String> depthGeoTiffFolderPathMap = new HashMap<>();
+    private final Map<Integer, Double> depthDesiredPixelSizeXinMetersMap = new HashMap<>();
+    private final Map<Integer, Double> depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap = new HashMap<>();
+    private final List<TileWgs84> tileWgs84List = new ArrayList<>();
     private String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
+
     // tileRasterSize : when triangles refinement, we use a DEM raster of this size
-    private int tileRasterSize = 256;
+    private final int tileRasterSize = 256;
     private int refinementStrength = 1; // 1 = normal.
 
     private int geoTiffFilesCount = 0;
@@ -54,11 +51,9 @@ public class TileWgs84Manager {
     private Map<Integer, Double> minTriangleSizeForTileDepthMap = new HashMap<>();
 
     private boolean calculateNormals = true;
-    private List<TerrainElevationData> memSaveTerrainElevDataArray = new ArrayList<>();
-
+    private List<TerrainElevationData> memSaveTerrainElevDataList = new ArrayList<>();
+    private List<GaiaTriangle> memSaveTrianglesList = new ArrayList<>();
     private Vector2d memSavePixelSizeDegrees = new Vector2d();
-
-    private List<GaiaTriangle> memSaveTrianglesArray = new ArrayList<>();
 
     // constructor
     public TileWgs84Manager() {
@@ -79,7 +74,7 @@ public class TileWgs84Manager {
         for (int depth = 0; depth <= 28; depth++) {
             double tileSizeMeters = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
             double desiredPixelSizeXinMeters = tileSizeMeters / 256.0;
-            this.mapDepthDesiredPixelSizeXinMeters.put(depth, desiredPixelSizeXinMeters);
+            this.depthDesiredPixelSizeXinMetersMap.put(depth, desiredPixelSizeXinMeters);
         }
     }
 
@@ -103,6 +98,8 @@ public class TileWgs84Manager {
             terrainLayer.addExtension("octvertexnormals");
         }
 
+        int minTileDepth = globalOptions.getMinimumTileDepth();
+        int maxTileDepth = globalOptions.getMaximumTileDepth();
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             TilesRange tilesRange = new TilesRange();
 
@@ -129,7 +126,7 @@ public class TileWgs84Manager {
             } else {
                 this.terrainElevationDataManager.deleteObjects();
                 this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
-                this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.mapDepthGeoTiffFolderPath.get(depth));
+                this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
                 this.terrainElevationDataManager.makeTerrainQuadTree();
             }
 
@@ -149,7 +146,7 @@ public class TileWgs84Manager {
         }
 
         // finally save the terrainLayer.json
-        terrainLayer.saveJsonFile(outputDirectory, "layer.json");
+        terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
     }
 
     public double getMaxTriangleSizeForTileDepth(int depth) {
@@ -161,31 +158,31 @@ public class TileWgs84Manager {
     }
 
     public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
-        if (mapDepthMaxDiffBetweenGeoTiffSampleAndTrianglePlane.containsKey(depth)) {
-            return mapDepthMaxDiffBetweenGeoTiffSampleAndTrianglePlane.get(depth);
+        if (depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.containsKey(depth)) {
+            return depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.get(depth);
         } else {
             double maxDiff = TileWgs84Utils.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(depth);
-            mapDepthMaxDiffBetweenGeoTiffSampleAndTrianglePlane.put(depth, maxDiff);
-            return mapDepthMaxDiffBetweenGeoTiffSampleAndTrianglePlane.get(depth);
+            depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.put(depth, maxDiff);
+            return depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.get(depth);
         }
 
     }
 
 
     public String getTilePath(TileIndices tileIndices) {
-        String tileTempDirectory = this.tileTempDirectory;
+        String tileTempDirectory = globalOptions.getTileTempPath();
         String neighborFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
         return tileTempDirectory + File.separator + neighborFilePath;
     }
 
     public String getQuantizedMeshTileFolderPath(TileIndices tileIndices) {
-        String outputDirectory = this.outputDirectory;
+        String outputDirectory = globalOptions.getOutputPath();
         String neighborFolderPath = tileIndices.getL() + File.separator + tileIndices.getX();
         return outputDirectory + File.separator + neighborFolderPath;
     }
 
     public String getQuantizedMeshTilePath(TileIndices tileIndices) {
-        String outputDirectory = this.outputDirectory;
+        String outputDirectory = globalOptions.getOutputPath();
         String neighborFilePath = tileIndices.getL() + File.separator + tileIndices.getX() + File.separator + tileIndices.getY();
         return outputDirectory + File.separator + neighborFilePath + ".terrain";
     }
@@ -222,9 +219,9 @@ public class TileWgs84Manager {
         return neighborTile;
     }
 
-    public boolean existTileFile(TileIndices tileIndices) {
+    public boolean isNotExistsTileFile(TileIndices tileIndices) {
         String neighborFullPath = getTilePath(tileIndices);
-        return FileUtils.isFileExists(neighborFullPath);
+        return !FileUtils.isFileExists(neighborFullPath);
     }
 
     public TileWgs84 loadTileWgs84(TileIndices tileIndices) throws IOException, TransformException {
@@ -258,7 +255,7 @@ public class TileWgs84Manager {
 
         this.setGeoTiffFilesCount(geotiffCount);
 
-        log.info("resizing geoTiffs: geoTiffsCount : " + geotiffCount);
+        log.info("[Resize GeoTiff] resizing geoTiffs Count : {} ", geotiffCount);
 
         if (geotiffCount == 1) {
             this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);
@@ -294,28 +291,28 @@ public class TileWgs84Manager {
 
             Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(originalGridCoverage2D);
 
-            int minDepth = this.minTileDepth;
-            int maxDepth = this.maxTileDepth;
-            for (int depth = minDepth; depth <= maxDepth; depth += 1) {
-                double desiredPixelSizeXinMeters = this.mapDepthDesiredPixelSizeXinMeters.get(depth);
+            int minTileDepth = globalOptions.getMinimumTileDepth();
+            int maxTileDepth = globalOptions.getMaximumTileDepth();
+            for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
+                double desiredPixelSizeXinMeters = this.depthDesiredPixelSizeXinMetersMap.get(depth);
                 double desiredPixelSizeYinMeters = desiredPixelSizeXinMeters;
 
                 //****************************************************************************************
                 if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
                     // In this case just assign the originalGeoTiffFolderPath
-                    this.mapDepthGeoTiffFolderPath.put(depth, this.originalGeoTiffFolderPath);
+                    this.depthGeoTiffFolderPathMap.put(depth, globalOptions.getInputPath());
                     continue;
                 }
 
                 String depthStr = String.valueOf(depth);
-                String resizedGeoTiffFolderPath = this.tempResizedGeoTiffFolderPath + File.separator + depthStr + File.separator + currentFolderPath;
+                String resizedGeoTiffFolderPath = globalOptions.getResizedTiffTempPath() + File.separator + depthStr + File.separator + currentFolderPath;
                 String resizedGeoTiffFilePath = resizedGeoTiffFolderPath + File.separator + geoTiffFileName;
 
                 // check if exist the file
                 if (FileUtils.isFileExists(resizedGeoTiffFilePath)) {
                     // in this case, just assign the resizedGeoTiffFolderPath
-                    String resizedGeoTiffSETFolderPath_forThisDepth = this.tempResizedGeoTiffFolderPath + File.separator + depthStr;
-                    this.mapDepthGeoTiffFolderPath.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
+                    String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
+                    this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
                     continue;
                 }
 
@@ -325,8 +322,8 @@ public class TileWgs84Manager {
                 FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
 
-                String resizedGeoTiffSETFolderPath_forThisDepth = this.tempResizedGeoTiffFolderPath + File.separator + depthStr;
-                this.mapDepthGeoTiffFolderPath.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
+                String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
+                this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
             }
 
 

@@ -52,7 +52,7 @@ public class TerrainElevationDataManager {
     }
 
     public void MakeUniqueTerrainElevationData() throws IOException, FactoryException, TransformException {
-        log.info("MakeUniqueTerrainElevationData() started");
+        log.debug("MakeUniqueTerrainElevationData() started");
 
         if (uniqueGeoTiffFilePath == null) {
             return;
@@ -76,7 +76,7 @@ public class TerrainElevationDataManager {
         uniqueTerrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
 
         gridCoverage2D.dispose(true);
-        log.info("MakeUniqueTerrainElevationData() ended");
+        log.debug("MakeUniqueTerrainElevationData() ended");
     }
 
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {

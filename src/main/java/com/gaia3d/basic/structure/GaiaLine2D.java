@@ -11,10 +11,6 @@ public class GaiaLine2D {
     private double dirX;
     private double dirY;
 
-    public void deleteObjects() {
-        // nothing to do.
-    }
-
     public void setBy2Points(double startPosX, double startPosY, double endPosX, double endPosY) {
         this.posX = startPosX;
         this.posY = startPosY;

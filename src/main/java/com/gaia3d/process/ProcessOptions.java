@@ -4,10 +4,8 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum ProcessOptions
-{
+public enum ProcessOptions {
     HELP("help", "h", "help", false, "Print this message"),
-    VERSION("version", "v", "version", false, "Print version"),
 
     INPUT("input", "i", "input", true, "Input folder path"),
     OUTPUT("output", "o", "output", true, "Output folder path"),

@@ -12,8 +12,6 @@ import org.joml.Vector2d;
  * It can be used to calculate the center and volume of the geometry.
  * It can also be used to convert the local bounding rectangle to lonlat bounding rectangle.
  * It can also be used to calculate the longest distance of the geometry.
- *
- * @auther znkim
  * @see GaiaBoundingBox
  * @since 1.0.0
  */

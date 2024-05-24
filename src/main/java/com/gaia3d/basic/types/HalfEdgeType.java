@@ -7,14 +7,13 @@ import lombok.Getter;
 @Getter
 public enum HalfEdgeType {
 
-    //             UP
-    //        +----------+
-    //        |          |
-    // LEFT   |          | RIGHT
-    //        |          |
-    //        +----------+
-    //             DOWN
-
+    //           UP
+    //      +----------+
+    //      |          |
+    // LEFT |          | RIGHT
+    //      |          |
+    //      +----------+
+    //           DOWN
 
     UNKNOWN(-1),
     LEFT(0),

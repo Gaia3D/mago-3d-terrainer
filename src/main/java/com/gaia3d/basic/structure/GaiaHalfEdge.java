@@ -295,7 +295,7 @@ public class GaiaHalfEdge {
             int type_int = type.getValue();
             dataOutputStream.writeInt(type_int);
         } catch (Exception e) {
-            log.error("Error : {}", e.getMessage());
+            log.error("{}", e.getMessage());
         }
     }
 

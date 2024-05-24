@@ -2,16 +2,20 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.basic.types.HalfEdgeType;
-import lombok.NoArgsConstructor;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@NoArgsConstructor
+//@NoArgsConstructor
+//@AllArgsConstructor
+@Builder
 @Slf4j
 public class TileMerger3x3 {
+
+    private final static double VERTEX_COINCIDENT_ERROR = 0.0000000000001;
 
     //  +----------+----------+----------+
     //  |          |          |          |
@@ -26,43 +30,37 @@ public class TileMerger3x3 {
     //  | LD_Tile  | D_Tile   | RD_Tile  |
     //  |          |          |          |
     //  +----------+----------+----------+
-    private TileWgs84 center_tile = null;
-    private TileWgs84 left_tile = null;
-    private TileWgs84 right_tile = null;
-    private TileWgs84 up_tile = null;
-    private TileWgs84 down_tile = null;
+    private TileWgs84 centerTile;
+    private TileWgs84 leftTile;
+    private TileWgs84 rightTile;
+    private TileWgs84 upTile;
+    private TileWgs84 downTile;
 
-    private TileWgs84 left_up_tile = null;
-    private TileWgs84 right_up_tile = null;
-    private TileWgs84 left_down_tile = null;
-    private TileWgs84 right_down_tile = null;
+    private TileWgs84 leftUpTile;
+    private TileWgs84 rightUpTile;
+    private TileWgs84 leftDownTile;
+    private TileWgs84 rightDownTile;
 
-    private double vertexCoincidentError = 0.0000000000001;
-
-
-    public TileMerger3x3(TileWgs84 center_tile, TileWgs84 left_tile, TileWgs84 right_tile, TileWgs84 up_tile, TileWgs84 down_tile, TileWgs84 left_up_tile, TileWgs84 right_up_tile, TileWgs84 left_down_tile, TileWgs84 right_down_tile) {
-        this.center_tile = center_tile;
-        this.left_tile = left_tile;
-        this.right_tile = right_tile;
-        this.up_tile = up_tile;
-        this.down_tile = down_tile;
-        this.left_up_tile = left_up_tile;
-        this.right_up_tile = right_up_tile;
-        this.left_down_tile = left_down_tile;
-        this.right_down_tile = right_down_tile;
-    }
+    /*public TileMerger3x3(TileWgs84 centerTile, TileWgs84 leftTile, TileWgs84 rightTile, TileWgs84 upTile, TileWgs84 downTile, TileWgs84 leftUpTile, TileWgs84 rightUpTile, TileWgs84 leftDownTile, TileWgs84 rightDownTile) {
+        this.centerTile = centerTile;
+        this.leftTile = leftTile;
+        this.rightTile = rightTile;
+        this.upTile = upTile;
+        this.downTile = downTile;
+        this.leftUpTile = leftUpTile;
+        this.rightUpTile = rightUpTile;
+        this.leftDownTile = leftDownTile;
+        this.rightDownTile = rightDownTile;
+    }*/
 
     private boolean setTwinHalfEdgeWithHalfEdgesList(GaiaHalfEdge halfEdge, List<GaiaHalfEdge> halfEdgesList) {
-        int halfEdgesList_count = halfEdgesList.size();
-        for (int i = 0; i < halfEdgesList_count; i++) {
-            GaiaHalfEdge halfEdge2 = halfEdgesList.get(i);
-
+        for (GaiaHalfEdge halfEdge2 : halfEdgesList) {
             if (halfEdge2.getTwin() != null) {
                 // this halfEdge2 has a twin
                 continue;
             }
 
-            if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, vertexCoincidentError)) {
+            if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, VERTEX_COINCIDENT_ERROR)) {
                 // 1rst, must change the startVertex & endVertex of the halfEdge2
                 GaiaVertex startVertex = halfEdge.getStartVertex();
                 GaiaVertex endVertex = halfEdge.getEndVertex();
@@ -106,14 +104,12 @@ public class TileMerger3x3 {
         for (GaiaHalfEdge halfEdge : listHEdges_A) {
             if (halfEdge.getTwin() != null) {
                 // this halfEdge has a twin
-                log.info("Error: halfEdge has a twin.");
+                //log.warn("halfEdge has a twin.");
                 continue;
             }
-
             if (!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B)) {
                 // error.!***
-                log.info("Error: no twin halfEdge found.");
-
+                log.error("HalfEdge has no twin.");
             }
         }
     }
@@ -144,13 +140,13 @@ public class TileMerger3x3 {
 
             // in this case, join halfEdges of the right side of the left tile with the left side of the result mesh.
             GaiaMesh L_mesh = L_Tile.getMesh();
-            List<GaiaHalfEdge> L_mesh_right_halfEdges = L_mesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
-            List<GaiaHalfEdge> result_mesh_left_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.LEFT);
+            List<GaiaHalfEdge> leftMeshRightHalfEdges = L_mesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
+            List<GaiaHalfEdge> resultMeshLeftHalfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.LEFT);
 
-            if (result_mesh_left_halfEdges.size() > 0)// the c_tile can be null
-            {
+            // the c_tile can be null
+            if (!resultMeshLeftHalfEdges.isEmpty()) {
                 // now, set twins of halfEdges
-                this.setTwinsBetweenHalfEdges(L_mesh_right_halfEdges, result_mesh_left_halfEdges);
+                this.setTwinsBetweenHalfEdges(leftMeshRightHalfEdges, resultMeshLeftHalfEdges);
 
                 // now, merge the left tile mesh to the result mesh.
                 resultMergedMesh.removeDeletedObjects();
@@ -169,13 +165,13 @@ public class TileMerger3x3 {
 
             // in this case, join halfEdges of the left side of the right tile with the right side of the result mesh.
             GaiaMesh R_mesh = R_Tile.getMesh();
-            List<GaiaHalfEdge> R_mesh_left_halfEdges = R_mesh.getHalfEdgesByType(HalfEdgeType.LEFT);
-            List<GaiaHalfEdge> result_mesh_right_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
+            List<GaiaHalfEdge> rightMeshLeftHalfEdges = R_mesh.getHalfEdgesByType(HalfEdgeType.LEFT);
+            List<GaiaHalfEdge> resultMeshRightHalfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
 
-            if (result_mesh_right_halfEdges.size() > 0)// the c_tile & left_tile can be null
-            {
+            // the c_tile & left_tile can be null
+            if (!resultMeshRightHalfEdges.isEmpty()) {
                 // now, set twins of halfEdges
-                this.setTwinsBetweenHalfEdges(R_mesh_left_halfEdges, result_mesh_right_halfEdges);
+                this.setTwinsBetweenHalfEdges(rightMeshLeftHalfEdges, resultMeshRightHalfEdges);
 
                 // now, merge the right tile mesh to the result mesh.
                 resultMergedMesh.removeDeletedObjects();
@@ -220,11 +216,11 @@ public class TileMerger3x3 {
             //  +----------+
 
             // in this case, join halfEdges of the down side of the up tile with the up side of the result mesh.
-            List<GaiaHalfEdge> U_mesh_down_halfEdges = U_mesh.getHalfEdgesByType(HalfEdgeType.DOWN);
-            List<GaiaHalfEdge> result_mesh_up_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.UP);
+            List<GaiaHalfEdge> upMeshDownHalfEdges = U_mesh.getHalfEdgesByType(HalfEdgeType.DOWN);
+            List<GaiaHalfEdge> resultMeshUpHalfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.UP);
 
             // now, set twins of halfEdges
-            this.setTwinsBetweenHalfEdges(U_mesh_down_halfEdges, result_mesh_up_halfEdges);
+            this.setTwinsBetweenHalfEdges(upMeshDownHalfEdges, resultMeshUpHalfEdges);
 
             // now, merge the up tile mesh to the result mesh.
             resultMergedMesh.removeDeletedObjects();
@@ -243,11 +239,11 @@ public class TileMerger3x3 {
             //  +----------+
 
             // in this case, join halfEdges of the up side of the down tile with the down side of the result mesh.
-            List<GaiaHalfEdge> D_mesh_up_halfEdges = D_mesh.getHalfEdgesByType(HalfEdgeType.UP);
-            List<GaiaHalfEdge> result_mesh_down_halfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.DOWN);
+            List<GaiaHalfEdge> downMeshUpHalfEdges = D_mesh.getHalfEdgesByType(HalfEdgeType.UP);
+            List<GaiaHalfEdge> resultMeshDownHalfEdges = resultMergedMesh.getHalfEdgesByType(HalfEdgeType.DOWN);
 
             // now, set twins of halfEdges
-            this.setTwinsBetweenHalfEdges(D_mesh_up_halfEdges, result_mesh_down_halfEdges);
+            this.setTwinsBetweenHalfEdges(downMeshUpHalfEdges, resultMeshDownHalfEdges);
 
             // now, merge the down tile mesh to the result mesh.
             resultMergedMesh.removeDeletedObjects();
@@ -260,12 +256,12 @@ public class TileMerger3x3 {
 
     public GaiaMesh getMergedMesh() {
         // 1rst, copy the center tile mesh to the result mesh.
-        GaiaMesh resultMergedMesh_up = this.getMergedMesh_3x1(left_up_tile, up_tile, right_up_tile);
-        GaiaMesh resultMergedMesh = this.getMergedMesh_3x1(left_tile, center_tile, right_tile);
-        GaiaMesh resultMergedMesh_down = this.getMergedMesh_3x1(left_down_tile, down_tile, right_down_tile);
+        GaiaMesh resultMergedMeshUp = this.getMergedMesh_3x1(leftUpTile, upTile, rightUpTile);
+        GaiaMesh resultMergedMesh = this.getMergedMesh_3x1(leftTile, centerTile, rightTile);
+        GaiaMesh resultMergedMeshDown = this.getMergedMesh_3x1(leftDownTile, downTile, rightDownTile);
 
         // 2nd, merge the up & down meshes to the result mesh.
-        resultMergedMesh = this.getMergedMesh_1x3(resultMergedMesh_up, resultMergedMesh, resultMergedMesh_down);
+        resultMergedMesh = this.getMergedMesh_1x3(resultMergedMeshUp, resultMergedMesh, resultMergedMeshDown);
 
 
         return resultMergedMesh;
@@ -293,12 +289,12 @@ public class TileMerger3x3 {
 
     private List<GaiaVertex> getVerticesOfTriangles(List<GaiaTriangle> triangles) {
         List<GaiaVertex> resultVertices = new ArrayList<>();
-        HashMap<GaiaVertex, Integer> map_vertices = new HashMap<>();
+        HashMap<GaiaVertex, Integer> mapVertices = new HashMap<>();
         for (GaiaTriangle triangle : triangles) {
             List<GaiaVertex> vertices = triangle.getVertices();
             for (GaiaVertex vertex : vertices) {
-                if (!map_vertices.containsKey(vertex)) {
-                    map_vertices.put(vertex, 1);
+                if (!mapVertices.containsKey(vertex)) {
+                    mapVertices.put(vertex, 1);
                     resultVertices.add(vertex);
                 }
             }
@@ -309,15 +305,15 @@ public class TileMerger3x3 {
     public void getSeparatedMeshes(GaiaMesh bigMesh, List<GaiaMesh> resultSeparatedMeshes, boolean originIsLeftUp) {
         // separate by ownerTile_tileIndices
         List<GaiaTriangle> triangles = bigMesh.triangles;
-        HashMap<String, List<GaiaTriangle>> map_triangles = new HashMap<>();
+        HashMap<String, List<GaiaTriangle>> mapTriangles = new HashMap<>();
         for (GaiaTriangle triangle : triangles) {
             if (triangle.getOwnerTileIndices() != null) {
                 TileIndices tileIndices = triangle.getOwnerTileIndices();
                 String tileIndicesString = tileIndices.getString();
-                List<GaiaTriangle> trianglesList = map_triangles.get(tileIndicesString);
+                List<GaiaTriangle> trianglesList = mapTriangles.get(tileIndicesString);
                 if (trianglesList == null) {
                     trianglesList = new ArrayList<GaiaTriangle>();
-                    map_triangles.put(tileIndicesString, trianglesList);
+                    mapTriangles.put(tileIndicesString, trianglesList);
                 }
                 trianglesList.add(triangle);
             } else {
@@ -327,16 +323,16 @@ public class TileMerger3x3 {
         }
 
         // now, create separated meshes
-        for (String tileIndicesString : map_triangles.keySet()) {
-            List<GaiaTriangle> trianglesList = map_triangles.get(tileIndicesString);
+        for (String tileIndicesString : mapTriangles.keySet()) {
+            List<GaiaTriangle> trianglesList = mapTriangles.get(tileIndicesString);
 
             GaiaMesh separatedMesh = new GaiaMesh();
             separatedMesh.triangles = trianglesList;
             TileIndices tileIndices = trianglesList.get(0).getOwnerTileIndices();
-            TileIndices L_tileIndices = tileIndices.get_L_TileIndices(originIsLeftUp);
-            TileIndices R_tileIndices = tileIndices.get_R_TileIndices(originIsLeftUp);
-            TileIndices U_tileIndices = tileIndices.get_U_TileIndices(originIsLeftUp);
-            TileIndices D_tileIndices = tileIndices.get_D_TileIndices(originIsLeftUp);
+            TileIndices leftTileIndices = tileIndices.getLeftTileIndices(originIsLeftUp);
+            TileIndices rightTileIndices = tileIndices.getRightTileIndices(originIsLeftUp);
+            TileIndices upTileIndices = tileIndices.getUpTileIndices(originIsLeftUp);
+            TileIndices downTileIndices = tileIndices.getDownTileIndices(originIsLeftUp);
 
             //GaiaBoundingBox bbox = this.getBBoxOfTriangles(trianglesList);
             List<GaiaHalfEdge> halfEdges = this.getHalfEdgesOfTriangles(trianglesList);
@@ -345,26 +341,25 @@ public class TileMerger3x3 {
             for (GaiaHalfEdge halfEdge : halfEdges) {
                 GaiaHalfEdge twin = halfEdge.getTwin();
                 if (twin != null) {
-                    GaiaTriangle twins_triangle = twin.getTriangle();
-                    if (twins_triangle != null) {
-                        String twins_triangle_tileIndicesString = twins_triangle.getOwnerTileIndices().getString();
-                        if (!twins_triangle_tileIndicesString.equals(tileIndicesString)) {
+                    GaiaTriangle twinsTriangle = twin.getTriangle();
+                    if (twinsTriangle != null) {
+                        String twinsTriangleTileIndicesString = twinsTriangle.getOwnerTileIndices().getString();
+                        if (!twinsTriangleTileIndicesString.equals(tileIndicesString)) {
                             // the twin triangle has different ownerTile_tileIndices
                             halfEdge.setTwin(null);
 
                             // now, for the hedges, must calculate the hedgeType
                             // must know the relative position of the twin triangle's tile
-
-                            if (twins_triangle_tileIndicesString.equals(L_tileIndices.getString())) {
+                            if (twinsTriangleTileIndicesString.equals(leftTileIndices.getString())) {
                                 halfEdge.setType(HalfEdgeType.LEFT);
                                 twin.setType(HalfEdgeType.RIGHT);
-                            } else if (twins_triangle_tileIndicesString.equals(R_tileIndices.getString())) {
+                            } else if (twinsTriangleTileIndicesString.equals(rightTileIndices.getString())) {
                                 halfEdge.setType(HalfEdgeType.RIGHT);
                                 twin.setType(HalfEdgeType.LEFT);
-                            } else if (twins_triangle_tileIndicesString.equals(U_tileIndices.getString())) {
+                            } else if (twinsTriangleTileIndicesString.equals(upTileIndices.getString())) {
                                 halfEdge.setType(HalfEdgeType.UP);
                                 twin.setType(HalfEdgeType.DOWN);
-                            } else if (twins_triangle_tileIndicesString.equals(D_tileIndices.getString())) {
+                            } else if (twinsTriangleTileIndicesString.equals(downTileIndices.getString())) {
                                 halfEdge.setType(HalfEdgeType.DOWN);
                                 twin.setType(HalfEdgeType.UP);
                             }
@@ -378,7 +373,5 @@ public class TileMerger3x3 {
 
             resultSeparatedMeshes.add(separatedMesh);
         }
-
     }
-
 }

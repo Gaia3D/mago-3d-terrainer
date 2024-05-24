@@ -1,36 +1,42 @@
 package com.gaia3d.quantizedMesh;
 
 import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
+@Setter
+@Getter
+@Slf4j
 public class QuantizedMesh {
-    QuantizedMeshHeader header = new QuantizedMeshHeader();
+    private QuantizedMeshHeader header = new QuantizedMeshHeader();
 
-    int vertexCount = 0;
-    int triangleCount = 0;
-    short[] uBuffer = null;
-    short[] vBuffer = null;
-    short[] heightBuffer = null;
-    int[] triangleIndices = null;
+    private int vertexCount = 0;
+    private int triangleCount = 0;
+    private short[] uBuffer = null;
+    private short[] vBuffer = null;
+    private short[] heightBuffer = null;
+    private int[] triangleIndices = null;
 
     // edgesData
-    int westVertexCount;
-    int[] westIndices = null;
+    private int westVertexCount;
+    private int[] westIndices = null;
 
-    int southVertexCount;
-    int[] southIndices = null;
+    private int southVertexCount;
+    private int[] southIndices = null;
 
-    int eastVertexCount;
-    int[] eastIndices = null;
+    private int eastVertexCount;
+    private int[] eastIndices = null;
 
-    int northVertexCount;
-    int[] northIndices = null;
+    private int northVertexCount;
+    private int[] northIndices = null;
 
     // normals data
-    byte extensionId = 0;
-    int extensionLength = 0;
-    byte[] octEncodedNormals = null; // 2 bytes per normal
+    private byte extensionId = 0;
+    private  int extensionLength = 0;
+    private byte[] octEncodedNormals = null; // 2 bytes per normal
 
     public short zigZagEncode(int n) {
         return (short) ((n << 1) ^ (n >> 31));

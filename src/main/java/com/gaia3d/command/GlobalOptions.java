@@ -23,10 +23,10 @@ import java.nio.file.Path;
 public class GlobalOptions {
     /* singleton */
     private static final GlobalOptions instance = new GlobalOptions();
-
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 12;
+    private static final boolean DEFAULT_CALCULATE_NORMALS = false;
 
     private String version;
     private String javaVersionInfo;

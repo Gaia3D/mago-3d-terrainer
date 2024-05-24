@@ -118,7 +118,7 @@ public class GeographicExtension {
 
     }
 
-    public boolean intersectsBBox(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg) {
+    public boolean intersectsBox(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg) {
         return minLonDeg >= minGeographicCoordDeg.x && minLonDeg <= maxGeographicCoordDeg.x && minLatDeg >= minGeographicCoordDeg.y && minLatDeg <= maxGeographicCoordDeg.y && maxLonDeg >= minGeographicCoordDeg.x && maxLonDeg <= maxGeographicCoordDeg.x && maxLatDeg >= minGeographicCoordDeg.y && maxLatDeg <= maxGeographicCoordDeg.y;
     }
 

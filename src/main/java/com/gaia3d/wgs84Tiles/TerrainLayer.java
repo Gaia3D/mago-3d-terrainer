@@ -41,7 +41,7 @@ public class TerrainLayer {
     }
 
     public HashMap<Integer, TilesRange> getTilesRangeMap() {
-        HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<Integer, TilesRange>();
+        HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<>();
 
         for (TilesRange tilesRange : this.available) {
             tilesRangeMap.put(tilesRange.getTileDepth(), tilesRange);
@@ -63,10 +63,7 @@ public class TerrainLayer {
         this.tiles = new String[1];
         this.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
         this.projection = "EPSG:4326";
-        this.extensions = new ArrayList<String>();
-//        this.extensions.add("octvertexnormals");
-//        this.extensions.add("metadata");
-//        this.extensions.add("watermask");
+        this.extensions = new ArrayList<>();
         this.bounds = new double[4];
         this.bounds[0] = 0.0;
         this.bounds[1] = 0.0;
@@ -76,7 +73,7 @@ public class TerrainLayer {
 
     public void addExtension(String extension) {
         if (this.extensions == null) {
-            this.extensions = new ArrayList<String>();
+            this.extensions = new ArrayList<>();
         }
         this.extensions.add(extension);
     }

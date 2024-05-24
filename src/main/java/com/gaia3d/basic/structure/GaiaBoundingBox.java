@@ -130,14 +130,14 @@ public class GaiaBoundingBox {
         return !(max_x < minX) && !(min_x > maxX) && !(max_y < minY) && !(min_y > maxY);
     }
 
-    public boolean intersectsPointXY_xAxis(double pos_x) {
+    public boolean intersectsPointXYWithXAxis(double posX) {
         // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis
-        return !(pos_x < minX) && !(pos_x > maxX);
+        return !(posX < minX) && !(posX > maxX);
     }
 
-    public boolean intersectsPointXY_yAxis(double pos_y) {
+    public boolean intersectsPointXYWithYAxis(double posY) {
         // this function checks if a point2D is intersected by the boundingBox only meaning xAxis and yAxis
-        return !(pos_y < minY) && !(pos_y > maxY);
+        return !(posY < minY) && !(posY > maxY);
     }
 
     public double getLengthX() {

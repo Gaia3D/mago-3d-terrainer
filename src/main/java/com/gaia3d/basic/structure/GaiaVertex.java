@@ -82,14 +82,14 @@ public class GaiaVertex {
     }
 
     public List<GaiaHalfEdge> getAllOutingHalfEdges() {
-        List<GaiaHalfEdge> outingHalfEdges = new ArrayList<GaiaHalfEdge>();
+        List<GaiaHalfEdge> outingHalfEdges = new ArrayList<>();
 
         // there are 2 cases: this vertex is interior vertex or boundary vertex, but we dont know
         // 1- interior vertex
         // 2- boundary vertex
         if (this.outingHEdge == null) {
             // error
-            log.info("Error: this.outingHEdge == null");
+            log.warn("This vertex has no outingHEdge. id : {}", this.id);
         }
 
         GaiaHalfEdge firstHalfEdge = this.outingHEdge;
@@ -156,7 +156,7 @@ public class GaiaVertex {
                 dataOutputStream.writeInt(-1);
             }
         } catch (Exception e) {
-            log.error("Error : {}", e.getMessage());
+            log.error("{}", e.getMessage());
         }
     }
 
