@@ -12,8 +12,6 @@ import org.joml.Vector2d;
  * It can be used to calculate the center and volume of the geometry.
  * It can also be used to convert the local bounding rectangle to lonlat bounding rectangle.
  * It can also be used to calculate the longest distance of the geometry.
- *
- * @auther znkim
  * @see GaiaBoundingBox
  * @since 1.0.0
  */
@@ -155,7 +153,7 @@ public class GaiaRectangle {
     }
 
     public boolean intersectsInSomeAxis(GaiaRectangle compare) {
-        // check axis x.***
+        // check axis x
         boolean intersectsInX = false;
         if (compare.minX > this.maxX) {
             intersectsInX = false;
@@ -165,7 +163,7 @@ public class GaiaRectangle {
             return true;
         }
 
-        // check axis y.***
+        // check axis y
         boolean intersectsInY = false;
         if (compare.minY > this.maxY) {
             intersectsInY = false;

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gaia3d.reader.FileUtils;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -13,33 +15,36 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+
+@Getter
+@Setter
 @Slf4j
 public class TerrainLayer {
-    String tilejson = null;
-    String name = null;
-    String description = null;
-    String version = null;
-    String format = null;
-    String attribution = null;
-    String template = null;
-    String legend = null;
-    String scheme = null;
-    List<String> extensions = null;
-    String[] tiles = null;
+    private String tilejson = null;
+    private String name = null;
+    private String description = null;
+    private String version = null;
+    private String format = null;
+    private String attribution = null;
+    private String template = null;
+    private String legend = null;
+    private String scheme = null;
+    private List<String> extensions = null;
+    private String[] tiles = null;
 
-    String projection = null;
-    double[] bounds = null;
-    ArrayList<TilesRange> available = new ArrayList<TilesRange>();
+    private String projection = null;
+    private double[] bounds = null;
+    private final List<TilesRange> available = new ArrayList<>();
 
     public TerrainLayer() {
         this.setDefault();
     }
 
     public HashMap<Integer, TilesRange> getTilesRangeMap() {
-        HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<Integer, TilesRange>();
+        HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<>();
 
         for (TilesRange tilesRange : this.available) {
-            tilesRangeMap.put(tilesRange.tileDepth, tilesRange);
+            tilesRangeMap.put(tilesRange.getTileDepth(), tilesRange);
         }
 
         return tilesRangeMap;
@@ -58,10 +63,7 @@ public class TerrainLayer {
         this.tiles = new String[1];
         this.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
         this.projection = "EPSG:4326";
-        this.extensions = new ArrayList<String>();
-//        this.extensions.add("octvertexnormals");
-//        this.extensions.add("metadata");
-//        this.extensions.add("watermask");
+        this.extensions = new ArrayList<>();
         this.bounds = new double[4];
         this.bounds[0] = 0.0;
         this.bounds[1] = 0.0;
@@ -70,8 +72,8 @@ public class TerrainLayer {
     }
 
     public void addExtension(String extension) {
-        if(this.extensions == null) {
-            this.extensions = new ArrayList<String>();
+        if (this.extensions == null) {
+            this.extensions = new ArrayList<>();
         }
         this.extensions.add(extension);
     }
@@ -96,7 +98,7 @@ public class TerrainLayer {
         objectNodeRoot.putArray("tiles").add(this.tiles[0]);
         objectNodeRoot.putArray("bounds").add(this.bounds[0]).add(this.bounds[1]).add(this.bounds[2]).add(this.bounds[3]);
 
-        if(this.extensions != null && this.extensions.size() > 0) {
+        if (this.extensions != null && this.extensions.size() > 0) {
             ArrayNode objectNodeExtensions = objectMapper.createArrayNode();
             for (String extension : this.extensions) {
                 objectNodeExtensions.add(extension);
@@ -110,10 +112,10 @@ public class TerrainLayer {
             TilesRange tilesRange = tilesRangeMap.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
-            objectNodeTileDepth.put("startX", tilesRange.minTileX);
-            objectNodeTileDepth.put("endX", tilesRange.maxTileX);
-            objectNodeTileDepth.put("startY", tilesRange.minTileY);
-            objectNodeTileDepth.put("endY", tilesRange.maxTileY);
+            objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
+            objectNodeTileDepth.put("endX", tilesRange.getMaxTileX());
+            objectNodeTileDepth.put("startY", tilesRange.getMinTileY());
+            objectNodeTileDepth.put("endY", tilesRange.getMaxTileY());
 
             objectNodeTileDepth_array.add(objectNodeTileDepth);
             objectNodeAvailable.add(objectNodeTileDepth_array);
@@ -122,7 +124,7 @@ public class TerrainLayer {
 
         objectNodeRoot.set("available", objectNodeAvailable);
 
-        // Save the json index file.***
+        // Save the json index file
         try {
             JsonNode jsonNode = new ObjectMapper().readTree(objectNodeRoot.toString());
             objectMapper.writeValue(new File(fullFileName), jsonNode);

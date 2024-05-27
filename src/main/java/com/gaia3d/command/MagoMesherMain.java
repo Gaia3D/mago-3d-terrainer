@@ -2,6 +2,7 @@ package com.gaia3d.command;
 
 
 import com.gaia3d.process.ProcessOptions;
+import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
 import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
@@ -14,9 +15,6 @@ import java.io.IOException;
 
 @Slf4j
 public class MagoMesherMain {
-    public static String version = "1.0.2";
-    public static int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    public static int DEFAULT_MAXIMUM_TILE_DEPTH = 16;
 
     public static void main(String[] args) {
         try {
@@ -25,22 +23,25 @@ public class MagoMesherMain {
             CommandLine command = parser.parse(Configurator.createOptions(), args);
             boolean isHelp = command.hasOption(ProcessOptions.HELP.getArgName());
             boolean hasLogPath = command.hasOption(ProcessOptions.LOG.getArgName());
-            boolean isVersion = command.hasOption(ProcessOptions.VERSION.getArgName());
 
-            GeotoolsConfigurator geotoolsConfigurator = new GeotoolsConfigurator();
+            GeoToolsConfigurator geotoolsConfigurator = new GeoToolsConfigurator();
             TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
             geotoolsConfigurator.setEpsg();
-            tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT.getArgName());
 
-            Configurator.initConsoleLogger();
-            if (hasLogPath) {
-                Configurator.initFileLogger(null, command.getOptionValue(ProcessOptions.LOG.getArgName()));
-            }
             if (command.hasOption(ProcessOptions.DEBUG.getArgName())) {
+                Configurator.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
+                if (hasLogPath) {
+                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(ProcessOptions.LOG.getArgName()));
+                }
                 Configurator.setLevel(Level.DEBUG);
             } else {
+                Configurator.initConsoleLogger();
+                if (hasLogPath) {
+                    Configurator.initFileLogger(null, command.getOptionValue(ProcessOptions.LOG.getArgName()));
+                }
                 Configurator.setLevel(Level.INFO);
             }
+
             printStart();
 
             if (isHelp) {
@@ -48,60 +49,33 @@ public class MagoMesherMain {
                 return;
             }
 
-            if (isVersion) {
-                log.info("Version: " + version);
-            }
+            GlobalOptions.init(command);
 
-            if (command.hasOption(ProcessOptions.INPUT.getArgName())) {
-                tileWgs84Manager.originalGeoTiffFolderPath = command.getOptionValue(ProcessOptions.INPUT.getArgName());
-            } else {
-                throw new RuntimeException("Input folder path is required.");
-            }
-
-            if (command.hasOption(ProcessOptions.OUTPUT.getArgName())) {
-                tileWgs84Manager.outputDirectory = command.getOptionValue(ProcessOptions.OUTPUT.getArgName());
-                tileWgs84Manager.tileTempDirectory = tileWgs84Manager.outputDirectory + File.separator + "tileTempFolder";
-                tileWgs84Manager.tempResizedGeoTiffFolderPath = tileWgs84Manager.outputDirectory + File.separator + "resizedGeoTiffFolder";
-            } else {
-                throw new RuntimeException("Output folder path is required.");
-            }
-
-            if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
-                tileWgs84Manager.minTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName()));
-            } else {
-                log.info("Minimum tile depth is not set. Default value is " + DEFAULT_MINIMUM_TILE_DEPTH);
-                tileWgs84Manager.minTileDepth = DEFAULT_MINIMUM_TILE_DEPTH;
-            }
-
-            if (command.hasOption(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
-                tileWgs84Manager.maxTileDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
-            } else {
-                log.info("Maximum tile depth is not set. Default value is " + DEFAULT_MAXIMUM_TILE_DEPTH);
-                tileWgs84Manager.maxTileDepth = DEFAULT_MAXIMUM_TILE_DEPTH;
-            }
+            GlobalOptions globalOptions = GlobalOptions.getInstance();
 
             if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
                 tileWgs84Manager.setCalculateNormals(true);
             }
 
-            log.info("[Resize GeoTiff] Start resizing GeoTiff files.");
-            tileWgs84Manager.processResizeGeotiffs(tileWgs84Manager.originalGeoTiffFolderPath, null);
-            log.info("[Resize GeoTiff] Finished resizing GeoTiff files.");
+            log.info("[Resize GeoTiff] Start GeoTiff Resizing files.");
+            tileWgs84Manager.processResizeGeotiffs(globalOptions.getInputPath(), null);
+            log.info("[Resize GeoTiff] Finished GeoTiff Resizing files.");
 
-            log.info("[Make Terrain Elevation Data] Start making terrain elevation data.");
-            tileWgs84Manager.terrainElevationDataManager = new com.gaia3d.wgs84Tiles.TerrainElevationDataManager();
-            tileWgs84Manager.terrainElevationDataManager.setTerrainElevationDataFolderPath(tileWgs84Manager.tempResizedGeoTiffFolderPath + File.separator + "0");
+            log.info("[Terrain Elevation Data] Start making terrain elevation data.");
+            tileWgs84Manager.setTerrainElevationDataManager(new TerrainElevationDataManager());
+            tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
             if (tileWgs84Manager.getGeoTiffFilesCount() == 1) {
-                tileWgs84Manager.terrainElevationDataManager.setGeoTiffFilesCount(1);
-                tileWgs84Manager.terrainElevationDataManager.setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
-                tileWgs84Manager.terrainElevationDataManager.MakeUniqueTerrainElevationData();
+                tileWgs84Manager.getTerrainElevationDataManager().setGeoTiffFilesCount(1);
+                tileWgs84Manager.getTerrainElevationDataManager().setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
+                tileWgs84Manager.getTerrainElevationDataManager().MakeUniqueTerrainElevationData();
             } else {
-                tileWgs84Manager.terrainElevationDataManager.makeTerrainQuadTree();
+                tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree();
             }
-            log.info("[Make Terrain Elevation Data] Finished making terrain elevation data.");
-            log.info("[Make Tile Meshes] Start making tile meshes.");
+            log.info("[Terrain Elevation Data] Finished making terrain elevation data.");
+
+            log.info("[Tile Meshes] Start making tile meshes.");
             tileWgs84Manager.makeTileMeshes();
-            log.info("[Make Tile Meshes] Finished making tile meshes.");
+            log.info("[Tile Meshes] Finished making tile meshes.");
         } catch (FactoryException e) {
             log.error("Failed to set EPSG.", e);
             throw new RuntimeException(e);
@@ -114,19 +88,83 @@ public class MagoMesherMain {
         } catch (IOException e) {
             log.error("Failed to run process, Please check the arguments.", e);
             throw new RuntimeException(e);
-        } finally {
-            log.info("----------------------------------------");
-            log.info("Finished.");
         }
+        printEnd();
+        Configurator.destroyLogger();
     }
 
+    /**
+     * Prints the program information and the java version information.
+     */
     private static void printStart() {
-        String programInfo = "Mago Quantized Mesher by Gaia3D, Inc.";
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        String programInfo = globalOptions.getProgramInfo();
         log.info("\n" +
                 "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┳┳┓┏┓┏┓┓┏┏┓┳┓\n" +
                 "┃┃┃┣┫┃┓┃┃   ┫┃┃  ┃┃┃┣ ┗┓┣┫┣ ┣┫\n" +
                 "┛ ┗┛┗┗┛┗┛  ┗┛┻┛  ┛ ┗┗┛┗┛┛┗┗┛┛┗\n" +
                 programInfo + "\n" +
                 "----------------------------------------");
+    }
+
+    /**
+     * Prints the program information and the java version information.
+     */
+    private static void printVersion() {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        String programInfo = globalOptions.getProgramInfo();
+        String javaVersionInfo = globalOptions.getJavaVersionInfo();
+        log.info(
+                programInfo + "\n" +
+                        javaVersionInfo
+        );
+        log.info("----------------------------------------");
+    }
+
+    /**
+     * Prints the total file count, total tile count, and the process time.
+     */
+    private static void printEnd() {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        long startTime = globalOptions.getStartTime();
+        long endTime = System.currentTimeMillis();
+        log.info("----------------------------------------");
+        log.info("End Process Time : {}", millisecondToDisplayTime(endTime - startTime));
+        log.info("----------------------------------------");
+    }
+
+    /**
+     * Converts the byte size to the display size.
+     */
+    private static String byteCountToDisplaySize(long size) {
+        String displaySize;
+        if (size / 1073741824L > 0L) {
+            displaySize = size / 1073741824L + "GB";
+        } else if (size / 1048576L > 0L) {
+            displaySize = size / 1048576L + "MB";
+        } else if (size / 1024L > 0L) {
+            displaySize = size / 1024L + "KB";
+        } else {
+            displaySize = size + "bytes";
+        }
+        return displaySize;
+    }
+
+    /**
+     * Converts the millisecond to the display time.
+     */
+    private static String millisecondToDisplayTime(long millis) {
+        String displayTime = "";
+        if (millis / 3600000L > 0L) {
+            displayTime += millis / 3600000L + "h ";
+        }
+        if (millis / 60000L > 0L) {
+            displayTime += millis / 60000L + "m ";
+        }
+        if (millis / 1000L > 0L) {
+            displayTime += millis / 1000L + "s ";
+        }
+        displayTime += millis % 1000L + "ms";
+        return displayTime;
     }
 }

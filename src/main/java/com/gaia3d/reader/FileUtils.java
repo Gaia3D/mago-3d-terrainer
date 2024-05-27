@@ -2,6 +2,7 @@ package com.gaia3d.reader;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 public class FileUtils {
 
@@ -10,9 +11,15 @@ public class FileUtils {
         return file.exists();
     }
 
-    public static boolean createAllFoldersIfNoExist(String filePath) {
+    public static void createAllFoldersIfNoExist(String filePath) {
         File file = new File(filePath);
-        return file.mkdirs();
+        if (file.exists() && file.isDirectory()) {
+            return;
+        } else {
+            if (!file.mkdirs()) {
+                throw new RuntimeException("Failed to create folder: " + filePath);
+            }
+        }
     }
 
     public static String removeFileNameFromPath(String filePath) {
@@ -20,12 +27,7 @@ public class FileUtils {
         return file.getParent();
     }
 
-    public static boolean deleteFileIfExists(String filePath) {
-        File file = new File(filePath);
-        return file.delete();
-    }
-
-    public static void getFileNames(String folderPath, String extension, ArrayList<String> fileNames) {
+    public static void getFileNames(String folderPath, String extension, List<String> fileNames) {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
@@ -40,7 +42,7 @@ public class FileUtils {
         }
     }
 
-    public static void getFolderNames(String folderPath, ArrayList<String> folderNames) {
+    public static void getFolderNames(String folderPath, List<String> folderNames) {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
@@ -53,15 +55,15 @@ public class FileUtils {
         }
     }
 
-    public static void getFilePathsByExtension(String folderPath, String extension, ArrayList<String> fileNames, boolean isRecursive) {
-        ArrayList<String> currfileNames = new ArrayList<>();
+    public static void getFilePathsByExtension(String folderPath, String extension, List<String> fileNames, boolean isRecursive) {
+        List<String> currfileNames = new ArrayList<>();
         FileUtils.getFileNames(folderPath, extension, currfileNames);
         for (String fileName : currfileNames) {
             fileNames.add(folderPath + File.separator + fileName);
         }
 
         if (isRecursive) {
-            ArrayList<String> folderNames = new ArrayList<>();
+            List<String> folderNames = new ArrayList<>();
             FileUtils.getFolderNames(folderPath, folderNames);
             for (String folderName : folderNames) {
                 String subFolderPath = folderPath + File.separator + folderName;

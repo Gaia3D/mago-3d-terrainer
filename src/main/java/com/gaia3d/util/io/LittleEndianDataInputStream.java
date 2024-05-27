@@ -10,9 +10,10 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * LittleEndianDataInputStream
+ *
  * @author znkim
- * @since 1.0.0
  * @see FilterInputStream
+ * @since 1.0.0
  */
 public class LittleEndianDataInputStream extends FilterInputStream implements DataInput {
     /**
@@ -46,16 +47,14 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
     @Override
     public boolean readBoolean() throws IOException {
         int b = in.read();
-        if (b == -1)
-            throw new EOFException();
+        if (b == -1) throw new EOFException();
         return b != 0;
     }
 
     @Override
     public byte readByte() throws IOException {
         int b = in.read();
-        if (b == -1)
-            throw new EOFException();
+        if (b == -1) throw new EOFException();
         return (byte) b;
     }
 
@@ -70,8 +69,7 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
     @Override
     public int readUnsignedByte() throws IOException {
         int b = in.read();
-        if (b == -1)
-            throw new EOFException();
+        if (b == -1) throw new EOFException();
         return (byte) b;
     }
 
@@ -79,8 +77,7 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
     public short readShort() throws IOException {
         int b1 = in.read();
         int b2 = in.read();
-        if ((b1 | b2) < 0)
-            throw new EOFException();
+        if ((b1 | b2) < 0) throw new EOFException();
         return (short) ((b2 << 8) + b1);
     }
 
@@ -96,8 +93,7 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
     public int readUnsignedShort() throws IOException {
         int b1 = in.read();
         int b2 = in.read();
-        if ((b1 | b2) < 0)
-            throw new EOFException();
+        if ((b1 | b2) < 0) throw new EOFException();
         return (short) ((b2 << 8) + b1);
     }
 
@@ -105,8 +101,7 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
     public char readChar() throws IOException {
         int b1 = in.read();
         int b2 = in.read();
-        if ((b1 | b2) < 0)
-            throw new EOFException();
+        if ((b1 | b2) < 0) throw new EOFException();
         return (char) ((b2 << 8) + b1);
     }
 
@@ -116,8 +111,7 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
         int b2 = in.read();
         int b3 = in.read();
         int b4 = in.read();
-        if ((b1 | b2 | b3 | b4) < 0)
-            throw new EOFException();
+        if ((b1 | b2 | b3 | b4) < 0) throw new EOFException();
         return (b4 << 24) + (b3 << 16) + (b2 << 8) + b1;
     }
 
@@ -135,16 +129,8 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
         for (int i = 0; i < 8; i++) {
             b[i] = in.read();
         }
-        if (b[0] < 0)
-            throw new EOFException();
-        return (((long) b[0] << 56) +
-                ((long) (b[1] & 255) << 48) +
-                ((long) (b[2] & 255) << 40) +
-                ((long) (b[3] & 255) << 32) +
-                ((long) (b[4] & 255) << 24) +
-                ((b[5] & 255) << 16) +
-                ((b[6] & 255) <<  8) +
-                ((b[7] & 255)));
+        if (b[0] < 0) throw new EOFException();
+        return (((long) b[0] << 56) + ((long) (b[1] & 255) << 48) + ((long) (b[2] & 255) << 40) + ((long) (b[3] & 255) << 32) + ((long) (b[4] & 255) << 24) + ((b[5] & 255) << 16) + ((b[6] & 255) << 8) + ((b[7] & 255)));
     }
 
     @Override
@@ -153,8 +139,7 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
         for (int i = 0; i < 4; i++) {
             b[i] = in.read();
         }
-        if (b[0] < 0)
-            throw new EOFException();
+        if (b[0] < 0) throw new EOFException();
 
         byte[] bytes = intsToBytes(b);
         return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
@@ -174,8 +159,7 @@ public class LittleEndianDataInputStream extends FilterInputStream implements Da
         for (int i = 0; i < 8; i++) {
             b[i] = in.read();
         }
-        if (b[0] < 0)
-            throw new EOFException();
+        if (b[0] < 0) throw new EOFException();
         byte[] bytes = intsToBytes(b);
         return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getDouble();
     }

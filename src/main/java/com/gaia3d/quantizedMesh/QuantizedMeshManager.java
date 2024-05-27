@@ -6,10 +6,13 @@ import com.gaia3d.wgs84Tiles.TileWgs84;
 import org.joml.*;
 
 import java.lang.Math;
-import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * QuantizedMeshManager
+ * https://github.com/CesiumGS/cesium/blob/master/Source/Core/CesiumTerrainProvider.js#L327
+ */
 public class QuantizedMeshManager {
-    //https://github.com/CesiumGS/cesium/blob/master/Source/Core/CesiumTerrainProvider.js#L327
 
     private Vector2f signNotZero(Vector2f value) {
         return new Vector2f(value.x >= 0 ? 1 : -1, value.y >= 0 ? 1 : -1);
@@ -57,9 +60,7 @@ public class QuantizedMeshManager {
         }
 
         // Guardar los valores de los bytes en un arreglo
-        byte[] resultado = {(byte) bX, (byte) bY};
-
-        return resultado;
+        return new byte[]{(byte) bX, (byte) bY};
     }
 
     private Vector3f octToFloat32x3(Vector2f e) {
@@ -114,76 +115,76 @@ public class QuantizedMeshManager {
     }
 
     public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile, boolean calculateNormals) {
-        // 1rst get the quantized mesh header.***
+        // 1rst get the quantized mesh header
         QuantizedMeshHeader header = new QuantizedMeshHeader();
-        GaiaMesh mesh = tile.mesh;
+        GaiaMesh mesh = tile.getMesh();
 
         if (mesh == null) return null;
 
-        ArrayList<GaiaVertex> vertices = mesh.vertices;
+        List<GaiaVertex> vertices = mesh.vertices;
         int vertexCount = vertices.size();
         if (vertexCount == 0) return null;
 
         mesh.setObjectsIdInList();
 
-        // Calculate the minimum and maximum heights & bbox.***
+        // Calculate the minimum and maximum heights & bbox
         GaiaBoundingBox bboxWC = new GaiaBoundingBox();
         double minimumHeight = Double.MAX_VALUE;
         double maximumHeight = -Double.MAX_VALUE;
         for (int i = 0; i < vertexCount; i++) {
             GaiaVertex vertex = vertices.get(i);
-            double height = vertex.position.z;
+            double height = vertex.getPosition().z;
             if (height < minimumHeight) minimumHeight = height;
             if (height > maximumHeight) maximumHeight = height;
 
-            // calculate the bbox in world coordinates.***
-            double[] posWC = GlobeUtils.geographicToCartesianWgs84(vertex.position.x, vertex.position.y, height);
+            // calculate the bbox in world coordinates
+            double[] posWC = GlobeUtils.geographicToCartesianWgs84(vertex.getPosition().x, vertex.getPosition().y, height);
             bboxWC.addPoint(posWC[0], posWC[1], posWC[2]);
         }
         double midHeight = (minimumHeight + maximumHeight) / 2.0;
 
-        // Calculate the center of the tile in Earth-centered Fixed coordinates.***
-        GeographicExtension geographicExtension = tile.geographicExtension;
+        // Calculate the center of the tile in Earth-centered Fixed coordinates
+        GeographicExtension geographicExtension = tile.getGeographicExtension();
         double midLonDeg = geographicExtension.getMidLongitudeDeg();
         double midLatDeg = geographicExtension.getMidLatitudeDeg();
 
         double[] cartesianWC = GlobeUtils.geographicToCartesianWgs84(midLonDeg, midLatDeg, midHeight);
 
-        header.CenterX = cartesianWC[0];
-        header.CenterY = cartesianWC[1];
-        header.CenterZ = cartesianWC[2];
+        header.setCenterX(cartesianWC[0]);
+        header.setCenterY(cartesianWC[1]);
+        header.setCenterZ(cartesianWC[2]);
 
-        header.MinimumHeight = (float) minimumHeight;
-        header.MaximumHeight = (float) maximumHeight;
+        header.setMinimumHeight((float) minimumHeight);
+        header.setMaximumHeight((float) maximumHeight);
 
-        // Calculate the bounding sphere.***
+        // Calculate the bounding sphere
         Vector3d centerWC = bboxWC.getCenter();
         double radius = bboxWC.getLongestDistance() / 2.0;
 
-        header.BoundingSphereCenterX = centerWC.x;
-        header.BoundingSphereCenterY = centerWC.y;
-        header.BoundingSphereCenterZ = centerWC.z;
-        header.BoundingSphereRadius = radius;
+        header.setBoundingSphereCenterX(centerWC.x);
+        header.setBoundingSphereCenterY(centerWC.y);
+        header.setBoundingSphereCenterZ(centerWC.z);
+        header.setBoundingSphereRadius(radius);
 
-        // Calculate the horizon occlusion point.***
+        // Calculate the horizon occlusion point
         // https://cesium.com/blog/2013/05/09/computing-the-horizon-occlusion-point/
         Vector3d horizonOccPoint = calculateHorizonOcclusionPoint(bboxWC);
 
-        header.HorizonOcclusionPointX = horizonOccPoint.x;
-        header.HorizonOcclusionPointY = horizonOccPoint.y;
-        header.HorizonOcclusionPointZ = horizonOccPoint.z;
+        header.setHorizonOcclusionPointX(horizonOccPoint.x);
+        header.setHorizonOcclusionPointY(horizonOccPoint.y);
+        header.setHorizonOcclusionPointZ(horizonOccPoint.z);
 
-        // Now, calculate the quantized mesh.******************************************************************************
+        // Now, calculate the quantized mesh***************************************************************************
         QuantizedMesh quantizedMesh = new QuantizedMesh();
-        quantizedMesh.header = header;
+        quantizedMesh.setHeader(header);
 
-        quantizedMesh.vertexCount = vertexCount;
-        quantizedMesh.triangleCount = mesh.triangles.size();
+        quantizedMesh.setVertexCount(vertexCount);
+        quantizedMesh.setTriangleCount(mesh.triangles.size());
 
-        quantizedMesh.uBuffer = new short[vertexCount];
-        quantizedMesh.vBuffer = new short[vertexCount];
-        quantizedMesh.heightBuffer = new short[vertexCount];
-        quantizedMesh.triangleIndices = new int[quantizedMesh.triangleCount * 3];
+        quantizedMesh.setUBuffer(new short[vertexCount]);
+        quantizedMesh.setVBuffer(new short[vertexCount]);
+        quantizedMesh.setHeightBuffer(new short[vertexCount]);
+        quantizedMesh.setTriangleIndices(new int[quantizedMesh.getTriangleCount() * 3]);
 
         double minLonDeg = geographicExtension.getMinLongitudeDeg();
         double maxLonDeg = geographicExtension.getMaxLongitudeDeg();
@@ -202,64 +203,66 @@ public class QuantizedMeshManager {
 
         for (int i = 0; i < vertexCount; i++) {
             GaiaVertex vertex = vertices.get(i);
-            if(vertex.objectStatus == GaiaObjectStatus.DELETED) {
-                int hola = 0;
-            }
-            double lonDeg = vertex.position.x;
-            double latDeg = vertex.position.y;
-            double height = vertex.position.z;
+            double lonDeg = vertex.getPosition().x;
+            double latDeg = vertex.getPosition().y;
+            double height = vertex.getPosition().z;
 
-            quantizedMesh.uBuffer[i] = (short) ((lonDeg - minLonDeg) / lonScale);
-            quantizedMesh.vBuffer[i] = (short) ((latDeg - minLatDeg) / latScale);
-            quantizedMesh.heightBuffer[i] = (short) ((height - minimumHeight) * heightScale);
+            short[] uBuffer = quantizedMesh.getUBuffer();
+            short[] vBuffer = quantizedMesh.getVBuffer();
+            short[] heightBuffer = quantizedMesh.getHeightBuffer();
+
+            uBuffer[i] = (short) ((lonDeg - minLonDeg) / lonScale);
+            vBuffer[i] = (short) ((latDeg - minLatDeg) / latScale);
+            heightBuffer[i] = (short) ((height - minimumHeight) * heightScale);
         }
 
-        for (int i = 0; i < quantizedMesh.triangleCount; i++) {
+        for (int i = 0; i < quantizedMesh.getTriangleCount(); i++) {
             GaiaTriangle triangle = mesh.triangles.get(i);
-            ArrayList<GaiaVertex> triVertices = triangle.getVertices();
-            quantizedMesh.triangleIndices[i * 3] = triVertices.get(0).id;
-            quantizedMesh.triangleIndices[i * 3 + 1] = triVertices.get(1).id;
-            quantizedMesh.triangleIndices[i * 3 + 2] = triVertices.get(2).id;
+            List<GaiaVertex> triVertices = triangle.getVertices();
+            quantizedMesh.getTriangleIndices()[i * 3] = triVertices.get(0).getId();
+            quantizedMesh.getTriangleIndices()[i * 3 + 1] = triVertices.get(1).getId();
+            quantizedMesh.getTriangleIndices()[i * 3 + 2] = triVertices.get(2).getId();
         }
 
-        // now, edgesIndices.***
-        // west vertices.***
-        ArrayList<GaiaVertex> westVertices = mesh.getLeftVerticesSortedUpToDown(); // original.***
+        // now, edgesIndices
+        // west vertices
+        List<GaiaVertex> westVertices = mesh.getLeftVerticesSortedUpToDown(); // original
         int westVerticesCount = westVertices.size();
-        quantizedMesh.westIndices = new int[westVerticesCount];
-        quantizedMesh.westVertexCount = westVerticesCount;
+        quantizedMesh.setWestIndices(new int[westVerticesCount]);
+        quantizedMesh.setWestVertexCount(westVerticesCount);
         for (int i = 0; i < westVerticesCount; i++) {
-            quantizedMesh.westIndices[i] = westVertices.get(i).id;
+            quantizedMesh.getWestIndices()[i] = westVertices.get(i).getId();
         }
 
-        // south vertices.***
-        ArrayList<GaiaVertex> southVertices = mesh.getDownVerticesSortedLeftToRight();
+        // south vertices
+        List<GaiaVertex> southVertices = mesh.getDownVerticesSortedLeftToRight();
         int southVerticesCount = southVertices.size();
-        quantizedMesh.southIndices = new int[southVerticesCount];
-        quantizedMesh.southVertexCount = southVerticesCount;
+        quantizedMesh.setSouthIndices(new int[southVerticesCount]);
+        quantizedMesh.setSouthVertexCount(southVerticesCount);
         for (int i = 0; i < southVerticesCount; i++) {
-            quantizedMesh.southIndices[i] = southVertices.get(i).id;
+            quantizedMesh.getSouthIndices()[i] = southVertices.get(i).getId();
         }
 
-        // east vertices.***
-        ArrayList<GaiaVertex> eastVertices = mesh.getRightVerticesSortedDownToUp();
+        // east vertices
+        List<GaiaVertex> eastVertices = mesh.getRightVerticesSortedDownToUp();
         int eastVerticesCount = eastVertices.size();
-        quantizedMesh.eastIndices = new int[eastVerticesCount];
-        quantizedMesh.eastVertexCount = eastVerticesCount;
+        quantizedMesh.setEastIndices(new int[eastVerticesCount]);
+        quantizedMesh.setEastVertexCount(eastVerticesCount);
         for (int i = 0; i < eastVerticesCount; i++) {
-            quantizedMesh.eastIndices[i] = eastVertices.get(i).id;
+            quantizedMesh.getEastIndices()[i] = eastVertices.get(i).getId();
         }
 
-        // north vertices.***
-        ArrayList<GaiaVertex> northVertices = mesh.getUpVerticesSortedRightToLeft();
+        // north vertices
+        List<GaiaVertex> northVertices = mesh.getUpVerticesSortedRightToLeft();
         int northVerticesCount = northVertices.size();
-        quantizedMesh.northIndices = new int[northVerticesCount];
-        quantizedMesh.northVertexCount = northVerticesCount;
+        quantizedMesh.setNorthIndices(new int[northVerticesCount]);
+        quantizedMesh.setNorthVertexCount(northVerticesCount);
         for (int i = 0; i < northVerticesCount; i++) {
-            quantizedMesh.northIndices[i] = northVertices.get(i).id;
+            int[] northIndices = quantizedMesh.getNorthIndices();
+            northIndices[i] = northVertices.get(i).getId();
         }
 
-        // check if save normals.***
+        // check if save normals
         if(calculateNormals) {
             Matrix4d tMat = GlobeUtils.transformMatrixAtCartesianPointWgs84(cartesianWC[0], cartesianWC[1], cartesianWC[2]);
             Matrix3d rotMat = new Matrix3d();
@@ -268,32 +271,32 @@ public class QuantizedMeshManager {
             Matrix3d rotMatInv = new Matrix3d();
             rotMatInv.invert(rotMat);
 
-            // Calculate the normals.***
-            quantizedMesh.octEncodedNormals = new byte[vertexCount * 2];
+            // Calculate the normals
+            quantizedMesh.setOctEncodedNormals(new byte[vertexCount * 2]);
             for (int i = 0; i < vertexCount; i++) {
                 GaiaVertex vertex = vertices.get(i);
-                Vector3f normal = vertex.normal;
+                Vector3f normal = vertex.getNormal();
                 if(normal == null)
                 {
                     normal = new Vector3f(0, 0, 1);
                 }
 
-                // rotate normal.***
-                Vector3f normalRotated = new Vector3f(normal.x, normal.z, -normal.y); // best result (-90 in xAxis).***
-                rotMatInv.transform(normalRotated); // test.***
+                // rotate normal
+                Vector3f normalRotated = new Vector3f(normal.x, normal.z, -normal.y); // best result (-90 in xAxis)
+                rotMatInv.transform(normalRotated); // test
 
                 Vector2f octNormal = float32x3ToOct(normalRotated);
 
-                quantizedMesh.octEncodedNormals[i * 2] = (byte) (octNormal.x * 254);
-                quantizedMesh.octEncodedNormals[i * 2 + 1] = (byte) (octNormal.y * 254);
+                quantizedMesh.getOctEncodedNormals()[i * 2] = (byte) (octNormal.x * 254);
+                quantizedMesh.getOctEncodedNormals()[i * 2 + 1] = (byte) (octNormal.y * 254);
             }
 
             // Terrain Lighting
             // Name: Oct-Encoded Per-Vertex Normals
             // extension Id: 1
-            quantizedMesh.extensionId = 1; // byte.***
-            // the size in bytes of "quantizedMesh.octEncodedNormals" is vertexCount * 2.***
-            quantizedMesh.extensionLength = vertexCount * 2; // int.***
+            quantizedMesh.setExtensionId((byte) 1); // byte
+            // the size in bytes of "quantizedMesh.octEncodedNormals" is vertexCount * 2
+            quantizedMesh.setExtensionLength(vertexCount * 2); // int
 
         }
 
@@ -304,7 +307,7 @@ public class QuantizedMeshManager {
         Vector3d centerWC = bboxWC.getCenter();
         double radius = bboxWC.getLongestDistance() / 2.0;
 
-        // Calculate the horizon occlusion point.***
+        // Calculate the horizon occlusion point
         // https://cesium.com/blog/2013/05/09/computing-the-horizon-occlusion-point/
         double[] centerCartesian = new double[3];
         centerCartesian[0] = centerWC.x;
@@ -316,8 +319,8 @@ public class QuantizedMeshManager {
         double centerLatDeg = centerCartographic.y;
         double centerHeight = centerCartographic.z;
 
-        double centerLonRad = centerLonDeg * GlobeUtils.getDegToRadFactor();
-        double centerLatRad = centerLatDeg * GlobeUtils.getDegToRadFactor();
+        double centerLonRad = centerLonDeg * GlobeUtils.DEG_TO_RADIAN_FACTOR;
+        double centerLatRad = centerLatDeg * GlobeUtils.DEG_TO_RADIAN_FACTOR;
 
         double cosLat = Math.cos(centerLatRad);
         double sinLat = Math.sin(centerLatRad);

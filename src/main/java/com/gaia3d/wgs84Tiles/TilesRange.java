@@ -1,19 +1,23 @@
 package com.gaia3d.wgs84Tiles;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@Slf4j
 public class TilesRange {
-    int tileDepth;
-    int minTileX;
-    int maxTileX;
-    int minTileY;
-    int maxTileY;
-
-    public TilesRange() {
-    }
+    private int tileDepth;
+    private int minTileX;
+    private int maxTileX;
+    private int minTileY;
+    private int maxTileY;
 
     public List<TileIndices> getTileIndices(List<TileIndices> resultTileIndices) {
         if (resultTileIndices == null) {
@@ -31,14 +35,14 @@ public class TilesRange {
     }
 
     public boolean intersects(TileIndices tileIndices) {
-        if (tileIndices.L != tileDepth) {
+        if (tileIndices.getL() != tileDepth) {
             return false;
         }
 
-        if (tileIndices.X < minTileX || tileIndices.X > maxTileX) {
+        if (tileIndices.getX() < minTileX || tileIndices.getX() > maxTileX) {
             return false;
         }
 
-        return tileIndices.Y >= minTileY && tileIndices.Y <= maxTileY;
+        return tileIndices.getY() >= minTileY && tileIndices.getY() <= maxTileY;
     }
 }

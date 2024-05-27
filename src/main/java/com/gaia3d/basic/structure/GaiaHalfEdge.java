@@ -4,33 +4,40 @@ package com.gaia3d.basic.structure;
 import com.gaia3d.basic.types.HalfEdgeType;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
+@Getter
+@Setter
 public class GaiaHalfEdge {
-    public GaiaVertex startVertex = null;
-    public GaiaHalfEdge next = null;
-    public GaiaHalfEdge twin = null;
-    public GaiaTriangle triangle = null;
+    @Getter
+    private GaiaVertex startVertex = null;
+    @Getter
+    private GaiaHalfEdge next = null;
+    private GaiaHalfEdge twin = null;
+    private GaiaTriangle triangle = null;
 
-    public int id = -1;
+    private int id = -1;
 
-    public int startVertexId = -1;
-    public int nextId = -1;
-    public int twinId = -1;
-    public int triangleId = -1;
+    private int startVertexId = -1;
+    private int nextId = -1;
+    private int twinId = -1;
+    private int triangleId = -1;
 
-    public HalfEdgeType type = HalfEdgeType.UNKNOWN;
-    public GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
+    private HalfEdgeType type = HalfEdgeType.UNKNOWN;
+    private GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
 
-    public GaiaLine2D line2D = null;
+    private GaiaLine2D line2D = null;
 
-    public GaiaRectangle boundingRect = null;
+    private GaiaRectangle boundingRect = null;
 
     public void deleteObjects() {
         startVertex = null;
@@ -49,11 +56,12 @@ public class GaiaHalfEdge {
 
     public void setTriangle(GaiaTriangle triangle) {
         this.triangle = triangle;
+        //triangle.setHalfEdge(this);
         triangle.halfEdge = this;
     }
 
     public void setTriangleToHEdgesLoop(GaiaTriangle triangle) {
-        ArrayList<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
+        List<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
         this.getHalfEdgesLoop(halfEdgesLoop);
         for (GaiaHalfEdge halfEdge : halfEdgesLoop) {
             halfEdge.setTriangle(triangle);
@@ -61,13 +69,9 @@ public class GaiaHalfEdge {
         halfEdgesLoop.clear();
     }
 
-    public GaiaVertex getStartVertex() {
-        return startVertex;
-    }
-
     public void setStartVertex(GaiaVertex startVertex) {
         this.startVertex = startVertex;
-        startVertex.outingHEdge = this;
+        startVertex.setOutingHEdge(this);
     }
 
     public GaiaVertex getEndVertex() {
@@ -81,10 +85,6 @@ public class GaiaHalfEdge {
                 return null;
             }
         }
-    }
-
-    public GaiaHalfEdge getNext() {
-        return next;
     }
 
     public GaiaHalfEdge getPrev() {
@@ -112,20 +112,19 @@ public class GaiaHalfEdge {
     public GaiaLine2D getLine2DXY() {
         if (this.line2D == null) {
             this.line2D = new GaiaLine2D();
-            Vector3d startPos = this.getStartVertex().position;
-            Vector3d endPos = this.getEndVertex().position;
+            Vector3d startPos = this.getStartVertex().getPosition();
+            Vector3d endPos = this.getEndVertex().getPosition();
             this.line2D.setBy2Points(startPos.x, startPos.y, endPos.x, endPos.y);
         }
 
         return this.line2D;
     }
 
-    public void getHalfEdgesLoop(ArrayList<GaiaHalfEdge> halfEdgesLoop) {
+    public void getHalfEdgesLoop(List<GaiaHalfEdge> halfEdgesLoop) {
         GaiaHalfEdge currHalfEdge = this;
         GaiaHalfEdge firstHalfEdge = this;
         halfEdgesLoop.add(currHalfEdge);
         boolean finished = false;
-        int testDebugCounter = 0;
         while (!finished) {
             GaiaHalfEdge nextHalfEdge = currHalfEdge.next;
             if (nextHalfEdge == null) {
@@ -139,34 +138,26 @@ public class GaiaHalfEdge {
                 }
                 halfEdgesLoop.add(currHalfEdge);
             }
-
-            testDebugCounter++;
-
-            if (testDebugCounter > 10) {
-                int hola = 0;
-            }
         }
     }
 
     public double getSquaredLength() {
-        Vector3d startPos = this.getStartVertex().position;
-        Vector3d endPos = this.getEndVertex().position;
-        double squaredLength = startPos.distanceSquared(endPos);
-        return squaredLength;
+        Vector3d startPos = this.getStartVertex().getPosition();
+        Vector3d endPos = this.getEndVertex().getPosition();
+        return startPos.distanceSquared(endPos);
     }
 
     public double getSquaredLengthXY() {
-        Vector3d startPos = this.getStartVertex().position;
-        Vector3d endPos = this.getEndVertex().position;
+        Vector3d startPos = this.getStartVertex().getPosition();
+        Vector3d endPos = this.getEndVertex().getPosition();
         Vector2d startPosXY = new Vector2d(startPos.x, startPos.y);
         Vector2d endPosXY = new Vector2d(endPos.x, endPos.y);
-        double squaredLength = startPosXY.distanceSquared(endPosXY);
-        return squaredLength;
+        return startPosXY.distanceSquared(endPosXY);
     }
 
     public Vector3d getMidPosition() {
-        Vector3d startPos = this.getStartVertex().position;
-        Vector3d endPos = this.getEndVertex().position;
+        Vector3d startPos = this.getStartVertex().getPosition();
+        Vector3d endPos = this.getEndVertex().getPosition();
         Vector3d midPos = new Vector3d();
         midPos.add(startPos).add(endPos).mul(0.5);
         //midPos.set((startPos.x/2.0 + endPos.x/2.0), (startPos.y/2.0 + endPos.y/2.0), (startPos.z/2.0 + endPos.z/2.0));
@@ -174,20 +165,20 @@ public class GaiaHalfEdge {
     }
 
     public Vector3d getDirection() {
-        Vector3d startPos = this.getStartVertex().position;
-        Vector3d endPos = this.getEndVertex().position;
+        Vector3d startPos = this.getStartVertex().getPosition();
+        Vector3d endPos = this.getEndVertex().getPosition();
         Vector3d dir = new Vector3d();
         dir.sub(endPos, startPos);
         dir.normalize();
         return dir;
     }
 
-    public void getInterpolatedPositions(ArrayList<Vector3d> resultPositions, int numPositions) {
+    public void getInterpolatedPositions(List<Vector3d> resultPositions, int numPositions) {
         // this function returns the interpolated positions of this halfEdge.***
         // resultPositions must be initialized.***
         resultPositions.clear();
-        Vector3d startPos = this.getStartVertex().position;
-        Vector3d endPos = this.getEndVertex().position;
+        Vector3d startPos = this.getStartVertex().getPosition();
+        Vector3d endPos = this.getEndVertex().getPosition();
         Vector3d dir = getDirection();
         double length = startPos.distance(endPos);
         double step = length / (numPositions - 1);
@@ -201,8 +192,8 @@ public class GaiaHalfEdge {
     public GaiaRectangle getBoundingRectangle() {
         if (this.boundingRect == null) {
             this.boundingRect = new GaiaRectangle();
-            Vector3d startPos = this.getStartVertex().position;
-            Vector3d endPos = this.getEndVertex().position;
+            Vector3d startPos = this.getStartVertex().getPosition();
+            Vector3d endPos = this.getEndVertex().getPosition();
             this.boundingRect.setInit(new Vector2d(startPos.x, startPos.y));
             this.boundingRect.addPoint(endPos.x, endPos.y);
         }
@@ -267,7 +258,6 @@ public class GaiaHalfEdge {
         this.triangleId = dataInputStream.readInt();
         int typeValue = dataInputStream.readInt();
         this.type = HalfEdgeType.fromValue(typeValue);
-        int hola = 0;
     }
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
@@ -277,7 +267,7 @@ public class GaiaHalfEdge {
 
             // 2nd, save startVertex.***
             if (startVertex != null) {
-                dataOutputStream.writeInt(startVertex.id);
+                dataOutputStream.writeInt(startVertex.getId());
             } else {
                 dataOutputStream.writeInt(-1);
             }
@@ -298,16 +288,14 @@ public class GaiaHalfEdge {
 
             // 5th, save triangle.***
             if (triangle != null) {
-                dataOutputStream.writeInt(triangle.id);
+                dataOutputStream.writeInt(triangle.getId());
             } else {
                 dataOutputStream.writeInt(-1);
             }
             int type_int = type.getValue();
             dataOutputStream.writeInt(type_int);
-
-            int hola = 0;
         } catch (Exception e) {
-            log.error("Error : {}", e.getMessage());
+            log.error("{}", e.getMessage());
         }
     }
 

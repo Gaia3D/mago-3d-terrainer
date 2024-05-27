@@ -8,7 +8,7 @@ import lombok.Getter;
 public enum GaiaObjectStatus {
     UNKNOWN(-1), ACTIVE(0), DELETED(1);
 
-    private int value;
+    private final int value;
 
     public static GaiaObjectStatus fromValue(int value) {
         for (GaiaObjectStatus type : GaiaObjectStatus.values()) {
@@ -18,5 +18,4 @@ public enum GaiaObjectStatus {
         }
         return UNKNOWN;
     }
-
 }

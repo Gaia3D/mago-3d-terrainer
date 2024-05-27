@@ -1,0 +1,31 @@
+package com.gaia3d.command;
+
+import lombok.extern.slf4j.Slf4j;
+import org.geotools.referencing.ReferencingFactoryFinder;
+import org.geotools.referencing.factory.PropertyAuthorityFactory;
+import org.geotools.referencing.factory.ReferencingFactoryContainer;
+import org.geotools.util.factory.Hints;
+import org.opengis.referencing.crs.CRSAuthorityFactory;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Set;
+
+@Slf4j
+public class GeoToolsConfigurator {
+    public void setEpsg() throws IOException {
+        Hints hints = new Hints(Hints.CRS_AUTHORITY_FACTORY, PropertyAuthorityFactory.class);
+        log.debug("[Geotools]=================={}==================}", ReferencingFactoryFinder.getCRSAuthorityFactories(hints).size());
+
+        URL epsg = Thread.currentThread().getContextClassLoader().getResource("epsg.properties");
+        if (epsg != null) {
+            ReferencingFactoryContainer referencingFactoryContainer = ReferencingFactoryContainer.instance(hints);
+            ReferencingFactoryFinder.scanForPlugins();
+            Set<CRSAuthorityFactory> factories = ReferencingFactoryFinder.getCRSAuthorityFactories(hints);
+            log.debug("[Geotools]=================={}==================}", factories.size());
+            factories.forEach(f -> {
+                log.debug("{}", f);
+            });
+        }
+    }
+}

@@ -1,17 +1,24 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.List;
 
+@Getter
+@Setter
 public class TerrainElevationDataQuadTree {
-    // A region is represented by multiple small geoTiff files.***
-    // Here, we use a quadtree to represent a region.***
-    // The quadtree is a tree data structure in which each internal node has exactly four children.***
-    TerrainElevationDataQuadTree parent = null;
-    GeographicExtension geographicExtension = new GeographicExtension();
-    TerrainElevationDataQuadTree[] children = null;
-    ArrayList<TerrainElevationData> terrainElevationDataList = new ArrayList<TerrainElevationData>();
+    // A region is represented by multiple small geoTiff files
+    // Here, we use a quadtree to represent a region
+    // The quadtree is a tree data structure in which each internal node has exactly four children
+    private TerrainElevationDataQuadTree parent = null;
+    private GeographicExtension geographicExtension = new GeographicExtension();
+    private TerrainElevationDataQuadTree[] children = null;
+    private List<TerrainElevationData> terrainElevationDataList = new ArrayList<>();
+
+    private static final int CHILDREN_COUNT = 4;
     int depth = 0;
 
     public TerrainElevationDataQuadTree(TerrainElevationDataQuadTree parent) {
@@ -23,15 +30,13 @@ public class TerrainElevationDataQuadTree {
 
     public void deleteObjects() {
         if (terrainElevationDataList != null) {
-            int terrainElevationDataCount = terrainElevationDataList.size();
-            for (int i = 0; i < terrainElevationDataCount; i++) {
-                TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
+            for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
                 terrainElevationData.deleteObjects();
             }
         }
 
         if (children != null) {
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < CHILDREN_COUNT; i++) {
                 children[i].deleteObjects();
             }
         }
@@ -51,7 +56,7 @@ public class TerrainElevationDataQuadTree {
         int terrainElevationDataCount = terrainElevationDataList.size();
         for (int i = 0; i < terrainElevationDataCount; i++) {
             TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
-            GeographicExtension geographicExtension = terrainElevationData.geographicExtension;
+            GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
 
             if (i == 0) {
                 this.geographicExtension.copyFrom(geographicExtension);
@@ -62,12 +67,12 @@ public class TerrainElevationDataQuadTree {
     }
 
     private void makeTree(int maxDepth) {
-        // if my datas count is less than 2, then return.***
+        // if my datas count is less than 2, then return
         if (terrainElevationDataList.size() < 2) {
             return;
         }
 
-        // 1rst create child nodes if no exist.***
+        // 1rst create child nodes if no exist
         if (children == null) {
             children = new TerrainElevationDataQuadTree[4];
             children[0] = new TerrainElevationDataQuadTree(this);
@@ -75,7 +80,7 @@ public class TerrainElevationDataQuadTree {
             children[2] = new TerrainElevationDataQuadTree(this);
             children[3] = new TerrainElevationDataQuadTree(this);
 
-            // set geographicExtension for children.***
+            // set geographicExtension for children
             //    +----+----+
             //    | 3  | 2  |
             //    +----+----+
@@ -103,25 +108,23 @@ public class TerrainElevationDataQuadTree {
             geographicExtension3.setDegrees(minLonDeg, midLatDeg, 0.0, midLonDeg, maxLatDeg, 0.0);
         }
 
-        // 2nd distribute data to children.***
-        int terrainElevationDataCount = terrainElevationDataList.size();
-        for (int i = 0; i < terrainElevationDataCount; i++) {
-            TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
-            GeographicExtension geographicExtension = terrainElevationData.geographicExtension;
+        // 2nd distribute data to children
+        for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
+            GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
 
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < CHILDREN_COUNT; j++) {
                 if (children[j].geographicExtension.intersects(geographicExtension)) {
                     children[j].addTerrainElevationData(terrainElevationData);
                 }
             }
         }
 
-        // now remove all data from this node.***
+        // now remove all data from this node
         terrainElevationDataList.clear();
 
         if (this.depth < maxDepth) {
-            // continue making children.***
-            for (int j = 0; j < 4; j++) {
+            // continue making children
+            for (int j = 0; j < CHILDREN_COUNT; j++) {
                 children[j].makeTree(maxDepth);
             }
         }
@@ -129,15 +132,13 @@ public class TerrainElevationDataQuadTree {
 
     public void deleteCoverage() {
         if (terrainElevationDataList != null) {
-            int terrainElevationDataCount = terrainElevationDataList.size();
-            for (int i = 0; i < terrainElevationDataCount; i++) {
-                TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
+            for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
                 terrainElevationData.deleteCoverage();
             }
         }
 
         if (children != null) {
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < CHILDREN_COUNT; i++) {
                 children[i].deleteCoverage();
             }
         }
@@ -145,17 +146,15 @@ public class TerrainElevationDataQuadTree {
 
     public void deleteCoverageIfNotIntersects(GeographicExtension geographicExtension) {
         if (terrainElevationDataList != null) {
-            int terrainElevationDataCount = terrainElevationDataList.size();
-            for (int i = 0; i < terrainElevationDataCount; i++) {
-                TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
-                if (!geographicExtension.intersects(terrainElevationData.geographicExtension)) {
+            for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
+                if (!geographicExtension.intersects(terrainElevationData.getGeographicExtension())) {
                     terrainElevationData.deleteCoverage();
                 }
             }
         }
 
         if (children != null) {
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < CHILDREN_COUNT; i++) {
                 if (!geographicExtension.intersects(children[i].geographicExtension)) {
                     children[i].deleteCoverage();
                 } else {
@@ -170,41 +169,32 @@ public class TerrainElevationDataQuadTree {
         makeTree(maxDepth);
     }
 
-    public void getTerrainElevationDatasArray(double lonDeg, double latDeg, ArrayList<TerrainElevationData> resultTerrainElevDataArray) {
-        int terrainElevationDataCount = terrainElevationDataList.size();
-        for (int i = 0; i < terrainElevationDataCount; i++) {
-            TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
-            GeographicExtension geographicExtension = terrainElevationData.geographicExtension;
-
+    public void getTerrainElevationDatasArray(double lonDeg, double latDeg, List<TerrainElevationData> resultTerrainElevDataArray) {
+        for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
+            GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
             if (geographicExtension.intersects(lonDeg, latDeg)) {
                 resultTerrainElevDataArray.add(terrainElevationData);
-                //break;
             }
         }
 
         if (children != null) {
-            // check children.***
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < CHILDREN_COUNT; j++) {
                 if (children[j].geographicExtension.intersects(lonDeg, latDeg)) {
                     children[j].getTerrainElevationDatasArray(lonDeg, latDeg, resultTerrainElevDataArray);
                     break;
                 }
             }
         }
-
     }
 
 
     public TerrainElevationData getTerrainElevationData(double lonDeg, double latDeg) {
         // function used in "TileWgs84 class : public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException, IOException {"
-        // to know the pixelSizeDegree.***
+        // to know the pixelSizeDegree
         TerrainElevationData resultTerrainElevationData = null;
 
-        int terrainElevationDataCount = terrainElevationDataList.size();
-        for (int i = 0; i < terrainElevationDataCount; i++) {
-            TerrainElevationData terrainElevationData = terrainElevationDataList.get(i);
-            GeographicExtension geographicExtension = terrainElevationData.geographicExtension;
-
+        for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
+            GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
             if (geographicExtension.intersects(lonDeg, latDeg)) {
                 resultTerrainElevationData = terrainElevationData;
                 break;
@@ -213,8 +203,8 @@ public class TerrainElevationDataQuadTree {
 
         if (resultTerrainElevationData == null) {
             if (children != null) {
-                // check children.***
-                for (int j = 0; j < 4; j++) {
+                // check children
+                for (int j = 0; j < CHILDREN_COUNT; j++) {
                     if (children[j].geographicExtension.intersects(lonDeg, latDeg)) {
                         resultTerrainElevationData = children[j].getTerrainElevationData(lonDeg, latDeg);
                         break;

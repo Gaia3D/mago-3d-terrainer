@@ -7,9 +7,10 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * BigEndianDataOutputStream
+ *
  * @author znkim
- * @since 1.0.0
  * @see FilterOutputStream
+ * @since 1.0.0
  */
 public class BigEndianDataOutputStream extends DataOutputStream implements DataOutput {
 
