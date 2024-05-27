@@ -253,7 +253,7 @@ public class TileWgs84Manager {
             //log.error("Error: neighborFullPath is not exist: " + neighborFullPath);
             return null;
         } else {
-            log.debug("Loading tile: LOAD - * - LOAD : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
+            //log.debug("Loading tile: LOAD - * - LOAD : " + tileIndices.X + ", " + tileIndices.Y + ", " + tileIndices.L);
             // load the Tile.***
             neighborTile = new TileWgs84(null, this);
             neighborTile.tileIndices = tileIndices;

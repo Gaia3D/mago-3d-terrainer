@@ -60,6 +60,19 @@ class MesherMainTest {
     }
 
     @Test
+    void main_korea_oneGeotiff() throws FactoryException, TransformException, IOException {
+        //****************************************************************
+        // Note : the outFolder must be different from the inputFolder.***
+        //****************************************************************
+        String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\data_geoTiff_1file_korea";
+        String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output\\";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(15);
+        String refinementStrength = String.valueOf(1);
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
     void main_earth() throws FactoryException, TransformException, IOException {
         //****************************************************************
         // Note : the outFolder must be different from the inputFolder.***
