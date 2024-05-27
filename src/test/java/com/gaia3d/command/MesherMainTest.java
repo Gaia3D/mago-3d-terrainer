@@ -59,7 +59,6 @@ class MesherMainTest {
     }
 
     @Test
-<<<<<<< HEAD
     void main_korea_oneGeotiff() throws FactoryException, TransformException, IOException {
         //****************************************************************
         // Note : the outFolder must be different from the inputFolder.***
