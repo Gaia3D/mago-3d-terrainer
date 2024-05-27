@@ -74,31 +74,13 @@ public class GaiaMesh {
 
     public void removeDeletedObjects() {
         // 1rst, check vertices
-        List<GaiaVertex> newVertices = new ArrayList<>();
-        for (GaiaVertex vertex : vertices) {
-            if (vertex.getObjectStatus() != GaiaObjectStatus.DELETED) {
-                newVertices.add(vertex);
-            }
-        }
-        vertices = newVertices;
+        vertices.removeIf(vertex -> vertex.getObjectStatus() == GaiaObjectStatus.DELETED);
 
         // 2nd, check triangles
-        List<GaiaTriangle> newTriangles = new ArrayList<>();
-        for (GaiaTriangle triangle : triangles) {
-            if (triangle.getObjectStatus() != GaiaObjectStatus.DELETED) {
-                newTriangles.add(triangle);
-            }
-        }
-        triangles = newTriangles;
+        triangles.removeIf(triangle -> triangle.getObjectStatus() == GaiaObjectStatus.DELETED);
 
         // 3rd, check halfEdges
-        List<GaiaHalfEdge> newHalfEdges = new ArrayList<>();
-        for (GaiaHalfEdge halfEdge : halfEdges) {
-            if (halfEdge.getObjectStatus() != GaiaObjectStatus.DELETED) {
-                newHalfEdges.add(halfEdge);
-            }
-        }
-        halfEdges = newHalfEdges;
+        halfEdges.removeIf(halfEdge -> halfEdge.getObjectStatus() == GaiaObjectStatus.DELETED);
     }
 
     public void removeDeletedObjectsOriginal() {
@@ -552,8 +534,11 @@ public class GaiaMesh {
             disableTriangle(triangle);
 
             longestHEdge.setObjectStatus(GaiaObjectStatus.DELETED);
+            longestHEdge.deleteObjects();
             prevHEdge.setObjectStatus(GaiaObjectStatus.DELETED);
+            prevHEdge.deleteObjects();
             nextHEdge.setObjectStatus(GaiaObjectStatus.DELETED);
+            nextHEdge.deleteObjects();
         } else {
             // split the 2 triangles
             //                                        oppVtx_T
@@ -758,12 +743,18 @@ public class GaiaMesh {
 
             // disable hedges
             longestHEdge.setObjectStatus(GaiaObjectStatus.DELETED);
+            longestHEdge.deleteObjects();
             prevHEdge.setObjectStatus(GaiaObjectStatus.DELETED);
+            prevHEdge.deleteObjects();
             nextHEdge.setObjectStatus(GaiaObjectStatus.DELETED);
+            nextHEdge.deleteObjects();
 
             longestHEdgeAdjT.setObjectStatus(GaiaObjectStatus.DELETED);
+            longestHEdgeAdjT.deleteObjects();
             prevHEdgeAdjT.setObjectStatus(GaiaObjectStatus.DELETED);
+            prevHEdgeAdjT.deleteObjects();
             nextHEdgeAdjT.setObjectStatus(GaiaObjectStatus.DELETED);
+            nextHEdgeAdjT.deleteObjects();
         }
     }
 
