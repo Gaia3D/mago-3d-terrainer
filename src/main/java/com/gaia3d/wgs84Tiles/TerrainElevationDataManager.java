@@ -179,7 +179,7 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
-    public double getElevationNearest(double lonDeg, double latDeg, List<TerrainElevationData> memSaveTerrainElevDatasArray) throws TransformException, IOException {
+    public double getElevationNearest_NOUSED(double lonDeg, double latDeg, List<TerrainElevationData> memSaveTerrainElevDatasArray) throws TransformException, IOException {
         double resultElevation = 0.0;
 
         if (this.geoTiffFilesCount == 1) {
