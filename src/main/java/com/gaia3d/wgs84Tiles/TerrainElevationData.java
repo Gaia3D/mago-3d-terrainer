@@ -5,6 +5,7 @@ import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
@@ -76,11 +77,83 @@ public class TerrainElevationData {
         double value = 0.0;
         if (raster != null) {
             value = raster.getSampleDouble(x, y, 0);
+
+            if(this.memSaveNoDataContainer == null) {
+                this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+            }
+
+            if (memSaveNoDataContainer != null) {
+                double nodata = memSaveNoDataContainer.getAsSingleValue();
+                if (value == nodata) {
+                    return 0.0;
+                }
+            }
         }
         return value;
     }
 
     public double getElevation(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
+        double resultAltitude = 0.0;
+
+        // 1rst check if lon, lat intersects with geoExtension
+        if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
+            intersects[0] = false;
+            return resultAltitude;
+        }
+
+        if (this.coverage == null) {
+            GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
+            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
+        }
+
+        // determine the grid coordinates of the point
+        if(this.raster == null) {
+            this.raster = this.coverage.getRenderedImage().getData();
+        }
+
+        double unitaryX = (lonDeg - this.geographicExtension.getMinLongitudeDeg()) / this.geographicExtension.getLongitudeRangeDegree();
+        double unitaryY = 1.0 - (latDeg - this.geographicExtension.getMinLatitudeDeg()) / this.geographicExtension.getLatitudeRangeDegree();
+
+        int rasterHeight = this.raster.getHeight();
+        int rasterWidth = this.raster.getWidth();
+
+        int column = (int) (unitaryX * rasterWidth);
+        int row = (int) (unitaryY * rasterHeight);
+
+        int columnNext = column + 1;
+        int rowNext = row + 1;
+
+        if(columnNext >= rasterWidth) {
+            columnNext = rasterWidth - 1;
+        }
+
+        if(rowNext >= rasterHeight) {
+            rowNext = rasterHeight - 1;
+        }
+
+        double factorX = (unitaryX * rasterWidth) - column;
+        double factorY = (unitaryY * rasterHeight) - row;
+
+        // interpolation bilinear.***
+        double value00 = this.getGridValue(column, row);
+        double value01 = this.getGridValue(column, rowNext);
+        double value10 = this.getGridValue(columnNext, row);
+        double value11 = this.getGridValue(columnNext, rowNext);
+
+        double value0 = value00 * (1.0 - factorY) + value01 * factorY;
+        double value1 = value10 * (1.0 - factorY) + value11 * factorY;
+
+        intersects[0] = true;
+        resultAltitude = value0 + factorX * (value1 - value0);
+
+        // update min, max altitude
+        minAltitude = Math.min(minAltitude, resultAltitude);
+        maxAltitude = Math.max(maxAltitude, resultAltitude);
+
+        return resultAltitude;
+    }
+
+    public double getElevation_original(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
         double resultAltitude = 0.0;
 
         // 1rst check if lon, lat intersects with geoExtension
@@ -105,10 +178,10 @@ public class TerrainElevationData {
         memSavePosWorld.x = lonDeg;
         memSavePosWorld.y = latDeg;
 
-
         memSaveAlt[0] = 0.0;
         try {
             coverage.evaluate((DirectPosition) memSavePosWorld, memSaveAlt);
+
             intersects[0] = true;
 
             // check if is NoData
@@ -130,5 +203,7 @@ public class TerrainElevationData {
 
         return resultAltitude;
     }
+
+
 
 }
