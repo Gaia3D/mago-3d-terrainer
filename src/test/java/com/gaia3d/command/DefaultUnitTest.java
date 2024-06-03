@@ -97,7 +97,7 @@ public class DefaultUnitTest {
         FileUtils.deleteDirectory(outputPath);
     }
 
-    @Test
+    /*@Test
     void sampleCubicSpline() throws IOException {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
@@ -116,9 +116,9 @@ public class DefaultUnitTest {
         };
         MagoMesherMain.main(args);
         FileUtils.deleteDirectory(outputPath);
-    }
+    }*/
 
-    @Test
+    /*@Test
     void sampleCubicSplineMaxDepth12() throws IOException {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
@@ -137,5 +137,5 @@ public class DefaultUnitTest {
         };
         MagoMesherMain.main(args);
         FileUtils.deleteDirectory(outputPath);
-    }
+    }*/
 }

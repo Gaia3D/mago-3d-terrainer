@@ -7,18 +7,14 @@ import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.joml.Vector2d;
-import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.TransformException;
 
 import java.awt.image.Raster;
-import java.io.IOException;
 
 @Slf4j
 @Getter
@@ -94,7 +90,7 @@ public class TerrainElevationData {
         return value;
     }
 
-    public double getElevation(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
+    public double getElevation(double lonDeg, double latDeg, boolean[] intersects) {
         double resultAltitude = 0.0;
 
         // 1rst check if lon, lat intersects with geoExtension
@@ -123,38 +119,12 @@ public class TerrainElevationData {
         int row = (int) (unitaryY * rasterHeight); // nearest row
 
         GlobalOptions globalOptions = GlobalOptions.getInstance();
-        if(globalOptions.getInterpolationType() == InterpolationType.NEAREST) {
-            // nearest neighbor
+        if (globalOptions.getInterpolationType() == InterpolationType.NEAREST) {
             intersects[0] = true;
-            resultAltitude = this.getGridValue(column, row);
-        }
-        else if(globalOptions.getInterpolationType() == InterpolationType.BILINEAR)
-        {
-            int columnNext = column + 1;
-            int rowNext = row + 1;
-
-            if(columnNext >= rasterWidth) {
-                columnNext = rasterWidth - 1;
-            }
-
-            if(rowNext >= rasterHeight) {
-                rowNext = rasterHeight - 1;
-            }
-
-            double factorX = (unitaryX * rasterWidth) - column;
-            double factorY = (unitaryY * rasterHeight) - row;
-
-            // interpolation bilinear.***
-            double value00 = this.getGridValue(column, row);
-            double value01 = this.getGridValue(column, rowNext);
-            double value10 = this.getGridValue(columnNext, row);
-            double value11 = this.getGridValue(columnNext, rowNext);
-
-            double value0 = value00 * (1.0 - factorY) + value01 * factorY;
-            double value1 = value10 * (1.0 - factorY) + value11 * factorY;
-
+            resultAltitude = calcNearestInterpolation(column, row);
+        } else {
             intersects[0] = true;
-            resultAltitude = value0 + factorX * (value1 - value0);
+            resultAltitude = calcBilinearInterpolation(column, row);
         }
 
         // update min, max altitude
@@ -162,6 +132,40 @@ public class TerrainElevationData {
         maxAltitude = Math.max(maxAltitude, resultAltitude);
 
         return resultAltitude;
+    }
+
+    private double calcNearestInterpolation(int column, int row) {
+        return this.getGridValue(column, row);
+    }
+
+    private double calcBilinearInterpolation(int column, int row) {
+        int rasterHeight = this.raster.getHeight();
+        int rasterWidth = this.raster.getWidth();
+
+        int columnNext = column + 1;
+        int rowNext = row + 1;
+
+        if(columnNext >= rasterWidth) {
+            columnNext = rasterWidth - 1;
+        }
+
+        if(rowNext >= rasterHeight) {
+            rowNext = rasterHeight - 1;
+        }
+
+        double factorX = (column + 0.5) / rasterWidth;
+        double factorY = (row + 0.5) / rasterHeight;
+
+        // interpolation bilinear.***
+        double value00 = this.getGridValue(column, row);
+        double value01 = this.getGridValue(column, rowNext);
+        double value10 = this.getGridValue(columnNext, row);
+        double value11 = this.getGridValue(columnNext, rowNext);
+
+        double value0 = value00 * (1.0 - factorY) + value01 * factorY;
+        double value1 = value10 * (1.0 - factorY) + value11 * factorY;
+
+        return value0 + factorX * (value1 - value0);
     }
 
 }

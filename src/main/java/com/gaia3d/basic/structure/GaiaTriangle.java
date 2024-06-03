@@ -87,9 +87,9 @@ public class GaiaTriangle {
         return this.plane;
     }
 
-    public boolean intersectsPointXY(double pos_x, double pos_y, List<GaiaHalfEdge> memSaveHedges, GaiaLine2D memSaveline2D) {
+    public boolean intersectsPointXY(double posX, double posY, List<GaiaHalfEdge> memSaveHedges, GaiaLine2D memSaveline2D) {
         GaiaBoundingBox boundingBox = this.getBoundingBox();
-        if (!boundingBox.intersectsPointXY(pos_x, pos_y)) {
+        if (!boundingBox.intersectsPointXY(posX, posY)) {
             return false;
         }
 
@@ -100,7 +100,7 @@ public class GaiaTriangle {
         for (int i = 0; i < hedgesCount; i++) {
             GaiaHalfEdge hedge = memSaveHedges.get(i);
             line2dAux = hedge.getLine2DXY();
-            byte relativePosition2D_linePoint = line2dAux.relativePositionOfPoint(pos_x, pos_y, error);
+            byte relativePosition2D_linePoint = line2dAux.relativePositionOfPoint(posX, posY, error);
 
             // relative positions :
             // 0 : point is on the line.

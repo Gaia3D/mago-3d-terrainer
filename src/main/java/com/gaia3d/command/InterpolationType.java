@@ -10,9 +10,9 @@ import javax.media.jai.Interpolation;
 public enum InterpolationType {
 
     NEAREST(Interpolation.INTERP_NEAREST, "nearest"),
-    BILINEAR(Interpolation.INTERP_BILINEAR, "bilinear"),
-    BICUBIC(Interpolation.INTERP_BICUBIC, "bicubic"),
-    BICUBIC2(Interpolation.INTERP_BICUBIC_2, "bicubic2"),;
+    BILINEAR(Interpolation.INTERP_BILINEAR, "bilinear");
+    /*BICUBIC(Interpolation.INTERP_BICUBIC, "bicubic"),
+    BICUBIC2(Interpolation.INTERP_BICUBIC_2, "bicubic2"),;*/
 
     private final int interpolation;
     private final String interpolationArgument;

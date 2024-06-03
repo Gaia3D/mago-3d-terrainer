@@ -178,44 +178,7 @@ public class TerrainElevationDataManager {
 
         return resultElevation;
     }
-
-    public double getElevationNearest_NOUSED(double lonDeg, double latDeg, List<TerrainElevationData> memSaveTerrainElevDatasArray) throws TransformException, IOException {
-        double resultElevation = 0.0;
-
-        if (this.geoTiffFilesCount == 1) {
-            if (uniqueTerrainElevationData == null) {
-                return resultElevation;
-            }
-
-            resultElevation = uniqueTerrainElevationData.getElevation(lonDeg, latDeg, memSaveIntersects);
-            return resultElevation;
-        }
-
-        if (rootTerrainElevationDataQuadTree == null) {
-            return resultElevation;
-        }
-
-        memSaveTerrainElevDatasArray.clear();
-        rootTerrainElevationDataQuadTree.getTerrainElevationDatasArray(lonDeg, latDeg, memSaveTerrainElevDatasArray);
-
-        memSaveIntersects[0] = false;
-        for (TerrainElevationData terrainElevationData : memSaveTerrainElevDatasArray) {
-            double elevation = terrainElevationData.getElevation(lonDeg, latDeg, memSaveIntersects);
-            if (!memSaveIntersects[0]) {
-                continue;
-            }
-
-            if (elevation < 0.0) {
-                elevation = 0.0;
-            }
-
-            resultElevation = elevation;
-            break;
-        }
-
-        return resultElevation;
-    }
-
+    
     private void loadAllGeoTiff(String terrainElevationDataFolderPath) throws FactoryException, TransformException {
         // load all geoTiffFiles
         memSaveGeoTiffFileNames.clear();
