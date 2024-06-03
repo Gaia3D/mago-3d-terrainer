@@ -1,5 +1,3 @@
-import org.gradle.internal.os.OperatingSystem
-
 plugins {
     id "java"
     id "com.google.cloud.tools.jib" version "3.4.0"
@@ -8,20 +6,6 @@ plugins {
 
 group = 'com.gaia3d'
 version = '1.3.6'
-project.ext.lwjglVersion = "3.3.2"
-
-switch ( OperatingSystem.current() ) {
-    case OperatingSystem.WINDOWS:
-        project.ext.lwjglNatives = "natives-windows"
-        break
-    case OperatingSystem.LINUX:
-        project.ext.lwjglNatives = "natives-linux"
-        break
-    case OperatingSystem.MAC_OS:
-        project.ext.lwjglNatives = "natives-macos"
-        break
-}
-project.ext.lwjglNatives = "natives-linux"
 
 repositories {
     maven { url "https://repo.osgeo.org/repository/release/"}
@@ -32,36 +16,21 @@ dependencies {
     compileOnly "org.projectlombok:lombok:1.18.30"
     annotationProcessor "org.projectlombok:lombok:1.18.30"
 
-    // logging
     implementation 'org.slf4j:slf4j-api:1.7.25'
-    // log4j
     implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
     implementation 'org.apache.logging.log4j:log4j-api:2.14.0'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
 
-    // commons library (apache)
     implementation 'commons-logging:commons-logging:1.2'
     implementation 'commons-io:commons-io:2.11.0'
     implementation 'commons-cli:commons-cli:1.5.0'
     implementation 'commons-collections:commons-collections:3.2.2'
     implementation 'org.apache.commons:commons-text:1.10.0'
-
-    // lwjgl (lightweight java game library)
-    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-    implementation "org.lwjgl:lwjgl"
-    implementation "org.lwjgl:lwjgl-opengl"
-    implementation "org.lwjgl:lwjgl-stb"
-    implementation "org.lwjgl:lwjgl-glfw"
-
-    // joml (java opengl math library)
     implementation "org.joml:joml:1.10.5"
 
-    // proj4j (java projection library)
     implementation "org.locationtech.proj4j:proj4j:1.2.3"
     implementation "org.locationtech.proj4j:proj4j-epsg:1.2.3"
 
-
-    // geotools (java geospatial library)
     implementation "org.geotools:gt-geotiff:26.5"
     implementation 'org.geotools:gt-geojsondatastore:26.5'
     implementation "org.geotools:gt-referencing:26.5"
@@ -78,16 +47,8 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 
-    // jackson (json library)
     implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
     implementation('com.fasterxml.jackson.core:jackson-databind:2.12.7.1')
-
-    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
 
     testCompileOnly "org.projectlombok:lombok:1.18.30"
     testAnnotationProcessor "org.projectlombok:lombok:1.18.30"
@@ -143,5 +104,5 @@ shadowJar {
         attributes 'Implementation-Vendor-Id': 'com.gaia3d'
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
-    archiveFileName = "mago-3d-mesher-${project.version}-${project.ext.lwjglNatives}.jar"
+    archiveFileName = "mago-3d-mesher-${project.version}.jar"
 }
