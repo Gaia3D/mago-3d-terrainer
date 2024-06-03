@@ -1,6 +1,8 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.command.InterpolationType;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
@@ -117,93 +119,49 @@ public class TerrainElevationData {
         int rasterHeight = this.raster.getHeight();
         int rasterWidth = this.raster.getWidth();
 
-        int column = (int) (unitaryX * rasterWidth);
-        int row = (int) (unitaryY * rasterHeight);
+        int column = (int) (unitaryX * rasterWidth); // nearest column
+        int row = (int) (unitaryY * rasterHeight); // nearest row
 
-        int columnNext = column + 1;
-        int rowNext = row + 1;
-
-        if(columnNext >= rasterWidth) {
-            columnNext = rasterWidth - 1;
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        if(globalOptions.getInterpolationType() == InterpolationType.NEAREST) {
+            // nearest neighbor
+            intersects[0] = true;
+            resultAltitude = this.getGridValue(column, row);
         }
+        else if(globalOptions.getInterpolationType() == InterpolationType.BILINEAR)
+        {
+            int columnNext = column + 1;
+            int rowNext = row + 1;
 
-        if(rowNext >= rasterHeight) {
-            rowNext = rasterHeight - 1;
-        }
+            if(columnNext >= rasterWidth) {
+                columnNext = rasterWidth - 1;
+            }
 
-        double factorX = (unitaryX * rasterWidth) - column;
-        double factorY = (unitaryY * rasterHeight) - row;
+            if(rowNext >= rasterHeight) {
+                rowNext = rasterHeight - 1;
+            }
 
-        // interpolation bilinear.***
-        double value00 = this.getGridValue(column, row);
-        double value01 = this.getGridValue(column, rowNext);
-        double value10 = this.getGridValue(columnNext, row);
-        double value11 = this.getGridValue(columnNext, rowNext);
+            double factorX = (unitaryX * rasterWidth) - column;
+            double factorY = (unitaryY * rasterHeight) - row;
 
-        double value0 = value00 * (1.0 - factorY) + value01 * factorY;
-        double value1 = value10 * (1.0 - factorY) + value11 * factorY;
+            // interpolation bilinear.***
+            double value00 = this.getGridValue(column, row);
+            double value01 = this.getGridValue(column, rowNext);
+            double value10 = this.getGridValue(columnNext, row);
+            double value11 = this.getGridValue(columnNext, rowNext);
 
-        intersects[0] = true;
-        resultAltitude = value0 + factorX * (value1 - value0);
-
-        // update min, max altitude
-        minAltitude = Math.min(minAltitude, resultAltitude);
-        maxAltitude = Math.max(maxAltitude, resultAltitude);
-
-        return resultAltitude;
-    }
-
-    public double getElevation_original(double lonDeg, double latDeg, boolean[] intersects) throws TransformException, IOException {
-        double resultAltitude = 0.0;
-
-        // 1rst check if lon, lat intersects with geoExtension
-        if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
-            intersects[0] = false;
-            return resultAltitude;
-        }
-
-        if (this.coverage == null) {
-            GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
-        }
-
-        // https://taylor.callsen.me/parsing-geotiff-files-in-java/
-        memSaveWgs84 = DefaultGeographicCRS.WGS84;
-
-        memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-        //note :  DirectPosition2D(memSavewgs84, lonDeg, latDeg); // longitude supplied first
-        if (memSavePosWorld == null) {
-            memSavePosWorld = new DirectPosition2D(memSaveWgs84, 0.0, 0.0);
-        }
-        memSavePosWorld.x = lonDeg;
-        memSavePosWorld.y = latDeg;
-
-        memSaveAlt[0] = 0.0;
-        try {
-            coverage.evaluate((DirectPosition) memSavePosWorld, memSaveAlt);
+            double value0 = value00 * (1.0 - factorY) + value01 * factorY;
+            double value1 = value10 * (1.0 - factorY) + value11 * factorY;
 
             intersects[0] = true;
-
-            // check if is NoData
-            if (memSaveNoDataContainer != null) {
-                double nodata = memSaveNoDataContainer.getAsSingleValue();
-                if (memSaveAlt[0] == nodata) {
-                    return 0.0;
-                }
-            }
-        } catch (Exception e) {
-            // out of bounds coverage coordinates
-            intersects[0] = false;
-            return resultAltitude;
+            resultAltitude = value0 + factorX * (value1 - value0);
         }
+
         // update min, max altitude
-        resultAltitude = memSaveAlt[0];
         minAltitude = Math.min(minAltitude, resultAltitude);
         maxAltitude = Math.max(maxAltitude, resultAltitude);
 
         return resultAltitude;
     }
-
-
 
 }
