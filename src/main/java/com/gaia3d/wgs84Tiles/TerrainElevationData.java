@@ -74,9 +74,14 @@ public class TerrainElevationData {
     public double getGridValue(int x, int y) {
         double value = 0.0;
         if (raster != null) {
-            value = raster.getSampleDouble(x, y, 0);
-
-            if(this.memSaveNoDataContainer == null) {
+            try {
+                value = raster.getSampleDouble(x, y, 0);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
+            } catch (Exception e) {
+                log.error("[getGridValue : Exception] Error in getGridValue", e);
+            }
+            if (this.memSaveNoDataContainer == null) {
                 this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
             }
 

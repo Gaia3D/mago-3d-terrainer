@@ -21,7 +21,7 @@ class MesherMainTest {
     void sample() {
         String pathName = "sample";
         String[] args = new String[]{
-                "-input", "D:/dem/sample-input/",
+                "-input", "D:/dem/sample-input/0417_sejong_merged_dem_compressed-deflate.tif",
                 "-output", "D:/dem/sample-output/" + pathName,
                 "-log", "D:/dem/sample-output/" + pathName + "/log.txt",
                 "-min", "0",
@@ -31,6 +31,19 @@ class MesherMainTest {
         MagoMesherMain.main(args);
     }
 
+    @Test
+    void globalSample() {
+        String pathName = "sample-input-global";
+        String[] args = new String[]{
+                "-input", "D:/dem/sample-input-global/",
+                "-output", "D:/dem/sample-output-global/",
+                "-log", "D:/dem/sample-output/" + pathName + "/log.txt",
+                "-min", "0",
+                "-max", "8",
+                //"-d",
+        };
+        MagoMesherMain.main(args);
+    }
 
     @Test
     void main() throws FactoryException, TransformException, IOException {

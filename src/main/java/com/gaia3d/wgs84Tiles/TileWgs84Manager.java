@@ -247,8 +247,17 @@ public class TileWgs84Manager {
 
 
     public void processResizeGeotiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException {
+        File terrainElevationDataFolder = new File(terrainElevationDataFolderPath);
+        if (!terrainElevationDataFolder.exists()) {
+            log.error("terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);
+            throw new RuntimeException("Error: terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);
+        } else if (!terrainElevationDataFolder.isDirectory()) {
+            log.error("terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
+            throw new RuntimeException("Error: terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
+        }
+
         // 1rst check geoTiff files count
-        List<String> geoTiffFilePaths = new ArrayList<String>();
+        List<String> geoTiffFilePaths = new ArrayList<>();
         FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, "tif", geoTiffFilePaths, true);
 
         int geotiffCount = geoTiffFilePaths.size();
