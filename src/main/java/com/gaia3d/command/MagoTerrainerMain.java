@@ -14,7 +14,7 @@ import java.io.File;
 import java.io.IOException;
 
 @Slf4j
-public class MagoMesherMain {
+public class MagoTerrainerMain {
 
     public static void main(String[] args) {
         try {
@@ -100,9 +100,9 @@ public class MagoMesherMain {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         String programInfo = globalOptions.getProgramInfo();
         log.info("\n" +
-                "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┳┳┓┏┓┏┓┓┏┏┓┳┓\n" +
-                "┃┃┃┣┫┃┓┃┃   ┫┃┃  ┃┃┃┣ ┗┓┣┫┣ ┣┫\n" +
-                "┛ ┗┛┗┗┛┗┛  ┗┛┻┛  ┛ ┗┗┛┗┛┛┗┗┛┛┗\n" +
+                "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┏┳┓┏┓┳┓┳┓┏┓┳┳┓┏┓┳┓\n" +
+                "┃┃┃┣┫┃┓┃┃   ┫┃┃   ┃ ┣ ┣┫┣┫┣┫┃┃┃┣ ┣┫\n" +
+                "┛ ┗┛┗┗┛┗┛  ┗┛┻┛   ┻ ┗┛┛┗┛┗┛┗┻┛┗┗┛┛┗\n" +
                 programInfo + "\n" +
                 "----------------------------------------");
     }

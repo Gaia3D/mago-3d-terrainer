@@ -14,7 +14,7 @@ class MesherMainTest {
     @Test
     void help() {
         String[] args = new String[]{"-h"};
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
     }
 
     @Test
@@ -28,7 +28,7 @@ class MesherMainTest {
                 "-max", "10",
                 "-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
     }
 
     @Test
@@ -42,7 +42,7 @@ class MesherMainTest {
                 "-max", "8",
                 //"-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
     }
 
     @Test
@@ -157,6 +157,6 @@ class MesherMainTest {
     
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
         String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-mn", minTileDepth, "-mx", maxTileDepth, "-rs", refinementStrength, "-d", "-cn"};
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
     }
 }

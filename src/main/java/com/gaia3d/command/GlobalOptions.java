@@ -141,9 +141,9 @@ public class GlobalOptions {
         String javaVersion = System.getProperty("java.version");
         String javaVendor = System.getProperty("java.vendor");
         String javaVersionInfo = "JAVA Version : " + javaVersion + " (" + javaVendor + ") ";
-        String version = MagoMesherMain.class.getPackage().getImplementationVersion();
-        String title = MagoMesherMain.class.getPackage().getImplementationTitle();
-        String vendor = MagoMesherMain.class.getPackage().getImplementationVendor();
+        String version = MagoTerrainerMain.class.getPackage().getImplementationVersion();
+        String title = MagoTerrainerMain.class.getPackage().getImplementationTitle();
+        String vendor = MagoTerrainerMain.class.getPackage().getImplementationVendor();
         version = version == null ? "dev-version" : version;
         title = title == null ? "3d-mesher" : title;
         vendor = vendor == null ? "Gaia3D, Inc." : vendor;

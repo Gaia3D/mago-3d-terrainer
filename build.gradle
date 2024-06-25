@@ -86,7 +86,7 @@ jib {
 jar {
     finalizedBy shadowJar
     manifest {
-        attributes "Main-Class": "com.gaia3d.command.MagoMesherMain"
+        attributes "Main-Class": "com.gaia3d.command.MagoTerrainerMain"
     }
     from {
         configurations.runtimeClasspath.collect {it.isDirectory() ? it : zipTree(it)}
@@ -97,12 +97,12 @@ jar {
 shadowJar {
     mergeServiceFiles()
     manifest {
-        attributes 'Main-Class': 'com.gaia3d.command.MagoMesherMain'
+        attributes 'Main-Class': 'com.gaia3d.command.MagoTerrainerMain'
         attributes 'Implementation-Version': project.version
-        attributes 'Implementation-Title': '3d-mesher'
+        attributes 'Implementation-Title': 'mago-3d-terrainer'
         attributes 'Implementation-Vendor': 'Gaia3d, Inc.'
         attributes 'Implementation-Vendor-Id': 'com.gaia3d'
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
-    archiveFileName = "mago-3d-mesher-${project.version}.jar"
+    archiveFileName = "mago-3d-terrainer-${project.version}.jar"
 }

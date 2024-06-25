@@ -12,7 +12,7 @@ public class DefaultUnitTest {
     @Test
     void help() {
         String[] args = new String[]{"-h"};
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
     }
 
     @Test
@@ -31,7 +31,7 @@ public class DefaultUnitTest {
                 "-max", "10",
                 //"-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
     }
 
@@ -51,7 +51,7 @@ public class DefaultUnitTest {
                 "-max", "12",
                 //"-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
     }
 
@@ -72,7 +72,7 @@ public class DefaultUnitTest {
                 "-interpolationType", "nearest",
                 //"-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
     }
 
@@ -93,7 +93,7 @@ public class DefaultUnitTest {
                 "-interpolationType", "nearest",
                 //"-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
     }
 
@@ -114,7 +114,7 @@ public class DefaultUnitTest {
                 "-interpolationType", "bicubic",
                 //"-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
     }*/
 
@@ -135,7 +135,7 @@ public class DefaultUnitTest {
                 "-interpolationType", "bicubic",
                 //"-d",
         };
-        MagoMesherMain.main(args);
+        MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
     }*/
 }
