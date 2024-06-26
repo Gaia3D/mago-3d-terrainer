@@ -1,9 +1,12 @@
 package com.gaia3d.reader;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class FileUtils {
 
     public static boolean isFileExists(String filePath) {
@@ -31,7 +34,10 @@ public class FileUtils {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
-        assert listOfFiles != null;
+        if (listOfFiles == null) {
+            log.warn("No files in the folder: " + folderPath);
+            return;
+        }
         for (File file : listOfFiles) {
             if (file.isFile()) {
                 String fileName = file.getName();
@@ -46,7 +52,10 @@ public class FileUtils {
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
-        assert listOfFiles != null;
+        if (listOfFiles == null) {
+            log.warn("No files in the folder: " + folderPath);
+            return;
+        }
         for (File file : listOfFiles) {
             if (file.isDirectory()) {
                 String folderName = file.getName();

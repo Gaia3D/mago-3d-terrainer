@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
 import org.joml.Vector2d;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -275,9 +276,9 @@ public class TileWgs84Manager {
 
     }
 
-    public void resizeGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException {
+    public void resizeGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
         // load all geoTiffFiles
-        List<String> geoTiffFileNames = new ArrayList<String>();
+        List<String> geoTiffFileNames = new ArrayList<>();
         com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
 
         if (currentFolderPath == null) {
@@ -294,8 +295,9 @@ public class TileWgs84Manager {
 
             CoordinateReferenceSystem crsTarget = originalGridCoverage2D.getCoordinateReferenceSystem2D();
             if (!(crsTarget instanceof ProjectedCRS || crsTarget instanceof GeographicCRS)) {
-                //throw new GeoTiffException( null, "The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems", null);
-                continue;
+                log.error("The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems");
+                throw new GeoTiffException( null, "The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems", null);
+                //continue;
             }
 
             Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(originalGridCoverage2D);

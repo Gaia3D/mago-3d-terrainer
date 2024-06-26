@@ -18,15 +18,40 @@ class MesherMainTest {
     }
 
     @Test
-    void sample() {
+    void sampleDirect() {
         String pathName = "sample";
         String[] args = new String[]{
-                "-input", "D:/dem/sample-input/0417_sejong_merged_dem_compressed-deflate.tif",
+                "-input", "D:/dem/sample-input/",
                 "-output", "D:/dem/sample-output/" + pathName,
                 "-log", "D:/dem/sample-output/" + pathName + "/log.txt",
                 "-min", "0",
                 "-max", "10",
-                "-d",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample() {
+        String pathName = "sample";
+        String[] args = new String[]{
+                "-input", "D:/dem/sample-input/",
+                "-output", "D:/dem/sample-output/" + pathName,
+                "-log", "D:/dem/sample-output/" + pathName + "/log.txt",
+                "-min", "0",
+                "-max", "10",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void merge() {
+        String pathName = "merge";
+        String[] args = new String[]{
+                "-input", "D:/dem/merge-input/",
+                "-output", "D:/dem/merge-output/",
+                "-log", "D:/dem/sample-output/" + pathName + "/log.txt",
+                "-min", "0",
+                "-max", "6",
         };
         MagoTerrainerMain.main(args);
     }
