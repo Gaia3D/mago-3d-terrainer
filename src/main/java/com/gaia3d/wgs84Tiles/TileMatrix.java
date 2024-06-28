@@ -793,7 +793,7 @@ public class TileMatrix {
         // Here refine only the triangles of the tiles of TilesRange
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(tilesRange.getTileDepth());
-        log.info("[RefineMesh] Tile Level : {} # MaxDiff(m) : {}", tilesRange.getTileDepth(), maxDiff);
+        log.debug("[RefineMesh] Tile Level : {} # MaxDiff(m) : {}", tilesRange.getTileDepth(), maxDiff);
 
         // refine the mesh
         boolean finished = false;

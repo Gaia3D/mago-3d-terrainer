@@ -49,9 +49,9 @@ class MesherMainTest {
         String[] args = new String[]{
                 "-input", "D:/dem/merge-input/",
                 "-output", "D:/dem/merge-output/",
-                "-log", "D:/dem/sample-output/" + pathName + "/log.txt",
+                "-log", "D:/dem/merge-output/log.txt",
                 "-min", "0",
-                "-max", "6",
+                "-max", "12",
         };
         MagoTerrainerMain.main(args);
     }

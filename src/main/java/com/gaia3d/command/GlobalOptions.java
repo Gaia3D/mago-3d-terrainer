@@ -26,6 +26,7 @@ public class GlobalOptions {
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 12;
+    private static final int DEFAULT_MOSAIC_SIZE = 64;
     private static final boolean DEFAULT_CALCULATE_NORMALS = false;
 
     private String version;
@@ -34,6 +35,8 @@ public class GlobalOptions {
 
     private long startTime = 0;
     private long endTime = 0;
+
+    private int mosaicSize;
 
     private String inputPath;
     private String outputPath;
@@ -96,6 +99,12 @@ public class GlobalOptions {
             instance.setInterpolationType(DEFAULT_INTERPOLATION_TYPE);
         }
 
+        if (command.hasOption(ProcessOptions.TILING_MOSAIC_SIZE.getArgName())) {
+            instance.setMosaicSize(Integer.parseInt(command.getOptionValue(ProcessOptions.TILING_MOSAIC_SIZE.getArgName())));
+        } else {
+            instance.setMosaicSize(DEFAULT_MOSAIC_SIZE);
+        }
+
         instance.setCalculateNormals(command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName()));
 
         printGlobalOptions();
@@ -109,6 +118,7 @@ public class GlobalOptions {
         log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
         log.info("Interpolation Type: {}", instance.getInterpolationType());
         log.info("Calculate Normals: {}", instance.isCalculateNormals());
+        log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("----------------------------------------");
     }
 

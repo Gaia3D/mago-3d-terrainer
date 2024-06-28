@@ -110,7 +110,7 @@ public class TerrainElevationData {
         }
 
         // determine the grid coordinates of the point
-        if(this.raster == null) {
+        if (this.raster == null) {
             this.raster = this.coverage.getRenderedImage().getData();
         }
 

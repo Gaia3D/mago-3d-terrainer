@@ -18,10 +18,8 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 @Setter
@@ -101,7 +99,11 @@ public class TileWgs84Manager {
 
         int minTileDepth = globalOptions.getMinimumTileDepth();
         int maxTileDepth = globalOptions.getMaximumTileDepth();
+
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
+            long startTime = System.currentTimeMillis();
+            Date startDate = new Date(startTime);
+
             TilesRange tilesRange = new TilesRange();
 
             if (depth == 0) {
@@ -131,23 +133,53 @@ public class TileWgs84Manager {
                 this.terrainElevationDataManager.makeTerrainQuadTree();
             }
 
-            // now, subdivide the tilesRange
-            int maxCol = 80;
-            int maxRow = 80;
+            int mosaicSize = globalOptions.getMosaicSize();
+            int maxCol = mosaicSize;
+            int maxRow = mosaicSize;
             List<TilesRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, maxCol, maxRow, null);
 
+            log.info("------------------------------------");
+            log.info("[Tiling] Start making tile meshes for depth: {} - DividedTilesRanges.size: {}", depth, subDividedTilesRanges.size());
+            AtomicInteger counter = new AtomicInteger(0);
+            int total = subDividedTilesRanges.size();
             for (TilesRange subDividedTilesRange : subDividedTilesRanges) {
+                int progress = counter.incrementAndGet();
+                log.info("[Tiling] - {} depth tile progress... [{}/{}]", depth, progress, total);
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
                 boolean is1rstGeneration = depth == minTileDepth;
-
                 tileMatrix.makeMatrixMesh(is1rstGeneration);
-
             }
 
+            long endTime = System.currentTimeMillis();
+            Date endDate = new Date(endTime);
+
+
+            log.info("[Tiling] End making tile meshes for depth: {} - Duration: {} ms}", depth, timeFormat(endTime - startTime));
+
+            String javaHeapSize = System.getProperty("java.vm.name") + " " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB";
+            // java vm이 사용할수 있는 총 메모리(bytes), -Xmx
+            long maxMem = Runtime.getRuntime().maxMemory()/1024/1024;
+            // java vm에 할당된 총 메모리
+            long totalMem = Runtime.getRuntime().totalMemory()/1024/1024;
+            // java vm이 추가로 할당 가능한 메모리
+            long freeMem = Runtime.getRuntime().freeMemory()/1024/1024;
+            // 현재 사용중인 메모리
+            long usedMem = totalMem - freeMem;
+            // 퍼센트
+            double pct = usedMem * 100 / maxMem;
+            log.info("[Tiling] - Java Heap Size: {} - MaxMem: {}MB - TotalMem: {}MB - FreeMem: {}MB - UsedMem: {}MB - Pct: {}%", javaHeapSize, maxMem, totalMem, freeMem, usedMem, pct);
         }
 
         // finally save the terrainLayer.json
         terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
+    }
+
+    public String timeFormat(long time) {
+        long ms = time % 1000;
+        long s = (time / 1000) % 60;
+        long m = (time / (1000 * 60)) % 60;
+        long h = (time / (1000 * 60 * 60)) % 24;
+        return String.format("%02d:%02d:%02d.%03d", h, m, s, ms);
     }
 
     public double getMaxTriangleSizeForTileDepth(int depth) {
