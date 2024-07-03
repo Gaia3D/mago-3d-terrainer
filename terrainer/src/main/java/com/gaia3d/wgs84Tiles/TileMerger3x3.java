@@ -41,7 +41,9 @@ public class TileMerger3x3 {
     private TileWgs84 leftDownTile;
     private TileWgs84 rightDownTile;
 
+    @Builder.Default
     private List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
+    @Builder.Default
     private List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
 
     /*public TileMerger3x3(TileWgs84 centerTile, TileWgs84 leftTile, TileWgs84 rightTile, TileWgs84 upTile, TileWgs84 downTile, TileWgs84 leftUpTile, TileWgs84 rightUpTile, TileWgs84 leftDownTile, TileWgs84 rightDownTile) {
