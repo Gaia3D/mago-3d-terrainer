@@ -12,6 +12,7 @@ import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.joml.Vector2d;
+import org.joml.Vector2i;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.awt.image.Raster;
@@ -33,6 +34,8 @@ public class TerrainElevationData {
     private CoordinateReferenceSystem memSaveWgs84 = DefaultGeographicCRS.WGS84;
     private NoDataContainer memSaveNoDataContainer = null;
     private DirectPosition2D memSavePosWorld = null; // longitude supplied first
+    private int geoTiffWidth = -1;
+    private int geoTiffHeight = -1;
 
     public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
         this.terrainElevDataManager = terrainElevationDataManager;
@@ -104,24 +107,29 @@ public class TerrainElevationData {
             return resultAltitude;
         }
 
-        if (this.coverage == null) {
-            GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
-        }
+//        if (this.coverage == null) {
+//            GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
+//            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
+//        }
+//
+//        // determine the grid coordinates of the point
+//        if (this.raster == null) {
+//            this.raster = this.coverage.getRenderedImage().getData();
+//        }
 
-        // determine the grid coordinates of the point
-        if (this.raster == null) {
-            this.raster = this.coverage.getRenderedImage().getData();
-        }
+        Vector2i size = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
 
         double unitaryX = (lonDeg - this.geographicExtension.getMinLongitudeDeg()) / this.geographicExtension.getLongitudeRangeDegree();
         double unitaryY = 1.0 - (latDeg - this.geographicExtension.getMinLatitudeDeg()) / this.geographicExtension.getLatitudeRangeDegree();
 
-        int rasterHeight = this.raster.getHeight();
-        int rasterWidth = this.raster.getWidth();
+//        int rasterHeight = this.raster.getHeight();
+//        int rasterWidth = this.raster.getWidth();
 
-        int column = (int) (unitaryX * rasterWidth); // nearest column
-        int row = (int) (unitaryY * rasterHeight); // nearest row
+        int geoTiffRasterHeight = size.y;
+        int geoTiffRasterWidth = size.x;
+
+        int column = (int) (unitaryX * geoTiffRasterWidth); // nearest column
+        int row = (int) (unitaryY * geoTiffRasterHeight); // nearest row
 
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         if (globalOptions.getInterpolationType() == InterpolationType.NEAREST) {
@@ -129,7 +137,7 @@ public class TerrainElevationData {
             resultAltitude = calcNearestInterpolation(column, row);
         } else {
             intersects[0] = true;
-            resultAltitude = calcBilinearInterpolation(column, row);
+            resultAltitude = calcBilinearInterpolation(column, row, geoTiffRasterWidth, geoTiffRasterHeight);
         }
 
         // update min, max altitude
@@ -143,9 +151,9 @@ public class TerrainElevationData {
         return this.getGridValue(column, row);
     }
 
-    private double calcBilinearInterpolation(int column, int row) {
-        int rasterHeight = this.raster.getHeight();
-        int rasterWidth = this.raster.getWidth();
+    private double calcBilinearInterpolation(int column, int row, int geoTiffWidth, int geoTiffHeight) {
+        int rasterHeight = geoTiffHeight;
+        int rasterWidth = geoTiffWidth;
 
         int columnNext = column + 1;
         int rowNext = row + 1;

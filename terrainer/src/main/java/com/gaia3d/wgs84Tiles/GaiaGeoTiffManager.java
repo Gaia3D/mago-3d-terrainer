@@ -11,6 +11,7 @@ import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import org.joml.Vector2i;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
@@ -19,6 +20,8 @@ import javax.media.jai.Interpolation;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -27,8 +30,13 @@ import java.io.IOException;
 public class GaiaGeoTiffManager {
     private int[] memSavePixel = new int[1];
     private double[] memSaveOriginalUpperLeftCorner = new double[2];
+    private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
+    private Map<String, Vector2i> mapPathGridCoverage2dSize = new HashMap<>();
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
+        if (mapPathGridCoverage2d.containsKey(geoTiffFilePath)) {
+            return mapPathGridCoverage2d.get(geoTiffFilePath);
+        }
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         GridCoverage2D coverage = null;
@@ -46,7 +54,34 @@ public class GaiaGeoTiffManager {
             log.error(e.getMessage());
         }
 
+        mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
+
+        // save the width and height of the coverage
+        GridGeometry gridGeometry = coverage.getGridGeometry();
+        int width = gridGeometry.getGridRange().getSpan(0);
+        int height = gridGeometry.getGridRange().getSpan(1);
+        Vector2i size = new Vector2i(width, height);
+        mapPathGridCoverage2dSize.put(geoTiffFilePath, size);
+
+
         return coverage;
+    }
+
+    public Vector2i getGridCoverage2DSize(String geoTiffFilePath) {
+        if(mapPathGridCoverage2dSize.containsKey(geoTiffFilePath) == false)
+        {
+            GridCoverage2D coverage = loadGeoTiffGridCoverage2D(geoTiffFilePath);
+        }
+        return mapPathGridCoverage2dSize.get(geoTiffFilePath);
+    }
+
+    public void deleteObjects()
+    {
+        for (GridCoverage2D coverage : mapPathGridCoverage2d.values()) {
+            coverage.dispose(true);
+        }
+        mapPathGridCoverage2d.clear();
+
     }
 
     public GridCoverage2D getResizedCoverage2D(GridCoverage2D originalCoverage, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters) throws FactoryException {

@@ -34,6 +34,27 @@ public class TilesRange {
         return resultTileIndices;
     }
 
+    public TilesRange expand1() {
+        TilesRange expandedTilesRange = new TilesRange();
+        expandedTilesRange.setTileDepth(tileDepth);
+        int expandedMinTileX = minTileX - 1;
+        if(expandedMinTileX < 0) {
+            expandedMinTileX = 0;
+        }
+        int expandedMaxTileX = maxTileX + 1;
+        int expandedMinTileY = minTileY - 1;
+        if(expandedMinTileY < 0) {
+            expandedMinTileY = 0;
+        }
+        int expandedMaxTileY = maxTileY + 1;
+        expandedTilesRange.setMinTileX(expandedMinTileX);
+        expandedTilesRange.setMaxTileX(expandedMaxTileX);
+        expandedTilesRange.setMinTileY(expandedMinTileY);
+        expandedTilesRange.setMaxTileY(expandedMaxTileY);
+        return expandedTilesRange;
+
+    }
+
     public boolean intersects(TileIndices tileIndices) {
         if (tileIndices.getL() != tileDepth) {
             return false;

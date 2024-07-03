@@ -41,6 +41,9 @@ public class TileMerger3x3 {
     private TileWgs84 leftDownTile;
     private TileWgs84 rightDownTile;
 
+    private List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
+    private List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+
     /*public TileMerger3x3(TileWgs84 centerTile, TileWgs84 leftTile, TileWgs84 rightTile, TileWgs84 upTile, TileWgs84 downTile, TileWgs84 leftUpTile, TileWgs84 rightUpTile, TileWgs84 leftDownTile, TileWgs84 rightDownTile) {
         this.centerTile = centerTile;
         this.leftTile = leftTile;
@@ -281,7 +284,9 @@ public class TileMerger3x3 {
     private GaiaBoundingBox getBBoxOfTriangles(List<GaiaTriangle> triangles) {
         GaiaBoundingBox resultBBox = new GaiaBoundingBox();
         for (GaiaTriangle triangle : triangles) {
-            GaiaBoundingBox triangleBBox = triangle.getBoundingBox();
+            this.listVerticesMemSave.clear();
+            this.listHalfEdgesMemSave.clear();
+            GaiaBoundingBox triangleBBox = triangle.getBoundingBox(this.listVerticesMemSave, this.listHalfEdgesMemSave);
             resultBBox.addBoundingBox(triangleBBox);
         }
         return resultBBox;
@@ -291,8 +296,10 @@ public class TileMerger3x3 {
         List<GaiaVertex> resultVertices = new ArrayList<>();
         HashMap<GaiaVertex, Integer> mapVertices = new HashMap<>();
         for (GaiaTriangle triangle : triangles) {
-            List<GaiaVertex> vertices = triangle.getVertices();
-            for (GaiaVertex vertex : vertices) {
+            this.listVerticesMemSave.clear();
+            this.listHalfEdgesMemSave.clear();
+            this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+            for (GaiaVertex vertex : this.listVerticesMemSave) {
                 if (!mapVertices.containsKey(vertex)) {
                     mapVertices.put(vertex, 1);
                     resultVertices.add(vertex);

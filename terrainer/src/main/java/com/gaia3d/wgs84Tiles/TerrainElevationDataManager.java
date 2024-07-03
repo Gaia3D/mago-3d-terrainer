@@ -41,7 +41,7 @@ public class TerrainElevationDataManager {
     // if there are multiple geoTiff files, use this
     private int quadtreeMaxDepth = 10;
     private TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree = null;
-    private GaiaGeoTiffManager gaiaGeoTiffManager = null;
+    private GaiaGeoTiffManager myGaiaGeoTiffManager = null;
     private boolean[] memSaveIntersects = {false};
     private List<String> memSaveGeoTiffFileNames = new ArrayList<>();
 
@@ -51,6 +51,14 @@ public class TerrainElevationDataManager {
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreeMaxDepth);
     }
 
+    public GaiaGeoTiffManager getGaiaGeoTiffManager() {
+        if(myGaiaGeoTiffManager == null) {
+            myGaiaGeoTiffManager = new GaiaGeoTiffManager();
+        }
+        return myGaiaGeoTiffManager;
+    }
+
+
     public void MakeUniqueTerrainElevationData() throws IOException, FactoryException, TransformException {
         log.debug("MakeUniqueTerrainElevationData() started");
 
@@ -59,12 +67,12 @@ public class TerrainElevationDataManager {
         }
 
 
-        if (gaiaGeoTiffManager == null) {
-            gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        if (myGaiaGeoTiffManager == null) {
+            myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
         }
 
         uniqueTerrainElevationData = new TerrainElevationData(this);
-        GridCoverage2D gridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(uniqueGeoTiffFilePath);
+        GridCoverage2D gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(uniqueGeoTiffFilePath);
         uniqueTerrainElevationData.setGeotiffFilePath(uniqueGeoTiffFilePath);
 
         CoordinateReferenceSystem crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
@@ -90,6 +98,20 @@ public class TerrainElevationDataManager {
         }
 
         return tileWgs84Raster;
+    }
+
+    public void makeAllTileWgs84Rasters(TilesRange tileRange, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
+        List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
+        for (TileIndices tileIndices : tileIndicesList) {
+            TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
+            if (tileWgs84Raster == null) {
+                tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
+                int tileRasterWidth = tileWgs84Manager.getTileRasterSize();
+                int tileRasterHeight = tileWgs84Manager.getTileRasterSize();
+                tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
+                mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
+            }
+        }
     }
 
     public void deleteTileRasters() {
@@ -184,8 +206,8 @@ public class TerrainElevationDataManager {
         memSaveGeoTiffFileNames.clear();
         FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", memSaveGeoTiffFileNames);
 
-        if (gaiaGeoTiffManager == null) {
-            gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        if (myGaiaGeoTiffManager == null) {
+            myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
         }
         GeometryFactory gf = new GeometryFactory();
 
@@ -207,7 +229,7 @@ public class TerrainElevationDataManager {
             geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
 
-            gridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
             terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
 
             crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
@@ -228,6 +250,13 @@ public class TerrainElevationDataManager {
         for (String folderName : folderNames) {
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
             loadAllGeoTiff(folderPath);
+        }
+    }
+
+    public void deleteGeoTiffManager() {
+        if (myGaiaGeoTiffManager != null) {
+            myGaiaGeoTiffManager.deleteObjects();
+            myGaiaGeoTiffManager = null;
         }
     }
 }

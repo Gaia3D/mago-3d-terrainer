@@ -6,6 +6,7 @@ import com.gaia3d.wgs84Tiles.TileWgs84;
 import org.joml.*;
 
 import java.lang.Math;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,6 +14,9 @@ import java.util.List;
  * https://github.com/CesiumGS/cesium/blob/master/Source/Core/CesiumTerrainProvider.js#L327
  */
 public class QuantizedMeshManager {
+
+    private List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
+    private List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
 
     private Vector2f signNotZero(Vector2f value) {
         return new Vector2f(value.x >= 0 ? 1 : -1, value.y >= 0 ? 1 : -1);
@@ -218,10 +222,12 @@ public class QuantizedMeshManager {
 
         for (int i = 0; i < quantizedMesh.getTriangleCount(); i++) {
             GaiaTriangle triangle = mesh.triangles.get(i);
-            List<GaiaVertex> triVertices = triangle.getVertices();
-            quantizedMesh.getTriangleIndices()[i * 3] = triVertices.get(0).getId();
-            quantizedMesh.getTriangleIndices()[i * 3 + 1] = triVertices.get(1).getId();
-            quantizedMesh.getTriangleIndices()[i * 3 + 2] = triVertices.get(2).getId();
+            this.listVerticesMemSave.clear();
+            this.listHalfEdgesMemSave.clear();
+            this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+            quantizedMesh.getTriangleIndices()[i * 3] = this.listVerticesMemSave.get(0).getId();
+            quantizedMesh.getTriangleIndices()[i * 3 + 1] = this.listVerticesMemSave.get(1).getId();
+            quantizedMesh.getTriangleIndices()[i * 3 + 2] = this.listVerticesMemSave.get(2).getId();
         }
 
         // now, edgesIndices

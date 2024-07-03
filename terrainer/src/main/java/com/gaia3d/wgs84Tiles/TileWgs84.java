@@ -56,6 +56,9 @@ public class TileWgs84 {
     private TileWgs84[] neighborTiles = new TileWgs84[8];
     private TileWgs84[] childTiles = new TileWgs84[4];
 
+    private List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
+    private List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+
     public TileWgs84(TileWgs84 parentTile, TileWgs84Manager manager) {
         this.parentTile = parentTile;
         this.manager = manager;
@@ -449,7 +452,9 @@ public class TileWgs84 {
     public boolean saveSeparatedTiles(List<GaiaMesh> separatedMeshes) {
         // save the 9 tiles
         for (GaiaMesh mesh : separatedMeshes) {
-            if (!TileWgs84Utils.checkTileTest(mesh, this.manager.getVertexCoincidentError(), this.manager.isOriginIsLeftUp())) {
+            this.listVerticesMemSave.clear();
+            this.listHalfEdgesMemSave.clear();
+            if (!TileWgs84Utils.checkTileTest(mesh, this.manager.getVertexCoincidentError(), this.manager.isOriginIsLeftUp(), this.listVerticesMemSave, this.listHalfEdgesMemSave)) {
                 log.error("Mesh is invalid.");
             }
 
@@ -470,7 +475,9 @@ public class TileWgs84 {
     }
 
     private boolean triangleIntersectsLongitudeOrLatitude(GaiaTriangle triangle, double midLonDeg, double midLatDeg) {
-        List<GaiaVertex> vertices = triangle.getVertices();
+        this.listVerticesMemSave.clear();
+        this.listHalfEdgesMemSave.clear();
+        this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
         int vertexLeftSideCount = 0;
         int vertexRightSideCount = 0;
         int vertexUpsideCount = 0;
@@ -478,7 +485,7 @@ public class TileWgs84 {
         int vertexCoincidentCount = 0;
         double vertexCoincidentError = this.manager.getVertexCoincidentError();
 
-        for (GaiaVertex vertex : vertices) {
+        for (GaiaVertex vertex : this.listVerticesMemSave) {
             double diffX = Math.abs(vertex.getPosition().x - midLonDeg);
             double diffY = Math.abs(vertex.getPosition().y - midLatDeg);
             if (diffX < vertexCoincidentError || diffY < vertexCoincidentError) {
@@ -504,6 +511,8 @@ public class TileWgs84 {
             }
         }
 
+        this.listVerticesMemSave.clear();
+
         if (vertexLeftSideCount > 0 && vertexRightSideCount > 0) {
             return true;
         }
@@ -521,7 +530,9 @@ public class TileWgs84 {
 
 
         // check if the triangle must be refined
-        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+        this.listVerticesMemSave.clear();
+        this.listHalfEdgesMemSave.clear();
+        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox(this.listVerticesMemSave, this.listHalfEdgesMemSave);
 
         double widthDeg = bboxTriangle.getLengthX();
         double heightDeg = bboxTriangle.getLengthY();
@@ -531,7 +542,9 @@ public class TileWgs84 {
 
         // fast check***************************************************************
         // check the barycenter of the triangle
-        Vector3d barycenter = triangle.getBarycenter();
+        this.listVerticesMemSave.clear();
+        this.listHalfEdgesMemSave.clear();
+        Vector3d barycenter = triangle.getBarycenter(this.listVerticesMemSave, this.listHalfEdgesMemSave);
         double elevation = terrainElevationDataManager.getElevation(barycenter.x, barycenter.y, this.manager.getMemSaveTerrainElevDataList());
         double planeElevation = barycenter.z;
 
@@ -587,9 +600,11 @@ public class TileWgs84 {
         GeographicExtension rootGeographicExtension = terrainElevationDataManager.getRootGeographicExtension();
         if (!rootGeographicExtension.intersectsBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY())) {
             // Need check only the 3 vertex of the triangle
-            List<GaiaVertex> vertices = triangle.getVertices();
-            int verticesCount = vertices.size();
-            for (GaiaVertex vertex : vertices) {
+            this.listVerticesMemSave.clear();
+            this.listHalfEdgesMemSave.clear();
+            this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+            int verticesCount = this.listVerticesMemSave.size();
+            for (GaiaVertex vertex : this.listVerticesMemSave) {
                 if (vertex.getPosition().z > maxDiff) {
                     log.debug("SUPER-FAST-Check : true * true * true * true * true * true * true * ");
                     return true;
@@ -613,7 +628,9 @@ public class TileWgs84 {
         double pixelSizeX = widthDeg / 32.0;
         double pixelSizeY = heightDeg / 32.0;
 
-        GaiaPlane plane = triangle.getPlane();
+        this.listVerticesMemSave.clear();
+        this.listHalfEdgesMemSave.clear();
+        GaiaPlane plane = triangle.getPlane(this.listVerticesMemSave, this.listHalfEdgesMemSave);
 
         int columnsCount = (int) (widthDeg / pixelSizeX);
         int rowsCount = (int) (heightDeg / pixelSizeY);
@@ -628,7 +645,8 @@ public class TileWgs84 {
             double posY = bboxMinY + row * pixelSizeY;
             for (int column = 0; column < columnsCount; column++) {
                 double posX = bboxMinX + column * pixelSizeX;
-                boolean intersects = triangle.intersectsPointXY(posX, posY, memSaveHedges, memSaveline);
+                this.listVerticesMemSave.clear();
+                boolean intersects = triangle.intersectsPointXY(posX, posY, memSaveHedges, this.listVerticesMemSave, memSaveline);
                 counter++;
 
                 if (!intersects) {
@@ -665,7 +683,9 @@ public class TileWgs84 {
         double lonDegRange = geoExtent.getLongitudeRangeDegree();
         double latDegRange = geoExtent.getLatitudeRangeDegree();
 
-        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox();
+        this.listVerticesMemSave.clear();
+        this.listHalfEdgesMemSave.clear();
+        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox(this.listVerticesMemSave, this.listHalfEdgesMemSave);
 
         double bboxLengthX = bboxTriangle.getLengthX();
         double bboxLengthY = bboxTriangle.getLengthY();
@@ -678,7 +698,9 @@ public class TileWgs84 {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
 
         if (lonDiff < lonError || latDiff < latError) {
-            GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge();
+            this.listHalfEdgesMemSave.clear();
+            GaiaHalfEdge longestHEdge = triangle.getLongestHalfEdge(this.listHalfEdgesMemSave);
+            this.listHalfEdgesMemSave.clear();
             if (longestHEdge.getTwin() == null) {
                 // in this case must check if exist neighborTile
                 HalfEdgeType halfEdgeType = longestHEdge.getType();
@@ -764,7 +786,9 @@ public class TileWgs84 {
             if (mustRefineTriangle(triangle)) // X
             {
                 this.manager.getMemSaveTrianglesList().clear();
-                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getMemSaveTrianglesList());
+                this.listHalfEdgesMemSave.clear();
+                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getMemSaveTrianglesList(), this.listHalfEdgesMemSave);
+                this.listHalfEdgesMemSave.clear();
 
                 if (!this.manager.getMemSaveTrianglesList().isEmpty()) {
                     refined = true;
@@ -797,7 +821,9 @@ public class TileWgs84 {
 
             log.debug("[RefineMesh] FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH");
             this.manager.getMemSaveTrianglesList().clear();
-            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getMemSaveTrianglesList());
+            this.listHalfEdgesMemSave.clear();
+            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getMemSaveTrianglesList(), this.listHalfEdgesMemSave);
+            this.listHalfEdgesMemSave.clear();
 
             if (!this.manager.getMemSaveTrianglesList().isEmpty()) {
                 refined = true;
@@ -842,8 +868,10 @@ public class TileWgs84 {
 
         Map<GaiaVertex, GaiaVertex> mapVertices = new HashMap<>();
         for (GaiaTriangle triangle : triangles) {
-            List<GaiaVertex> vertices = triangle.getVertices();
-            for (GaiaVertex vertex : vertices) {
+            this.listVerticesMemSave.clear();
+            this.listHalfEdgesMemSave.clear();
+            this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+            for (GaiaVertex vertex : this.listVerticesMemSave) {
                 mapVertices.put(vertex, vertex);
             }
         }
@@ -912,7 +940,9 @@ public class TileWgs84 {
                 continue;
             }
 
-            Vector3d barycenter = triangle.getBarycenter();
+            this.listVerticesMemSave.clear();
+            this.listHalfEdgesMemSave.clear();
+            Vector3d barycenter = triangle.getBarycenter(this.listVerticesMemSave, this.listHalfEdgesMemSave);
             if (barycenter.x < midLonDeg) {
                 if (barycenter.y < midLatDeg) {
                     // leftDownTile

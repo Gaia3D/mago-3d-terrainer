@@ -143,11 +143,22 @@ public class TileWgs84Manager {
             AtomicInteger counter = new AtomicInteger(0);
             int total = subDividedTilesRanges.size();
             for (TilesRange subDividedTilesRange : subDividedTilesRanges) {
+                // 1rst, make all tilew rastyers.***
+                TilesRange expandedTilesRange = subDividedTilesRange.expand1();
+                this.terrainElevationDataManager.makeAllTileWgs84Rasters(expandedTilesRange, this);
+                this.terrainElevationDataManager.deleteGeoTiffManager();
+
                 int progress = counter.incrementAndGet();
                 log.info("[Tiling] - {} depth tile progress... [{}/{}]", depth, progress, total);
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
                 boolean is1rstGeneration = depth == minTileDepth;
                 tileMatrix.makeMatrixMesh(is1rstGeneration);
+
+                // now delete the tileMatrix to free memory.
+                tileMatrix.deleteObjects();
+
+                this.terrainElevationDataManager.deleteTileRasters();
+                this.terrainElevationDataManager.deleteGeoTiffManager();
             }
 
             long endTime = System.currentTimeMillis();

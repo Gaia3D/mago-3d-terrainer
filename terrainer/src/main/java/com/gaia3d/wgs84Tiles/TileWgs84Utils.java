@@ -1,9 +1,6 @@
 package com.gaia3d.wgs84Tiles;
 
-import com.gaia3d.basic.structure.GaiaBoundingBox;
-import com.gaia3d.basic.structure.GaiaMesh;
-import com.gaia3d.basic.structure.GaiaVertex;
-import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.basic.structure.*;
 import com.gaia3d.util.GlobeUtils;
 
 import java.io.File;
@@ -237,9 +234,11 @@ public class TileWgs84Utils {
         return Y >= 0 && Y < numTilesY;
     }
 
-    public static boolean checkTileTest(GaiaMesh mesh, double error, boolean originIsLeftUp) {
+    public static boolean checkTileTest(GaiaMesh mesh, double error, boolean originIsLeftUp, List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
         List<GaiaVertex> resultVertices = new ArrayList<>();
-        mesh.getVerticesByTriangles(resultVertices);
+        listVerticesMemSave.clear();
+        listHalfEdgesMemSave.clear();
+        mesh.getVerticesByTriangles(resultVertices, listVerticesMemSave, listHalfEdgesMemSave);
 
         if (resultVertices.size() != mesh.vertices.size()) {
             return false;
