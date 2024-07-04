@@ -136,6 +136,20 @@ class MesherMainTest {
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
+    @Test
+    void mainSejongJinho20240704() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+        String outputDirectory = "D:/data/DEM_output/output";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(16);
+        String refinementStrength = String.valueOf(1);
+        String originalGeoTiffFolderPath = "D:\\data\\DEM\\Sejong20240704";
+
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
 
     //@Test
     void mainSmallMountainForTrees() throws FactoryException, TransformException, IOException {

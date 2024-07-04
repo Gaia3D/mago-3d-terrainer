@@ -107,15 +107,15 @@ public class TerrainElevationData {
             return resultAltitude;
         }
 
-//        if (this.coverage == null) {
-//            GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
-//            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
-//        }
-//
-//        // determine the grid coordinates of the point
-//        if (this.raster == null) {
-//            this.raster = this.coverage.getRenderedImage().getData();
-//        }
+        if (this.coverage == null) {
+            GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
+            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
+        }
+
+        // determine the grid coordinates of the point
+        if (this.raster == null) {
+            this.raster = this.coverage.getRenderedImage().getData();
+        }
 
         Vector2i size = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
 
