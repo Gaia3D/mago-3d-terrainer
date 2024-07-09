@@ -24,7 +24,6 @@ public class DataLayer
     public DataLayer()
     {
 
-
     }
 
     public void addTimeSliceFileName(String timeSliceFileName)

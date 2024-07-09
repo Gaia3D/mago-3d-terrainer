@@ -172,6 +172,9 @@ public class AirPollutionDataConverter
             boolean skipEmptyStrings = true;
             AirPollutionSliceData airPollutionSliceData = new AirPollutionSliceData();
 
+            // There are points that are not in the net (has no "NET ID").***
+            List<AirPollutionNoNetPixelData> noNetPixelDataList = new ArrayList<>();
+
             boolean is1rstPoint = true;
 
             while (!finished)
@@ -208,7 +211,27 @@ public class AirPollutionDataConverter
                 // check "NET ID".***
                 if(vecStringSize < 10)
                 {
-                    // here discards the rows that have no "NET ID".***
+                    // This point is not in the net.***
+                    // now, transform strings to values.***
+                    double px = Double.parseDouble(vecStrings.get(0));
+                    double py = Double.parseDouble(vecStrings.get(1));
+                    double pz = Double.parseDouble(vecStrings.get(3));
+
+                    double pollutionValue = Double.parseDouble(vecStrings.get(2));
+
+                    AirPollutionNoNetPixelData airPollutionNoNetPixelData = new AirPollutionNoNetPixelData();
+                    airPollutionNoNetPixelData.X = px;
+                    airPollutionNoNetPixelData.Y = py;
+                    airPollutionNoNetPixelData.Z = pz;
+                    airPollutionNoNetPixelData.averageConcentration = pollutionValue;
+                    airPollutionNoNetPixelData.ZELEV = Double.parseDouble(vecStrings.get(3));
+                    airPollutionNoNetPixelData.ZHILL = Double.parseDouble(vecStrings.get(4));
+                    airPollutionNoNetPixelData.ZFLAG = Double.parseDouble(vecStrings.get(5));
+                    airPollutionNoNetPixelData.AVE = vecStrings.get(6);
+                    airPollutionNoNetPixelData.GRP = vecStrings.get(7);
+                    airPollutionNoNetPixelData.DATE = vecStrings.get(8);
+
+                    noNetPixelDataList.add(airPollutionNoNetPixelData);
                     continue;
                 }
 
@@ -278,6 +301,173 @@ public class AirPollutionDataConverter
 
             br.close();
             fr.close();
+
+            // check if exist noNetPixelDataList.***
+            if(noNetPixelDataList.size() > 0)
+            {
+                // save a json file for noNetPixelDataList.***
+                String originalFileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
+                String outputNoNetJsonFolderPath = outputFolderPath + File.separator + "noNetJson";
+                StringModifier.createFolderIfNoExists(Paths.get(outputNoNetJsonFolderPath));
+
+                String altitudeString = "Alt" + String.format("%.2f", dataLayer.altitude);
+                String outputFileName = originalFileName + "_noNet.json";
+                String outputFilePath = outputNoNetJsonFolderPath + File.separator + outputFileName;
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                ArrayNode objectNodeRoot = objectMapper.createArrayNode();
+                for(int i = 0; i < noNetPixelDataList.size(); i++)
+                {
+                    AirPollutionNoNetPixelData airPollutionPixelData = noNetPixelDataList.get(i);
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.put("X", airPollutionPixelData.X);
+                    objectNode.put("Y", airPollutionPixelData.Y);
+                    objectNode.put("averageConcentration", airPollutionPixelData.averageConcentration);
+                    objectNode.put("ZELEV", airPollutionPixelData.ZELEV);
+                    objectNode.put("ZHILL", airPollutionPixelData.ZHILL);
+                    objectNode.put("ZFLAG", airPollutionPixelData.ZFLAG);
+                    objectNode.put("AVE", airPollutionPixelData.AVE);
+                    objectNode.put("GRP", airPollutionPixelData.GRP);
+                    objectNode.put("DATE", airPollutionPixelData.DATE);
+
+                    objectNodeRoot.add(objectNode);
+                }
+
+                objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void makeNoNetPointsJsonFiles(String filePath, String outputFolderPath, DataLayer dataLayer)
+    {
+        // make a temp folder inside of outputFolderPath.***
+        String tempFolderPath = outputFolderPath + File.separator + "temp";
+        StringModifier.createFolderIfNoExists(Paths.get(tempFolderPath));
+
+        double[] srcPts = new double[2];
+
+        try {
+            String inputFilePath = filePath;
+            File file = new File(inputFilePath);    //creates a new file instance
+            FileReader fr = new FileReader(file);   //reads the file
+            BufferedReader br = new BufferedReader(fr);  //creates a buffering character input stream
+
+            String line;
+            Boolean finished = false;
+            String delimiter = " ";
+            int columnsCount = 0;
+            int rowsCount = 0;
+            boolean bIsMatrix = true;
+            int currDate = 0;
+
+            double pollutionValueMAX = 0.0;
+
+            // read lines.***
+            // Hard Coding : read 8 lines that is the header.***
+            for (int i = 0; i < 8; i++)// Hard Coding
+            {
+                line = br.readLine();// Hard Coding
+            }
+
+            int lastDate = 0;
+
+            Vector<String> vecStrings = new Vector<String>();
+            boolean skipEmptyStrings = true;
+            AirPollutionSliceData airPollutionSliceData = new AirPollutionSliceData();
+
+            // There are points that are not in the net (has no "NET ID").***
+            List<AirPollutionNoNetPixelData> noNetPixelDataList = new ArrayList<>();
+
+            boolean is1rstPoint = true;
+
+            while (!finished)
+            {
+                line = br.readLine();
+                if (line == null) {
+                    finished = true;
+
+                    break;
+                }
+
+                rowsCount += 1;
+
+                vecStrings.clear();
+                StringModifier.splitString(line, delimiter, vecStrings, skipEmptyStrings);
+                int vecStringSize = vecStrings.size();
+
+                // skip rows that vecStrings.size() < 8.***
+                if (vecStringSize < 8) {
+                    continue;
+                }
+
+                // check "NET ID".***
+                if(vecStringSize < 10)
+                {
+                    // This point is not in the net.***
+                    // now, transform strings to values.***
+                    double px = Double.parseDouble(vecStrings.get(0));
+                    double py = Double.parseDouble(vecStrings.get(1));
+                    double pz = Double.parseDouble(vecStrings.get(3));
+
+                    double pollutionValue = Double.parseDouble(vecStrings.get(2));
+
+                    AirPollutionNoNetPixelData airPollutionNoNetPixelData = new AirPollutionNoNetPixelData();
+                    airPollutionNoNetPixelData.X = px;
+                    airPollutionNoNetPixelData.Y = py;
+                    airPollutionNoNetPixelData.Z = pz;
+                    airPollutionNoNetPixelData.averageConcentration = pollutionValue;
+                    airPollutionNoNetPixelData.ZELEV = Double.parseDouble(vecStrings.get(3));
+                    airPollutionNoNetPixelData.ZHILL = Double.parseDouble(vecStrings.get(4));
+                    airPollutionNoNetPixelData.ZFLAG = Double.parseDouble(vecStrings.get(5));
+                    airPollutionNoNetPixelData.AVE = vecStrings.get(6);
+                    airPollutionNoNetPixelData.GRP = vecStrings.get(7);
+                    airPollutionNoNetPixelData.DATE = vecStrings.get(8);
+
+                    noNetPixelDataList.add(airPollutionNoNetPixelData);
+                    continue;
+                }
+
+            } // end while.***
+
+            br.close();
+            fr.close();
+
+            // check if exist noNetPixelDataList.***
+            if(noNetPixelDataList.size() > 0)
+            {
+                // save a json file for noNetPixelDataList.***
+                String outputNoNetJsonFolderPath = outputFolderPath + File.separator + "noNetJson";
+                StringModifier.createFolderIfNoExists(Paths.get(outputNoNetJsonFolderPath));
+
+                String altitudeString = "Alt" + String.format("%.2f", dataLayer.altitude);
+                String outputFileName = "airPollution_" + altitudeString + "_noNet.json";
+                String outputFilePath = outputNoNetJsonFolderPath + File.separator + outputFileName;
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                ArrayNode objectNodeRoot = objectMapper.createArrayNode();
+                for(int i = 0; i < noNetPixelDataList.size(); i++)
+                {
+                    AirPollutionNoNetPixelData airPollutionPixelData = noNetPixelDataList.get(i);
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.put("X", airPollutionPixelData.X);
+                    objectNode.put("Y", airPollutionPixelData.Y);
+                    objectNode.put("Z", airPollutionPixelData.Z);
+                    objectNode.put("averageConcentration", airPollutionPixelData.averageConcentration);
+                    objectNode.put("ZELEV", airPollutionPixelData.ZELEV);
+                    objectNode.put("ZHILL", airPollutionPixelData.ZHILL);
+                    objectNode.put("ZFLAG", airPollutionPixelData.ZFLAG);
+                    objectNode.put("AVE", airPollutionPixelData.AVE);
+                    objectNode.put("GRP", airPollutionPixelData.GRP);
+                    objectNode.put("DATE", airPollutionPixelData.DATE);
+
+                    objectNodeRoot.add(objectNode);
+                }
+
+                objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
