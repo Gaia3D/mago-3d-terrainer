@@ -1,6 +1,5 @@
 package com.gaia3d.command;
 
-import com.gaia3d.basic.types.FormatType;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 

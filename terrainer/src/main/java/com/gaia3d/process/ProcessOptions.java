@@ -17,7 +17,8 @@ public enum ProcessOptions {
     MESH_REFINEMENT_STRENGTH("strength", "rs", "meshRefinementStrength", false,"Mesh refinement strength"),
     CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Calculate normals"),
     INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear, bicubic)"),
-    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic size (default : 16)");
+    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic size (default : 32)"),
+    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", "rasterMaxSize", true, "Maximum raster size (default : 8192)");
 
     private final String longName;
     private final String shortName;

@@ -328,13 +328,13 @@ public class TileWgs84Manager {
     public void splitGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
         // load all geoTiffFiles
         List<String> geoTiffFileNames = new ArrayList<>();
-        com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
+        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
 
         if (currentFolderPath == null) {
             currentFolderPath = "";
         }
 
-        int maxPixelsWidth = 8192;
+        int maxPixelsWidth = globalOptions.getMaxRasterSize();
 
         GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
         String splitTiffTempPath = globalOptions.getSplitTiffTempPath();
