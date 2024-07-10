@@ -26,7 +26,7 @@ public class GlobalOptions {
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 12;
-    private static final int DEFAULT_MOSAIC_SIZE = 64;
+    private static final int DEFAULT_MOSAIC_SIZE = 32;
     private static final boolean DEFAULT_CALCULATE_NORMALS = false;
 
     private String version;
