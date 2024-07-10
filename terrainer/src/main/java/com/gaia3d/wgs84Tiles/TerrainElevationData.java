@@ -46,6 +46,11 @@ public class TerrainElevationData {
             this.coverage.dispose(true);
             this.coverage = null;
         }
+
+        if(this.memSaveNoDataContainer != null)
+        {
+            this.memSaveNoDataContainer = null;
+        }
         this.raster = null;
     }
 
@@ -76,6 +81,32 @@ public class TerrainElevationData {
 
     public double getGridValue(int x, int y) {
         double value = 0.0;
+        if(raster == null)
+        {
+            GaiaGeoTiffManager gaiaGeoTiffManager = null;
+
+            if (this.coverage == null) {
+                gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
+                this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
+            }
+
+            if (this.memSaveNoDataContainer == null) {
+                this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+            }
+
+            // determine the grid coordinates of the point
+            if (this.raster == null) {
+                this.raster = this.coverage.getRenderedImage().getData();
+                this.coverage.dispose(true);
+                this.coverage = null;
+            }
+
+            if(gaiaGeoTiffManager != null)
+            {
+                gaiaGeoTiffManager.deleteObjects();
+            }
+        }
+
         if (raster != null) {
             try {
                 value = raster.getSampleDouble(x, y, 0);
@@ -84,9 +115,9 @@ public class TerrainElevationData {
             } catch (Exception e) {
                 log.error("[getGridValue : Exception] Error in getGridValue", e);
             }
-            if (this.memSaveNoDataContainer == null) {
-                this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-            }
+//            if (this.memSaveNoDataContainer == null) {
+//                this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+//            }
 
             if (memSaveNoDataContainer != null) {
                 double nodata = memSaveNoDataContainer.getAsSingleValue();
@@ -107,15 +138,15 @@ public class TerrainElevationData {
             return resultAltitude;
         }
 
-        if (this.coverage == null) {
-            GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
-            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
-        }
-
-        // determine the grid coordinates of the point
-        if (this.raster == null) {
-            this.raster = this.coverage.getRenderedImage().getData();
-        }
+//        if (this.coverage == null) {
+//            GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
+//            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
+//        }
+//
+//        // determine the grid coordinates of the point
+//        if (this.raster == null) {
+//            this.raster = this.coverage.getRenderedImage().getData();
+//        }
 
         Vector2i size = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
 

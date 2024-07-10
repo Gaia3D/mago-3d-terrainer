@@ -26,7 +26,8 @@ public class TilesRange {
 
         for (int y = minTileY; y <= maxTileY; y++) {
             for (int x = minTileX; x <= maxTileX; x++) {
-                TileIndices tileIndices = new TileIndices(tileDepth, x, y);
+                TileIndices tileIndices = new TileIndices();
+                tileIndices.set(x, y, tileDepth);
                 resultTileIndices.add(tileIndices);
             }
         }

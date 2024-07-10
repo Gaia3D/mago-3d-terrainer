@@ -27,6 +27,8 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationDataManager {
+    // manager.***
+    TileWgs84Manager tileWgs84Manager = null;
     private List<TerrainElevationData> memSaveTerrainElevDatasArray = new ArrayList<>();
     private List<GaiaTriangle> memSaveTrianglesArray = new ArrayList<>();
     private Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<>();
@@ -90,6 +92,10 @@ public class TerrainElevationDataManager {
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
         TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
         if (tileWgs84Raster == null) {
+            if(tileIndices.getL() == 0)
+            {
+                int hola = 0;
+            }
             tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
             int tileRasterWidth = tileWgs84Manager.getTileRasterSize();
             int tileRasterHeight = tileWgs84Manager.getTileRasterSize();
@@ -156,12 +162,29 @@ public class TerrainElevationDataManager {
 
     public void deleteObjects() {
         this.deleteTileRasters();
+        this.deleteCoverage();
         if (rootTerrainElevationDataQuadTree == null) {
             return;
         }
 
         rootTerrainElevationDataQuadTree.deleteObjects();
         rootTerrainElevationDataQuadTree = null;
+    }
+
+    public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager, double lonDeg, double latDeg) {
+        double resultElevation = 0.0;
+        TileWgs84Raster tileWgs84Raster = null;
+        try {
+            tileWgs84Raster = this.getTileWgs84Raster(tileIndices, tileWgs84Manager);
+            resultElevation = tileWgs84Raster.getElevationBilinear(lonDeg, latDeg);
+//            if (resultElevation == Float.NaN) {
+//                resultElevation = 0.0;
+//            }
+        } catch (TransformException | IOException e) {
+            e.printStackTrace();
+        }
+
+        return resultElevation;
     }
 
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> memSaveTerrainElevDatasArray) throws TransformException, IOException {
@@ -224,9 +247,17 @@ public class TerrainElevationDataManager {
         CoordinateReferenceSystem crsWgs84 = null;
         MathTransform targetToWgs = null;
 
+        Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();;
+
         for (String memSaveGeoTiffFileName : memSaveGeoTiffFileNames) {
             geoTiffFileName = memSaveGeoTiffFileName;
             geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
+
+            // check if this geoTiff is usable
+            if (mapNoUsableGeotiffPaths.containsKey(geoTiffFilePath)) {
+                continue;
+            }
+
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
 
             gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);

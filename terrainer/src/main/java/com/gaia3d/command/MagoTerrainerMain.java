@@ -57,12 +57,17 @@ public class MagoTerrainerMain {
                 tileWgs84Manager.setCalculateNormals(true);
             }
 
+            log.info("[Split GeoTiff] Start GeoTiff Splitting files.");
+            tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());
+            log.info("[Split GeoTiff] Finished GeoTiff Splitting files.");
+
             log.info("[Resize GeoTiff] Start GeoTiff Resizing files.");
             tileWgs84Manager.processResizeGeotiffs(globalOptions.getInputPath(), null);
             log.info("[Resize GeoTiff] Finished GeoTiff Resizing files.");
 
             log.info("[Terrain Elevation Data] Start making terrain elevation data.");
             tileWgs84Manager.setTerrainElevationDataManager(new TerrainElevationDataManager());
+            tileWgs84Manager.getTerrainElevationDataManager().setTileWgs84Manager(tileWgs84Manager);
             tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
             if (tileWgs84Manager.getGeoTiffFilesCount() == 1) {
                 tileWgs84Manager.getTerrainElevationDataManager().setGeoTiffFilesCount(1);

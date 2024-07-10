@@ -593,9 +593,14 @@ public class TileMatrix {
 
         int verticesCount = verticesOfCurrentTile.size();
         log.debug("recalculating elevations... vertices count : " + verticesCount);
+        TileIndices tileIndicesAux = new TileIndices();
+        boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
+        int currDepth = tilesRange.getTileDepth();
         for (int i = 0; i < verticesCount; i++) {
             GaiaVertex vertex = verticesOfCurrentTile.get(i);
-            vertex.getPosition().z = terrainElevationDataManager.getElevation(vertex.getPosition().x, vertex.getPosition().y, this.manager.getMemSaveTerrainElevDataList());
+            TileWgs84Utils.selectTileIndices(currDepth, vertex.getPosition().x, vertex.getPosition().y, tileIndicesAux, originIsLeftUp);
+            vertex.getPosition().z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, vertex.getPosition().x, vertex.getPosition().y);
+            //vertex.getPosition().z = terrainElevationDataManager.getElevation(vertex.getPosition().x, vertex.getPosition().y, this.manager.getMemSaveTerrainElevDataList());
         }
     }
 

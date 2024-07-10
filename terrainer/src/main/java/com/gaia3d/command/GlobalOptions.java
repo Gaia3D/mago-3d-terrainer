@@ -41,6 +41,7 @@ public class GlobalOptions {
     private String inputPath;
     private String outputPath;
     private String resizedTiffTempPath;
+    private String splitTiffTempPath;
     private String tileTempPath;
 
     private String logPath;
@@ -71,6 +72,8 @@ public class GlobalOptions {
             instance.setOutputPath(outputPath);
             instance.setResizedTiffTempPath(outputPath + File.separator + "ResizedTiffTemp");
             instance.setTileTempPath(outputPath + File.separator + "TileTemp");
+            String inputPath = command.getOptionValue(ProcessOptions.INPUT.getArgName());
+            instance.setSplitTiffTempPath(inputPath + File.separator + "SplitTiffTemp");
         } else {
             throw new IllegalArgumentException("Please enter the value of the output argument.");
         }

@@ -11,6 +11,7 @@ import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.joml.Vector2i;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
@@ -39,16 +40,28 @@ public class GaiaGeoTiffManager {
         }
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
+        int gridCoverage2dCount = mapPathGridCoverage2d.size();
+        if(gridCoverage2dCount > 0)
+        {
+            // delete the first one
+            String firstKey = mapPathGridCoverage2d.keySet().iterator().next();
+            GridCoverage2D firstCoverage = mapPathGridCoverage2d.get(firstKey);
+            firstCoverage.dispose(true);
+            mapPathGridCoverage2d.remove(firstKey);
+        }
+
         GridCoverage2D coverage = null;
         try {
             File file = new File(geoTiffFilePath);
             GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
 
+//            // Interpolate the coverage**********************************************************************************
 //            InterpolationType interpolationType = globalOptions.getInterpolationType();
 //            Interpolation interpolation = Interpolation.getInstance(interpolationType.getInterpolation());
-//
 //            coverage = Interpolator2D.create(coverage, interpolation);
+//            //-----------------------------------------------------------------------------------------------------------
+
             reader.dispose();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -125,5 +138,16 @@ public class GaiaGeoTiffManager {
         writer.write(coverage, null);
         writer.dispose();
         outputStream.close();
+    }
+
+    public GridCoverage2D extractSubGridCoverage2D(GridCoverage2D originalGridCoverage2D, ReferencedEnvelope tileEnvelope) {
+        GridCoverage2D subGridCoverage2D = null;
+        try {
+            Operations ops = new Operations(null);
+            subGridCoverage2D = (GridCoverage2D) ops.crop(originalGridCoverage2D, tileEnvelope);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return subGridCoverage2D;
     }
 }

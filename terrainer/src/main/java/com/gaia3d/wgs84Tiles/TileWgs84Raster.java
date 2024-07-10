@@ -36,7 +36,9 @@ public class TileWgs84Raster {
             return -1;
         }
 
-        return (int) ((lonDeg - minLonDeg) / deltaLonDeg);
+        int resultCol = (int) ((lonDeg - minLonDeg) / deltaLonDeg);
+
+        return resultCol;
     }
 
     public int getRow(double latDeg) {
@@ -47,7 +49,9 @@ public class TileWgs84Raster {
             return -1;
         }
 
-        return (int) ((latDeg - minLatDeg) / deltaLatDeg);
+        int resultRow = (int) ((latDeg - minLatDeg) / deltaLatDeg);
+
+        return resultRow;
     }
 
     public double getLonDeg(int col) {
@@ -69,6 +73,35 @@ public class TileWgs84Raster {
         return elevations[idx];
     }
 
+    public float getElevationBilinear(double lonDeg, double latDeg)
+    {
+        int col = getColumn(lonDeg);
+        int row = getRow(latDeg);
+
+        if (col < 0 || col >= rasterWidth || row < 0 || row >= rasterHeight) {
+            return Float.NaN;
+        }
+
+        double lon0 = getLonDeg(col);
+        double lat0 = getLatDeg(row);
+
+        double lon1 = getLonDeg(col + 1);
+        double lat1 = getLatDeg(row + 1);
+
+        double dx = (lonDeg - lon0) / (lon1 - lon0);
+        double dy = (latDeg - lat0) / (lat1 - lat0);
+
+        float z00 = getElevation(col, row);
+        float z01 = getElevation(col, row + 1);
+        float z10 = getElevation(col + 1, row);
+        float z11 = getElevation(col + 1, row + 1);
+
+        float z0 = z00 + (z01 - z00) * (float) dy;
+        float z1 = z10 + (z11 - z10) * (float) dy;
+
+        return z0 + (z1 - z0) * (float) dx;
+    }
+
     public void deleteObjects() {
         this.geographicExtension = null;
         this.elevations = null;
@@ -87,8 +120,8 @@ public class TileWgs84Raster {
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth);
-        deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight);
+        deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth-1);
+        deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight-1);
 
         double semiDeltaLonDeg = deltaLonDeg * 0.5;
         double semiDeltaLatDeg = deltaLatDeg * 0.5;

@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.Math.abs;
+
 @NoArgsConstructor
 @Slf4j
 public class GaiaMesh {
@@ -435,7 +437,9 @@ public class GaiaMesh {
             Vector3d midPosition = longestHEdge.getMidPosition();
 
             // now determine the elevation of the midPoint
-            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
+            TileIndices tileIndices = triangle.getOwnerTileIndices();
+            double elevation = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+            //double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
 
             midPosition.z = elevation;
             GaiaVertex midVertex = newVertex();
@@ -597,8 +601,16 @@ public class GaiaMesh {
             GaiaVertex midVertex = newVertex();
 
             // now determine the elevation of the midPoint
-            double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
+            TileIndices tileIndices = triangle.getOwnerTileIndices();
+            double elevation = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+            //double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
             midPosition.z = elevation;
+
+//            if(abs(elevation - elevationTest) > 20)
+//            {
+//                int hola = 0;
+//                double elevationTest2 = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+//            }
 
             midVertex.setPosition(midPosition);
 
