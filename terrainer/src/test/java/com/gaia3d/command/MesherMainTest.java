@@ -1,11 +1,14 @@
 package com.gaia3d.command;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.io.IOException;
-
+@Slf4j
 class MesherMainTest {
     //****************************************************************
     // Note : the outFolder must be different from the inputFolder
@@ -91,7 +94,7 @@ class MesherMainTest {
         String originalGeoTiffFolderPath = "D:/QuantizedMesh_JavaProjects/data_geoTiff/5m";
         String outputDirectory = "D:/QuantizedMesh_JavaProjects/output/";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(15);
+        String maxTileDepth = String.valueOf(12);
         String refinementStrength = String.valueOf(1);
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
@@ -129,7 +132,7 @@ class MesherMainTest {
         //*******************************************************************
         String outputDirectory = "D:/data/DEM_output/output";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(11);
+        String maxTileDepth = String.valueOf(9);
         String refinementStrength = String.valueOf(1);
         String originalGeoTiffFolderPath = "D:\\data\\(20240627)Asia-Geotiff";
 

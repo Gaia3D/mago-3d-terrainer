@@ -120,6 +120,9 @@ public class TileWgs84Raster {
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
+        // TODO : must check if the rasterWidth and rasterHeight are valid values. In low definition geoTiff files is possible that the
+        // columns count and rows count are less than rasterWidth and rasterHeight.
+
         deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth-1);
         deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight-1);
 

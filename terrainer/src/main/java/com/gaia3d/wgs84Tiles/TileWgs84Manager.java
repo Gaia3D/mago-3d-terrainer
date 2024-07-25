@@ -80,6 +80,33 @@ public class TileWgs84Manager {
         }
     }
 
+    public void deleteObjects() {
+        if (this.terrainElevationDataManager != null) {
+            this.terrainElevationDataManager.deleteObjects();
+            this.terrainElevationDataManager = null;
+        }
+
+        if (this.terrainLayer != null) {
+            //this.terrainLayer.deleteObjects();
+            this.terrainLayer = null;
+        }
+
+        if (this.memSaveTerrainElevDataList != null) {
+            this.memSaveTerrainElevDataList.clear();
+        }
+
+        if (this.memSaveTrianglesList != null) {
+            this.memSaveTrianglesList.clear();
+        }
+
+        this.depthGeoTiffFolderPathMap.clear();
+        this.depthDesiredPixelSizeXinMetersMap.clear();
+        this.depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.clear();
+        this.maxTriangleSizeForTileDepthMap.clear();
+        this.minTriangleSizeForTileDepthMap.clear();
+        this.mapNoUsableGeotiffPaths.clear();
+    }
+
     public void makeTileMeshes() throws IOException, TransformException, FactoryException {
         GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
 
@@ -512,6 +539,8 @@ public class TileWgs84Manager {
 
                 FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
+
+                resizedGridCoverage2D.dispose(true);
 
                 String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
                 this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);

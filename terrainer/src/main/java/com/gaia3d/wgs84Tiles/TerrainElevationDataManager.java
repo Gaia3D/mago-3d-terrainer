@@ -163,12 +163,20 @@ public class TerrainElevationDataManager {
     public void deleteObjects() {
         this.deleteTileRasters();
         this.deleteCoverage();
+        if(myGaiaGeoTiffManager != null)
+        {
+            myGaiaGeoTiffManager.deleteObjects();
+            myGaiaGeoTiffManager = null;
+        }
+
         if (rootTerrainElevationDataQuadTree == null) {
             return;
         }
 
         rootTerrainElevationDataQuadTree.deleteObjects();
         rootTerrainElevationDataQuadTree = null;
+
+        memSaveTerrainElevDatasArray.clear();
     }
 
     public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager, double lonDeg, double latDeg) {

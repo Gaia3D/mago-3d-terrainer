@@ -6,6 +6,7 @@ import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
 import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
@@ -81,6 +82,47 @@ public class MagoTerrainerMain {
             log.info("[Tile Meshes] Start making tile meshes.");
             tileWgs84Manager.makeTileMeshes();
             log.info("[Tile Meshes] Finished making tile meshes.");
+
+            tileWgs84Manager.deleteObjects();
+            tileWgs84Manager = null;
+
+            System.gc();
+
+            // Finally delete temp folder.***
+            //GlobalOptions globalOptions = GlobalOptions.getInstance();
+            File tileTempFolder = new File(globalOptions.getTileTempPath());
+            if (tileTempFolder.exists() && tileTempFolder.isDirectory()) {
+                try {
+                    log.info("Deleting tileTempFolder");
+                    FileUtils.deleteDirectory(tileTempFolder);
+                } catch (IOException e) {
+                    log.error("Failed to delete tileTempFolder.", e);
+                    throw new RuntimeException(e);
+                }
+            }
+
+            File splittedTempFolder = new File(globalOptions.getSplitTiffTempPath());
+            if (splittedTempFolder.exists() && splittedTempFolder.isDirectory()) {
+                try {
+                    log.info("Deleting splittedTempFolder");
+                    FileUtils.deleteDirectory(splittedTempFolder);
+                } catch (IOException e) {
+                    log.error("Failed to delete splittedTempFolder.", e);
+                    throw new RuntimeException(e);
+                }
+            }
+
+            File resizedTempFolder = new File(globalOptions.getResizedTiffTempPath());
+            if (resizedTempFolder.exists() && resizedTempFolder.isDirectory()) {
+                try {
+                    log.info("Deleting resizedTempFolder");
+                    FileUtils.deleteDirectory(resizedTempFolder);
+                } catch (IOException e) {
+                    log.error("Failed to delete resizedTempFolder.", e);
+                    throw new RuntimeException(e);
+                }
+            }
+
         } catch (FactoryException e) {
             log.error("Failed to set EPSG.", e);
             throw new RuntimeException(e);
@@ -94,6 +136,9 @@ public class MagoTerrainerMain {
             log.error("Failed to run process, Please check the arguments.", e);
             throw new RuntimeException(e);
         }
+
+
+
         printEnd();
         Configurator.destroyLogger();
     }
