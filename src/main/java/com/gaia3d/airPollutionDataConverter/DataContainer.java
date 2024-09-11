@@ -12,6 +12,9 @@ public class DataContainer
     public double centerGeoCoordLatitudeDegree = 0.0;
     public double centerGeoCoordAltitude = 0.0;
 
+    public double width_km = 0.0;
+    public double height_km = 0.0;
+
     public String originalSourceProj4 = "";
     public ArrayList<DataLayer> dataLayers = new ArrayList<>();
 
@@ -32,7 +35,12 @@ public class DataContainer
 
     public int minute = 0;
     public int second = 0;
+    public int millisecond = 0;
 
+    public String timeIntervalUnits = "";
+    public double timeInterval = 0.0;
+    public ArrayList<PngsBinaryBlockData> pngsBinDataArray = new ArrayList<>();
+    public ArrayList<String> mosaicTexMetaDataFileNames = new ArrayList<>();
 
 
     public DataContainer()
@@ -100,6 +108,7 @@ public class DataContainer
                     resultMinMaxValues[1] = minMaxValues[1];
                 }
             }
+            i++;
         }
     }
 }

@@ -1,9 +1,15 @@
 package com.gaia3d.airPollutionDataConverter;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gaia3d.image.Texture2D;
 import com.gaia3d.image.TextureUtils;
 import com.gaia3d.utils.GeometryUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.TreeMap;
 
 public class AirPollutionVolume
@@ -14,9 +20,13 @@ public class AirPollutionVolume
 
     public int mosaicColumnsCount = 0;
     public int mosaicRowsCount = 0;
+    public int mosaicTextureWidth = 0;
+    public int mosaicTextureHeight = 0;
+
 
     public double totalMinValue = Integer.MAX_VALUE;
     public double totalMaxValue = Integer.MIN_VALUE;
+    public String mosaicPngFileName = "";
 
     public AirPollutionSliceData getOrNewAirPollutionSliceData(Double slice)
     {
@@ -116,5 +126,83 @@ public class AirPollutionVolume
         }
 
         int hola = 0;
+    }
+
+    public void saveAsJson(String jsonFilePath) {
+        /*
+        // example of json.***
+        {
+			"minValue": 0.0,
+			"maxValue": 0.0194,
+			"width": 450,
+			"height": 450,
+			"mosaicTextureFileName": "Air   0min_mosaicTexture.png",
+			"mosaicColumnsCount": 3,
+			"mosaicRowsCount": 3,
+			"dataSlices": [
+				{
+					"minValue": 0.0,
+					"maxValue": 0.0194,
+					"width": 150,
+					"height": 150,
+					"minAltitude": 0.0,
+					"maxAltitude": 10.0,
+					"fileName": "Air   0min.TXT"
+				},
+				{
+					"minValue": 0.0,
+					"maxValue": 0.000151,
+					"width": 150,
+					"height": 150,
+					"minAltitude": 10.0,
+					"maxAltitude": 20.0,
+					"fileName": "Air   0min.TXT"
+				}
+				...
+				...
+				...
+			]
+		}*/
+
+        AirPollutionSliceData anySliceData = volumeData.get(volumeData.firstKey());
+        int mosaicTexWidth = this.mosaicColumnsCount * anySliceData.getColumnsCount();
+        int mosaicTexHeight = this.mosaicRowsCount * anySliceData.getRowsCount();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode mosaicTextureMetadataObjectNode = objectMapper.createObjectNode();
+        mosaicTextureMetadataObjectNode.put("minValue", this.totalMinValue);
+        mosaicTextureMetadataObjectNode.put("maxValue", this.totalMaxValue);
+        mosaicTextureMetadataObjectNode.put("width", mosaicTexWidth);
+        mosaicTextureMetadataObjectNode.put("height", mosaicTexHeight);
+        mosaicTextureMetadataObjectNode.put("mosaicTextureFileName", this.mosaicPngFileName);
+        mosaicTextureMetadataObjectNode.put("mosaicColumnsCount", this.mosaicColumnsCount);
+        mosaicTextureMetadataObjectNode.put("mosaicRowsCount", this.mosaicRowsCount);
+
+        ArrayNode mosaicTextureMetadataArrayNode = objectMapper.createArrayNode();
+        // traverse "volumeData".***
+        for (AirPollutionSliceData sliceData : volumeData.values())
+        {
+            ObjectNode sliceDataObjectNode = objectMapper.createObjectNode();
+            double[] minMaxValues = new double[2];
+            sliceData.getMinMaxValues(minMaxValues);
+            sliceDataObjectNode.put("minValue", minMaxValues[0]);
+            sliceDataObjectNode.put("maxValue", minMaxValues[1]);
+            sliceDataObjectNode.put("width", sliceData.getColumnsCount());
+            sliceDataObjectNode.put("height", sliceData.getRowsCount());
+            sliceDataObjectNode.put("minAltitude", sliceData.minAltitude);
+            sliceDataObjectNode.put("maxAltitude", sliceData.maxAltitude);
+            sliceDataObjectNode.put("fileName", sliceData.fileName);
+            mosaicTextureMetadataArrayNode.add(sliceDataObjectNode);
+        }
+
+        mosaicTextureMetadataObjectNode.put("dataSlices", mosaicTextureMetadataArrayNode);
+
+        try {
+            JsonNode jsonNode = new ObjectMapper().readTree(mosaicTextureMetadataObjectNode.toString());
+            objectMapper.writeValue(new File(jsonFilePath), jsonNode);
+            //this.dataContainer.addMosaicTexMetaDataFileName(mosaicTextureMetadataFileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

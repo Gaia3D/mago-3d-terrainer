@@ -10,6 +10,11 @@ public class AirPollutionSliceData
     // TreeMap <Y, AirPollutionRowData>. Y = row.***
     TreeMap<Double, AirPollutionRowData> matrixData = new TreeMap <Double, AirPollutionRowData>();
     ArrayList<AirPollutionRowData> matrixDataArray = null;
+    public String fileName = "";
+    public double minValue = 0.0;
+    public double maxValue = 0.0;
+    public double minAltitude = 0.0;
+    public double maxAltitude = 0.0;
 
     public void addPixelData(AirPollutionPixelData pixelData)
     {

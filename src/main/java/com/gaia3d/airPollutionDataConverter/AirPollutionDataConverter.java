@@ -611,8 +611,6 @@ public class AirPollutionDataConverter
             this.dataContainer = new DataContainer();
         }
 
-        this.dataContainer.originalSourceProj4 = "+proj=utm +zone=52 +datum=WGS84 +units=m +no_defs +type=crs"; // hard coding.***
-
         // read the data structure file.***
         // the dataStructure file is json format.***
         ObjectMapper objectMapper = new ObjectMapper();
@@ -655,10 +653,8 @@ public class AirPollutionDataConverter
         // load one file and calculate the location data.***
         this.loadOneFileAndCalculateLocationData(somefilePath, firstDataLayer);
 
-
         // make temp files for each layer.***
         this.makeTempFilesForLayers(inputFolderPath, outputFolderPath);
-
 
         // once read the data, now convert the data.***
         int datesCount = this.dataContainer.datesArray.size();
@@ -667,6 +663,22 @@ public class AirPollutionDataConverter
             String currDate = this.dataContainer.datesArray.get(date);
             this.convertDataByDate(currDate, inputFolderPath, outputFolderPath);
         }
+
+        // now, with the stored mosaicTexturesFilePaths, make the mosaicTexture's pngsBinaryBlock.***
+        // The pngsBinaryBlock is a binary file that contains all mosaicTextures, limited to 60MB.***
+        ArrayList<String> mosaicTexturesFilePaths = new ArrayList<>();
+        int mosaicTexturesCount = this.dataContainer.dateAndMosaicTexFileNames.size();
+        // traverse map.***
+        for(Map.Entry<String, String> entry : this.dataContainer.dateAndMosaicTexFileNames.entrySet())
+        {
+            String date = entry.getKey();
+            String mosaicTextureFileName = entry.getValue();
+            String mosaicTextureFilePath = outputFolderPath + File.separator + mosaicTextureFileName;
+            mosaicTexturesFilePaths.add(mosaicTextureFilePath);
+        }
+
+        this.dataContainer.pngsBinDataArray.clear();
+        makePngsBinaryBlocks(mosaicTexturesFilePaths, outputFolderPath, this.dataContainer.pngsBinDataArray);
 
         // now save indexJson file.***
         BoundingBox bbox = firstDataLayer.geoCoordBBox;
@@ -680,7 +692,179 @@ public class AirPollutionDataConverter
         int hola = 0;
     }
 
+    private void getPngsGroupLimitedByMaxByteSize(ArrayList<String> mosaicTexturesFilePaths, long maxByteSize, ArrayList<ArrayList<String>> resultPngsGroup)
+    {
+        int mosaicTexturesFilePathsCount = mosaicTexturesFilePaths.size();
+        {
+            ArrayList<String> pngsGroup = new ArrayList<>();
+            long currentPngsGroupSize = 0;
+            for (int i = 0; i < mosaicTexturesFilePathsCount; i++) {
+                String mosaicTextureFilePath = mosaicTexturesFilePaths.get(i);
+                File mosaicTextureFile = new File(mosaicTextureFilePath);
+                long mosaicTextureFileSize = mosaicTextureFile.length();
+                if (currentPngsGroupSize + mosaicTextureFileSize > maxByteSize) {
+                    // save the current pngsGroup.***
+                    resultPngsGroup.add(pngsGroup);
+                    pngsGroup = new ArrayList<>();
+                    currentPngsGroupSize = 0;
+                }
+                pngsGroup.add(mosaicTextureFilePath);
+                currentPngsGroupSize += mosaicTextureFileSize;
+            }
+            if (pngsGroup.size() > 0) {
+                resultPngsGroup.add(pngsGroup);
+            }
+        }
+    }
+
+    public void makePngsBinaryBlocks(ArrayList<String> mosaicTexturesFilePaths, String outputFolderPath, ArrayList<PngsBinaryBlockData> pngsBinDataArray)
+    {
+        // This function makes a pngsBinaryBlock.***
+        // The pngsBinaryBlock is a binary file that contains all mosaicTextures, limited to 60MB.***
+        double pngsBinaryBlockSizeLimit = 60.0; // MB.***
+        long currentPngsBinaryBlockSize = 0;
+        long pngsBinaryBlockSizeLimitBytes = (long) (pngsBinaryBlockSizeLimit * 1024.0 * 1024.0);
+        ArrayList<ArrayList<String>> pngsGroups = new ArrayList<>();
+        getPngsGroupLimitedByMaxByteSize(mosaicTexturesFilePaths, pngsBinaryBlockSizeLimitBytes, pngsGroups);
+        int groupsCount = pngsGroups.size();
+        for(int group = 0; group < groupsCount; group++)
+        {
+            String pngsBinaryBlockFileName = "pngsBinaryBlock_" + group + ".bin";
+            currentPngsBinaryBlockSize = 0;
+            ArrayList<String> mosaicTextureFilePathArray = pngsGroups.get(group);
+            int pngsCount = mosaicTextureFilePathArray.size();
+            try ( DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFolderPath + "\\" + pngsBinaryBlockFileName))) )
+            {
+                for(int j=0; j<pngsCount; j++)
+                {
+                    String mosaicTextureFilePath = mosaicTextureFilePathArray.get(j);
+                    File mosaicTextureFile = new File(mosaicTextureFilePath);
+                    long mosaicTextureFileSize = mosaicTextureFile.length();
+
+                    PngsBinaryBlockData pngsBinData = new PngsBinaryBlockData();
+                    pngsBinData.originalPngFileName = mosaicTextureFile.getName();
+                    pngsBinData.pngsBinaryBlockDataFileName = pngsBinaryBlockFileName;
+                    pngsBinData.startByteIndex = (int)currentPngsBinaryBlockSize;
+                    pngsBinData.endByteIndex = (int)(currentPngsBinaryBlockSize + mosaicTextureFileSize);
+                    currentPngsBinaryBlockSize += mosaicTextureFileSize;
+                    pngsBinDataArray.add(pngsBinData);
+
+                    try (BufferedInputStream fis = new BufferedInputStream(new FileInputStream(mosaicTextureFile))) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = fis.read(buffer)) != -1) {
+                            dataOutputStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void saveIndexJsonFile(String outputFolderPath)
+    {
+        // save the index.json file.***
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode objectNodeRoot = objectMapper.createObjectNode();
+        // centerGeographicCoords.***
+        ObjectNode objectCenterGeographicCoordsNode = objectMapper.createObjectNode();
+        objectNodeRoot.set("centerGeographicCoord", objectCenterGeographicCoordsNode);
+        objectCenterGeographicCoordsNode.put("longitude", this.dataContainer.centerGeoCoordLongitudeDegree);
+        objectCenterGeographicCoordsNode.put("latitude", this.dataContainer.centerGeoCoordLatitudeDegree);
+        objectCenterGeographicCoordsNode.put("altitude", this.dataContainer.centerGeoCoordAltitude);
+
+        // date : year, month, day, hour, minute, second.***
+        objectNodeRoot.put("year", this.dataContainer.year);
+        objectNodeRoot.put("month", this.dataContainer.month);
+        objectNodeRoot.put("day", this.dataContainer.day);
+        objectNodeRoot.put("hour", this.dataContainer.hour);
+        objectNodeRoot.put("minute", this.dataContainer.minute);
+        objectNodeRoot.put("second", this.dataContainer.second);
+        objectNodeRoot.put("millisecond", this.dataContainer.millisecond);
+
+        // height_km, width_km.***
+        BoundingBox bbox = new BoundingBox();
+        this.dataContainer.getGeoCoordBoundingBox(bbox);
+        double lengthX = 13100; // hard coding.***
+        double lengthY = 13100; // hard coding.***
+        objectNodeRoot.put("width_km", lengthX / 1000.0);
+        objectNodeRoot.put("height_km", lengthY / 1000.0);
+
+        // timeInterval & timeUnit.***
+        this.dataContainer.timeInterval = 1;
+        this.dataContainer.timeIntervalUnits = "day"; // hard coding.***
+        objectNodeRoot.put("timeInterval", this.dataContainer.timeInterval);
+        objectNodeRoot.put("timeIntervalUnits", this.dataContainer.timeIntervalUnits);
+
+        // minMaxValues.***
+        objectNodeRoot.put("totalMinValue", this.dataContainer.totalMinValue);
+        objectNodeRoot.put("totalMaxValue", this.dataContainer.totalMaxValue);
+
+        // "mosaicTexMetaDataFileNamesCount".*********************************************************************************
+        objectNodeRoot.put("mosaicTexMetaDataFileNamesCount", this.dataContainer.dateAndMosaicTexFileNames.size());
+
+        // "mosaicTexMetaDataJsonArray".***
+        ArrayNode mosaicTexMetaDataJsonArrayNode = objectMapper.createArrayNode();
+        int mosaicTexMetaDataFileNamesCount = this.dataContainer.mosaicTexMetaDataFileNames.size();
+        for(int i=0; i<mosaicTexMetaDataFileNamesCount; i++)
+        {
+            String mosaicTexMetaDataFileName = this.dataContainer.mosaicTexMetaDataFileNames.get(i);
+
+            // load the jsonFile.***
+            String mosaicTexMetaDataFilePath = outputFolderPath + "\\" + mosaicTexMetaDataFileName;
+            ObjectNode mosaicTexMetaDataObjectNode = null;
+            try {
+                mosaicTexMetaDataObjectNode = (ObjectNode) objectMapper.readTree(new File(mosaicTexMetaDataFilePath));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mosaicTexMetaDataJsonArrayNode.add(mosaicTexMetaDataObjectNode);
+        }
+        //objectNodeRoot.put("mosaicTexMetaDataFileNames", mosaicTexMetaDataFileNamesArrayNode);
+        objectNodeRoot.put("mosaicTexMetaDataFileNamesCount", mosaicTexMetaDataFileNamesCount);
+        objectNodeRoot.put("mosaicTexMetaDataJsonArray", mosaicTexMetaDataJsonArrayNode);
+
+        // now write the pngsBinaryBlockData.***
+        HashMap<String, Integer> pngsBinDataMap = new HashMap<>();
+        ArrayNode pngsBinDataArrayNode = objectMapper.createArrayNode();
+        int pngsBinDataArrayCount = this.dataContainer.pngsBinDataArray.size();
+        for(int i=0; i<pngsBinDataArrayCount; i++)
+        {
+            PngsBinaryBlockData pngsBinData = this.dataContainer.pngsBinDataArray.get(i);
+            ObjectNode pngsBinDataObjectNode = objectMapper.createObjectNode();
+            pngsBinDataObjectNode.put("originalPngFileName", pngsBinData.originalPngFileName);
+            pngsBinDataObjectNode.put("pngsBinaryBlockDataFileName", pngsBinData.pngsBinaryBlockDataFileName);
+            pngsBinDataObjectNode.put("startByteIndex", pngsBinData.startByteIndex);
+            pngsBinDataObjectNode.put("endByteIndex", pngsBinData.endByteIndex);
+            pngsBinDataArrayNode.add(pngsBinDataObjectNode);
+
+            pngsBinDataMap.put(pngsBinData.pngsBinaryBlockDataFileName, i);
+        }
+        objectNodeRoot.put("pngsBinDataArray", pngsBinDataArrayNode);
+
+        // now save the pngsBinaryBlockDataFileNameMap.***
+        ArrayNode pngsBinDataMapArrayNode = objectMapper.createArrayNode();
+        Set<String> keys = pngsBinDataMap.keySet();
+        for(String key : keys)
+        {
+            ObjectNode pngsBinDataMapObjectNode = objectMapper.createObjectNode();
+            pngsBinDataMapObjectNode.put("fileName", key);
+            pngsBinDataMapArrayNode.add(pngsBinDataMapObjectNode);
+        }
+
+        objectNodeRoot.put("pngsBinBlockFileNames", pngsBinDataMapArrayNode);
+
+        String outputFilePath = outputFolderPath + File.separator + "index.json";
+        try {
+            objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveIndexJsonFile_original(String outputFolderPath)
     {
         // save the index.json file.***
         ObjectMapper objectMapper = new ObjectMapper();
@@ -776,6 +960,17 @@ public class AirPollutionDataConverter
             }
 
             AirPollutionSliceData airPollutionSliceData = airPollutionVolume.getOrNewAirPollutionSliceData(altitude);
+            airPollutionSliceData.minAltitude = altitude;
+
+            if(layer < layersCount -1)
+            {
+                DataLayer dataLayerNext = this.dataContainer.getDataLayer(layer + 1);
+                double altitudeNext = dataLayerNext.altitude;
+                airPollutionSliceData.maxAltitude = altitudeNext;
+            }
+            else {
+                airPollutionSliceData.maxAltitude = altitude + 1.0;
+            }
 
             File file = new File(tempFilePath);
             if(!file.exists())
@@ -797,6 +992,7 @@ public class AirPollutionDataConverter
         String outputFileName = "airPollution_" + date + ".png";
         String outputFilePath = outputFolderPath + "/" + outputFileName;
         resultMosaicTexture.saveAsPNG(outputFilePath);
+        airPollutionVolume.mosaicPngFileName = outputFileName;
 
         this.dataContainer.dateAndMosaicTexFileNames.put(date, outputFileName);
         this.dataContainer.mosaicColumnsCount = airPollutionVolume.mosaicColumnsCount;
@@ -809,6 +1005,12 @@ public class AirPollutionDataConverter
         {
             this.dataContainer.totalMaxValue = minMaxValues[1];
         }
+
+        // Now, save the json for this volume.***
+        String jsonFileName = "airPollution_" + date + ".json";
+        String jsonFilePath = outputFolderPath + File.separator + jsonFileName;
+        airPollutionVolume.saveAsJson(jsonFilePath);
+        this.dataContainer.mosaicTexMetaDataFileNames.add(jsonFileName);
 
         int hola = 0;
     }
