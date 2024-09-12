@@ -138,37 +138,23 @@ public class TerrainElevationData {
             return resultAltitude;
         }
 
-//        if (this.coverage == null) {
-//            GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
-//            this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
-//        }
-//
-//        // determine the grid coordinates of the point
-//        if (this.raster == null) {
-//            this.raster = this.coverage.getRenderedImage().getData();
-//        }
-
         Vector2i size = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
 
         double unitaryX = (lonDeg - this.geographicExtension.getMinLongitudeDeg()) / this.geographicExtension.getLongitudeRangeDegree();
         double unitaryY = 1.0 - (latDeg - this.geographicExtension.getMinLatitudeDeg()) / this.geographicExtension.getLatitudeRangeDegree();
 
-//        int rasterHeight = this.raster.getHeight();
-//        int rasterWidth = this.raster.getWidth();
-
         int geoTiffRasterHeight = size.y;
         int geoTiffRasterWidth = size.x;
-
-        int column = (int) (unitaryX * geoTiffRasterWidth); // nearest column
-        int row = (int) (unitaryY * geoTiffRasterHeight); // nearest row
 
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         if (globalOptions.getInterpolationType() == InterpolationType.NEAREST) {
             intersects[0] = true;
+            int column = (int) (unitaryX * geoTiffRasterWidth); // nearest column
+            int row = (int) (unitaryY * geoTiffRasterHeight); // nearest row
             resultAltitude = calcNearestInterpolation(column, row);
         } else {
             intersects[0] = true;
-            resultAltitude = calcBilinearInterpolation(column, row, geoTiffRasterWidth, geoTiffRasterHeight);
+            resultAltitude = calcBilinearInterpolation(unitaryX, unitaryY, geoTiffRasterWidth, geoTiffRasterHeight); // new.***
         }
 
         // update min, max altitude
@@ -182,9 +168,15 @@ public class TerrainElevationData {
         return this.getGridValue(column, row);
     }
 
-    private double calcBilinearInterpolation(int column, int row, int geoTiffWidth, int geoTiffHeight) {
+    private double calcBilinearInterpolation(double x, double y, int geoTiffWidth, int geoTiffHeight) {
         int rasterHeight = geoTiffHeight;
         int rasterWidth = geoTiffWidth;
+
+        int column = (int) (x * rasterWidth);
+        int row = (int) (y * rasterHeight);
+
+        double fx = x * rasterWidth - column;
+        double fy = y * rasterHeight - row;
 
         int columnNext = column + 1;
         int rowNext = row + 1;
@@ -197,8 +189,8 @@ public class TerrainElevationData {
             rowNext = rasterHeight - 1;
         }
 
-        double factorX = (column + 0.5) / rasterWidth;
-        double factorY = (row + 0.5) / rasterHeight;
+        double factorX = fx;
+        double factorY = fy;
 
         // interpolation bilinear.***
         double value00 = this.getGridValue(column, row);
