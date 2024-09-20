@@ -22,6 +22,7 @@ public class Main {
         options.addOption("output", true, "output folder path");
         options.addOption("inputDataStructurePath", true, "inputDataStructurePath");
         options.addOption("maxDatesCount", true, "max dates count");
+        options.addOption("scale", true, "scales the data values");
 
         CommandLineParser parser = new DefaultParser();
         CommandLine commandLine = parser.parse(options, args);
@@ -39,6 +40,11 @@ public class Main {
             if(maxDatesCount > 0)
             {
                 airPollDataConverter.setMaxDatesCount(maxDatesCount);
+            }
+            if(commandLine.hasOption("scale"))
+            {
+                double scale = Double.parseDouble(commandLine.getOptionValue("scale"));
+                airPollDataConverter.setScale(scale);
             }
             airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
         }

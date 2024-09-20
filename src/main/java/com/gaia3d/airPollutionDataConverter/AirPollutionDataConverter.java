@@ -47,6 +47,7 @@ public class AirPollutionDataConverter
 
     public int maxDatesAllowed = -1; // if negative value, then no limit.***
     public AirPollutionTimeSeries airPollutionTimeSeries = null;
+    public double scale = 1.0;
 
     private void getAllDatesInFile(String filePath, ArrayList<String> resultDatesArray)
     {
@@ -217,7 +218,7 @@ public class AirPollutionDataConverter
                     double py = Double.parseDouble(vecStrings.get(1));
                     double pz = Double.parseDouble(vecStrings.get(3));
 
-                    double pollutionValue = Double.parseDouble(vecStrings.get(2));
+                    double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
 
                     AirPollutionNoNetPixelData airPollutionNoNetPixelData = new AirPollutionNoNetPixelData();
                     airPollutionNoNetPixelData.X = px;
@@ -276,7 +277,7 @@ public class AirPollutionDataConverter
                 double py = Double.parseDouble(vecStrings.get(1));
                 double pz = Double.parseDouble(vecStrings.get(3));
 
-                double pollutionValue = Double.parseDouble(vecStrings.get(2));
+                double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
 
                 is1rstPoint = false;
 
@@ -1018,5 +1019,9 @@ public class AirPollutionDataConverter
     public void setMaxDatesCount(int maxDatesCount)
     {
         this.maxDatesAllowed = maxDatesCount;
+    }
+
+    public void setScale(double scale) {
+        this.scale = scale;
     }
 }

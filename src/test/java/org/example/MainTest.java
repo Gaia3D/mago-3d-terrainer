@@ -45,6 +45,23 @@ class MainTest
     }
 
     @Test
+    void main_B_PM25() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirPollution\\B_PM25";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
     void main_O_NO2() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirPollution\\O_NO2";
         String outputFolderPath = inputFolderPath + "\\output";
@@ -95,12 +112,16 @@ class MainTest
         Main.main(testArgs);
     }
 
+
+
     @Test
-    void main_B_PM25() throws ParseException, IOException, org.apache.commons.cli.ParseException {
-        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirPollution\\B_PM25";
+    void main_OD_H2S() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirPollution\\OD_H2S";
         String outputFolderPath = inputFolderPath + "\\output";
         String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
-        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        int maxDatesCount = 720; // if negative value, then all dates will be converted.
+        //maxDatesCount = 360; // test.***
+        // 720 = 30 days * 24 hours.
         String[] testArgs = new String[]{
                 "-type", "AIR-POLLUTION",
                 "-input", inputFolderPath,
@@ -113,8 +134,8 @@ class MainTest
     }
 
     @Test
-    void main_OD_H2S() throws ParseException, IOException, org.apache.commons.cli.ParseException {
-        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirPollution\\OD_H2S";
+    void main_OD_NH3() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirPollution\\OD_NH3";
         String outputFolderPath = inputFolderPath + "\\output";
         String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
         int maxDatesCount = 720; // if negative value, then all dates will be converted.
@@ -151,12 +172,11 @@ class MainTest
     }
 
     @Test
-    void main_OD_NH3() throws ParseException, IOException, org.apache.commons.cli.ParseException {
-        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirPollution\\OD_NH3";
+    void main_B_NO2_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\B_NO2";
         String outputFolderPath = inputFolderPath + "\\output";
         String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
-        int maxDatesCount = 720; // if negative value, then all dates will be converted.
-        //maxDatesCount = 360; // test.***
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
         // 720 = 30 days * 24 hours.
         String[] testArgs = new String[]{
                 "-type", "AIR-POLLUTION",
@@ -168,4 +188,170 @@ class MainTest
 
         Main.main(testArgs);
     }
+
+    @Test
+    void main_B_PM10_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\B_PM10";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void main_B_PM25_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\B_PM25";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void main_O_NO2_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\O_NO2";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void main_O_PM10_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\O_PM10";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void main_O_PM25_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\O_PM25";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void main_OD_H2S_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\OD_H2S";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = 720; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void main_OD_NH3_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\OD_NH3";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = 720; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void main_OD_OU_20240919() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\OD_OU";
+        String outputFolderPath = inputFolderPath + "\\output";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = 720; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount)
+        };
+
+        Main.main(testArgs);
+    }
+
+    // Scale test.***
+    @Test
+    void main_B_NO2_20240919_scaled() throws ParseException, IOException, org.apache.commons.cli.ParseException {
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20240919\\B_NO2";
+        String outputFolderPath = inputFolderPath + "\\output_scaled";
+        String inputDataStructurePath = inputFolderPath + "\\dataStructure.json";
+        int maxDatesCount = -1; // if negative value, then all dates will be converted.
+        // 720 = 30 days * 24 hours.
+        String[] testArgs = new String[]{
+                "-type", "AIR-POLLUTION",
+                "-input", inputFolderPath,
+                "-output", outputFolderPath,
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-maxDatesCount", String.valueOf(maxDatesCount),
+                "-scale", "0.5"
+        };
+
+        Main.main(testArgs);
+    }
+
+
 }
