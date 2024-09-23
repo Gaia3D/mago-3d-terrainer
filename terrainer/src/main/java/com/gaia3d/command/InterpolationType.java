@@ -11,8 +11,7 @@ public enum InterpolationType {
 
     NEAREST(Interpolation.INTERP_NEAREST, "nearest"),
     BILINEAR(Interpolation.INTERP_BILINEAR, "bilinear");
-    /*BICUBIC(Interpolation.INTERP_BICUBIC, "bicubic"),
-    BICUBIC2(Interpolation.INTERP_BICUBIC_2, "bicubic2"),;*/
+    //BICUBIC(Interpolation.INTERP_BICUBIC, "bicubic");
 
     private final int interpolation;
     private final String interpolationArgument;
