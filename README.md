@@ -15,8 +15,7 @@ usage: Mago 3D Quantized Mesher
  -d,--debug                      Debug Mode, print more detail log
  -h,--help                       Print this message
  -i,--input <arg>                Input folder path
- -it,--interpolationType <arg>   Interpolation type (nearest, bilinear,
-                                 bicubic)
+ -it,--interpolationType <arg>   Interpolation type (nearest, bilinear)
  -l,--log <arg>                  Log file path
  -mn,--minDepth <arg>            Minimum tile depth (0 ~ 22)
  -mx,--maxDepth <arg>            Maximum tile depth (0 ~ 22)
