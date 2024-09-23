@@ -244,11 +244,11 @@ class MesherMainTest {
         //*******************************************************************
         // Note : the outputFolder must be different from the inputFolder
         //*******************************************************************
-        String outputDirectory = "D:/data/DEM_output/Terrain_buildingPinchosMini";
+        String outputDirectory = "D:/data/DEM_output/Terrain_Contour_pinchos";
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(21);
+        String maxTileDepth = String.valueOf(18);
         String refinementStrength = String.valueOf(1);
-        String originalGeoTiffFolderPath = "D:/data/TerrainData_issues/Jinho_20240923/buildingsMini";
+        String originalGeoTiffFolderPath = "D:/data/TerrainData_issues/Jinho_20240923/terrainContour_pinchos";
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
