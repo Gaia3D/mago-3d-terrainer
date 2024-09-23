@@ -56,12 +56,12 @@ public class TileWgs84Raster {
 
     public double getLonDeg(int col) {
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
-        return minLonDeg + col * deltaLonDeg + deltaLonDeg * 0.5;
+        return minLonDeg + col * deltaLonDeg;
     }
 
     public double getLatDeg(int row) {
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
-        return minLatDeg + row * deltaLatDeg + deltaLatDeg * 0.5;
+        return minLatDeg + row * deltaLatDeg;
     }
 
     public float getElevation(int col, int row) {

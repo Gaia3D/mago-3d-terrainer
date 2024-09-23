@@ -192,6 +192,21 @@ public class TerrainElevationDataManager {
             e.printStackTrace();
         }
 
+        // Test debug.***
+        if(resultElevation > 60.0)
+        {
+            int hola = 0;
+            try {
+                tileWgs84Raster = this.getTileWgs84Raster(tileIndices, tileWgs84Manager);
+                resultElevation = tileWgs84Raster.getElevationBilinear(lonDeg, latDeg);
+//            if (resultElevation == Float.NaN) {
+//                resultElevation = 0.0;
+//            }
+            } catch (TransformException | IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         return resultElevation;
     }
 

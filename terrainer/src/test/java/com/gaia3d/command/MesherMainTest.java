@@ -224,6 +224,34 @@ class MesherMainTest {
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
+
+    @Test
+    void main_BangKok_20240919() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+        String outputDirectory = "D:/data/DEM_output/output";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(16);
+        String refinementStrength = String.valueOf(1);
+        String originalGeoTiffFolderPath = "D:/data/TerrainData_issues/Thailand_yeonhwa";
+
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void main_building_pinchos_mini() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+        String outputDirectory = "D:/data/DEM_output/Terrain_buildingPinchosMini";
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(21);
+        String refinementStrength = String.valueOf(1);
+        String originalGeoTiffFolderPath = "D:/data/TerrainData_issues/Jinho_20240923/buildingsMini";
+
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
     
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
         String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-mn", minTileDepth, "-mx", maxTileDepth, "-rs", refinementStrength, "-cn"};
