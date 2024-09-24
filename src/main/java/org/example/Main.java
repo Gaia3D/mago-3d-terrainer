@@ -6,6 +6,7 @@ import org.apache.commons.cli.*;
 
 import javax.imageio.metadata.IIOInvalidTreeException;
 import java.io.FileNotFoundException;
+import java.util.Objects;
 
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
 // then press Enter. You can now see whitespace characters in your code.
@@ -29,7 +30,7 @@ public class Main {
 
         String type = commandLine.getOptionValue("type");
 
-        if (type == "AIR-POLLUTION") {
+        if (Objects.equals(type, "AIR-POLLUTION")) {
             // ICT-EIA air pollution test.*************************************
             String inputFolderPath = commandLine.getOptionValue("input");
             String outputFolderPath = commandLine.getOptionValue("output");
@@ -46,6 +47,8 @@ public class Main {
                 double scale = Double.parseDouble(commandLine.getOptionValue("scale"));
                 airPollDataConverter.setScale(scale);
             }
+
+
             airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
         }
     }

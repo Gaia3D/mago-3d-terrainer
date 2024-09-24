@@ -8,6 +8,7 @@ import com.gaia3d.geometry.BoundingBox;
 import com.gaia3d.geometry.Vertex;
 import com.gaia3d.image.Texture2D;
 import com.gaia3d.utils.StringModifier;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 import org.locationtech.proj4j.CRSFactory;
 import org.locationtech.proj4j.CoordinateReferenceSystem;
@@ -17,6 +18,8 @@ import javax.imageio.metadata.IIOInvalidTreeException;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
+
+@Slf4j
 
 public class AirPollutionDataConverter
 {
@@ -51,6 +54,7 @@ public class AirPollutionDataConverter
 
     private void getAllDatesInFile(String filePath, ArrayList<String> resultDatesArray)
     {
+        log.info("Reading ASCII.");
         HashMap<String, Integer> mapDates = new HashMap<>();
         try
         {
@@ -80,6 +84,7 @@ public class AirPollutionDataConverter
             Vector<String> vecStrings = new Vector<String>();
             boolean skipEmptyStrings = true;
             AirPollutionSliceData airPollutionSliceData = new AirPollutionSliceData();
+            int counterAux = 0;
 
             while (!finished)
             {
@@ -90,6 +95,12 @@ public class AirPollutionDataConverter
                 }
 
                 rowsCount += 1;
+
+                if(counterAux > 100000)
+                {
+                    log.info("Reading ASCII. Rows count : " + rowsCount);
+                    counterAux = 0;
+                }
 
                 vecStrings.clear();
                 StringModifier.splitString(line, delimiter, vecStrings, skipEmptyStrings);
@@ -118,6 +129,8 @@ public class AirPollutionDataConverter
                         break;
                     }
                 }
+
+                counterAux += 1;
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -247,6 +260,7 @@ public class AirPollutionDataConverter
                 else if(lastDate != currDate)
                 {
                     // here, save the temp file.***
+                    log.info("Saving temp file. Date : " + lastDate);
                     double altitude = dataLayer.altitude;
                     String altitudeString = "Alt" + String.format("%.2f", altitude);
                     String outputFileName = "airPollution_" + altitudeString + "_" + lastDate + ".bin";
@@ -478,8 +492,10 @@ public class AirPollutionDataConverter
     private void makeTempFilesForLayers(String inputFolderPath, String outputFolderPath)
     {
         int layersCount = this.dataContainer.getDataLayersCount();
+        log.info("Making temp files. Layers count : " + layersCount);
         for(int layer = 0; layer < layersCount; layer++)
         {
+            log.info("Current layer : " + layer);
             DataLayer dataLayer = this.dataContainer.getDataLayer(layer);
             String filePath = dataLayer.filePath;
             if(dataLayer.tempFilesMap == null)
@@ -625,10 +641,12 @@ public class AirPollutionDataConverter
         // now, read the data.***
         this.dataContainer.originalSourceProj4 = objectNodeRoot.get("proj4").asText();
         int layersCount = objectNodeRoot.get("layersCount").asInt();
+        log.info("Reading data. Layers count : " + layersCount);
         ArrayNode objectLayersArrayNode = (ArrayNode) objectNodeRoot.get("layers");
         int timeSlicesCount = 0;
         for(int layer = 0; layer < layersCount; layer++)
         {
+            log.info("Current layer : " + layer);
             ObjectNode objectLayersNode = (ObjectNode) objectLayersArrayNode.get(layer);
             String filePath = objectLayersNode.get("filePath").asText();
 
@@ -652,12 +670,14 @@ public class AirPollutionDataConverter
         this.dataContainer.hour = Integer.parseInt(startDate.substring(6, 8));
 
         // load one file and calculate the location data.***
+        log.info("Calculating location data.");
         this.loadOneFileAndCalculateLocationData(somefilePath, firstDataLayer);
 
         // make temp files for each layer.***
         this.makeTempFilesForLayers(inputFolderPath, outputFolderPath);
 
         // once read the data, now convert the data.***
+        log.info("Converting data. Datas count : " + this.dataContainer.datesArray.size());
         int datesCount = this.dataContainer.datesArray.size();
         for(int date = 0; date < datesCount; date++)
         {
@@ -670,6 +690,7 @@ public class AirPollutionDataConverter
         ArrayList<String> mosaicTexturesFilePaths = new ArrayList<>();
         int mosaicTexturesCount = this.dataContainer.dateAndMosaicTexFileNames.size();
         // traverse map.***
+        log.info("Making mosaic textures. Mosaic textures count : " + mosaicTexturesCount);
         for(Map.Entry<String, String> entry : this.dataContainer.dateAndMosaicTexFileNames.entrySet())
         {
             String date = entry.getKey();
@@ -679,6 +700,7 @@ public class AirPollutionDataConverter
         }
 
         this.dataContainer.pngsBinDataArray.clear();
+        log.info("Making pngs binary blocks.");
         makePngsBinaryBlocks(mosaicTexturesFilePaths, outputFolderPath, this.dataContainer.pngsBinDataArray);
 
         // now save indexJson file.***
