@@ -48,7 +48,7 @@ dependencies {
 }
 
 test {
-    //useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 jar {

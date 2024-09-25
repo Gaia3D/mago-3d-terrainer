@@ -18,38 +18,52 @@ public class Main {
         log.info("Start the program.");
 
         Options options = new Options();
-        options.addOption("type", true, "conversion type");
         options.addOption("input", true, "input folder path");
         options.addOption("output", true, "output folder path");
-        options.addOption("inputDataStructurePath", true, "inputDataStructurePath");
-        options.addOption("maxDatesCount", true, "max dates count");
         options.addOption("scale", true, "scales the data values");
 
         CommandLineParser parser = new DefaultParser();
         CommandLine commandLine = parser.parse(options, args);
 
-        String type = commandLine.getOptionValue("type");
+        String inputFolderPath = commandLine.getOptionValue("input");
 
-        if (Objects.equals(type, "AIR-POLLUTION")) {
-            // ICT-EIA air pollution test.*************************************
-            String inputFolderPath = commandLine.getOptionValue("input");
-            String outputFolderPath = commandLine.getOptionValue("output");
-            String inputDataStructurePath = commandLine.getOptionValue("inputDataStructurePath");
-            int maxDatesCount = Integer.parseInt(commandLine.getOptionValue("maxDatesCount"));
-
-            AirPollutionDataConverter airPollDataConverter = new AirPollutionDataConverter();
-            if(maxDatesCount > 0)
-            {
-                airPollDataConverter.setMaxDatesCount(maxDatesCount);
-            }
-            if(commandLine.hasOption("scale"))
-            {
-                double scale = Double.parseDouble(commandLine.getOptionValue("scale"));
-                airPollDataConverter.setScale(scale);
-            }
-
-
-            airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
+        if(inputFolderPath == null)
+        {
+            log.error("Input folder path is not provided.");
+            return;
         }
+
+        if(!inputFolderPath.endsWith("/"))
+        {
+            inputFolderPath += "\\";
+        }
+
+        String outputFolderPath = commandLine.getOptionValue("output");
+
+        if(outputFolderPath == null)
+        {
+            log.error("Output folder path is not provided.");
+            return;
+        }
+
+        if(!outputFolderPath.endsWith("/"))
+        {
+            outputFolderPath += "\\";
+        }
+
+
+        // Convert the data.************************************************************************************
+        String inputDataStructurePath = inputFolderPath + "dataStructure.json";
+        AirPollutionDataConverter airPollDataConverter = new AirPollutionDataConverter();
+
+        if(commandLine.hasOption("scale"))
+        {
+            double scale = Double.parseDouble(commandLine.getOptionValue("scale"));
+            airPollDataConverter.setScale(scale);
+        }
+
+
+        airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
+
     }
 }

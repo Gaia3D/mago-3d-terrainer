@@ -628,6 +628,9 @@ public class AirPollutionDataConverter
             this.dataContainer = new DataContainer();
         }
 
+        // inputDataStructurePathFile = new File(inputFolderPath, "./O_24_NO2_TS_F060.pst");
+
+
         // read the data structure file.***
         // the dataStructure file is json format.***
         ObjectMapper objectMapper = new ObjectMapper();
@@ -640,6 +643,15 @@ public class AirPollutionDataConverter
 
         // now, read the data.***
         this.dataContainer.originalSourceProj4 = objectNodeRoot.get("proj4").asText();
+        // check if exist "maxDatesCount" in objectNodeRoot.***
+        int maxDatesCount = -1;
+        if(objectNodeRoot.has("maxDatesCount"))
+        {
+            maxDatesCount = objectNodeRoot.get("maxDatesCount").asInt();
+        }
+
+        this.setMaxDatesCount(maxDatesCount);
+
         int layersCount = objectNodeRoot.get("layersCount").asInt();
         log.info("Reading data. Layers count : " + layersCount);
         ArrayNode objectLayersArrayNode = (ArrayNode) objectNodeRoot.get("layers");
@@ -648,7 +660,13 @@ public class AirPollutionDataConverter
         {
             log.info("Current layer : " + layer);
             ObjectNode objectLayersNode = (ObjectNode) objectLayersArrayNode.get(layer);
-            String filePath = objectLayersNode.get("filePath").asText();
+            String fileName = objectLayersNode.get("fileName").asText();
+            // if the fileName contains "./", then remove it.***
+            if(fileName.startsWith("./"))
+            {
+                fileName = fileName.substring(2);
+            }
+            String filePath = inputFolderPath + fileName;
 
             DataLayer dataLayer = new DataLayer();
             dataLayer.altitude = objectLayersNode.get("altitude").asDouble();
