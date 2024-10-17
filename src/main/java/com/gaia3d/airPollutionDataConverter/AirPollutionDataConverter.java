@@ -767,7 +767,31 @@ public class AirPollutionDataConverter
         this.dataContainer.centerGeoCoordLatitudeDegree = centerPos.y;
         this.dataContainer.centerGeoCoordAltitude = 0.0;
 
+        log.info("Saving index.json file.");
         this.saveIndexJsonFile(outputFolderPath);
+
+        // Finally delete the temp folder.***
+        log.info("Deleting temp folder.");
+        String tempFolderPath = outputFolderPath + File.separator + "temp";
+        StringModifier.deleteFolder(tempFolderPath);
+
+        // delete all mosaicTextures.***
+        log.info("Deleting mosaic textures.");
+        for(int i = 0; i < mosaicTexturesFilePaths.size(); i++)
+        {
+            String mosaicTextureFilePath = mosaicTexturesFilePaths.get(i);
+            StringModifier.deleteFile(mosaicTextureFilePath);
+        }
+
+        // delete the jsonFiles in this.dataContainer.mosaicTexMetaDataFileNames.***
+        log.info("Deleting json files.");
+        int mosaicTexMetaDataFileNamesCount = this.dataContainer.mosaicTexMetaDataFileNames.size();
+        for(int i=0; i<mosaicTexMetaDataFileNamesCount; i++)
+        {
+            String mosaicTexMetaDataFileName = this.dataContainer.mosaicTexMetaDataFileNames.get(i);
+            String mosaicTexMetaDataFilePath = outputFolderPath + File.separator + mosaicTexMetaDataFileName;
+            StringModifier.deleteFile(mosaicTexMetaDataFilePath);
+        }
 
         int hola = 0;
     }
@@ -807,13 +831,14 @@ public class AirPollutionDataConverter
         ArrayList<ArrayList<String>> pngsGroups = new ArrayList<>();
         getPngsGroupLimitedByMaxByteSize(mosaicTexturesFilePaths, pngsBinaryBlockSizeLimitBytes, pngsGroups);
         int groupsCount = pngsGroups.size();
+
         for(int group = 0; group < groupsCount; group++)
         {
             String pngsBinaryBlockFileName = "pngsBinaryBlock_" + group + ".bin";
             currentPngsBinaryBlockSize = 0;
             ArrayList<String> mosaicTextureFilePathArray = pngsGroups.get(group);
             int pngsCount = mosaicTextureFilePathArray.size();
-            try ( DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFolderPath + "\\" + pngsBinaryBlockFileName))) )
+            try ( DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFolderPath + File.separator + pngsBinaryBlockFileName))) )
             {
                 for(int j=0; j<pngsCount; j++)
                 {
@@ -891,7 +916,7 @@ public class AirPollutionDataConverter
             String mosaicTexMetaDataFileName = this.dataContainer.mosaicTexMetaDataFileNames.get(i);
 
             // load the jsonFile.***
-            String mosaicTexMetaDataFilePath = outputFolderPath + "\\" + mosaicTexMetaDataFileName;
+            String mosaicTexMetaDataFilePath = outputFolderPath + File.separator + mosaicTexMetaDataFileName;
             ObjectNode mosaicTexMetaDataObjectNode = null;
             try {
                 mosaicTexMetaDataObjectNode = (ObjectNode) objectMapper.readTree(new File(mosaicTexMetaDataFilePath));

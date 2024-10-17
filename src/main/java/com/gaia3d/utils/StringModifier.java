@@ -52,9 +52,26 @@ public class StringModifier
 //        }
     }
 
+    public static void deleteFolder(String folderPath) {
+        File folder = new File(folderPath);
+        if (folder.exists()) {
+            File[] files = folder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        deleteFolder(file.getAbsolutePath());
+                    } else {
+                        file.delete();
+                    }
+                }
+            }
+            folder.delete();
+        }
+    }
+
     public static String getLastNameFromPath(String folderPath) {
         String folderName = "";
-        int lastIndexOf = folderPath.lastIndexOf("\\");
+        int lastIndexOf = folderPath.lastIndexOf(File.separator);
         if (lastIndexOf >= 0) {
             folderName = folderPath.substring(lastIndexOf + 1);
         }
@@ -253,6 +270,13 @@ public class StringModifier
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void deleteFile(String mosaicTextureFilePath) {
+        File file = new File(mosaicTextureFilePath);
+        if (file.exists()) {
+            file.delete();
         }
     }
 }

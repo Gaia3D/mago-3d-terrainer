@@ -53,9 +53,9 @@ public class Main {
 
         }
 
-        if(!inputFolderPath.endsWith("/"))
+        if(!inputFolderPath.endsWith(File.separator))
         {
-            inputFolderPath += "\\";
+            inputFolderPath += File.separator;
         }
 
         String outputFolderPath = commandLine.getOptionValue("output");
@@ -66,11 +66,10 @@ public class Main {
             return;
         }
 
-        if(!outputFolderPath.endsWith("/"))
+        if(!outputFolderPath.endsWith(File.separator))
         {
-            outputFolderPath += "\\";
+            outputFolderPath += File.separator;
         }
-
 
         // Convert the data.************************************************************************************
         String inputDataStructurePath = inputFolderPath + dataStructureJsonFileName;
