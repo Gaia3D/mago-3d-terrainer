@@ -74,7 +74,8 @@ public class AirPollutionSliceData
             this.matrixData = new TreeMap <Double, AirPollutionRowData>();
 
             FileInputStream fileInputStream = new FileInputStream(filePath);
-            DataInputStream dataInputStream = new DataInputStream(fileInputStream);
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+            DataInputStream dataInputStream = new DataInputStream(bufferedInputStream);
 
             int rowsCount = dataInputStream.readInt();
             int columnsCount = dataInputStream.readInt();
@@ -93,6 +94,7 @@ public class AirPollutionSliceData
             }
             fileInputStream.close();
             dataInputStream.close();
+            bufferedInputStream.close();
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -113,7 +115,8 @@ public class AirPollutionSliceData
         try
         {
             FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-            DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream);
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+            DataOutputStream dataOutputStream = new DataOutputStream(bufferedOutputStream);
 
             dataOutputStream.writeInt(rowsCount);
             dataOutputStream.writeInt(columnsCount);
@@ -127,6 +130,7 @@ public class AirPollutionSliceData
             }
             dataOutputStream.close();
             fileOutputStream.close();
+            bufferedOutputStream.close();
         }
         catch (IOException e) {
             e.printStackTrace();

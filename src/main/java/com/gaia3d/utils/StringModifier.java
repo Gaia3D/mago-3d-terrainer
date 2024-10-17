@@ -13,17 +13,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 public class StringModifier
 {
     public static void splitString(String wordToSplit, String delimiter, Vector<String> resultSplittedStrings, boolean skipEmptyStrings) {
-        String[] splittedStrings = wordToSplit.split(delimiter);
+        //String[] splittedStrings = wordToSplit.split(delimiter);
 
-        // discard strings with length zero.***
-        Integer stringsCount = splittedStrings.length;
-        for (Integer i = 0; i < stringsCount; i++) {
-            String word = splittedStrings[i];
+        StringTokenizer tokenizer = new StringTokenizer(wordToSplit, delimiter);
+        while(tokenizer.hasMoreTokens()) {
+            String word = tokenizer.nextToken();
 
             if(skipEmptyStrings) {
                 if (word.length() != 0) {
@@ -33,6 +33,23 @@ public class StringModifier
                 resultSplittedStrings.add(word);
             }
         }
+
+
+
+
+//        // discard strings with length zero.***
+//        Integer stringsCount = splittedStrings.length;
+//        for (Integer i = 0; i < stringsCount; i++) {
+//            String word = splittedStrings[i];
+//
+//            if(skipEmptyStrings) {
+//                if (word.length() != 0) {
+//                    resultSplittedStrings.add(word);
+//                }
+//            } else {
+//                resultSplittedStrings.add(word);
+//            }
+//        }
     }
 
     public static String getLastNameFromPath(String folderPath) {

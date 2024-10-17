@@ -46,6 +46,43 @@ public class AirPollutionDataConverter
 //  349700.00000 4030300.00000       0.00000   181.20   278.00     0.00   24-HR  ALL       20081824  CART1
 //  349800.00000 4030300.00000       0.00000   193.10   278.00     0.00   24-HR  ALL       20081824  CART1
     //        ...
+
+    // DataStructure sample.************************************************************************************************
+//    {
+//        "layersCount": 7,
+//            "proj4" : "+proj=utm +zone=52 +datum=WGS84 +units=m +no_defs +type=crs",
+//            "maxDatesCount" : 720,
+//            "layers": [
+//        {
+//            "altitude": 0.0,
+//                "fileName": "OD_01_H2S_TS_F000.pst"
+//        },
+//        {
+//            "altitude": 10.0,
+//                "fileName": "OD_01_H2S_TS_F010.pst"
+//        },
+//        {
+//            "altitude": 20.0,
+//                "fileName": "OD_01_H2S_TS_F020.pst"
+//        },
+//        {
+//            "altitude": 30.0,
+//                "fileName": "OD_01_H2S_TS_F030.pst"
+//        },
+//        {
+//            "altitude": 60.0,
+//                "fileName": "OD_01_H2S_TS_F060.pst"
+//        },
+//        {
+//            "altitude": 100.0,
+//                "fileName": "OD_01_H2S_TS_F100.pst"
+//        },
+//        {
+//            "altitude": 200.0,
+//                "fileName": "OD_01_H2S_TS_F200.pst"
+//        }
+//	]
+//    }
     public DataContainer dataContainer = null;
 
     public int maxDatesAllowed = -1; // if negative value, then no limit.***
@@ -643,6 +680,8 @@ public class AirPollutionDataConverter
 
         // now, read the data.***
         this.dataContainer.originalSourceProj4 = objectNodeRoot.get("proj4").asText();
+        this.dataContainer.timeInterval = objectNodeRoot.get("timeInterval").asDouble();
+        this.dataContainer.timeIntervalUnits = objectNodeRoot.get("timeIntervalUnits").asText();
         // check if exist "maxDatesCount" in objectNodeRoot.***
         int maxDatesCount = -1;
         if(objectNodeRoot.has("maxDatesCount"))
@@ -834,8 +873,6 @@ public class AirPollutionDataConverter
         objectNodeRoot.put("height_km", lengthY / 1000.0);
 
         // timeInterval & timeUnit.***
-        this.dataContainer.timeInterval = 1;
-        this.dataContainer.timeIntervalUnits = "day"; // hard coding.***
         objectNodeRoot.put("timeInterval", this.dataContainer.timeInterval);
         objectNodeRoot.put("timeIntervalUnits", this.dataContainer.timeIntervalUnits);
 
@@ -896,81 +933,6 @@ public class AirPollutionDataConverter
         }
 
         objectNodeRoot.put("pngsBinBlockFileNames", pngsBinDataMapArrayNode);
-
-        String outputFilePath = outputFolderPath + File.separator + "index.json";
-        try {
-            objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveIndexJsonFile_original(String outputFolderPath)
-    {
-        // save the index.json file.***
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode objectNodeRoot = objectMapper.createObjectNode();
-        // centerGeographicCoords.***
-        ObjectNode objectCenterGeographicCoordsNode = objectMapper.createObjectNode();
-        objectNodeRoot.set("centerGeographicCoord", objectCenterGeographicCoordsNode);
-        objectCenterGeographicCoordsNode.put("longitude", this.dataContainer.centerGeoCoordLongitudeDegree);
-        objectCenterGeographicCoordsNode.put("latitude", this.dataContainer.centerGeoCoordLatitudeDegree);
-        objectCenterGeographicCoordsNode.put("altitude", this.dataContainer.centerGeoCoordAltitude);
-
-        // date : year, month, day, hour, minute, second.***
-        objectNodeRoot.put("year", this.dataContainer.year);
-        objectNodeRoot.put("month", this.dataContainer.month);
-        objectNodeRoot.put("day", this.dataContainer.day);
-        objectNodeRoot.put("hour", this.dataContainer.hour);
-        objectNodeRoot.put("minute", this.dataContainer.minute);
-        objectNodeRoot.put("second", this.dataContainer.second);
-
-
-
-        // mosaicColumnsCount, mosaicRowsCount.***
-        objectNodeRoot.put("mosaicColumnsCount", this.dataContainer.mosaicColumnsCount);
-        objectNodeRoot.put("mosaicRowsCount", this.dataContainer.mosaicRowsCount);
-
-        // height_km, width_km.***
-        BoundingBox bbox = new BoundingBox();
-        this.dataContainer.getGeoCoordBoundingBox(bbox);
-        double lengthX = 13100; // hard coding.***
-        double lengthY = 13100; // hard coding.***
-        objectNodeRoot.put("width_km", lengthX / 1000.0);
-        objectNodeRoot.put("height_km", lengthY / 1000.0);
-
-        // minMaxValues.***
-        objectNodeRoot.put("pollutionMinValue", this.dataContainer.totalMinValue);
-        objectNodeRoot.put("pollutionMaxValue", this.dataContainer.totalMaxValue);
-
-        objectNodeRoot.put("layersCount", 1);
-
-        // timeSeries.***
-        int timeSeriesCount = this.dataContainer.dateAndMosaicTexFileNames.size();
-        ArrayNode objectLayersArrayNode = objectMapper.createArrayNode();
-        objectNodeRoot.set("layers", objectLayersArrayNode);
-        ObjectNode objectLayersNode = objectMapper.createObjectNode();
-        objectLayersArrayNode.add(objectLayersNode);
-
-        ArrayNode objectTimeSeriesArrayNode = objectMapper.createArrayNode();
-        // for each layer textureWidth, textureHeight, altitude, timeSeries.***
-        DataLayer someDataLayer = this.dataContainer.getDataLayer(0);
-        objectLayersNode.put("textureWidth", someDataLayer.columnsCount);
-        objectLayersNode.put("textureHeight", someDataLayer.rowsCount);
-
-        objectLayersNode.set("timeSeries", objectTimeSeriesArrayNode);
-        for(int timeSeries = 0; timeSeries < timeSeriesCount; timeSeries++)
-        {
-            ObjectNode objectTimeSeriesNode = objectMapper.createObjectNode();
-            objectTimeSeriesArrayNode.add(objectTimeSeriesNode);
-
-            String date = this.dataContainer.dateAndMosaicTexFileNames.keySet().toArray()[timeSeries].toString();
-            String mosaicTexFileName = this.dataContainer.dateAndMosaicTexFileNames.get(date);
-
-            objectTimeSeriesNode.put("date", date);
-            objectTimeSeriesNode.put("mosaicTexFileName", mosaicTexFileName);
-        }
-
 
         String outputFilePath = outputFolderPath + File.separator + "index.json";
         try {

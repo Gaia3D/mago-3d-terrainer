@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
 
 import javax.imageio.metadata.IIOInvalidTreeException;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Objects;
 
@@ -33,6 +34,25 @@ public class Main {
             return;
         }
 
+        // Is possible that inputFolderPath contains the dataStructure.json file name.***
+        // must check if the inputFolderPath is directory or file.***
+        // case 1 : String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_PM10";
+        // case 2 : String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_PM10\\dataStructureCustom.json";
+
+        String dataStructureJsonFileName = "dataStructure.json";
+        File file = new File(inputFolderPath);
+        if(file.isDirectory())
+        {
+            // ok.***
+        }
+        else if(file.isFile())
+        {
+            // remove the fileName from the path and keep in a string.***
+            dataStructureJsonFileName = file.getName();
+            inputFolderPath = file.getParent();
+
+        }
+
         if(!inputFolderPath.endsWith("/"))
         {
             inputFolderPath += "\\";
@@ -53,7 +73,7 @@ public class Main {
 
 
         // Convert the data.************************************************************************************
-        String inputDataStructurePath = inputFolderPath + "dataStructure.json";
+        String inputDataStructurePath = inputFolderPath + dataStructureJsonFileName;
         AirPollutionDataConverter airPollDataConverter = new AirPollutionDataConverter();
 
         if(commandLine.hasOption("scale"))
