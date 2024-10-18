@@ -2,8 +2,7 @@ package com.gaia3d.geometry;
 
 import com.gaia3d.utils.GeometryUtils;
 
-public class Segment
-{
+public class Segment {
     public Vertex startVertex = null;
     public Vertex endVertex = null;
 
@@ -27,15 +26,15 @@ public class Segment
     public Line getLine() {
         Line line = new Line();
         line.point = this.startVertex.point3d;
-        Point3D direction = this.endVertex.point3d.getSubstracted(this.startVertex.point3d); // end - start.***
+        Point3D direction = this.endVertex.point3d.getSubstracted(this.startVertex.point3d); // end - start.
         line.direction = direction.getNormalized();
         return line;
     }
 
     public boolean intersectsWithPointXY(Point3D p) {
-        // This function returns true if the input point intersects with this segment in XY plane.***
-        // 1rst check if vertex are collinear.***
-        // 2nd check if vertex is between the segment.***
+        // This function returns true if the input point intersects with this segment in XY plane.
+        // 1rst check if vertex are collinear.
+        // 2nd check if vertex is between the segment.
         double error = 0.0000001;
         if (!GeometryUtils.arePointsCollinealXY(this.startVertex.point3d, this.endVertex.point3d, p, error)) {
             return false;
@@ -56,8 +55,8 @@ public class Segment
     }
 
     public boolean intersectsWithSegmentXY(Segment segment, Point3D intersectionPoint) {
-        // This function checks if the 2 segments intersect in XY plane.***
-        // 1rst check if segments are collinear.***
+        // This function checks if the 2 segments intersect in XY plane.
+        // 1rst check if segments are collinear.
         Line line1 = this.getLine();
         Line line2 = segment.getLine();
         double error = 0.0000001;
@@ -66,7 +65,7 @@ public class Segment
             return false;
         }
 
-        // 2nd check if intersectionPoint is inside of 2 segments.***
+        // 2nd check if intersectionPoint is inside of 2 segments.
         if (!this.intersectsWithPointXY(intersectionPoint)) {
             return false;
         }

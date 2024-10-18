@@ -2,8 +2,7 @@ package com.gaia3d.geometry;
 
 import org.joml.Vector3d;
 
-public class BoundingBox
-{
+public class BoundingBox {
     public double minX, minY, minZ, maxX, maxY, maxZ;
 
     public Vector3d GetCenterPosition() {

@@ -2,10 +2,11 @@ package com.gaia3d.geometry;
 
 import com.gaia3d.utils.GeometryUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
-public class Triangle
-{
+public class Triangle {
     public Vertex vertex_0;
     public Vertex vertex_1;
     public Vertex vertex_2;
@@ -26,14 +27,14 @@ public class Triangle
     }
 
     public void reverseSense() {
-        // This function reverses the sense of the triangle.***
+        // This function reverses the sense of the triangle.
         Vertex vertexAux = vertex_0;
         vertex_0 = vertex_2;
         vertex_2 = vertexAux;
     }
 
-    public void getSegments(Vector<Segment> resultVecSegments) {
-        // This function returns the segments of the triangle.***
+    public void getSegments(List<Segment> resultVecSegments) {
+        // This function returns the segments of the triangle.
         Segment segment = new Segment();
         segment.set(vertex_0, vertex_1);
         resultVecSegments.add(segment);
@@ -46,7 +47,7 @@ public class Triangle
     }
 
     public BoundingRectangle getBoundingRectangleXY() {
-        // This function returns the bounding rectangle of the triangle in XY plane.***
+        // This function returns the bounding rectangle of the triangle in XY plane.
         BoundingRectangle boundingRectangle = new BoundingRectangle();
         boundingRectangle.init(vertex_0.point3d.x, vertex_0.point3d.y);
         boundingRectangle.addPoint(vertex_1.point3d.x, vertex_1.point3d.y);
@@ -65,7 +66,7 @@ public class Triangle
 
     public boolean hasCommonEdge(Triangle triangle) {
         // This function returns true if the triangles have a common edge.
-        Vector<Segment> vecSegments = new Vector<Segment>();
+        List<Segment> vecSegments = new ArrayList<>();
         getSegments(vecSegments);
         int segmentsCount = vecSegments.size();
         for (int i = 0; i < segmentsCount; i++) {
@@ -80,16 +81,16 @@ public class Triangle
 
     public boolean hasSegment(Segment segment) {
         // This function returns true if the triangle has the segment.
-        Vector<Segment> vecSegments = new Vector<Segment>();
+        List<Segment> vecSegments = new ArrayList<>();
         return hasVertex(segment.startVertex) && hasVertex(segment.endVertex);
     }
 
     public boolean intersectsXY(Segment segment) {
         // This function returns true if the segment intersects the triangle in XY plane.
-        // 1rst check if intersects the bounding rectangle.***
-        // check if the "segment" belongs to the triangle.***
+        // 1rst check if intersects the bounding rectangle.
+        // check if the "segment" belongs to the triangle.
         if (this.hasSegment(segment)) {
-            // the "segment" belongs to the triangle, so return false.***
+            // the "segment" belongs to the triangle, so return false.
             return false;
         }
 
@@ -99,8 +100,8 @@ public class Triangle
             return false;
         }
 
-        // 2nd check if intersects the segments.***
-        Vector<Segment> vecSegments = new Vector<Segment>();
+        // 2nd check if intersects the segments.
+        List<Segment> vecSegments = new ArrayList<>();
         getSegments(vecSegments);
         int segmentsCount = vecSegments.size();
         for (int i = 0; i < segmentsCount; i++) {
@@ -116,15 +117,15 @@ public class Triangle
 
     public boolean intersectsXY(Triangle triangle) {
         // This function returns true if the triangles intersects in the XY plane.
-        // 1rst check if intersects the bounding rectangles.***
+        // 1rst check if intersects the bounding rectangles.
         BoundingRectangle boundingRectangle1 = getBoundingRectangleXY();
         BoundingRectangle boundingRectangle2 = triangle.getBoundingRectangleXY();
         if (!boundingRectangle1.intersects(boundingRectangle2)) {
             return false;
         }
 
-        // 2nd check if intersects the segments.***
-        Vector<Segment> vecSegments1 = new Vector<Segment>();
+        // 2nd check if intersects the segments.
+        List<Segment> vecSegments1 = new ArrayList<>();
         getSegments(vecSegments1);
         int segmentsCount1 = vecSegments1.size();
         for (int i = 0; i < segmentsCount1; i++) {
@@ -139,7 +140,7 @@ public class Triangle
     }
 
 
-    public boolean intersectsWithTrianglesArrayXY(Vector<Triangle> vecTriangles) {
+    public boolean intersectsWithTrianglesArrayXY(List<Triangle> vecTriangles) {
         // This function returns true if the triangle intersects with any triangle in the array.
         int trianglesCount = vecTriangles.size();
         for (int i = 0; i < trianglesCount; i++) {
@@ -163,7 +164,7 @@ public class Triangle
         Point3D D = vertex.point3d;
 
         // https://es.wikipedia.org/wiki/Triangulaci%C3%B3n_de_Delaunay
-        // now, calculate the determinant of the matrix.***
+        // now, calculate the determinant of the matrix.
         //        | Ax Ay (Ax^2 + Ay^2) 1 |
         //        | Bx By (Bx^2 + By^2) 1 |
         //        | Cx Cy (Cx^2 + Cy^2) 1 |
@@ -196,8 +197,8 @@ public class Triangle
         } else if (det < 0.0) {
             return false;
         } else {
-            // the determinant is zero.***
-            // then the point is on the circumcircle.***
+            // the determinant is zero.
+            // then the point is on the circumcircle.
             return false;
         }
 

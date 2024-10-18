@@ -3,10 +3,11 @@ package com.gaia3d.globe;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
-public class Globe
-{
+public class Globe {
     public static double EquatorialRadiusMeters() {
         return 6378137.0; // meters.
     }
@@ -42,15 +43,15 @@ public class Globe
         Vector3d yAxis = new Vector3d();
         Vector3d zAxis = NormalAtCartesianPointWgs84(x, y, z);
 
-        // Note: Check if zAxis is vertical vector. PENDENT.***
+        // Note: Check if zAxis is vertical vector. PENDENT.
         //-----------------------------------------------------
 
         // now, calculate the east direction.
-        // project zAxis to plane XY and calculate the left perpendicular.***
+        // project zAxis to plane XY and calculate the left perpendicular.
         xAxis.set(-y, x, 0.0);
         xAxis.normalize();
 
-        // finally calculate the north direction.***
+        // finally calculate the north direction.
         zAxis.cross(xAxis, yAxis);
         yAxis.normalize();
 
@@ -60,8 +61,8 @@ public class Globe
         return transformMatrix;
     }
 
-    public static Vector<Double> GeographicDegree2DArrayToCartesianWGS84Array(Vector<Double> vecGeoCoordsDeg2D) {
-        Vector<Double> vecCartesianWgs84Array = new Vector<>();
+    public static List<Double> GeographicDegree2DArrayToCartesianWGS84Array(List<Double> vecGeoCoordsDeg2D) {
+        List<Double> vecCartesianWgs84Array = new ArrayList<>();
 
         int pointsCount = vecGeoCoordsDeg2D.size() / 2;
         Double altitude = 0.0;

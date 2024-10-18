@@ -2,6 +2,7 @@ package com.gaia3d.utils;
 
 import com.gaia3d.geometry.Triangle;
 import com.gaia3d.geometry.Vertex;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -12,44 +13,38 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
-public class StringModifier
-{
-    public static void splitString(String wordToSplit, String delimiter, Vector<String> resultSplittedStrings, boolean skipEmptyStrings) {
-        //String[] splittedStrings = wordToSplit.split(delimiter);
-
+@Slf4j
+public class StringModifier {
+    public static void splitString(String wordToSplit, String delimiter, List<String> resultSplittedStrings, boolean skipEmptyStrings) {
         StringTokenizer tokenizer = new StringTokenizer(wordToSplit, delimiter);
-        while(tokenizer.hasMoreTokens()) {
+        while (tokenizer.hasMoreTokens()) {
             String word = tokenizer.nextToken();
-
-            if(skipEmptyStrings) {
-                if (word.length() != 0) {
+            if (skipEmptyStrings) {
+                if (!word.isEmpty()) {
                     resultSplittedStrings.add(word);
                 }
             } else {
                 resultSplittedStrings.add(word);
             }
         }
+    }
 
-
-
-
-//        // discard strings with length zero.***
-//        Integer stringsCount = splittedStrings.length;
-//        for (Integer i = 0; i < stringsCount; i++) {
-//            String word = splittedStrings[i];
-//
-//            if(skipEmptyStrings) {
-//                if (word.length() != 0) {
-//                    resultSplittedStrings.add(word);
-//                }
-//            } else {
-//                resultSplittedStrings.add(word);
-//            }
-//        }
+    // discard strings with length zero
+    public static void splitStringOld(String wordToSplit, String delimiter, List<String> resultSplittedStrings, boolean skipEmptyStrings) {
+        String[] splitStrings = wordToSplit.split(delimiter);
+        for (String word : splitStrings) {
+            if (skipEmptyStrings) {
+                if (!word.isEmpty()) {
+                    resultSplittedStrings.add(word);
+                }
+            } else {
+                resultSplittedStrings.add(word);
+            }
+        }
     }
 
     public static void deleteFolder(String folderPath) {
@@ -115,8 +110,8 @@ public class StringModifier
         return false;
     }
 
-    public static Vector<String> getFolderNamesInFolder(String folderPath) {
-        Vector<String> vecFolderNames = new Vector<>();
+    public static List<String> getFolderNamesInFolder(String folderPath) {
+        List<String> vecFolderNames = new ArrayList<>();
         File folder = new File(folderPath);
 
         // Populates the array with names of files and directories
@@ -125,9 +120,9 @@ public class StringModifier
         for (int i = 0; i < filesCount; i++) {
             File file = listOfFiles[i];
 
-            // check if is a file or folder.***
+            // check if is a file or folder.
             if (file.isDirectory()) {
-                /* is a folder.*** */
+                /* is a folder. */
                 String folderName = file.getName();
                 vecFolderNames.add(folderName);
             }
@@ -142,17 +137,17 @@ public class StringModifier
         // Populates the array with names of files and directories
         File[] listOfFiles = folder.listFiles();
         int filesCount = listOfFiles.length;
-        boolean bIgnoreCase = true; // ignore char upperCase & lowerCase.***
+        boolean bIgnoreCase = true; // ignore char upperCase & lowerCase.
         for (int i = 0; i < filesCount; i++) {
             File file = listOfFiles[i];
 
-            // check if is a file or folder.***
+            // check if is a file or folder.
             if (file.isFile()) {
-                /* is a file.*** */
+                /* is a file. */
                 String fileName = file.getName();
                 Optional<String> optExtension = getExtensionByStringHandling(fileName);
                 if (optExtension.isPresent()) {
-                    // now check if the extension is coincident with wanted extension.***
+                    // now check if the extension is coincident with wanted extension.
                     String extension = optExtension.get();
                     if (checkStringCoincidences(extension, vecFileExtensions, bIgnoreCase)) {
                         vecFileNames.add(fileName);
@@ -195,21 +190,21 @@ public class StringModifier
         return bytes;
     }
 
-    public static void saveMeshToFile(String filePath, Vector<Vertex> vecVertexes, Vector<Triangle> vecTriangles, double pollutionValueMAX) {
-        // save vertexes to file.***
+    public static void saveMeshToFile(String filePath, List<Vertex> vecVertexes, List<Triangle> vecTriangles, double pollutionValueMAX) {
+        // save vertexes to file.
         try {
             int vertexesCount = vecVertexes.size();
             int trianglesCount = vecTriangles.size();
             FileOutputStream fileOutputStream = new FileOutputStream(filePath);
             DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream);
 
-            // save the pollutionValueMax.***
+            // save the pollutionValueMax.
             dataOutputStream.write(doubleToBytesInverse(pollutionValueMAX));
 
-            // now, save the vertexCount to file.***
+            // now, save the vertexCount to file.
             dataOutputStream.writeInt(bigEndianToLittleEndian(vertexesCount));
 
-            // now, save the vertex position (x, y, z) to file.***
+            // now, save the vertex position (x, y, z) to file.
             for (int i = 0; i < vertexesCount; i++) {
                 Vertex vertex = vecVertexes.get(i);
                 double x = vertex.point3d.x;
@@ -220,17 +215,17 @@ public class StringModifier
                 dataOutputStream.write(doubleToBytesInverse(y));
                 dataOutputStream.write(doubleToBytesInverse(z));
 
-                // save the pollution value.***
+                // save the pollution value.
                 dataOutputStream.write(doubleToBytesInverse(vertex.pollutionValue));
 
             }
 
-            // now, save the trianglesCount to file.***
+            // now, save the trianglesCount to file.
             GeometryUtils.setIdxInList(vecVertexes);
             int indicesCount = trianglesCount * 3;
             dataOutputStream.writeInt(bigEndianToLittleEndian(indicesCount));
 
-            // now, save the triangles to file.***
+            // now, save the triangles to file.
             for (int i = 0; i < trianglesCount; i++) {
                 Triangle triangle = vecTriangles.get(i);
                 int vertexIndex0 = triangle.vertex_0.idxInList;
@@ -242,21 +237,21 @@ public class StringModifier
                 dataOutputStream.writeInt(bigEndianToLittleEndian(vertexIndex2));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("", e);
         }
     }
 
-    public static void saveVertexesToFile(String filePath, Vector<Vertex> vecVertexes) {
-        // save vertexes to file.***
+    public static void saveVertexesToFile(String filePath, List<Vertex> vecVertexes) {
+        // save vertexes to file.
         try {
             int vertexesCount = vecVertexes.size();
             FileOutputStream fileOutputStream = new FileOutputStream(filePath);
             DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream);
 
-            // now, save the vertexCount to file.***
+            // now, save the vertexCount to file.
             dataOutputStream.writeInt(bigEndianToLittleEndian(vertexesCount));
 
-            // now, save the vertex position (x, y, z) to file.***
+            // now, save the vertex position (x, y, z) to file.
             for (int i = 0; i < vertexesCount; i++) {
                 Vertex vertex = vecVertexes.get(i);
                 double x = vertex.point3d.x;
@@ -269,7 +264,7 @@ public class StringModifier
 
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("", e);
         }
     }
 

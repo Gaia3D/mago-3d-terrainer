@@ -8,18 +8,15 @@ import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.FileImageOutputStream;
-import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 
 @Slf4j
-public class Texture2D
-{
+public class Texture2D {
     public int width, height;
     public byte[] data;
 
@@ -33,14 +30,14 @@ public class Texture2D
     }
 
     public int saveAsPNG_test(String filePathName) throws FileNotFoundException {
-        // This function saves the texture as PNG file.***
+        // This function saves the texture as PNG file.
         ImageWriter pngWriter = ImageIO.getImageWritersByFormatName("png").next();
         ImageWriteParam pngWriteParam = pngWriter.getDefaultWriteParam();
 
         return 0;
     }
 
-    // bKGD.***
+    // bKGD.
 //        IIOMetadataNode bkgdNode = new IIOMetadataNode("bKGD");
 //        IIOMetadataNode bKGDRGBnode = new IIOMetadataNode("bKGD_RGB");
 //        bKGDRGBnode.setAttribute("red", "255");
@@ -70,7 +67,6 @@ public class Texture2D
 //        bluePrimaryNode.setAttribute("x", "0.1500");
 //        bluePrimaryNode.setAttribute("y", "0.0600");
 //        srgbNode.appendChild(bluePrimaryNode);
-
 
 
     // chunk "iCCP" para indicar el perfil ICC de la imagen
@@ -125,10 +121,9 @@ public class Texture2D
 //
 
     public int saveAsPNG(String filePathName) throws FileNotFoundException, IIOInvalidTreeException {
-        // This function saves the texture as PNG file.***
+        // This function saves the texture as PNG file.
         BufferedImage myImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR); // Reemplaza con tu imagen
         myImage.getRaster().setDataElements(0, 0, width, height, data);
-
 
 
         ImageWriter pngWriter = ImageIO.getImageWritersByFormatName("PNG").next();
@@ -148,7 +143,7 @@ public class Texture2D
 
         IIOMetadata metadata = pngWriter.getDefaultImageMetadata(new ImageTypeSpecifier(myImage), pngWriteParam);
 
-        // chunks.***
+        // chunks.
         // https://www.javatips.net/api/javax.imageio.metadata.iiometadatanode
         String metadataFormat = "javax_imageio_png_1.0";
         IIOMetadataNode root = new IIOMetadataNode(metadataFormat);
@@ -193,9 +188,6 @@ public class Texture2D
         root.appendChild(sbitNode);
 
 
-
-
-
         //metadata.setFromTree(metadataFormat, root);
         metadata.mergeTree(metadataFormat, root);
 
@@ -228,7 +220,7 @@ public class Texture2D
 
            log.info("Imagen guardada como " + filePathName);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("", e);
         }
 
          */
@@ -237,26 +229,23 @@ public class Texture2D
     }
 
     public int saveAsPNG_testRGBA(String filePathName) throws FileNotFoundException, IIOInvalidTreeException {
-        // This function saves the texture as PNG file.***
+        // This function saves the texture as PNG file.
         BufferedImage myImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR); // Reemplaza con tu imagen
         //myImage.getRaster().setDataElements(0, 0, width, height, data);
-        // revert ABGR to RGBA.***
+        // revert ABGR to RGBA.
         byte[] reverted = new byte[data.length];
-        for(int col = 0; col < width; col++)
-        {
-            for(int row = 0; row < height; row++)
-            {
+        for (int col = 0; col < width; col++) {
+            for (int row = 0; row < height; row++) {
                 int index = (row * width + col) * 4;
 
-                if(data[index] != 0 || data[index + 1] != 0 || data[index + 2] != 0 || data[index + 3] != 0)
-                {
+                if (data[index] != 0 || data[index + 1] != 0 || data[index + 2] != 0 || data[index + 3] != 0) {
                     int a = 0;
                 }
 
-                reverted[index] = data[index+3];
+                reverted[index] = data[index + 3];
                 reverted[index + 1] = data[index + 2];
                 reverted[index + 2] = data[index + 1];
-                reverted[index + 3] = data[index + 0];
+                reverted[index + 3] = data[index];
             }
         }
 
@@ -279,7 +268,7 @@ public class Texture2D
 
         IIOMetadata metadata = pngWriter.getDefaultImageMetadata(new ImageTypeSpecifier(myImage), pngWriteParam);
 
-        // chunks.***
+        // chunks.
         // https://www.javatips.net/api/javax.imageio.metadata.iiometadatanode
         String metadataFormat = "javax_imageio_png_1.0";
         IIOMetadataNode root = new IIOMetadataNode(metadataFormat);
@@ -325,11 +314,8 @@ public class Texture2D
         // chunk "gAMA" para indicar el valor gamma de la imagen
         int gAMA_gamma = 45455; // 1.0 / 2.2 * 100000
         IIOMetadataNode gamaNode = new IIOMetadataNode("gAMA");
-        gamaNode.setAttribute("value",  Integer.toString(gAMA_gamma));
+        gamaNode.setAttribute("value", Integer.toString(gAMA_gamma));
         root.appendChild(gamaNode);
-
-
-        
 
 
         //metadata.setFromTree(metadataFormat, root);
@@ -349,21 +335,21 @@ public class Texture2D
     }
 
     public int saveAsPNG_old(String filePathName) {
-        // This function saves the texture as PNG file.***
+        // This function saves the texture as PNG file.
         BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
         bufferedImage.getRaster().setDataElements(0, 0, width, height, data);
 
         try {
             ImageIO.write(bufferedImage, "png", new File(filePathName));
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("", e);
         }
 
         return 0;
     }
 
     public int saveAsPNG_original(String filePathName) {
-        // This function saves the texture as PNG file.***
+        // This function saves the texture as PNG file.
         DataBufferByte dataBufferByte = new DataBufferByte(data, data.length);
         WritableRaster raster = Raster.createInterleavedRaster(dataBufferByte, width, height, width * 4, 4, new int[]{0, 1, 2, 3}, null);
         ColorModel colorModel = new ComponentColorModel(ColorModel.getRGBdefault().getColorSpace(), true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
@@ -375,7 +361,7 @@ public class Texture2D
             ImageIO.write(bufferedImage, "png", file);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("", e);
             return -1;
         }
 

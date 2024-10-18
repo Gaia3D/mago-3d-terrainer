@@ -2,13 +2,12 @@ package com.gaia3d.geometry;
 
 import com.gaia3d.utils.GeometryUtils;
 
-public class Line
-{
+public class Line {
     public Point3D point = new Point3D();
     public Point3D direction = new Point3D();
 
     public boolean isParallelXYtoLine(Line line, double error) {
-        // This function checks if the line is parallel to the input line in XY plane.***
+        // This function checks if the line is parallel to the input line in XY plane.
         double crossProduct = GeometryUtils.crossProduct2D(this.direction, line.direction);
         if (crossProduct < error && crossProduct > -error) {
             return true;
@@ -24,11 +23,11 @@ public class Line
         }
 
         Point3D intersectedPoint = new Point3D();
-        // y1 = A1x+B1.***
-        // y2 = A2x+B2.***
-        // A1x+B1 = A2x+B2.***
-        // x(A1-A2) = B2-B1.***
-        // x = (B2-B1)/(A1-A2).***
+        // y1 = A1x+B1.
+        // y2 = A2x+B2.
+        // A1x+B1 = A2x+B2.
+        // x(A1-A2) = B2-B1.
+        // x = (B2-B1)/(A1-A2).
         double A1 = this.direction.y / this.direction.x;
         double B1 = this.point.y - A1 * this.point.x;
         double A2 = line.direction.y / line.direction.x;
