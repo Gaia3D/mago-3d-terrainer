@@ -25,7 +25,7 @@ class MainTest2 {
     @Test
     void main_B_NO2_20240919_01() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\deia\\mock-nineeco-ftp\\datas\\815ba274-658a-4056-ae7f-bb474c816115\\BDI006\\output\\B_NO2\\index01.json";
-        String outputFolderPath = "D:\\data\\deia\\mock-nineeco-ftp\\datas\\815ba274-658a-4056-ae7f-bb474c816115\\BDI006\\result\\B_NO2\\01\\";
+        String outputFolderPath = "D:\\data\\deia\\mock-nineeco-ftp\\datas\\815ba274-658a-4056-ae7f-bb474c816115\\BDI006\\result\\temp\\";
         String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
 
         Main.main(testArgs);

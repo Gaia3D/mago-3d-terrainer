@@ -15,7 +15,8 @@ public class DataContainer {
     public double width_km = 0.0;
     public double height_km = 0.0;
 
-    public String originalSourceProj4 = "";
+    public String sourceProj = "";
+    public String targetProj = "";
     public ArrayList<DataLayer> dataLayers = new ArrayList<>();
 
     public ArrayList<String> datesArray = new ArrayList<>();

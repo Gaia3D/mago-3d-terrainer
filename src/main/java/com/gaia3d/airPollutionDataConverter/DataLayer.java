@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class DataLayer {
+    public int layerIndex = -1;
     public String filePath;
     public double altitude = 0.0;
 
