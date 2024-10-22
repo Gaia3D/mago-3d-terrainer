@@ -28,11 +28,11 @@ import static java.lang.Math.abs;
 
 @Slf4j
 public class TileMatrix {
+    private final double VERTEXT_COINCIDENT_ERROR = 0.0000000000001;
     private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TilesRange tilesRange;
     private final List<List<TileWgs84>> tilesMatrixRowCol = new ArrayList<>();
     public TileWgs84Manager manager = null;
-    double vertexCoincidentError = 0.0000000000001;
     // the tilesMatrixRowCol is a matrix of tiles
     // all the arrays have the same length
 
@@ -45,12 +45,10 @@ public class TileMatrix {
         this.manager = manager;
     }
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         for (List<TileWgs84> row : tilesMatrixRowCol) {
             for (TileWgs84 tile : row) {
-                if(tile != null)
-                    tile.deleteObjects();
+                if (tile != null) tile.deleteObjects();
             }
         }
 
@@ -65,7 +63,7 @@ public class TileMatrix {
                 continue;
             }
 
-            if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, vertexCoincidentError, axisToCheck)) {
+            if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, VERTEXT_COINCIDENT_ERROR, axisToCheck)) {
                 // 1rst, must change the startVertex & endVertex of the halfEdge2
                 GaiaVertex startVertex = halfEdge.getStartVertex();
                 GaiaVertex endVertex = halfEdge.getEndVertex();
@@ -464,7 +462,7 @@ public class TileMatrix {
     }
 
     private List<GaiaHalfEdge> getHalfEdgesOfTriangles(List<GaiaTriangle> triangles, List<GaiaHalfEdge> resultHalfEdges, List<GaiaHalfEdge> listHalfEdgesMemSave) {
-        if(resultHalfEdges == null) {
+        if (resultHalfEdges == null) {
             resultHalfEdges = new ArrayList<>();
         }
         //List<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();

@@ -25,7 +25,7 @@ public class GlobalOptions {
     private static final GlobalOptions instance = new GlobalOptions();
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 12;
+    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 20;
     private static final int DEFAULT_MOSAIC_SIZE = 32;
     private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
     private static final boolean DEFAULT_CALCULATE_NORMALS = false;
@@ -94,6 +94,10 @@ public class GlobalOptions {
             instance.setMaximumTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())));
         } else {
             instance.setMaximumTileDepth(DEFAULT_MAXIMUM_TILE_DEPTH);
+        }
+
+        if (instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {
+            throw new IllegalArgumentException("Minimum tile depth must be less than or equal to maximum tile depth.");
         }
 
         if (command.hasOption(ProcessOptions.INTERPOLATION_TYPE.getArgName())) {

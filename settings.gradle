@@ -1,0 +1,6 @@
+rootProject.name = 'mago-3d-terrainer'
+include ':mago-terrainer'
+project(':mago-terrainer').projectDir = new File(settingsDir, './terrainer')
+
+include ':mago-common'
+project(':mago-common').projectDir = new File(settingsDir, './common')

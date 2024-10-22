@@ -15,11 +15,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-
 @Getter
 @Setter
 @Slf4j
 public class TerrainLayer {
+    private final List<TilesRange> available = new ArrayList<>();
     private String tilejson = null;
     private String name = null;
     private String description = null;
@@ -31,10 +31,8 @@ public class TerrainLayer {
     private String scheme = null;
     private List<String> extensions = null;
     private String[] tiles = null;
-
     private String projection = null;
     private double[] bounds = null;
-    private final List<TilesRange> available = new ArrayList<>();
 
     public TerrainLayer() {
         this.setDefault();

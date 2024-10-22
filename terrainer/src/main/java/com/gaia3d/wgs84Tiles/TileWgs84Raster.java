@@ -73,8 +73,7 @@ public class TileWgs84Raster {
         return elevations[idx];
     }
 
-    public float getElevationBilinear(double lonDeg, double latDeg)
-    {
+    public float getElevationBilinear(double lonDeg, double latDeg) {
         int col = getColumn(lonDeg);
         int row = getRow(latDeg);
 
@@ -123,8 +122,8 @@ public class TileWgs84Raster {
         // TODO : must check if the rasterWidth and rasterHeight are valid values. In low definition geoTiff files is possible that the
         // columns count and rows count are less than rasterWidth and rasterHeight.
 
-        deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth-1);
-        deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight-1);
+        deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth - 1);
+        deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight - 1);
 
         double semiDeltaLonDeg = deltaLonDeg * 0.5;
         double semiDeltaLatDeg = deltaLatDeg * 0.5;

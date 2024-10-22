@@ -45,8 +45,7 @@ public class GaiaTriangle {
     public List<GaiaVertex> getVertices(List<GaiaVertex> resultVertices, List<GaiaHalfEdge> listHalfEdgesMemSave) {
         listHalfEdgesMemSave.clear();
         this.halfEdge.getHalfEdgesLoop(listHalfEdgesMemSave);
-        if(resultVertices == null)
-            resultVertices = new ArrayList<>();
+        if (resultVertices == null) resultVertices = new ArrayList<>();
         for (GaiaHalfEdge halfEdge : listHalfEdgesMemSave) {
             resultVertices.add(halfEdge.getStartVertex());
         }
@@ -186,9 +185,9 @@ public class GaiaTriangle {
     public double getTriangleMaxSizeInMeters(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
         listHalfEdgesMemSave.clear();
         GaiaBoundingBox bboxTriangle = this.getBoundingBox(listVerticesMemSave, listHalfEdgesMemSave);
-        double triangleMaxLegthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
-        double triangleMaxLegthRad = Math.toRadians(triangleMaxLegthDeg);
-        return triangleMaxLegthRad * GlobeUtils.EQUATORIAL_RADIUS;
+        double triangleMaxLengthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
+        double triangleMaxLengthRad = Math.toRadians(triangleMaxLengthDeg);
+        return triangleMaxLengthRad * GlobeUtils.EQUATORIAL_RADIUS;
     }
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {

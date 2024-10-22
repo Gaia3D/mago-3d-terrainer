@@ -47,8 +47,7 @@ public class TerrainElevationData {
             this.coverage = null;
         }
 
-        if(this.memSaveNoDataContainer != null)
-        {
+        if (this.memSaveNoDataContainer != null) {
             this.memSaveNoDataContainer = null;
         }
         this.raster = null;
@@ -81,8 +80,7 @@ public class TerrainElevationData {
 
     public double getGridValue(int x, int y) {
         double value = 0.0;
-        if(raster == null)
-        {
+        if (raster == null) {
             GaiaGeoTiffManager gaiaGeoTiffManager = null;
 
             if (this.coverage == null) {
@@ -101,8 +99,7 @@ public class TerrainElevationData {
                 this.coverage = null;
             }
 
-            if(gaiaGeoTiffManager != null)
-            {
+            if (gaiaGeoTiffManager != null) {
                 gaiaGeoTiffManager.deleteObjects();
             }
         }
@@ -181,11 +178,11 @@ public class TerrainElevationData {
         int columnNext = column + 1;
         int rowNext = row + 1;
 
-        if(columnNext >= rasterWidth) {
+        if (columnNext >= rasterWidth) {
             columnNext = rasterWidth - 1;
         }
 
-        if(rowNext >= rasterHeight) {
+        if (rowNext >= rasterHeight) {
             rowNext = rasterHeight - 1;
         }
 

@@ -10,6 +10,8 @@ import java.util.List;
 @Getter
 @Setter
 public class TerrainElevationDataQuadTree {
+    private static final int CHILDREN_COUNT = 4;
+    private int depth = 0;
     // A region is represented by multiple small geoTiff files
     // Here, we use a quadtree to represent a region
     // The quadtree is a tree data structure in which each internal node has exactly four children
@@ -18,13 +20,10 @@ public class TerrainElevationDataQuadTree {
     private TerrainElevationDataQuadTree[] children = null;
     private List<TerrainElevationData> terrainElevationDataList = new ArrayList<>();
 
-    private static final int CHILDREN_COUNT = 4;
-    int depth = 0;
-
     public TerrainElevationDataQuadTree(TerrainElevationDataQuadTree parent) {
         this.parent = parent;
         if (parent != null) {
-            this.depth = parent.depth + 1;
+            this.depth = parent.getDepth() + 1;
         }
     }
 

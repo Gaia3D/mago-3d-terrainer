@@ -92,10 +92,6 @@ public class TerrainElevationDataManager {
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
         TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
         if (tileWgs84Raster == null) {
-            if(tileIndices.getL() == 0)
-            {
-                int hola = 0;
-            }
             tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
             int tileRasterWidth = tileWgs84Manager.getTileRasterSize();
             int tileRasterHeight = tileWgs84Manager.getTileRasterSize();

@@ -4,9 +4,6 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.0'
 }
 
-group = 'com.gaia3d'
-version = '1.5.6'
-
 repositories {
     maven { url "https://repo.osgeo.org/repository/release/"}
     mavenCentral()
@@ -43,7 +40,7 @@ dependencies {
     implementation "javax.media:jai_imageio:1.1"
 
     implementation "org.jdom:jdom2:2.0.6"
-    implementation project(":mago-common")
+    //implementation project(":mago-common")
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -58,8 +55,9 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform()
-    exclude '**/*'
+    useJUnitPlatform {
+        includeTags 'Mandatory'
+    }
 }
 
 jib {

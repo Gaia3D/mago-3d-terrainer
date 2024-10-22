@@ -606,12 +606,6 @@ public class GaiaMesh {
             //double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
             midPosition.z = elevation;
 
-//            if(abs(elevation - elevationTest) > 20)
-//            {
-//                int hola = 0;
-//                double elevationTest2 = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
-//            }
-
             midVertex.setPosition(midPosition);
 
             // need longEdge_startVertex and longEdge_endVertex

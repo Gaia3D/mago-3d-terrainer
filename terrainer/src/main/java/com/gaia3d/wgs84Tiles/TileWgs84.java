@@ -4,23 +4,17 @@ import com.gaia3d.basic.structure.*;
 import com.gaia3d.basic.types.HalfEdgeType;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.reader.FileUtils;
-import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.util.io.BigEndianDataInputStream;
 import com.gaia3d.util.io.BigEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static java.lang.Math.abs;
 
 @Getter
 @Setter
@@ -214,8 +208,6 @@ public class TileWgs84 {
         this.mesh.setObjectsIdInList();
 
     }
-
-
 
 
     private boolean refineMeshOneIterationInitial(GaiaMesh mesh) throws TransformException, IOException {

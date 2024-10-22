@@ -1,13 +1,17 @@
 package com.gaia3d.command;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-public class DefaultUnitTest {
+@Tag("Mandatory")
+@Slf4j
+public class DefaultTest {
 
     @Test
     void help() {
@@ -21,12 +25,10 @@ public class DefaultUnitTest {
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
         File outputPath = new File(samplePath, "output");
-        File logPath = new File(outputPath, "log.txt");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-log", logPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "10",
                 //"-d",
@@ -41,12 +43,10 @@ public class DefaultUnitTest {
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
         File outputPath = new File(samplePath, "output");
-        File logPath = new File(outputPath, "log.txt");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-log", logPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "12",
                 //"-d",
@@ -61,12 +61,10 @@ public class DefaultUnitTest {
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
         File outputPath = new File(samplePath, "output");
-        File logPath = new File(outputPath, "log.txt");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-log", logPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "10",
                 "-interpolationType", "nearest",
@@ -82,12 +80,10 @@ public class DefaultUnitTest {
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
         File outputPath = new File(samplePath, "output");
-        File logPath = new File(outputPath, "log.txt");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-log", logPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "12",
                 "-interpolationType", "nearest",
@@ -138,4 +134,66 @@ public class DefaultUnitTest {
         MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
     }*/
+
+    @Test
+    void sampleWrongCaseNoInput() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
+        File inputPath = new File(samplePath, "input");
+        File outputPath = new File(samplePath, "output");
+
+        String[] args = new String[]{
+                "-output", outputPath.getAbsolutePath(),
+                "-max", "12",
+        };
+
+        try {
+            MagoTerrainerMain.main(args);
+            assert false;
+        } catch (Exception e) {
+            log.error("", e);
+        }
+    }
+
+    @Test
+    void sampleWrongCaseNoOutput() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
+        File inputPath = new File(samplePath, "input");
+        File outputPath = new File(samplePath, "output");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-max", "12",
+        };
+
+        try {
+            MagoTerrainerMain.main(args);
+            assert false;
+        } catch (Exception e) {
+            log.error("", e);
+        }
+    }
+
+    @Test
+    void sampleWrongCaseLowMaxDepthThanMinDepth() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
+        File inputPath = new File(samplePath, "input");
+        File outputPath = new File(samplePath, "output");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "12",
+                "-max", "5",
+        };
+
+        try {
+            MagoTerrainerMain.main(args);
+            assert false;
+        } catch (Exception e) {
+            log.error("", e);
+        }
+    }
 }

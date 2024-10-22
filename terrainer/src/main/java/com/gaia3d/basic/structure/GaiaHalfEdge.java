@@ -18,14 +18,12 @@ import java.util.List;
 @Getter
 @Setter
 public class GaiaHalfEdge {
-    @Getter
+    private int id = -1;
+
     private GaiaVertex startVertex = null;
-    @Getter
     private GaiaHalfEdge next = null;
     private GaiaHalfEdge twin = null;
     private GaiaTriangle triangle = null;
-
-    private int id = -1;
 
     private int startVertexId = -1;
     private int nextId = -1;

@@ -5,9 +5,9 @@ This is the Java version of the Quantized mesh generator for Cesium.
 ---
 ### Usage
 ```bash
-┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┳┳┓┏┓┏┓┓┏┏┓┳┓
-┃┃┃┣┫┃┓┃┃   ┫┃┃  ┃┃┃┣ ┗┓┣┫┣ ┣┫
-┛ ┗┛┗┗┛┗┛  ┗┛┻┛  ┛ ┗┗┛┗┛┛┗┗┛┛┗
+┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┏┳┓┏┓┳┓┳┓┏┓┳┳┓┏┓┳┓
+┃┃┃┣┫┃┓┃┃   ┫┃┃   ┃ ┣ ┣┫┣┫┣┫┃┃┃┣ ┣┫
+┛ ┗┛┗┗┛┗┛  ┗┛┻┛   ┻ ┗┛┛┗┛┗┛┗┻┛┗┗┛┛┗
 3d-mesher(dev-version) by Gaia3D, Inc.
 ----------------------------------------
 usage: Mago 3D Quantized Mesher
@@ -18,6 +18,8 @@ usage: Mago 3D Quantized Mesher
  -it,--interpolationType <arg>   Interpolation type (nearest, bilinear)
  -l,--log <arg>                  Log file path
  -mn,--minDepth <arg>            Minimum tile depth (0 ~ 22)
+ -mr,--rasterMaxSize <arg>       Maximum raster size (default : 8192)
+ -ms,--mosaicSize <arg>          Tiling mosaic size (default : 32)
  -mx,--maxDepth <arg>            Maximum tile depth (0 ~ 22)
  -o,--output <arg>               Output folder path
  -rs,--strength                  Mesh refinement strength

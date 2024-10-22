@@ -12,6 +12,7 @@ import org.joml.Vector2d;
  * It can be used to calculate the center and volume of the geometry.
  * It can also be used to convert the local bounding rectangle to lonlat bounding rectangle.
  * It can also be used to calculate the longest distance of the geometry.
+ *
  * @see GaiaBoundingBox
  * @since 1.0.0
  */
@@ -30,18 +31,6 @@ public class GaiaRectangle {
         addPoint(maxPoint);
     }
 
-    /*public Vector2d getCenter() {
-        return new Vector2d((minX + maxX) / 2, (minY + maxY) / 2);
-    }*/
-
-    /*public Vector2d getVolume() {
-        return new Vector2d(maxX - minX, maxY - minY);
-    }*/
-
-    /*public Vector2d getCenterCorrected() {
-        return new Vector2d((minX + maxX) / 2, (minY + maxY) / 2);
-    }*/
-
     public Vector2d getRange() {
         return new Vector2d(maxX - minX, maxY - minY);
     }
@@ -53,10 +42,6 @@ public class GaiaRectangle {
     public Vector2d getRightTopPoint() {
         return new Vector2d(maxX, minY);
     }
-
-    /*public double getBoundingArea() {
-        return (maxX * maxY);
-    }*/
 
     public double getArea() {
         return ((maxX - minX) * (maxY - minY));

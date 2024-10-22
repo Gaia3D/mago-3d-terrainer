@@ -39,12 +39,12 @@ public class TilesRange {
         TilesRange expandedTilesRange = new TilesRange();
         expandedTilesRange.setTileDepth(tileDepth);
         int expandedMinTileX = minTileX - 1;
-        if(expandedMinTileX < 0) {
+        if (expandedMinTileX < 0) {
             expandedMinTileX = 0;
         }
         int expandedMaxTileX = maxTileX + 1;
         int expandedMinTileY = minTileY - 1;
-        if(expandedMinTileY < 0) {
+        if (expandedMinTileY < 0) {
             expandedMinTileY = 0;
         }
         int expandedMaxTileY = maxTileY + 1;

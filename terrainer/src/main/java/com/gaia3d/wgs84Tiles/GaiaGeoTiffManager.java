@@ -1,13 +1,11 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.command.InterpolationType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
@@ -17,7 +15,6 @@ import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
 
-import javax.media.jai.Interpolation;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -41,8 +38,7 @@ public class GaiaGeoTiffManager {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         int gridCoverage2dCount = mapPathGridCoverage2d.size();
-        if(gridCoverage2dCount > 0)
-        {
+        if (gridCoverage2dCount > 0) {
             // delete the first one
             String firstKey = mapPathGridCoverage2d.keySet().iterator().next();
             GridCoverage2D firstCoverage = mapPathGridCoverage2d.get(firstKey);
@@ -81,16 +77,14 @@ public class GaiaGeoTiffManager {
     }
 
     public Vector2i getGridCoverage2DSize(String geoTiffFilePath) {
-        if(mapPathGridCoverage2dSize.containsKey(geoTiffFilePath) == false)
-        {
+        if (!mapPathGridCoverage2dSize.containsKey(geoTiffFilePath)) {
             GridCoverage2D coverage = loadGeoTiffGridCoverage2D(geoTiffFilePath);
             //coverage.dispose(true);
         }
         return mapPathGridCoverage2dSize.get(geoTiffFilePath);
     }
 
-    public void deleteObjects()
-    {
+    public void deleteObjects() {
         for (GridCoverage2D coverage : mapPathGridCoverage2d.values()) {
             coverage.dispose(true);
         }

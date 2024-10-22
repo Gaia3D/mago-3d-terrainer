@@ -28,17 +28,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class TileWgs84Manager {
     private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
-
-    private TerrainElevationDataManager terrainElevationDataManager = null;
     // For each depth level, use a different folder
     private final Map<Integer, String> depthGeoTiffFolderPathMap = new HashMap<>();
     private final Map<Integer, Double> depthDesiredPixelSizeXinMetersMap = new HashMap<>();
     private final Map<Integer, Double> depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap = new HashMap<>();
     private final List<TileWgs84> tileWgs84List = new ArrayList<>();
-    private String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
-
     // tileRasterSize : when triangles refinement, we use a DEM raster of this size
     private final int tileRasterSize = 256;
+    private TerrainElevationDataManager terrainElevationDataManager = null;
+    private String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
     private int refinementStrength = 1; // 1 = normal.
 
     private int geoTiffFilesCount = 0;
@@ -174,21 +172,20 @@ public class TileWgs84Manager {
             List<TilesRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, maxCol, maxRow, null);
 
             log.info("------------------------------------");
-            log.info("[Tiling] Start making tile meshes for depth: {} - DividedTilesRanges.size: {}", depth, subDividedTilesRanges.size());
+            log.info("[Tile] Start making tile meshes for depth: {} - DividedTilesRanges.size: {}", depth, subDividedTilesRanges.size());
             AtomicInteger counter = new AtomicInteger(0);
             int total = subDividedTilesRanges.size();
             for (TilesRange subDividedTilesRange : subDividedTilesRanges) {
                 // 1rst, make all tilew rastyers.***
                 TilesRange expandedTilesRange = subDividedTilesRange.expand1();
                 this.terrainElevationDataManager.makeAllTileWgs84Rasters(expandedTilesRange, this);
-                if (this.geoTiffFilesCount > 1)
-                {
+                if (this.geoTiffFilesCount > 1) {
                     this.terrainElevationDataManager.deleteGeoTiffManager();
                     this.terrainElevationDataManager.deleteCoverage();
                 }
 
                 int progress = counter.incrementAndGet();
-                log.info("[Tiling] - {} depth tile progress... [{}/{}]", depth, progress, total);
+                log.info("[Tile] - {} depth tile progress... [{}/{}]", depth, progress, total);
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
                 boolean is1rstGeneration = depth == minTileDepth;
                 tileMatrix.makeMatrixMesh(is1rstGeneration);
@@ -196,8 +193,7 @@ public class TileWgs84Manager {
                 // now delete the tileMatrix to free memory.
                 tileMatrix.deleteObjects();
 
-                if (this.geoTiffFilesCount > 1)
-                {
+                if (this.geoTiffFilesCount > 1) {
                     this.terrainElevationDataManager.deleteGeoTiffManager();
                     this.terrainElevationDataManager.deleteCoverage();
                 }
@@ -208,20 +204,20 @@ public class TileWgs84Manager {
             Date endDate = new Date(endTime);
 
 
-            log.info("[Tiling] End making tile meshes for depth: {} - Duration: {} ms}", depth, timeFormat(endTime - startTime));
+            log.info("[Tile] End making tile meshes for depth: {} - Duration: {} ms}", depth, timeFormat(endTime - startTime));
 
             String javaHeapSize = System.getProperty("java.vm.name") + " " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB";
             // java vm이 사용할수 있는 총 메모리(bytes), -Xmx
-            long maxMem = Runtime.getRuntime().maxMemory()/1024/1024;
+            long maxMem = Runtime.getRuntime().maxMemory() / 1024 / 1024;
             // java vm에 할당된 총 메모리
-            long totalMem = Runtime.getRuntime().totalMemory()/1024/1024;
+            long totalMem = Runtime.getRuntime().totalMemory() / 1024 / 1024;
             // java vm이 추가로 할당 가능한 메모리
-            long freeMem = Runtime.getRuntime().freeMemory()/1024/1024;
+            long freeMem = Runtime.getRuntime().freeMemory() / 1024 / 1024;
             // 현재 사용중인 메모리
             long usedMem = totalMem - freeMem;
             // 퍼센트
             double pct = usedMem * 100 / maxMem;
-            log.info("[Tiling] - Java Heap Size: {} - MaxMem: {}MB - TotalMem: {}MB - FreeMem: {}MB - UsedMem: {}MB - Pct: {}%", javaHeapSize, maxMem, totalMem, freeMem, usedMem, pct);
+            log.info("[Tile] - Java Heap Size: {} - MaxMem: {}MB - TotalMem: {}MB - FreeMem: {}MB - UsedMem: {}MB - Pct: {}%", javaHeapSize, maxMem, totalMem, freeMem, usedMem, pct);
         }
 
         // finally save the terrainLayer.json
@@ -332,8 +328,7 @@ public class TileWgs84Manager {
         return neighborTile;
     }
 
-    private void addNoUsableGeotiffPath(String noUsableGeotiffPath)
-    {
+    private void addNoUsableGeotiffPath(String noUsableGeotiffPath) {
         this.mapNoUsableGeotiffPaths.put(noUsableGeotiffPath, noUsableGeotiffPath);
     }
 
@@ -383,18 +378,14 @@ public class TileWgs84Manager {
             int cols = (int) Math.ceil(width / maxPixelsWidth);
             int rows = (int) Math.ceil(height / maxPixelsWidth);
 
-            if(cols == 1 && rows == 1)
-            {
+            if (cols == 1 && rows == 1) {
                 // in this case, do nothing
                 continue;
             }
 
-            if(width <= maxPixelsWidth && height <= maxPixelsWidth)
-            {
+            if (width <= maxPixelsWidth && height <= maxPixelsWidth) {
                 // in this case, do nothing
-            }
-            else
-            {
+            } else {
                 // the "geoTiffFileName" is no usable. Instead, use the split geoTiffs.***
                 this.addNoUsableGeotiffPath(geoTiffFilePath);
                 double tileWidth = envelope.getWidth() / cols;
@@ -407,8 +398,7 @@ public class TileWgs84Manager {
 
                         // check if "outputFilePath" already exists
                         File outputFile = new File(splitTiffTempPath, outputFilePath);
-                        if(outputFile.exists())
-                        {
+                        if (outputFile.exists()) {
                             continue;
                         }
 
@@ -467,7 +457,7 @@ public class TileWgs84Manager {
         int geotiffCount = geoTiffFilePaths.size();
         this.setGeoTiffFilesCount(geotiffCount);
 
-        log.info("[Resize GeoTiff] resizing geoTiffs Count : {} ", geotiffCount);
+        log.info("[Pre][Resize GeoTiff] resizing geoTiffs Count : {} ", geotiffCount);
 
         if (geotiffCount == 1) {
             this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);
@@ -503,7 +493,7 @@ public class TileWgs84Manager {
             CoordinateReferenceSystem crsTarget = originalGridCoverage2D.getCoordinateReferenceSystem2D();
             if (!(crsTarget instanceof ProjectedCRS || crsTarget instanceof GeographicCRS)) {
                 log.error("The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems");
-                throw new GeoTiffException( null, "The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems", null);
+                throw new GeoTiffException(null, "The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems", null);
                 //continue;
             }
 
