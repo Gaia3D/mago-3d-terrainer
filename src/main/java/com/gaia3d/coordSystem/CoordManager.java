@@ -21,7 +21,7 @@ public class CoordManager {
         BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, target);
         ProjCoordinate result = new ProjCoordinate();
         transformer.transform(coordinate, result);
-        return transformToWGS84(source, coordinate);
+        return result;
     }
 
     public void convertLocationIndicesTo4326() throws FactoryException, TransformException {

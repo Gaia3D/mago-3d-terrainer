@@ -11,7 +11,7 @@ import java.text.ParseException;
 @Slf4j
 class MainCaseTest {
 
-    private final String MAIN_PATH = "D:\\data\\deia\\mock-nineeco-ftp\\datas\\815ba274-658a-4056-ae7f-bb474c816115\\BDI006\\";
+    private final String MAIN_PATH = "G:\\datas\\815ba274-658a-4056-ae7f-bb474c816115\\BDI006\\";
 
     @Test
     void testHelp() throws ParseException, IOException, org.apache.commons.cli.ParseException {

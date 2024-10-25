@@ -348,17 +348,15 @@ public class AirPollutionDataConverter {
                     ObjectNode objectNode = objectMapper.createObjectNode();
                     objectNode.put("X", airPollutionPixelData.X);
                     objectNode.put("Y", airPollutionPixelData.Y);
-                    objectNode.put("averageConcentration", airPollutionPixelData.averageConcentration);
+                    objectNode.put("AVERAGE_CONC", airPollutionPixelData.averageConcentration);
                     objectNode.put("ZELEV", airPollutionPixelData.ZELEV);
                     objectNode.put("ZHILL", airPollutionPixelData.ZHILL);
                     objectNode.put("ZFLAG", airPollutionPixelData.ZFLAG);
                     objectNode.put("AVE", airPollutionPixelData.AVE);
                     objectNode.put("GRP", airPollutionPixelData.GRP);
                     objectNode.put("DATE", airPollutionPixelData.DATE);
-
                     objectNodeRoot.add(objectNode);
                 }
-
                 objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
             }
 
