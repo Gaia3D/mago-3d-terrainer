@@ -84,6 +84,8 @@ public class AirPollutionDataConverter {
 //    }
     public DataContainer dataContainer = null;
 
+    private Map<String, AirPollutionResultData> airPollutionResultDataMap = new HashMap<>();
+
     public int maxDatesAllowed = -1; // if negative value, then no limit.
     public double scale = 1.0;
 
@@ -257,6 +259,26 @@ public class AirPollutionDataConverter {
                     double convertedZ = result.z;
 
                     double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
+
+
+                    String key = convertedX + "," + convertedY;
+
+                    AirPollutionResultData newAirPollutionNoNetPixelData = AirPollutionResultData.builder()
+                            .xPosition(convertedX)
+                            .yPosition(convertedY)
+                            .maximumValue(pollutionValue)
+                            .date(vecStrings.get(8))
+                            .build();
+
+                    AirPollutionResultData airPollutionResultData = airPollutionResultDataMap.get(key);
+                    if (airPollutionResultData == null) {
+                        airPollutionResultDataMap.put(key, newAirPollutionNoNetPixelData);
+                    } else {
+                        if (pollutionValue > airPollutionResultData.getMaximumValue()) {
+                            airPollutionResultData.setMaximumValue(pollutionValue);
+                            airPollutionResultData.setDate(vecStrings.get(8));
+                        }
+                    }
 
                     AirPollutionNoNetPixelData airPollutionNoNetPixelData = new AirPollutionNoNetPixelData();
                     airPollutionNoNetPixelData.X = convertedX;
@@ -502,6 +524,21 @@ public class AirPollutionDataConverter {
             }
             dataLayer.tempFilesMap.clear();
             this.makeTempFiles(filePath, outputFolderPath, dataLayer);
+        }
+        writeResultData(outputFolderPath);
+        log.info("End making temp files.");
+
+    }
+
+    private void writeResultData(String outputFolderPath) {
+        List<AirPollutionResultData> airPollutionResultDataList = new ArrayList<>(airPollutionResultDataMap.values());
+        String outputNoNetJsonFolderPath = outputFolderPath + File.separator + "noNetJson";
+        StringModifier.createFolderIfNoExists(Paths.get(outputNoNetJsonFolderPath));
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(outputNoNetJsonFolderPath, "result_noNet.json"), airPollutionResultDataList);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
