@@ -1,13 +1,13 @@
 package com.gaia3d.airPollutionDataConverter;
 
 import com.gaia3d.geometry.BoundingBox;
-import org.locationtech.jts.math.Vector3D;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.TreeMap;
 
-public class DataContainer
-{
+@NoArgsConstructor
+public class DataContainer {
     public double centerGeoCoordLongitudeDegree = 0.0;
     public double centerGeoCoordLatitudeDegree = 0.0;
     public double centerGeoCoordAltitude = 0.0;
@@ -15,7 +15,8 @@ public class DataContainer
     public double width_km = 0.0;
     public double height_km = 0.0;
 
-    public String originalSourceProj4 = "";
+    public String sourceProj = "";
+    public String targetProj = "";
     public ArrayList<DataLayer> dataLayers = new ArrayList<>();
 
     public ArrayList<String> datesArray = new ArrayList<>();
@@ -42,43 +43,28 @@ public class DataContainer
     public ArrayList<PngsBinaryBlockData> pngsBinDataArray = new ArrayList<>();
     public ArrayList<String> mosaicTexMetaDataFileNames = new ArrayList<>();
 
-
-    public DataContainer()
-    {
-
-    }
-
-    public void addDataLayer(DataLayer dataLayer)
-    {
+    public void addDataLayer(DataLayer dataLayer) {
         dataLayers.add(dataLayer);
     }
 
-    public DataLayer getDataLayer(int index)
-    {
+    public DataLayer getDataLayer(int index) {
         return dataLayers.get(index);
     }
 
-    public int getDataLayersCount()
-    {
+    public int getDataLayersCount() {
         return dataLayers.size();
     }
 
-    public DataLayer getLastDataLayer()
-    {
+    public DataLayer getLastDataLayer() {
         return dataLayers.get(dataLayers.size() - 1);
     }
 
-    public void getGeoCoordBoundingBox(BoundingBox resultBBox)
-    {
-        int i=0;
-        for (DataLayer dataLayer : dataLayers)
-        {
-            if(i==0)
-            {
+    public void getGeoCoordBoundingBox(BoundingBox resultBBox) {
+        int i = 0;
+        for (DataLayer dataLayer : dataLayers) {
+            if (i == 0) {
                 resultBBox.copyFrom(dataLayer.geoCoordBBox);
-            }
-            else
-            {
+            } else {
                 resultBBox.addBox(dataLayer.geoCoordBBox);
             }
 
@@ -86,25 +72,18 @@ public class DataContainer
         }
     }
 
-    public void getTotalMinMaxValues(double[] resultMinMaxValues)
-    {
-        int i=0;
-        for (DataLayer dataLayer : dataLayers)
-        {
-            if(i == 0)
-            {
+    public void getTotalMinMaxValues(double[] resultMinMaxValues) {
+        int i = 0;
+        for (DataLayer dataLayer : dataLayers) {
+            if (i == 0) {
                 dataLayer.getMinMaxValues(resultMinMaxValues);
-            }
-            else
-            {
+            } else {
                 double[] minMaxValues = new double[2];
                 dataLayer.getMinMaxValues(minMaxValues);
-                if (minMaxValues[0] < resultMinMaxValues[0])
-                {
+                if (minMaxValues[0] < resultMinMaxValues[0]) {
                     resultMinMaxValues[0] = minMaxValues[0];
                 }
-                if (minMaxValues[1] > resultMinMaxValues[1])
-                {
+                if (minMaxValues[1] > resultMinMaxValues[1]) {
                     resultMinMaxValues[1] = minMaxValues[1];
                 }
             }

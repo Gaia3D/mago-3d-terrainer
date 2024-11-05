@@ -1,10 +1,8 @@
 package com.gaia3d.airPollutionDataConverter;
 
-public class AirPollutionPixelData
-{
-    double X;
-    double Y;
-    double Z;
-    double averageConcentration;
-
+public class AirPollutionPixelData {
+    public double X;
+    public double Y;
+    public double Z;
+    public double averageConcentration;
 }

@@ -7,8 +7,7 @@ public class PngsBinaryBlockData {
     public int startByteIndex = 0;
     public int endByteIndex = 0;
 
-    public PngsBinaryBlockData()
-    {
+    public PngsBinaryBlockData() {
 
     }
 }

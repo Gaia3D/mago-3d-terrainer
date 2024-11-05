@@ -6,10 +6,10 @@ import com.gaia3d.geometry.Point3D;
 import com.gaia3d.geometry.Vertex;
 import org.joml.Vector2d;
 
+import java.util.List;
 import java.util.Vector;
 
-public class GeometryUtils
-{
+public class GeometryUtils {
     public static Boolean AproxEqual(double valor, double valor_a_comparar, double error) {
         return valor < (valor_a_comparar + error) && valor > (valor_a_comparar - error);
     }
@@ -42,7 +42,7 @@ public class GeometryUtils
             resAux[2] - resBitMasked[2],
             resAux[3] - resBitMasked[3]];
 
-        // reverse the result.***
+        // reverse the result.
         var reversedResult = [res[3], res[2], res[1], res[0]];
 
          */
@@ -61,7 +61,7 @@ public class GeometryUtils
 
         float[] res = {resAux[0] - resBitMasked[0], resAux[1] - resBitMasked[1], resAux[2] - resBitMasked[2], resAux[3] - resBitMasked[3]};
 
-        // reverse the result.***
+        // reverse the result.
         float[] reversedResult = {res[3], res[2], res[1], res[0]};
 
         result[0] = (byte) (reversedResult[0] * 255.0f);
@@ -87,7 +87,7 @@ public class GeometryUtils
 
         float[] res = {resAux[0] - resBitMasked[0], resAux[1] - resBitMasked[1], resAux[2] - resBitMasked[2], resAux[3] - resBitMasked[3]};
 
-        // reverse the result.***
+        // reverse the result.
         float[] reversedResult = {res[3], res[2], res[1], res[0]};
 
         result[0] = (int) (reversedResult[0] * 255.0f);
@@ -112,18 +112,18 @@ public class GeometryUtils
     }
 
     public static boolean arePointsCollinealXY(Point3D point1, Point3D point2, Point3D point3, double error) {
-        // This function checks if the 3 vertexes are collinear.***
+        // This function checks if the 3 vertexes are collinear.
         double crossProduct = GeometryUtils.crossProduct2D(point1, point2, point3);
 
         return crossProduct < error && crossProduct > -error;
     }
 
     public static boolean areVertexesCollinealXY(Vertex vertex0, Vertex vertex1, Vertex vertex2, double error) {
-        // This function checks if the 3 vertexes are collinear.***
+        // This function checks if the 3 vertexes are collinear.
         return GeometryUtils.arePointsCollinealXY(vertex0.point3d, vertex1.point3d, vertex2.point3d, error);
     }
 
-    public static void translateVertexes(Vector<Vertex> vecVertex, double tx, double ty, double tz) {
+    public static void translateVertexes(List<Vertex> vecVertex, double tx, double ty, double tz) {
         int vertexCount = vecVertex.size();
         for (int i = 0; i < vertexCount; i++) {
             Vertex vertex = vecVertex.get(i);
@@ -133,7 +133,7 @@ public class GeometryUtils
         }
     }
 
-    public static void setIdxInList(Vector<Vertex> vecVertex) {
+    public static void setIdxInList(List<Vertex> vecVertex) {
         int vertexCount = vecVertex.size();
         for (int i = 0; i < vertexCount; i++) {
             Vertex vertex = vecVertex.get(i);
@@ -141,7 +141,7 @@ public class GeometryUtils
         }
     }
 
-    public static BoundingBox calculateBoundingBox(Vector<Vertex> vecVertex) {
+    public static BoundingBox calculateBoundingBox(List<Vertex> vecVertex) {
         BoundingBox resultBoundingBox = new BoundingBox();
         int vertexCount = vecVertex.size();
         for (int i = 0; i < vertexCount; i++) {
@@ -155,7 +155,7 @@ public class GeometryUtils
         return resultBoundingBox;
     }
 
-    public static Vector2d GetMinMaxValuesVectorDoubles(Vector<Double> vec_doubles) {
+    public static Vector2d GetMinMaxValuesVectorDoubles(List<Double> vec_doubles) {
         Vector2d minMax = new Vector2d();
 
         int valuesCount = vec_doubles.size();
@@ -175,7 +175,7 @@ public class GeometryUtils
         return minMax;
     }
 
-    public static BoundingRectangle GetBoundingRectangleOfDouble2Positions(Vector<Double> vec_double2Positions) {
+    public static BoundingRectangle GetBoundingRectangleOfDouble2Positions(List<Double> vec_double2Positions) {
         BoundingRectangle bRect = new BoundingRectangle();
 
         int positionsCount = vec_double2Positions.size() / 2;
@@ -184,19 +184,19 @@ public class GeometryUtils
             Double y = vec_double2Positions.get(i * 2 + 1);
 
             if (i == 0) {
-                bRect.minX = x; // bbox min x.***
-                bRect.minY = y; // bbox min y.***
-                bRect.maxX = x; // bbox max x.***
-                bRect.maxY = y; // bbox max y.***
+                bRect.minX = x; // bbox min x.
+                bRect.minY = y; // bbox min y.
+                bRect.maxX = x; // bbox max x.
+                bRect.maxY = y; // bbox max y.
             } else {
-                // x.***
+                // x.
                 if (x < bRect.minX) {
                     bRect.minX = x;
                 } else if (x > bRect.maxX) {
                     bRect.maxX = x;
                 }
 
-                // y.***
+                // y.
                 if (y < bRect.minY) {
                     bRect.minY = y;
                 } else if (y > bRect.maxY) {
@@ -209,7 +209,7 @@ public class GeometryUtils
         return bRect;
     }
 
-    public static BoundingBox GetBoundingBoxOfDouble3Positions(Vector<Double> vec_double3Positions) {
+    public static BoundingBox GetBoundingBoxOfDouble3Positions(List<Double> vec_double3Positions) {
         BoundingBox bbox = new BoundingBox();
         int positionsCount = vec_double3Positions.size() / 3;
         for (int i = 0; i < positionsCount; i++) {
@@ -218,28 +218,28 @@ public class GeometryUtils
             Double z = vec_double3Positions.get(i * 3 + 2);
 
             if (i == 0) {
-                bbox.minX = x; // bbox min x.***
-                bbox.minY = y; // bbox min y.***
-                bbox.minZ = z; // bbox min z.***
-                bbox.maxX = x; // bbox max x.***
-                bbox.maxY = y; // bbox max y.***
-                bbox.maxZ = z; // bbox max z.***
+                bbox.minX = x; // bbox min x.
+                bbox.minY = y; // bbox min y.
+                bbox.minZ = z; // bbox min z.
+                bbox.maxX = x; // bbox max x.
+                bbox.maxY = y; // bbox max y.
+                bbox.maxZ = z; // bbox max z.
             } else {
-                // x.***
+                // x.
                 if (x < bbox.minX) {
                     bbox.minX = x;
                 } else if (x > bbox.maxX) {
                     bbox.maxX = x;
                 }
 
-                // y.***
+                // y.
                 if (y < bbox.minY) {
                     bbox.minY = y;
                 } else if (y > bbox.maxY) {
                     bbox.maxY = y;
                 }
 
-                // z.***
+                // z.
                 if (z < bbox.minZ) {
                     bbox.minZ = z;
                 } else if (z > bbox.maxZ) {

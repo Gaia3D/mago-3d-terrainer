@@ -1,7 +1,6 @@
 package com.gaia3d.geometry;
 
-public class Point3D
-{
+public class Point3D {
     public double x = 0.0;
     public double y = 0.0;
     public double z = 0.0;

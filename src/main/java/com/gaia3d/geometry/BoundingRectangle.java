@@ -2,8 +2,7 @@ package com.gaia3d.geometry;
 
 import org.joml.Vector2d;
 
-public class BoundingRectangle
-{
+public class BoundingRectangle {
     public double minX, minY, maxX, maxY;
 
     public Vector2d GetCenterPosition() {

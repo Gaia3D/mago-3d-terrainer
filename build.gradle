@@ -2,8 +2,8 @@ plugins {
     id 'java'
 }
 
-group = 'org.example'
-version = '1.0-SNAPSHOT'
+group = 'com.gaia3d'
+version = '1.0.0'
 
 repositories {
     maven { url "https://repo.osgeo.org/repository/release/"}
@@ -29,22 +29,15 @@ dependencies {
     implementation("org.joml:joml:1.10.5")
     implementation("commons-cli:commons-cli:1.5.0")
 
-    // geotools (java geospatial library)
-    //implementation "org.geotools:gt-geotiff:21.3"
     implementation 'org.geotools:gt-geojsondatastore:21.3'
     implementation "org.geotools:gt-referencing:21.3"
     implementation "org.geotools:gt-epsg-wkt:21.3"
-    //implementation "org.geotools:gt-coverage:21.3"
-    //implementation "org.geotools:gt-main:21.3"
-    //implementation "org.geotools:gt-image:21.3"
 
     testCompileOnly "org.projectlombok:lombok:1.18.26"
     testAnnotationProcessor "org.projectlombok:lombok:1.18.26"
 
     implementation "org.locationtech.proj4j:proj4j:1.2.3"
     implementation "org.locationtech.proj4j:proj4j-epsg:1.2.3"
-
-
 }
 
 test {
@@ -53,7 +46,7 @@ test {
 
 jar {
     manifest {
-        attributes "Main-Class": "org.example.Main"
+        attributes "Main-Class": "com.gaia3d.Main"
     }
     from {
         configurations.runtimeClasspath.collect {it.isDirectory() ? it : zipTree(it)}
