@@ -190,7 +190,7 @@ class MainTest
 
     @Test
     void main_O_NO2_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
-        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_NO2\\dataStructure_24h.json";
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_NO2\\dataStructure_1hour.json";
         String outputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_NO2" + "\\output";
         String[] testArgs = new String[]{
                 "-input", inputFolderPath,
