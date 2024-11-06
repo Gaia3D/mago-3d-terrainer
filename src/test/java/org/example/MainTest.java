@@ -114,8 +114,8 @@ class MainTest {
     // New 20241008.
     @Test
     void main_B_NO2_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
-        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\B_NO2\\dataStructure.json";
-        String outputFolderPath = inputFolderPath + "\\output";
+        String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\B_NO2\\index01.json";
+        String outputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\B_NO2" + "\\output";
         String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
 
         Main.main(testArgs);

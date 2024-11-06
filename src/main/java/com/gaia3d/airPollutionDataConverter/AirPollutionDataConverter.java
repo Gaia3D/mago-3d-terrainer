@@ -977,9 +977,9 @@ public class AirPollutionDataConverter {
             airPollutionSliceData.loadTempFile(tempFilePath);
         }
         Texture2D resultMosaicTexture = new Texture2D();
-        airPollutionVolume.makeMosaicTexture(resultMosaicTexture);
+        airPollutionVolume.makeMosaicTexture(resultMosaicTexture); // here calculates volumeMinMaxValues.***
         double[] minMaxValues = new double[2];
-        this.dataContainer.getTotalMinMaxValues(minMaxValues);
+        airPollutionVolume.getMinMaxValues(minMaxValues);
 
         // now, save the mosaic texture.
         String outputFileName = "airPollution_" + date + ".png";

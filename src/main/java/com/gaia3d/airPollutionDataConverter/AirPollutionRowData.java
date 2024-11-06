@@ -16,10 +16,10 @@ public class AirPollutionRowData {
         resultMinMaxValues[1] = Double.MIN_VALUE;
         for (AirPollutionPixelData pixelData : rowData.values()) {
             if (pixelData.averageConcentration < resultMinMaxValues[0]) {
-                resultMinMaxValues[0] = (int) pixelData.averageConcentration;
+                resultMinMaxValues[0] = pixelData.averageConcentration;
             }
             if (pixelData.averageConcentration > resultMinMaxValues[1]) {
-                resultMinMaxValues[1] = (int) pixelData.averageConcentration;
+                resultMinMaxValues[1] = pixelData.averageConcentration;
             }
         }
     }

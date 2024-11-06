@@ -35,8 +35,8 @@ public class AirPollutionSliceData {
     }
 
     public void getMinMaxValues(double[] resultMinMaxValues) {
-        resultMinMaxValues[0] = Integer.MAX_VALUE;
-        resultMinMaxValues[1] = Integer.MIN_VALUE;
+        resultMinMaxValues[0] = Double.MAX_VALUE;
+        resultMinMaxValues[1] = Double.MIN_VALUE;
         for (AirPollutionRowData rowData : matrixData.values()) {
             double[] minMaxValues = new double[2];
             rowData.getMinMaxValues(minMaxValues);

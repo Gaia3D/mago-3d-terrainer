@@ -19,8 +19,8 @@ public class AirPollutionVolume {
     public int mosaicRowsCount = 0;
     public int mosaicTextureWidth = 0;
     public int mosaicTextureHeight = 0;
-    public double totalMinValue = Integer.MAX_VALUE;
-    public double totalMaxValue = Integer.MIN_VALUE;
+    public double totalMinValueOfVolume = Double.MAX_VALUE;
+    public double totalMaxValueOfVolume = Double.MIN_VALUE;
     public String mosaicPngFileName = "";
     // TreeMap <Z, AirPollutionSliceData>. Z = slice.
     public TreeMap<Double, AirPollutionSliceData> volumeData = new TreeMap<Double, AirPollutionSliceData>();
@@ -36,8 +36,8 @@ public class AirPollutionVolume {
     }
 
     public void getMinMaxValues(double[] resultMinMaxValues) {
-        resultMinMaxValues[0] = Integer.MAX_VALUE;
-        resultMinMaxValues[1] = Integer.MIN_VALUE;
+        resultMinMaxValues[0] = Double.MAX_VALUE;
+        resultMinMaxValues[1] = Double.MIN_VALUE;
         for (AirPollutionSliceData sliceData : volumeData.values()) {
             double[] minMaxValues = new double[2];
             sliceData.getMinMaxValues(minMaxValues);
@@ -48,6 +48,9 @@ public class AirPollutionVolume {
                 resultMinMaxValues[1] = minMaxValues[1];
             }
         }
+
+        this.totalMinValueOfVolume = resultMinMaxValues[0];
+        this.totalMaxValueOfVolume = resultMinMaxValues[1];
     }
 
     public void makeMosaicTexture(Texture2D resultMosaicTexture) {
@@ -68,9 +71,9 @@ public class AirPollutionVolume {
         double[] minMaxValues = new double[2];
         getMinMaxValues(minMaxValues);
 
-        this.totalMinValue = minMaxValues[0];
-        this.totalMaxValue = minMaxValues[1];
-        double totalValuesRange = totalMaxValue - totalMinValue;
+        this.totalMinValueOfVolume = minMaxValues[0];
+        this.totalMaxValueOfVolume = minMaxValues[1];
+        double totalValuesRange = totalMaxValueOfVolume - totalMinValueOfVolume;
 
         double[] mosaicData = new double[mosaicTexWidth * mosaicTexHeight];
         int i = 0;
@@ -100,7 +103,7 @@ public class AirPollutionVolume {
         byte[] encoded = new byte[4];
         for (int j = 0; j < totalValuesCount; j++) {
             double value = mosaicData[j];
-            double qValue = (value - totalMinValue) / totalValuesRange;
+            double qValue = (value - totalMinValueOfVolume) / totalValuesRange;
             GeometryUtils.encodeFloat((float) qValue, encoded);
             resultMosaicTexture.data[j * 4] = encoded[0];
             resultMosaicTexture.data[j * 4 + 1] = encoded[1];
@@ -151,8 +154,8 @@ public class AirPollutionVolume {
 
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode mosaicTextureMetadataObjectNode = objectMapper.createObjectNode();
-        mosaicTextureMetadataObjectNode.put("minValue", this.totalMinValue);
-        mosaicTextureMetadataObjectNode.put("maxValue", this.totalMaxValue);
+        mosaicTextureMetadataObjectNode.put("minValue", this.totalMinValueOfVolume);
+        mosaicTextureMetadataObjectNode.put("maxValue", this.totalMaxValueOfVolume);
         mosaicTextureMetadataObjectNode.put("width", mosaicTexWidth);
         mosaicTextureMetadataObjectNode.put("height", mosaicTexHeight);
         mosaicTextureMetadataObjectNode.put("mosaicTextureFileName", this.mosaicPngFileName);
