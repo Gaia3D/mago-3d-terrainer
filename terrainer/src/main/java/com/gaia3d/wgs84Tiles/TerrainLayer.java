@@ -11,9 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @Getter
 @Setter
@@ -76,13 +74,111 @@ public class TerrainLayer {
         this.extensions.add(extension);
     }
 
+    public boolean isInteger(String s) {
+        try {
+            Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public void generateAvailableTiles(String inputPath) {
+        File inputDirectory = new File(inputPath);
+        if (!inputDirectory.exists()) {
+            log.error("Input directory does not exist.");
+            return;
+        }
+
+        Set<Integer> depthZ = new LinkedHashSet<>();
+        File[] depthFiles = inputDirectory.listFiles();
+        Arrays.sort(depthFiles);
+        for (File depthFile : depthFiles) {
+            if (depthFile.isDirectory()) {
+                if (!isInteger(depthFile.getName())) {
+                    continue;
+                }
+                Set<Integer> tileX = new LinkedHashSet<>();
+                Set<Integer> tileY = new LinkedHashSet<>();
+                int tileDepth = Integer.parseInt(depthFile.getName());
+
+                log.info("[Generate][layer.json] Start generating layer.json. tileDepth: {}", tileDepth);
+                depthZ.add(tileDepth);
+                File[] tileXFiles = depthFile.listFiles();
+                for (File tileXFile : tileXFiles) {
+                    if (tileXFile.isDirectory()) {
+                        if (!isInteger(tileXFile.getName())) {
+                            continue;
+                        }
+
+                        tileX.add(Integer.parseInt(tileXFile.getName()));
+                        File[] tileYFiles = tileXFile.listFiles();
+                        for (File tileYFile : tileYFiles) {
+                            if (tileYFile.isFile()) {
+                                String tileYFileName = tileYFile.getName().split("\\.")[0];
+                                if (!isInteger(tileYFileName)) {
+                                    continue;
+                                }
+                                tileY.add(Integer.parseInt(tileYFileName));
+                            }
+                        }
+                    }
+                }
+                TilesRange tilesRange = new TilesRange();
+                tilesRange.setTileDepth(tileDepth);
+                tilesRange.setMinTileX(Collections.min(tileX));
+                tilesRange.setMaxTileX(Collections.max(tileX));
+                tilesRange.setMinTileY(Collections.min(tileY));
+                tilesRange.setMaxTileY(Collections.max(tileY));
+                available.add(tilesRange);
+            }
+        }
+        log.info("Available tiles: {}", available);
+        log.info("DepthZ: {}", depthZ);
+        available.sort(Comparator.comparingInt(TilesRange::getTileDepth));
+
+        // calc bounds
+        double minLon = -180.0;
+        double maxLon = 180.0;
+        double minLat = -90.0;
+        double maxLat = 90.0;
+
+        TilesRange lastTilesRange = available.get(available.size() - 1);
+        int lastTileDepth = lastTilesRange.getTileDepth();
+        int lastMinTileX = lastTilesRange.getMinTileX();
+        int lastMaxTileX = lastTilesRange.getMaxTileX();
+        int lastMinTileY = lastTilesRange.getMinTileY();
+        int lastMaxTileY = lastTilesRange.getMaxTileY();
+
+        double tileWidth = 360.0 / Math.pow(2, lastTileDepth + 1);
+        double tileHeight = 180.0 / Math.pow(2, lastTileDepth);
+        double calcMinLon = lastMinTileX * tileWidth + minLon;
+        double calcMaxLon = (lastMaxTileX + 1) * tileWidth + minLon;
+        double calcMinLat = (lastMaxTileY + 1) * tileHeight + minLat;
+        double calcMaxLat = lastMinTileY * tileHeight + minLat;
+
+        log.info("calcMinLon: {}", calcMinLon);
+        log.info("calcMaxLon: {}", calcMaxLon);
+        log.info("calcMinLat: {}", calcMinLat);
+        log.info("calcMaxLat: {}", calcMaxLat);
+
+        minLon = Math.max(minLon, calcMinLon);
+        minLat = Math.max(minLat, calcMinLat);
+        maxLon = Math.min(maxLon, calcMaxLon);
+        maxLat = Math.min(maxLat, calcMaxLat);
+
+        this.bounds[0] = minLon;
+        this.bounds[1] = minLat;
+        this.bounds[2] = maxLon;
+        this.bounds[3] = maxLat;
+    }
+
     public void saveJsonFile(String outputDirectory, String tilejsonFileName) {
         String fullFileName = outputDirectory + File.separator + tilejsonFileName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
 
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode objectNodeRoot = objectMapper.createObjectNode();
-
         objectNodeRoot.put("tilejson", this.tilejson);
         objectNodeRoot.put("name", this.name);
         objectNodeRoot.put("description", this.description);
@@ -117,7 +213,6 @@ public class TerrainLayer {
 
             objectNodeTileDepth_array.add(objectNodeTileDepth);
             objectNodeAvailable.add(objectNodeTileDepth_array);
-
         }
 
         objectNodeRoot.set("available", objectNodeAvailable);

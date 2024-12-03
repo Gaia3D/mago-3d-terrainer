@@ -3,6 +3,7 @@ package com.gaia3d.command;
 
 import com.gaia3d.process.ProcessOptions;
 import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
+import com.gaia3d.wgs84Tiles.TerrainLayer;
 import com.gaia3d.wgs84Tiles.TileWgs84Manager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
@@ -52,6 +53,21 @@ public class MagoTerrainerMain {
 
             GlobalOptions.init(command);
             GlobalOptions globalOptions = GlobalOptions.getInstance();
+
+            if (globalOptions.isLayerJsonGenerate()) {
+                log.info("[Generate][layer.json] Start generating layer.json.");
+
+                TerrainLayer terrainLayer = new TerrainLayer();
+                terrainLayer.setDefault();
+                terrainLayer.setBounds(new double[]{-180.0, -90.0, 180.0, 90.0}); // temp
+                terrainLayer.generateAvailableTiles(globalOptions.getInputPath());
+                if (globalOptions.isCalculateNormals()) {
+                    terrainLayer.addExtension("octvertexnormals");
+                }
+                terrainLayer.saveJsonFile(globalOptions.getInputPath(), "layer.json");
+                log.info("[Generate][layer.json] Finished generating layer.json.");
+                return;
+            }
 
             if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
                 tileWgs84Manager.setCalculateNormals(true);

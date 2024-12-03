@@ -33,6 +33,7 @@ public class GlobalOptions {
     private String version;
     private String javaVersionInfo;
     private String programInfo;
+    private boolean layerJsonGenerate = false;
 
     private long startTime = 0;
     private long endTime = 0;
@@ -94,6 +95,10 @@ public class GlobalOptions {
             instance.setMaximumTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())));
         } else {
             instance.setMaximumTileDepth(DEFAULT_MAXIMUM_TILE_DEPTH);
+        }
+
+        if (command.hasOption(ProcessOptions.JSON.getArgName())) {
+            instance.setLayerJsonGenerate(true);
         }
 
         if (instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {

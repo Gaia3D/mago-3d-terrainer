@@ -105,5 +105,5 @@ shadowJar {
         attributes 'Implementation-Vendor-Id': 'com.gaia3d'
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
-    archiveFileName = "mago-3d-terrainer-${project.version}.jar"
+    archiveFileName = "mago-3d-terrainer-${project.version}-shadow.jar"
 }

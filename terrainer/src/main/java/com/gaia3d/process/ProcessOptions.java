@@ -11,6 +11,7 @@ public enum ProcessOptions {
     OUTPUT("output", "o", "output", true, "Output folder path"),
     LOG("log", "l", "log", true, "Log file path"),
     DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
+    JSON("json", "j", "json", false, "Generate layer json file from terrain data"),
 
     MINIMUM_TILE_DEPTH("minDepth", "mn", "minDepth", true,"Minimum tile depth (0 ~ 22)"),
     MAXIMUM_TILE_DEPTH("maxDepth", "mx", "maxDepth", true,"Maximum tile depth (0 ~ 22)"),
