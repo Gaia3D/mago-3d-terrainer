@@ -3,7 +3,6 @@ package com.gaia3d.basic.structure;
 import java.util.List;
 
 public class GaiaHalfEdgeUtils {
-
     public static void concatenateHalfEdgesLoop(List<GaiaHalfEdge> halfEdgesArray) {
         for (int i = 0; i < halfEdgesArray.size(); i++) {
             GaiaHalfEdge halfEdge = halfEdgesArray.get(i);

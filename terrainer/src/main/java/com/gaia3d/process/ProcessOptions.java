@@ -11,15 +11,15 @@ public enum ProcessOptions {
     OUTPUT("output", "o", "output", true, "Output folder path"),
     LOG("log", "l", "log", true, "Log file path"),
     DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
-    JSON("json", "j", "json", false, "Generate layer json file from terrain data"),
+    JSON("json", "j", "json", false, "Generate only layer.json from terrain data"),
 
-    MINIMUM_TILE_DEPTH("minDepth", "mn", "minDepth", true,"Minimum tile depth (0 ~ 22)"),
-    MAXIMUM_TILE_DEPTH("maxDepth", "mx", "maxDepth", true,"Maximum tile depth (0 ~ 22)"),
+    MINIMUM_TILE_DEPTH("minDepth", "mn", "minDepth", true,"Minimum tile depth (range : 0 ~ 22) (default : 0)"),
+    MAXIMUM_TILE_DEPTH("maxDepth", "mx", "maxDepth", true,"Maximum tile depth (range : 0 ~ 22) (default : 18)"),
     MESH_REFINEMENT_STRENGTH("strength", "rs", "meshRefinementStrength", false,"Mesh refinement strength"),
     CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Calculate normals"),
     INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear)"),
-    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic size (default : 32)"),
-    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", "rasterMaxSize", true, "Maximum raster size (default : 8192)");
+    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic size per tile (default : 32)"),
+    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", "rasterMaxSize", true, "Maximum raster size per tile (default : 8192)");
 
     private final String longName;
     private final String shortName;

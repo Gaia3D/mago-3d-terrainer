@@ -1,6 +1,7 @@
 package com.gaia3d.command;
 
 import com.gaia3d.process.ProcessOptions;
+import com.gaia3d.wgs84Tiles.InterpolationType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,15 +26,15 @@ public class GlobalOptions {
     private static final GlobalOptions instance = new GlobalOptions();
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 20;
+    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 18;
     private static final int DEFAULT_MOSAIC_SIZE = 32;
     private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
-    private static final boolean DEFAULT_CALCULATE_NORMALS = false;
 
     private String version;
     private String javaVersionInfo;
     private String programInfo;
     private boolean layerJsonGenerate = false;
+    private boolean debugMode = false;
 
     private long startTime = 0;
     private long endTime = 0;
@@ -83,6 +84,10 @@ public class GlobalOptions {
 
         if (command.hasOption(ProcessOptions.LOG.getArgName())) {
             instance.setLogPath(command.getOptionValue(ProcessOptions.LOG.getArgName()));
+        }
+
+        if (command.hasOption(ProcessOptions.DEBUG.getArgName())) {
+            instance.setDebugMode(true);
         }
 
         if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
@@ -140,6 +145,8 @@ public class GlobalOptions {
         log.info("Calculate Normals: {}", instance.isCalculateNormals());
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());
+        log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
+        log.info("Debug Mode: {}", instance.isDebugMode());
         log.info("----------------------------------------");
     }
 

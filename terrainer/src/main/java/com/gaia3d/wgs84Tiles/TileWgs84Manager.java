@@ -166,9 +166,6 @@ public class TileWgs84Manager {
             int mosaicSize = globalOptions.getMosaicSize();
             int maxCol = mosaicSize;
             int maxRow = mosaicSize;
-
-//            int maxCol = 30;
-//            int maxRow = 30;
             List<TilesRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, maxCol, maxRow, null);
 
             log.info("------------------------------------");
@@ -201,9 +198,6 @@ public class TileWgs84Manager {
             }
 
             long endTime = System.currentTimeMillis();
-            Date endDate = new Date(endTime);
-
-
             log.info("[Tile] End making tile meshes for depth: {} - Duration: {} ms}", depth, timeFormat(endTime - startTime));
 
             String javaHeapSize = System.getProperty("java.vm.name") + " " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB";
@@ -471,7 +465,7 @@ public class TileWgs84Manager {
     public void resizeGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
         // load all geoTiffFiles
         List<String> geoTiffFileNames = new ArrayList<>();
-        com.gaia3d.reader.FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
+        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
 
         if (currentFolderPath == null) {
             currentFolderPath = "";
@@ -480,7 +474,10 @@ public class TileWgs84Manager {
         GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
 
         // now load all geotiff and make geotiff geoExtension data
+        int geoTiffFilesSize = geoTiffFileNames.size();
+        int geoTiffFilesCount = 0;
         for (String geoTiffFileName : geoTiffFileNames) {
+            log.info("[Pre][Resize GeoTiff][{}/{}] resizing geoTiff : {} ", ++geoTiffFilesCount, geoTiffFilesSize, geoTiffFileName);
             String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
 
             // check if the geotiffFileName is no usable

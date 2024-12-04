@@ -26,10 +26,6 @@ public class MagoTerrainerMain {
             boolean isHelp = command.hasOption(ProcessOptions.HELP.getArgName());
             boolean hasLogPath = command.hasOption(ProcessOptions.LOG.getArgName());
 
-            GeoToolsConfigurator geotoolsConfigurator = new GeoToolsConfigurator();
-            TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
-            geotoolsConfigurator.setEpsg();
-
             if (command.hasOption(ProcessOptions.DEBUG.getArgName())) {
                 Configurator.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
                 if (hasLogPath) {
@@ -43,7 +39,7 @@ public class MagoTerrainerMain {
                 }
                 Configurator.setLevel(Level.INFO);
             }
-
+            Configurator.setEpsg();
             printStart();
 
             if (isHelp) {
@@ -53,7 +49,6 @@ public class MagoTerrainerMain {
 
             GlobalOptions.init(command);
             GlobalOptions globalOptions = GlobalOptions.getInstance();
-
             if (globalOptions.isLayerJsonGenerate()) {
                 log.info("[Generate][layer.json] Start generating layer.json.");
 
@@ -69,6 +64,21 @@ public class MagoTerrainerMain {
                 return;
             }
 
+            if (GlobalOptions.getInstance().isLayerJsonGenerate()) {
+                log.info("[Generate][layer.json] Start generating layer.json.");
+                executeLayerJsonGenerate();
+                log.info("[Generate][layer.json] Finished generating layer.json.");
+                return;
+            } else {
+                log.info("[Generate] Start Terrainer process.");
+                execute(command);
+                log.info("[Generate] Finished Terrainer process.");
+                if (!globalOptions.isDebugMode()) {
+                    cleanTemp();
+                }
+            }
+
+            /*TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
             if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
                 tileWgs84Manager.setCalculateNormals(true);
             }
@@ -99,12 +109,10 @@ public class MagoTerrainerMain {
             log.info("[Tile] Finished making tile meshes.");
 
             tileWgs84Manager.deleteObjects();
-            tileWgs84Manager = null;
-
-            System.gc();
+            System.gc();*/
 
             // Finally delete temp folder.***
-            File tileTempFolder = new File(globalOptions.getTileTempPath());
+            /*File tileTempFolder = new File(globalOptions.getTileTempPath());
             if (tileTempFolder.exists() && tileTempFolder.isDirectory()) {
                 try {
                     log.info("[Post]Deleting tileTempFolder");
@@ -115,13 +123,13 @@ public class MagoTerrainerMain {
                 }
             }
 
-            File splittedTempFolder = new File(globalOptions.getSplitTiffTempPath());
-            if (splittedTempFolder.exists() && splittedTempFolder.isDirectory()) {
+            File splitTempFolder = new File(globalOptions.getSplitTiffTempPath());
+            if (splitTempFolder.exists() && splitTempFolder.isDirectory()) {
                 try {
-                    log.info("[Post]Deleting splittedTempFolder");
-                    FileUtils.deleteDirectory(splittedTempFolder);
+                    log.info("[Post]Deleting splitTempFolder");
+                    FileUtils.deleteDirectory(splitTempFolder);
                 } catch (IOException e) {
-                    log.error("[Post]Failed to delete splittedTempFolder.", e);
+                    log.error("[Post]Failed to delete splitTempFolder.", e);
                     throw new RuntimeException(e);
                 }
             }
@@ -135,8 +143,7 @@ public class MagoTerrainerMain {
                     log.error("[Post]Failed to delete resizedTempFolder.", e);
                     throw new RuntimeException(e);
                 }
-            }
-
+            }*/
         } catch (FactoryException e) {
             log.error("Failed to set EPSG.", e);
             throw new RuntimeException(e);
@@ -155,17 +162,110 @@ public class MagoTerrainerMain {
     }
 
     /**
+     * Executes the terrainer process.
+     * @param command the command line options.
+     * @throws IOException if an I/O error occurs.
+     * @throws FactoryException if a factory error occurs.
+     * @throws TransformException if a transform error occurs.
+     */
+    private static void execute(CommandLine command) throws IOException, FactoryException, TransformException {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+
+        TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
+        if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
+            tileWgs84Manager.setCalculateNormals(true);
+        }
+
+        log.info("[Pre][Split GeoTiff] Start GeoTiff Splitting files.");
+        tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());
+        log.info("[Pre][Split GeoTiff] Finished GeoTiff Splitting files.");
+
+        log.info("[Pre][Resize GeoTiff] Start GeoTiff Resizing files.");
+        tileWgs84Manager.processResizeGeotiffs(globalOptions.getInputPath(), null);
+        log.info("[Pre][Resize GeoTiff] Finished GeoTiff Resizing files.");
+
+        log.info("[Pre][Terrain Elevation Data] Start making terrain elevation data.");
+        tileWgs84Manager.setTerrainElevationDataManager(new TerrainElevationDataManager());
+        tileWgs84Manager.getTerrainElevationDataManager().setTileWgs84Manager(tileWgs84Manager);
+        tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
+        if (tileWgs84Manager.getGeoTiffFilesCount() == 1) {
+            tileWgs84Manager.getTerrainElevationDataManager().setGeoTiffFilesCount(1);
+            tileWgs84Manager.getTerrainElevationDataManager().setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
+            tileWgs84Manager.getTerrainElevationDataManager().MakeUniqueTerrainElevationData();
+        } else {
+            tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree();
+        }
+        log.info("[Pre][Terrain Elevation Data] Finished making terrain elevation data.");
+
+        log.info("[Tile] Start making tile meshes.");
+        tileWgs84Manager.makeTileMeshes();
+        log.info("[Tile] Finished making tile meshes.");
+
+        tileWgs84Manager.deleteObjects();
+        System.gc();
+    }
+
+    /**
+     * Executes the layer.json generation.
+     */
+    private static void executeLayerJsonGenerate() {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        TerrainLayer terrainLayer = new TerrainLayer();
+        terrainLayer.setDefault();
+        terrainLayer.setBounds(new double[]{-180.0, -90.0, 180.0, 90.0});
+        terrainLayer.generateAvailableTiles(globalOptions.getInputPath());
+        if (globalOptions.isCalculateNormals()) {
+            terrainLayer.addExtension("octvertexnormals");
+        }
+        terrainLayer.saveJsonFile(globalOptions.getInputPath(), "layer.json");
+    }
+
+    /**
+     * Cleans the temporary folders.
+     */
+    private static void cleanTemp() {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        File tileTempFolder = new File(globalOptions.getTileTempPath());
+        if (tileTempFolder.exists() && tileTempFolder.isDirectory()) {
+            try {
+                log.info("[Post]Deleting tileTempFolder");
+                FileUtils.deleteDirectory(tileTempFolder);
+            } catch (IOException e) {
+                log.error("[Post]Failed to delete tileTempFolder.", e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        File splitTempFolder = new File(globalOptions.getSplitTiffTempPath());
+        if (splitTempFolder.exists() && splitTempFolder.isDirectory()) {
+            try {
+                log.info("[Post]Deleting splitTempFolder");
+                FileUtils.deleteDirectory(splitTempFolder);
+            } catch (IOException e) {
+                log.error("[Post]Failed to delete splitTempFolder.", e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        File resizedTempFolder = new File(globalOptions.getResizedTiffTempPath());
+        if (resizedTempFolder.exists() && resizedTempFolder.isDirectory()) {
+            try {
+                log.info("[Post]Deleting resizedTempFolder");
+                FileUtils.deleteDirectory(resizedTempFolder);
+            } catch (IOException e) {
+                log.error("[Post]Failed to delete resizedTempFolder.", e);
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    /**
      * Prints the program information and the java version information.
      */
     private static void printStart() {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         String programInfo = globalOptions.getProgramInfo();
-        log.info("\n" +
-                "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┏┳┓┏┓┳┓┳┓┏┓┳┳┓┏┓┳┓\n" +
-                "┃┃┃┣┫┃┓┃┃   ┫┃┃   ┃ ┣ ┣┫┣┫┣┫┃┃┃┣ ┣┫\n" +
-                "┛ ┗┛┗┗┛┗┛  ┗┛┻┛   ┻ ┗┛┛┗┛┗┛┗┻┛┗┗┛┛┗\n" +
-                programInfo + "\n" +
-                "----------------------------------------");
+        log.info("\n" + "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┏┳┓┏┓┳┓┳┓┏┓┳┳┓┏┓┳┓\n" + "┃┃┃┣┫┃┓┃┃   ┫┃┃   ┃ ┣ ┣┫┣┫┣┫┃┃┃┣ ┣┫\n" + "┛ ┗┛┗┗┛┗┛  ┗┛┻┛   ┻ ┗┛┛┗┛┗┛┗┻┛┗┗┛┛┗\n" + programInfo + "\n" + "----------------------------------------");
     }
 
     /**
@@ -175,10 +275,7 @@ public class MagoTerrainerMain {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         String programInfo = globalOptions.getProgramInfo();
         String javaVersionInfo = globalOptions.getJavaVersionInfo();
-        log.info(
-                programInfo + "\n" +
-                        javaVersionInfo
-        );
+        log.info(programInfo + "\n" + javaVersionInfo);
         log.info("----------------------------------------");
     }
 

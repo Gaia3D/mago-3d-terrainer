@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Set;
 
+@Deprecated
 @Slf4j
 public class GeoToolsConfigurator {
     public void setEpsg() throws IOException {

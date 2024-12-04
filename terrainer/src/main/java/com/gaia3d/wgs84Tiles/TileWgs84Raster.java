@@ -37,7 +37,6 @@ public class TileWgs84Raster {
         }
 
         int resultCol = (int) ((lonDeg - minLonDeg) / deltaLonDeg);
-
         return resultCol;
     }
 
@@ -50,7 +49,6 @@ public class TileWgs84Raster {
         }
 
         int resultRow = (int) ((latDeg - minLatDeg) / deltaLatDeg);
-
         return resultRow;
     }
 

@@ -2,7 +2,6 @@ package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.command.InterpolationType;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;

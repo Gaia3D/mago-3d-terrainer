@@ -32,9 +32,7 @@ public class GaiaHalfEdge {
 
     private HalfEdgeType type = HalfEdgeType.UNKNOWN;
     private GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
-
     private GaiaLine2D line2D = null;
-
     private GaiaRectangle boundingRect = null;
 
     public void deleteObjects() {

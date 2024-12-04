@@ -1,4 +1,4 @@
-package com.gaia3d.command;
+package com.gaia3d.wgs84Tiles;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -54,7 +54,7 @@ public class TerrainElevationDataManager {
     }
 
     public GaiaGeoTiffManager getGaiaGeoTiffManager() {
-        if(myGaiaGeoTiffManager == null) {
+        if (myGaiaGeoTiffManager == null) {
             myGaiaGeoTiffManager = new GaiaGeoTiffManager();
         }
         return myGaiaGeoTiffManager;
@@ -159,8 +159,7 @@ public class TerrainElevationDataManager {
     public void deleteObjects() {
         this.deleteTileRasters();
         this.deleteCoverage();
-        if(myGaiaGeoTiffManager != null)
-        {
+        if (myGaiaGeoTiffManager != null) {
             myGaiaGeoTiffManager.deleteObjects();
             myGaiaGeoTiffManager = null;
         }
@@ -227,7 +226,7 @@ public class TerrainElevationDataManager {
 
         return resultElevation;
     }
-    
+
     private void loadAllGeoTiff(String terrainElevationDataFolderPath) throws FactoryException, TransformException {
         // load all geoTiffFiles
         memSaveGeoTiffFileNames.clear();
@@ -251,7 +250,7 @@ public class TerrainElevationDataManager {
         CoordinateReferenceSystem crsWgs84 = null;
         MathTransform targetToWgs = null;
 
-        Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();;
+        Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
 
         for (String memSaveGeoTiffFileName : memSaveGeoTiffFileNames) {
             geoTiffFileName = memSaveGeoTiffFileName;

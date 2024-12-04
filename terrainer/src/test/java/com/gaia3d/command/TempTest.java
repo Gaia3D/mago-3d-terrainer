@@ -13,9 +13,38 @@ import java.util.Objects;
 public class TempTest {
 
     @Test
-    void sampleKoreaTerrain() throws IOException {
-        File inputPath = new File("E:\\(DEM) Sample", "korea");
-        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-15");
+    void sampleKoreaTerrainLevel10() throws IOException {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "korea");
+        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-10");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "10",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleKoreaTerrainLevel12() throws IOException {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "korea");
+        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-12");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "12",
+                //"-d",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleKoreaTerrainLevel14() throws IOException {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "korea");
+        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-14");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -28,8 +57,37 @@ public class TempTest {
     }
 
     @Test
+    void sampleSeoulTerrainLevel15() throws IOException {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-15");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "15",
+                //"-d",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleSeoulTerrainLevel17() throws IOException {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-17");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "18",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void sampleKoreaCreateLayerJson() throws IOException {
-        //File inputPath = new File("E:\\(DEM) Sample", "korea");
+        //File inputPath = new File("G:\E-Drive\\(DEM) Sample", "korea");
         File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-15");
 
         String[] args = new String[]{

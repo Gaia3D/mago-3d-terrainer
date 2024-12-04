@@ -3,10 +3,12 @@ package com.gaia3d.basic.structure;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
+@AllArgsConstructor
 public enum GaiaObjectStatus {
-    UNKNOWN(-1), ACTIVE(0), DELETED(1);
+    UNKNOWN(-1),
+    ACTIVE(0),
+    DELETED(1);
 
     private final int value;
 

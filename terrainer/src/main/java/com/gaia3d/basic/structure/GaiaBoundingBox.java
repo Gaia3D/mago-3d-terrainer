@@ -1,6 +1,5 @@
 package com.gaia3d.basic.structure;
 
-
 import com.gaia3d.util.GlobeUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,16 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-/**
- * GaiaBoundingBox is a class to store the bounding box of a geometry.
- * It can be used to calculate the center and volume of the geometry.
- * It can also be used to convert the local bounding box to lonlat bounding box.
- * It can also be used to calculate the longest distance of the geometry.
- *
- * @auther znkim
- * @see GaiaRectangle
- * @since 1.0.0
- */
 @Slf4j
 @Setter
 @Getter

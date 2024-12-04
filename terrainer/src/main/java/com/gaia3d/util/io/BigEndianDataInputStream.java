@@ -5,13 +5,6 @@ import org.joml.Vector4d;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-/**
- * BigEndianDataInputStream
- *
- * @author znkim
- * @see FilterInputStream
- * @since 1.0.0
- */
 public class BigEndianDataInputStream extends DataInputStream implements DataInput {
     /**
      * Creates a <code>FilterInputStream</code>

@@ -21,15 +21,10 @@ import java.util.List;
 @Slf4j
 public class TileWgs84 {
     private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
-
     private TileWgs84Manager manager = null;
-
     private TileWgs84 parentTile = null;
-    // if parentTile == null, then this is the root tile.
-    private TileIndices tileIndices = null;
-
+    private TileIndices tileIndices = null; // if parentTile == null, then this is the root tile.
     private GeographicExtension geographicExtension = null;
-
     private GaiaMesh mesh = null;
 
     // for current tile, create the 8 neighbor tiles.

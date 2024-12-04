@@ -5,13 +5,6 @@ import org.joml.Vector4d;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-/**
- * BigEndianDataOutputStream
- *
- * @author znkim
- * @see FilterOutputStream
- * @since 1.0.0
- */
 public class BigEndianDataOutputStream extends DataOutputStream implements DataOutput {
 
     public BigEndianDataOutputStream(OutputStream out) {

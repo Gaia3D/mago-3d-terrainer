@@ -19,8 +19,8 @@ import java.util.Map;
 
 import static java.lang.Math.abs;
 
-@NoArgsConstructor
 @Slf4j
+@NoArgsConstructor
 public class GaiaMesh {
     public List<GaiaVertex> vertices = new ArrayList<>();
     public List<GaiaTriangle> triangles = new ArrayList<>();

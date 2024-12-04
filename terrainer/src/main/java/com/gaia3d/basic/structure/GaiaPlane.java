@@ -34,5 +34,4 @@ public class GaiaPlane {
         // else if the result is negative, the point is under the plane
         return a * x + b * y + c * z + d;
     }
-
 }

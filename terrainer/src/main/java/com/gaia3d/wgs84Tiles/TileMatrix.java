@@ -28,15 +28,13 @@ import static java.lang.Math.abs;
 
 @Slf4j
 public class TileMatrix {
-    private final double VERTEXT_COINCIDENT_ERROR = 0.0000000000001;
     private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private final double VERTEXT_COINCIDENT_ERROR = 0.0000000000001;
     private final TilesRange tilesRange;
     private final List<List<TileWgs84>> tilesMatrixRowCol = new ArrayList<>();
     public TileWgs84Manager manager = null;
     // the tilesMatrixRowCol is a matrix of tiles
     // all the arrays have the same length
-
-    GaiaBoundingBox bboxMemSave = new GaiaBoundingBox();
     List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
     List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
 

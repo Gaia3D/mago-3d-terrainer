@@ -7,11 +7,6 @@ import org.locationtech.proj4j.CRSFactory;
 import org.locationtech.proj4j.CoordinateReferenceSystem;
 import org.locationtech.proj4j.ProjCoordinate;
 
-/**
- * Utility class for converting between geographic and cartesian coordinates.
- * @author znkim
- * @since 1.0.0
- */
 public class GlobeUtils {
     public static final double DEG_TO_RADIAN_FACTOR = 0.017453292519943296d; // 3.141592653589793 / 180.0;
     public static final double EQUATORIAL_RADIUS = 6378137.0d; // meters

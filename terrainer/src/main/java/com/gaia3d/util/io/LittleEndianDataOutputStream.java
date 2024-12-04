@@ -11,13 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-/**
- * LittleEndianDataOutputStream
- *
- * @author znkim
- * @see FilterOutputStream
- * @since 1.0.0
- */
 public class LittleEndianDataOutputStream extends FilterOutputStream implements DataOutput {
 
     private final byte[] writeBuffer = new byte[8];
