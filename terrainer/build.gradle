@@ -88,6 +88,11 @@ jar {
     finalizedBy shadowJar
     manifest {
         attributes "Main-Class": "com.gaia3d.command.MagoTerrainerMain"
+        attributes 'Implementation-Version': project.version
+        attributes 'Implementation-Title': 'mago-3d-terrainer'
+        attributes 'Implementation-Vendor': 'Gaia3d, Inc.'
+        attributes 'Implementation-Vendor-Id': 'com.gaia3d'
+        attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
     from {
         configurations.runtimeClasspath.collect {it.isDirectory() ? it : zipTree(it)}
@@ -106,4 +111,5 @@ shadowJar {
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
     archiveFileName = "mago-3d-terrainer-${project.version}-shadow.jar"
+    destinationDirectory.set(file("${projectDir}/dist"))
 }
