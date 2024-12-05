@@ -57,6 +57,8 @@ public class TileWgs84Manager {
 
     // constructor
     public TileWgs84Manager() {
+        double intensity = globalOptions.getIntensity();
+
         // Init default values
         // init the maxTriangleSizeForTileDepthMap
         for (int i = 0; i < 28; i++) {
@@ -66,7 +68,7 @@ public class TileWgs84Manager {
                 maxSize *= 0.2;
             }
             maxTriangleSizeForTileDepthMap.put(i, maxSize);
-            double minSize = tileSizeMeters * 0.05;
+            double minSize = tileSizeMeters * 0.05 / intensity;
             minTriangleSizeForTileDepthMap.put(i, minSize);
         }
 
@@ -538,7 +540,7 @@ public class TileWgs84Manager {
 
         // now check if exist folders inside the terrainElevationDataFolderPath
         List<String> folderNames = new ArrayList<>();
-        com.gaia3d.reader.FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
+        FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
         String auxFolderPath = currentFolderPath;
         for (String folderName : folderNames) {
             auxFolderPath = currentFolderPath + File.separator + folderName;

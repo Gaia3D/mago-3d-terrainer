@@ -29,6 +29,7 @@ public class GlobalOptions {
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 18;
     private static final int DEFAULT_MOSAIC_SIZE = 32;
     private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
+    private static final double DEFAULT_INTENSITY = 4.0;
 
     private String version;
     private String javaVersionInfo;
@@ -53,6 +54,8 @@ public class GlobalOptions {
     private int maximumTileDepth;
     private InterpolationType interpolationType;
     private boolean calculateNormals;
+
+    private double intensity;
 
     public static GlobalOptions getInstance() {
         if (instance.javaVersionInfo == null) {
@@ -128,6 +131,12 @@ public class GlobalOptions {
             instance.setMaxRasterSize(Integer.parseInt(command.getOptionValue(ProcessOptions.RASTER_MAXIMUM_SIZE.getArgName())));
         } else {
             instance.setMaxRasterSize(DEFAULT_MAX_RASTER_SIZE);
+        }
+
+        if (command.hasOption(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName())) {
+            instance.setIntensity(Double.parseDouble(command.getOptionValue(ProcessOptions.MESH_REFINEMENT_STRENGTH.getArgName())));
+        } else {
+            instance.setIntensity(DEFAULT_INTENSITY);
         }
 
         instance.setCalculateNormals(command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName()));

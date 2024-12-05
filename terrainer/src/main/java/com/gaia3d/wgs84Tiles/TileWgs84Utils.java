@@ -1,6 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.util.GlobeUtils;
 
 import java.io.File;
@@ -10,6 +11,7 @@ import java.util.List;
 import static java.lang.Math.abs;
 
 public class TileWgs84Utils {
+    private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     public static double getTileSizeInMetersByDepth(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
@@ -19,25 +21,29 @@ public class TileWgs84Utils {
 
     public static double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
-        if (depth < 5) return tileSize * 0.01;
-        else if (depth <= 8) return tileSize * 0.01;
-        else if (depth == 9) return tileSize * 0.01;
-        else if (depth == 10) return tileSize * 0.02;
-        else if (depth == 11) return tileSize * 0.03;
-        else if (depth == 12) return tileSize * 0.04;
-        else if (depth == 13) return tileSize * 0.05;
-        else if (depth == 14) return tileSize * 0.05;
-        else if (depth == 15) return tileSize * 0.06;
-        else if (depth == 16) return tileSize * 0.06;
-        else if (depth == 17) return tileSize * 0.07;
-        else if (depth == 18) return tileSize * 0.07;
-        else if (depth == 19) return tileSize * 0.08;
-        else if (depth == 20) return tileSize * 0.10;
-        else if (depth == 21) return tileSize * 0.11;
-        else if (depth == 22) return tileSize * 0.12;
-        else if (depth == 23) return tileSize * 0.13;
-        else if (depth == 24) return tileSize * 0.14;
-        else return tileSize * 0.15;
+        double result = 0.0;
+
+        if (depth < 5)        result = tileSize * 0.01;
+        else if (depth <= 8)  result = tileSize * 0.01;
+        else if (depth == 9)  result = tileSize * 0.01;
+        else if (depth == 10) result = tileSize * 0.02;
+        else if (depth == 11) result = tileSize * 0.03;
+        else if (depth == 12) result = tileSize * 0.04;
+        else if (depth == 13) result = tileSize * 0.05;
+        else if (depth == 14) result = tileSize * 0.05;
+        else if (depth == 15) result = tileSize * 0.06;
+        else if (depth == 16) result = tileSize * 0.06;
+        else if (depth == 17) result = tileSize * 0.07;
+        else if (depth == 18) result = tileSize * 0.07;
+        else if (depth == 19) result = tileSize * 0.08;
+        else if (depth == 20) result = tileSize * 0.10;
+        else if (depth == 21) result = tileSize * 0.11;
+        else if (depth == 22) result = tileSize * 0.12;
+        else if (depth == 23) result = tileSize * 0.13;
+        else if (depth == 24) result = tileSize * 0.14;
+        else                  result = tileSize * 0.15;
+
+        return result / globalOptions.getIntensity();
     }
 
     public static double selectTileAngleRangeByDepth(int depth) {

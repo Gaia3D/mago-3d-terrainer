@@ -640,6 +640,7 @@ public class TileMatrix {
 
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.setRefineChecked(true);
+            log.info("Filtered by Min Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # minTriangleSizeForDepth : " + minTriangleSizeForDepth);
             return false;
         }
 
@@ -782,6 +783,8 @@ public class TileMatrix {
         memSavehedges.clear();
 
         triangle.setRefineChecked(true);
+
+        log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + colAux + " / " + colsCount + " # row : " + rowAux + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
         return false;
     }
 

@@ -72,7 +72,7 @@ public class GaiaGeoTiffManager {
     public Vector2i getGridCoverage2DSize(String geoTiffFilePath) {
         if (!mapPathGridCoverage2dSize.containsKey(geoTiffFilePath)) {
             GridCoverage2D coverage = loadGeoTiffGridCoverage2D(geoTiffFilePath);
-            //coverage.dispose(true);
+            coverage.dispose(true);
         }
         return mapPathGridCoverage2dSize.get(geoTiffFilePath);
     }
