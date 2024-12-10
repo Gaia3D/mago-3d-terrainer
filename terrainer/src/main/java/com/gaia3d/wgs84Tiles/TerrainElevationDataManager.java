@@ -93,8 +93,8 @@ public class TerrainElevationDataManager {
         TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
         if (tileWgs84Raster == null) {
             tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
-            int tileRasterWidth = tileWgs84Manager.getTileRasterSize();
-            int tileRasterHeight = tileWgs84Manager.getTileRasterSize();
+            int tileRasterWidth = tileWgs84Manager.getTILE_RASTER_SIZE();
+            int tileRasterHeight = tileWgs84Manager.getTILE_RASTER_SIZE();
             tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
             mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
         }
@@ -108,8 +108,8 @@ public class TerrainElevationDataManager {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
             if (tileWgs84Raster == null) {
                 tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
-                int tileRasterWidth = tileWgs84Manager.getTileRasterSize();
-                int tileRasterHeight = tileWgs84Manager.getTileRasterSize();
+                int tileRasterWidth = tileWgs84Manager.getTILE_RASTER_SIZE();
+                int tileRasterHeight = tileWgs84Manager.getTILE_RASTER_SIZE();
                 tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
                 mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
             }

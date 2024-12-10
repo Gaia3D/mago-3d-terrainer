@@ -10,9 +10,9 @@ import org.locationtech.proj4j.ProjCoordinate;
 public class GlobeUtils {
     public static final double DEG_TO_RADIAN_FACTOR = 0.017453292519943296d; // 3.141592653589793 / 180.0;
     public static final double EQUATORIAL_RADIUS = 6378137.0d; // meters
-    private static final double EQUATORIAL_RADIUS_SQUARED = 40680631590769.0d;
+    public static final double EQUATORIAL_RADIUS_SQUARED = 40680631590769.0d;
+    public static final double POLAR_RADIUS_SQUARED = 40408299984087.05552164d;
     private static final double POLAR_RADIUS = 6356752.3142d; // meters
-    private static final double POLAR_RADIUS_SQUARED = 40408299984087.05552164d;
     private static final double FIRST_ECCENTRICITY_SQUARED = 6.69437999014E-3d;
 
     private static final CoordinateReferenceSystem WGS84 = new CRSFactory().createFromParameters("WGS84", "+proj=longlat +datum=WGS84 +no_defs");

@@ -3,9 +3,10 @@ package com.gaia3d.quantizedMesh;
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.wgs84Tiles.TileWgs84;
-import org.joml.*;
+import org.joml.Vector2f;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 
-import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,14 +16,43 @@ import java.util.List;
  */
 public class QuantizedMeshManager {
 
+    private final List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
     private List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
-    private List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+
+    /*
+        def octDecode(x, y):
+        if x < 0 or x > 255 or y < 0 or y > 255:
+            raise ValueError('x and y must be signed and normalized between 0 and 255')
+        res = [x, y, 0.0]
+        res[0] = fromSnorm(x)
+        res[1] = fromSnorm(y)
+        res[2] = 1.0 - (abs(res[0]) + abs(res[1]))
+
+        if res[2] < 0.0:
+            oldX = res[0]
+            res[0] = (1.0 - abs(res[1])) * signNotZero(oldX)
+            res[1] = (1.0 - abs(oldX)) * signNotZero(res[1])
+        return c3d.normalize(res)
+     */
+    /*public Vector2f octEncode(Vector3f normal) {
+
+    }*/
+
+    /*
+        def toSnorm(v):
+        return round((clamp(v, -1.0, 1.0) * 0.5 + 0.5) * 255.0)
+     */
+    private Vector2f toSnorm(Vector2f value) {
+        float x = (float) Math.round((clamp(value.x, -1.0f, 1.0f) * 0.5f + 0.5f) * 255.0f);
+        float y = (float) Math.round((clamp(value.y, -1.0f, 1.0f) * 0.5f + 0.5f) * 255.0f);
+        return new Vector2f(x, y);
+    }
 
     private Vector2f signNotZero(Vector2f value) {
         return new Vector2f(value.x >= 0 ? 1 : -1, value.y >= 0 ? 1 : -1);
     }
 
-    private Vector2f float32x3ToOct(Vector3f normal) {
+    public Vector2f float32x3ToOct(Vector3f normal) {
         float x = normal.x;
         float y = normal.y;
         float z = normal.z;
@@ -38,7 +68,7 @@ public class QuantizedMeshManager {
             v = (float) ((1.0 - Math.abs(p.x)) * signNotZero(p).y);
             p = new Vector2f(u, v);
         }
-
+        p = toSnorm(p);
         return p;
     }
 
@@ -69,7 +99,7 @@ public class QuantizedMeshManager {
 
     private Vector3f octToFloat32x3(Vector2f e) {
         Vector3f v = new Vector3f(e.x, e.y, 1.0f - Math.abs(e.x) - Math.abs(e.y));
-        if(v.z < 0) {
+        if (v.z < 0) {
             Vector2f temp = new Vector2f(v.x, v.y);
             v.x = (1.0f - Math.abs(v.y)) * signNotZero(temp).x;
             v.y = (1.0f - Math.abs(temp.x)) * signNotZero(temp).y;
@@ -90,11 +120,11 @@ public class QuantizedMeshManager {
         // Each snorm’s max value interpreted as an integer,
         // e.g., 127.0 for snorm8
 
-        float M = (float) ((1 << (n/2 - 1)) - 1);
+        float m = (float) ((1 << (n / 2 - 1)) - 1);
         // Remap components to snorm(n/2) precision...with floor instead
         // of round (see equation 1)
-        s.x = (float) (Math.floor(clamp(s.x, -1.0f, 1.0f) * M) * (1.0f / M));
-        s.y = (float) (Math.floor(clamp(s.y, -1.0f, 1.0f) * M) * (1.0f / M));
+        s.x = (float) (Math.floor(clamp(s.x, -1.0f, 1.0f) * m) * (1.0f / m));
+        s.y = (float) (Math.floor(clamp(s.y, -1.0f, 1.0f) * m) * (1.0f / m));
 
         Vector2f bestRepresentation = s;
         float highestCosine = dot(octToFloat32x3(s), normal);
@@ -107,7 +137,7 @@ public class QuantizedMeshManager {
                 // This branch will be evaluated at compile time
                 if ((i != 0) || (j != 0)) {
 
-                    Vector2f candidate = new Vector2f(i * (1.0f/M) + s.x, j * (1.0f/M) + s.y);
+                    Vector2f candidate = new Vector2f(i * (1.0f / m) + s.x, j * (1.0f / m) + s.y);
                     float cosine = dot(octToFloat32x3(candidate), normal);
                     if (cosine > highestCosine) {
                         highestCosine = cosine;
@@ -269,32 +299,43 @@ public class QuantizedMeshManager {
         }
 
         // check if save normals
-        if(calculateNormals) {
-            Matrix4d tMat = GlobeUtils.transformMatrixAtCartesianPointWgs84(cartesianWC[0], cartesianWC[1], cartesianWC[2]);
-            Matrix3d rotMat = new Matrix3d();
-            tMat.get3x3(rotMat);
-
-            Matrix3d rotMatInv = new Matrix3d();
-            rotMatInv.invert(rotMat);
+        if (calculateNormals) {
+            /*Matrix4d tMat = GlobeUtils.transformMatrixAtCartesianPointWgs84(cartesianWC[0], cartesianWC[1], cartesianWC[2]);
+            Matrix3d rotMat = new Matrix3d(tMat);
+            Matrix3d rotMatInv = new Matrix3d(rotMat);
+            rotMatInv.invert(rotMat);*/
 
             // Calculate the normals
             quantizedMesh.setOctEncodedNormals(new byte[vertexCount * 2]);
             for (int i = 0; i < vertexCount; i++) {
                 GaiaVertex vertex = vertices.get(i);
                 Vector3f normal = vertex.getNormal();
-                if(normal == null)
-                {
+                if (normal == null) {
                     normal = new Vector3f(0, 0, 1);
                 }
+                Vector3d position = vertex.getPosition();
+
+                // global
+                //Matrix4d tMat = GlobeUtils.transformMatrixAtCartesianPointWgs84(cartesianWC[0], cartesianWC[1], cartesianWC[2]);
+
+
+                // local
+                //Matrix4d tMat = GlobeUtils.transformMatrixAtCartesianPointWgs84(position.x, position.y, position.z);
+                //Matrix3d rotMat = new Matrix3d(tMat);
+                //Matrix3d rotMatInv = new Matrix3d(rotMat);
+                //rotMatInv.invert(rotMat);
 
                 // rotate normal
-                Vector3f normalRotated = new Vector3f(normal.x, normal.z, -normal.y); // best result (-90 in xAxis)
-                rotMatInv.transform(normalRotated); // test
+                Vector3f normalRotated = new Vector3f(normal.x, normal.y, normal.z); // best result (-90 in xAxis)
+
+                // encode normal
+                //normalRotated = new Vector3f(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f, normal.z * 0.5f + 0.5f);
+                //rotMatInv.transform(normalRotated); // test
 
                 Vector2f octNormal = float32x3ToOct(normalRotated);
 
-                quantizedMesh.getOctEncodedNormals()[i * 2] = (byte) (octNormal.x * 254);
-                quantizedMesh.getOctEncodedNormals()[i * 2 + 1] = (byte) (octNormal.y * 254);
+                quantizedMesh.getOctEncodedNormals()[i * 2] = (byte) (octNormal.x);
+                quantizedMesh.getOctEncodedNormals()[i * 2 + 1] = (byte) (octNormal.y);
             }
 
             // Terrain Lighting

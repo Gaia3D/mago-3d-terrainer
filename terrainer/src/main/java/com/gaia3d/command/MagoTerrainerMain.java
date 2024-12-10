@@ -163,18 +163,16 @@ public class MagoTerrainerMain {
 
     /**
      * Executes the terrainer process.
+     *
      * @param command the command line options.
-     * @throws IOException if an I/O error occurs.
-     * @throws FactoryException if a factory error occurs.
+     * @throws IOException        if an I/O error occurs.
+     * @throws FactoryException   if a factory error occurs.
      * @throws TransformException if a transform error occurs.
      */
     private static void execute(CommandLine command) throws IOException, FactoryException, TransformException {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
-        if (command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName())) {
-            tileWgs84Manager.setCalculateNormals(true);
-        }
 
         log.info("[Pre][Split GeoTiff] Start GeoTiff Splitting files.");
         tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());

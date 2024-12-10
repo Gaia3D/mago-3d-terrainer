@@ -267,7 +267,7 @@ public class TileMatrix {
             this.refineMesh(resultMesh, tilesRange);
 
             // check if you must calculate normals
-            if (this.manager.isCalculateNormals()) {
+            if (globalOptions.isCalculateNormals()) {
                 this.listVerticesMemSave.clear();
                 this.listHalfEdgesMemSave.clear();
                 resultMesh.calculateNormals(this.listVerticesMemSave, this.listHalfEdgesMemSave);
@@ -300,7 +300,7 @@ public class TileMatrix {
 
     public void saveQuantizedMeshes(List<GaiaMesh> separatedMeshes) throws IOException {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
-        boolean calculateNormals = this.manager.isCalculateNormals();
+        boolean calculateNormals = globalOptions.isCalculateNormals();
 
         for (GaiaMesh mesh : separatedMeshes) {
             GaiaTriangle triangle = mesh.triangles.get(0); // take the first triangle
@@ -308,7 +308,7 @@ public class TileMatrix {
 
             TileWgs84 tile = new TileWgs84(null, this.manager);
             tile.setTileIndices(tileIndices);
-            String imageryType = this.manager.getImageryType();
+            String imageryType = this.manager.getIMAGINARY_TYPE();
             tile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
             tile.setMesh(mesh);
 
@@ -389,7 +389,7 @@ public class TileMatrix {
             if (tileIndices.getL() < maxTileDepth) {
                 // 1rst, mark triangles with the children tile indices
                 boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
-                String imageryType = this.manager.getImageryType();
+                String imageryType = this.manager.getIMAGINARY_TYPE();
 
                 // 2- make the 4 children
                 TileIndices childLightUpTileIndices = tileIndices.getChildLeftUpTileIndices(originIsLeftUp);
@@ -640,13 +640,14 @@ public class TileMatrix {
 
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.setRefineChecked(true);
-            log.info("Filtered by Min Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # minTriangleSizeForDepth : " + minTriangleSizeForDepth);
+            log.debug("Filtered by Min Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # minTriangleSizeForDepth : " + minTriangleSizeForDepth);
             return false;
         }
 
 
         double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
+            log.debug("Filtered by Max Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # maxTriangleSizeForDepth : " + maxTriangleSizeForDepth);
             return true;
         }
 

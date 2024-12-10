@@ -13,147 +13,129 @@ import java.util.Objects;
 public class TempTest {
 
     @Test
-    void sampleKoreaTerrainLevel10() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "korea");
-        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-10");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "10",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleKoreaTerrainLevel12() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "korea");
-        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-12");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "12",
-                //"-d",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleKoreaTerrainLevel14() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "korea");
-        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-14");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "15",
-                //"-d",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleKoreaTerrainLevel16() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "korea");
-        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-16");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "16",
-                //"-d",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleSeoulTerrainLevel14() {
+    void sample13Intensity1() {
         File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-14");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-13-intensity-1");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "13",
+                "-intensity", "1.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample13Intensity2() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-13-intensity-2");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "13",
+                "-intensity", "2.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample13Intensity4() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-13-intensity-4");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "13",
+                "-intensity", "4.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample13Intensity8() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-13-intensity-8");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "13",
+                "-intensity", "8.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample14Intensity1() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-14-intensity-1");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "14",
-                //"-d",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleSeoulTerrainLevel15() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-15");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "15",
-                //"-d",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleSeoulTerrainLevel16() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-16");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "16",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleSeoulTerrainLevel17() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-17");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "17",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleSeoulTerrainLevel18() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-18");
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "18",
-        };
-        MagoTerrainerMain.main(args);
-    }
-
-    @Test
-    void sampleKoreaCreateLayerJson() {
-        //File inputPath = new File("G:\E-Drive\\(DEM) Sample", "korea");
-        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-15");
-
-        String[] args = new String[]{
-                "-input", outputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                "-json",
+                "-intensity", "1.0",
                 "-calculateNormals",
-                //"-d",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample14Intensity2() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-14-intensity-2");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-intensity", "2.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample14Intensity4() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-14-intensity-4");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-intensity", "4.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample14Intensity8() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-14-intensity-8");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-intensity", "8.0",
+                "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
     }

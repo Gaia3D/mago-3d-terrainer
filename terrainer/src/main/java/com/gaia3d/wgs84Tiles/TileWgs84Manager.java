@@ -27,6 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Setter
 @Slf4j
 public class TileWgs84Manager {
+    private final int TILE_RASTER_SIZE = 256;
+    private final String IMAGINARY_TYPE = "CRS84"; // "CRS84" or "WEB_MERCATOR"
+
     private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
     // For each depth level, use a different folder
     private final Map<Integer, String> depthGeoTiffFolderPathMap = new HashMap<>();
@@ -34,11 +37,8 @@ public class TileWgs84Manager {
     private final Map<Integer, Double> depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap = new HashMap<>();
     private final List<TileWgs84> tileWgs84List = new ArrayList<>();
     // tileRasterSize : when triangles refinement, we use a DEM raster of this size
-    private final int tileRasterSize = 256;
     private TerrainElevationDataManager terrainElevationDataManager = null;
-    private String imageryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
-    private int refinementStrength = 1; // 1 = normal.
-
+    //private int refinementStrength = 1; // 1 = normal.
     private int geoTiffFilesCount = 0;
 
     private String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file
@@ -49,7 +49,7 @@ public class TileWgs84Manager {
     private Map<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<>();
     private Map<Integer, Double> minTriangleSizeForTileDepthMap = new HashMap<>();
 
-    private boolean calculateNormals = true;
+    //private boolean calculateNormals = true;
     private List<TerrainElevationData> memSaveTerrainElevDataList = new ArrayList<>();
     private List<GaiaTriangle> memSaveTrianglesList = new ArrayList<>();
     private Vector2d memSavePixelSizeDegrees = new Vector2d();
@@ -123,7 +123,7 @@ public class TileWgs84Manager {
         bounds[2] = maxLon;
         bounds[3] = maxLat;
 
-        if (this.calculateNormals) {
+        if (globalOptions.isCalculateNormals()) {
             terrainLayer.addExtension("octvertexnormals");
         }
 
@@ -279,7 +279,7 @@ public class TileWgs84Manager {
         if (!FileUtils.isFileExists(neighborFullPath)) {
             log.debug("Creating tile: CREATE - * - CREATE : " + tileIndices.getX() + ", " + tileIndices.getY() + ", " + tileIndices.getL());
             neighborTile.setTileIndices(tileIndices);
-            String imageryType = this.imageryType;
+            String imageryType = this.IMAGINARY_TYPE;
             neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
             neighborTile.createInitialMesh();
             if (neighborTile.getMesh() == null) {
@@ -290,7 +290,7 @@ public class TileWgs84Manager {
         } else {
             // load the Tile
             neighborTile.setTileIndices(tileIndices);
-            neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
+            neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, IMAGINARY_TYPE, originIsLeftUp));
             neighborTile.loadFile(neighborFullPath);
         }
 
@@ -317,7 +317,7 @@ public class TileWgs84Manager {
             // load the Tile
             neighborTile = new TileWgs84(null, this);
             neighborTile.setTileIndices(tileIndices);
-            neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
+            neighborTile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, IMAGINARY_TYPE, originIsLeftUp));
             neighborTile.loadFile(neighborFullPath);
         }
 

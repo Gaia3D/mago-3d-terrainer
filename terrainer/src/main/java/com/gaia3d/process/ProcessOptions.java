@@ -15,7 +15,7 @@ public enum ProcessOptions {
 
     MINIMUM_TILE_DEPTH("minDepth", "mn", "minDepth", true,"Minimum tile depth (range : 0 ~ 22) (default : 0)"),
     MAXIMUM_TILE_DEPTH("maxDepth", "mx", "maxDepth", true,"Maximum tile depth (range : 0 ~ 22) (default : 18)"),
-    MESH_REFINEMENT_STRENGTH("strength", "rs", "meshRefinementStrength", false,"Mesh refinement strength"),
+    INTENSITY("intensity", "rs", "intensity", true,"Mesh refinement strength. (default : 1.0)"),
     CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Calculate normals"),
     INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear)"),
     TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic size per tile (default : 32)"),

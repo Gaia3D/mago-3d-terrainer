@@ -23,7 +23,7 @@ public class TileWgs84Raster {
         this.tileIndices = tileIndices;
         this.manager = manager;
 
-        String imageryType = manager.getImageryType();
+        String imageryType = manager.getIMAGINARY_TYPE();
         boolean originIsLeftUp = manager.isOriginIsLeftUp();
         this.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
     }

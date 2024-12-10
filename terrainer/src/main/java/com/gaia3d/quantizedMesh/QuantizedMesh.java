@@ -20,22 +20,19 @@ public class QuantizedMesh {
     private short[] heightBuffer = null;
     private int[] triangleIndices = null;
 
-    // edgesData
+    // edge indices
     private int westVertexCount;
     private int[] westIndices = null;
-
     private int southVertexCount;
     private int[] southIndices = null;
-
     private int eastVertexCount;
     private int[] eastIndices = null;
-
     private int northVertexCount;
     private int[] northIndices = null;
 
     // normals data
     private byte extensionId = 0;
-    private  int extensionLength = 0;
+    private int extensionLength = 0;
     private byte[] octEncodedNormals = null; // 2 bytes per normal
 
     public short zigZagEncode(int n) {
@@ -50,8 +47,6 @@ public class QuantizedMesh {
             decodedIndices[i] = highest - code;
             if (code == 0) highest += 1;
         }
-
-
     }
 
     public void getEncodedIndices32(int[] indices, int count, int[] encodedIndices) {
@@ -237,7 +232,7 @@ public class QuantizedMesh {
             dataOutputStream.write(octEncodedNormals);
         }
 
-        
+
     }
 
 }
