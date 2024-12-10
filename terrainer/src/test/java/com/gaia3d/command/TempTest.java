@@ -77,6 +77,21 @@ public class TempTest {
     }
 
     @Test
+    void sample13Intensity16() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-13-intensity-16");
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "13",
+                "-intensity", "16.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void sample14Intensity1() {
         File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
         File outputPath = new File("D:\\data\\mago-server\\output", "seoul-14-intensity-1");
@@ -135,6 +150,22 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "8.0",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample14Intensity16() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
+        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-14-intensity-16");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-intensity", "16.0",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
