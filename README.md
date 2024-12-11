@@ -1,7 +1,5 @@
-![mago_3DTiler_256](https://github.com/Gaia3D/mago-3d-tiler/assets/87691347/792058e4-e41e-4f39-97e5-1a059b8d70b5)
-==
-mago 3DTerrainer: The Premier OGC 3D Tiles Solution!
-**--**
+mago 3DTerrainer 
+===
 
 ### 개요
 
@@ -18,7 +16,7 @@ OCG의 표준 포맷인 GeoTIFF 파일을 공간정보 레스터 데이터를 �
 - 상세옵션 조절: 최소/최대 타일 깊이, 타일 레스터 최대 크기, 타일 모자이크 크기, 타일생성 강도, 보간방법 등 다양한 상세옵션을 제공합니다.
 
 ### 사용법:
-기본적으로 코드 수정 시 tiler프로젝트의 gradle script인 jar를 통해 runnable jar를 생성할 수 있습니다.   
+기본적으로 코드 수정 시 terrainer프로젝트의 gradle script인 jar를 통해 runnable jar를 생성할 수 있습니다.   
 /terrainer/dist/ 디렉토리에는 미리 빌드된 jar가 준비 되어있습니다.
 - mago-3d-terrainer-1.X.X.jar
 
@@ -26,34 +24,36 @@ OCG의 표준 포맷인 GeoTIFF 파일을 공간정보 레스터 데이터를 �
 
 아래는 Help 코드를 실행시킨 예시입니다.
 ```
-java -jar mago-3d-tiler-x.x.x-natives-windows.jar -h
+java -jar mago-3d-terrainer-x.x.x-shadow.jar -h
 ```
 출력 결과물:
 ```
 ┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┏┳┓┏┓┳┓┳┓┏┓┳┳┓┏┓┳┓
 ┃┃┃┣┫┃┓┃┃   ┫┃┃   ┃ ┣ ┣┫┣┫┣┫┃┃┃┣ ┣┫
 ┛ ┗┛┗┗┛┗┛  ┗┛┻┛   ┻ ┗┛┛┗┛┗┛┗┻┛┗┗┛┛┗
-3d-mesher(dev-version) by Gaia3D, Inc.
+3d-terrainer(dev-version) by Gaia3D, Inc.
 ----------------------------------------
 usage: Mago 3D Quantized Mesher
- -cn,--calculateNormals          Calculate normals
+ -cn,--calculateNormals          Add terrain octVertexNormals for lighting
+                                 effect
  -d,--debug                      Debug Mode, print more detail log
  -h,--help                       Print this message
  -i,--input <arg>                Input folder path
+ -is,--intensity <arg>           Mesh refinement strength. (default : 4.0)
  -it,--interpolationType <arg>   Interpolation type (nearest, bilinear)
+                                 (default : bilinear)
  -j,--json                       Generate only layer.json from terrain
                                  data
  -l,--log <arg>                  Log file path
- -mn,--minDepth <arg>            Minimum tile depth (range : 0 ~ 22)
+ -max,--maxDepth <arg>           Maximum tile depth (range : 0 ~ 22)
+                                 (default : 14)
+ -min,--minDepth <arg>           Minimum tile depth (range : 0 ~ 22)
                                  (default : 0)
- -mr,--rasterMaxSize <arg>       Maximum raster size per tile (default :
-                                 8192)
- -ms,--mosaicSize <arg>          Tiling mosaic size per tile (default :
-                                 32)
- -mx,--maxDepth <arg>            Maximum tile depth (range : 0 ~ 22)
-                                 (default : 18)
+ -mr,--rasterMaxSize <arg>       Maximum raster size for split function.
+                                 (default : 8192)
+ -ms,--mosaicSize <arg>          Tiling mosaic buffer size per tile.
+                                 (default : 32)
  -o,--output <arg>               Output folder path
- -rs,--strength                  Mesh refinement strength
 ```
 
 필수 인자 값으로 작성한 간단한 Quantized-mesh 변환코드 입니다.
