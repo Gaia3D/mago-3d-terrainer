@@ -68,7 +68,17 @@ public class TileWgs84Manager {
                 maxSize *= 0.2;
             }
             maxTriangleSizeForTileDepthMap.put(i, maxSize);
-            double minSize = tileSizeMeters * 0.05 / intensity;
+
+            double minSize = tileSizeMeters * 0.1 / (intensity);
+            if (i > 13) {
+                minSize *= 0.25;
+            } else if (i > 12) {
+                minSize *= 0.5;
+            } else if (i > 11) {
+                minSize *= 0.75;
+            } else if (i > 10) {
+                minSize *= 0.9;
+            }
             minTriangleSizeForTileDepthMap.put(i, minSize);
         }
 

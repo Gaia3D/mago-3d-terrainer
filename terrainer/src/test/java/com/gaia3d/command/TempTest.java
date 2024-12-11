@@ -118,6 +118,7 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "1.0",
+                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -134,6 +135,7 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "2.0",
+                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -150,6 +152,7 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "4.0",
+                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -166,6 +169,7 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "8.0",
+                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -182,6 +186,7 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "16.0",
+                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
