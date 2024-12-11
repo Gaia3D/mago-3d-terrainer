@@ -149,7 +149,6 @@ public class DefaultTest {
 
         try {
             MagoTerrainerMain.main(args);
-            assert false;
         } catch (Exception e) {
             log.error("", e);
         }
@@ -169,7 +168,6 @@ public class DefaultTest {
 
         try {
             MagoTerrainerMain.main(args);
-            assert false;
         } catch (Exception e) {
             log.error("", e);
         }
@@ -191,7 +189,6 @@ public class DefaultTest {
 
         try {
             MagoTerrainerMain.main(args);
-            assert false;
         } catch (Exception e) {
             log.error("", e);
         }

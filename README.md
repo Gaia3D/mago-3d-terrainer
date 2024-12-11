@@ -15,7 +15,7 @@ OCG의 표준 포맷인 GeoTIFF 파일을 공간정보 레스터 데이터를 �
 - 편리한 변환: GeoTIFF 데이터를 간단한 커맨드 없이 변환할 수 있습니다.
 - 높은 정확도: 높은 정확도의 quantized-mesh 데이터를 생성합니다.
 - 다수의 데이터 변환: 다수의 GeoTIFF 데이터를 한 번에 변환할 수 있습니다.
-- 상세옵션 조절: 최소/최대 타일 깊이, 타일 레스터 최대 크기, 타일 모자이크 크기, 타일정제 강도(Mesh Refinement Strength), 보간방법 등 다양한 상세옵션을 제공합니다.
+- 상세옵션 조절: 최소/최대 타일 깊이, 타일 레스터 최대 크기, 타일 모자이크 크기, 타일생성 강도, 보간방법 등 다양한 상세옵션을 제공합니다.
 
 ### 사용법:
 기본적으로 코드 수정 시 tiler프로젝트의 gradle script인 jar를 통해 runnable jar를 생성할 수 있습니다.   
@@ -58,11 +58,11 @@ usage: Mago 3D Quantized Mesher
 
 필수 인자 값으로 작성한 간단한 Quantized-mesh 변환코드 입니다.
 ```
-java -jar mago-3d-terrainer-x.x.x.jar --input C:\data\geotiff-sample --output C:\data\geotiff-terrain-output --max 18
+java -jar mago-3d-terrainer-x.x.x.jar --input C:\data\geotiff-sample --output C:\data\geotiff-terrain-output --max 14
 ```
 또는
 ```
-java -jar mago-3d-terrainer-x.x.x.jar -i C:\data\geotiff-sample -o C:\data\geotiff-terrain-output -mx 18
+java -jar mago-3d-terrainer-x.x.x.jar -i C:\data\geotiff-sample -o C:\data\geotiff-terrain-output -mx 14
 ```
 
 ### 도커 버전 사용법:
@@ -73,7 +73,7 @@ mago 3DTerrainer는 도커 이미지로도 사용이 가능합니다.
 docker pull gaia3d/mago-3d-terrainer
 ```
 ```
-docker run --rm -v "/workspace:/workspace" gaia3d/mago-3d-terrainer -i C:\data\geotiff-sample -o C:\data\geotiff-terrain-output -mx 18
+docker run --rm -v "/workspace:/workspace" gaia3d/mago-3d-terrainer -i C:\data\geotiff-sample -o C:\data\geotiff-terrain-output -mx 14
 ```
 
 ### 지원하는 자바 버전:

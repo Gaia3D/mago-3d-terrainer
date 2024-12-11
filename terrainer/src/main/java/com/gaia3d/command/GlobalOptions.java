@@ -26,10 +26,10 @@ public class GlobalOptions {
     private static final GlobalOptions instance = new GlobalOptions();
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 18;
+    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
     private static final int DEFAULT_MOSAIC_SIZE = 32;
     private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
-    private static final double DEFAULT_INTENSITY = 1.0;
+    private static final double DEFAULT_INTENSITY = 4.0;
 
     private String version;
     private String javaVersionInfo;
@@ -93,16 +93,35 @@ public class GlobalOptions {
             instance.setDebugMode(true);
         }
 
-        if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
-            instance.setMinimumTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())));
-        } else {
-            instance.setMinimumTileDepth(DEFAULT_MINIMUM_TILE_DEPTH);
-        }
-
         if (command.hasOption(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
+            int maxDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
+            if (maxDepth < 0) {
+                log.warn("* Maximum tile depth is less than 0. Set to 0.");
+                maxDepth = 0;
+            } else if (maxDepth > 22) {
+                log.warn("* Maximum tile depth is greater than 22. Set to 22.");
+                maxDepth = 22;
+            }
             instance.setMaximumTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())));
         } else {
             instance.setMaximumTileDepth(DEFAULT_MAXIMUM_TILE_DEPTH);
+        }
+
+        if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
+            int minDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName()));
+            if (minDepth < 0) {
+                log.warn("* Minimum tile depth is less than 0. Set to 0.");
+                minDepth = 0;
+            } else if (minDepth > 22) {
+                log.warn("* Minimum tile depth is greater than 22. Set to 22.");
+                minDepth = 22;
+            } else if (minDepth > instance.getMaximumTileDepth()) {
+                log.warn("* Minimum tile depth is greater than maximum tile depth. Set to maximum tile depth.");
+                minDepth = 0;
+            }
+            instance.setMinimumTileDepth(minDepth);
+        } else {
+            instance.setMinimumTileDepth(DEFAULT_MINIMUM_TILE_DEPTH);
         }
 
         if (command.hasOption(ProcessOptions.JSON.getArgName())) {
@@ -115,7 +134,13 @@ public class GlobalOptions {
 
         if (command.hasOption(ProcessOptions.INTERPOLATION_TYPE.getArgName())) {
             String interpolationType = command.getOptionValue(ProcessOptions.INTERPOLATION_TYPE.getArgName());
-            InterpolationType type = InterpolationType.fromString(interpolationType);
+            InterpolationType type;
+            try {
+                type =  InterpolationType.fromString(interpolationType);
+            } catch (IllegalArgumentException e) {
+                log.warn("* Interpolation type is not valid. Set to bilinear.");
+                type = DEFAULT_INTERPOLATION_TYPE;
+            }
             instance.setInterpolationType(type);
         } else {
             instance.setInterpolationType(DEFAULT_INTERPOLATION_TYPE);
@@ -134,13 +159,20 @@ public class GlobalOptions {
         }
 
         if (command.hasOption(ProcessOptions.INTENSITY.getArgName())) {
-            instance.setIntensity(Double.parseDouble(command.getOptionValue(ProcessOptions.INTENSITY.getArgName())));
+            double intensity = Double.parseDouble(command.getOptionValue(ProcessOptions.INTENSITY.getArgName()));
+            if (intensity < 1) {
+                log.warn("* Intensity value is less than 1. Set to 1.");
+                intensity = 1;
+            } else if (intensity > 16) {
+                log.warn("* Intensity value is greater than 16. Set to 16.");
+                intensity = 16;
+            }
+            instance.setIntensity(intensity);
         } else {
             instance.setIntensity(DEFAULT_INTENSITY);
         }
 
         instance.setCalculateNormals(command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName()));
-
         printGlobalOptions();
     }
 
@@ -193,7 +225,7 @@ public class GlobalOptions {
         String title = MagoTerrainerMain.class.getPackage().getImplementationTitle();
         String vendor = MagoTerrainerMain.class.getPackage().getImplementationVendor();
         version = version == null ? "dev-version" : version;
-        title = title == null ? "3d-mesher" : title;
+        title = title == null ? "3d-terrainer" : title;
         vendor = vendor == null ? "Gaia3D, Inc." : vendor;
         String programInfo = title + "(" + version + ") by " + vendor;
 

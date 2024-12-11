@@ -13,6 +13,22 @@ import java.util.Objects;
 public class TempTest {
 
     @Test
+    void sejong14Intensity1() {
+        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "sejong");
+        File outputPath = new File("D:\\data\\mago-server\\output", "sejong-14-intensity-4");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-intensity", "4",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void sample13Intensity1() {
         File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
         File outputPath = new File("D:\\data\\mago-server\\output", "seoul-13-intensity-1");

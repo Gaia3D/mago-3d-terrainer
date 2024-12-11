@@ -13,13 +13,16 @@ public enum ProcessOptions {
     DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
     JSON("json", "j", "json", false, "Generate only layer.json from terrain data"),
 
-    MINIMUM_TILE_DEPTH("minDepth", "mn", "minDepth", true,"Minimum tile depth (range : 0 ~ 22) (default : 0)"),
-    MAXIMUM_TILE_DEPTH("maxDepth", "mx", "maxDepth", true,"Maximum tile depth (range : 0 ~ 22) (default : 18)"),
-    INTENSITY("intensity", "rs", "intensity", true,"Mesh refinement strength. (default : 1.0)"),
-    CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Calculate normals"),
-    INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear)"),
-    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic size per tile (default : 32)"),
-    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", "rasterMaxSize", true, "Maximum raster size per tile (default : 8192)");
+    // for terrain generation
+    MINIMUM_TILE_DEPTH("minDepth", "min", "minDepth", true,"Minimum tile depth (range : 0 ~ 22) (default : 0)"),
+    MAXIMUM_TILE_DEPTH("maxDepth", "max", "maxDepth", true,"Maximum tile depth (range : 0 ~ 22) (default : 14)"),
+    INTENSITY("intensity", "is", "intensity", true,"Mesh refinement strength. (default : 4.0)"),
+    CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Add terrain octVertexNormals for lighting effect"),
+    INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear) (default : bilinear)"),
+
+    // for optimization
+    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic buffer size per tile. (default : 32)"),
+    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", "rasterMaxSize", true, "Maximum raster size for split function. (default : 8192)");
 
     private final String longName;
     private final String shortName;
