@@ -1,4 +1,4 @@
-package com.gaia3d.basic.types;
+package com.gaia3d.terrain.types;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
-import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.util.GlobeUtils;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;

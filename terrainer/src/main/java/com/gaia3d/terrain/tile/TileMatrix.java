@@ -1,15 +1,16 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
-import com.gaia3d.basic.structure.*;
-import com.gaia3d.basic.types.TerrainHalfEdgeType;
-import com.gaia3d.basic.types.TerrainObjectStatus;
+import com.gaia3d.terrain.types.TerrainHalfEdgeType;
+import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.io.LittleEndianDataOutputStream;
 import com.gaia3d.quantizedMesh.QuantizedMesh;
 import com.gaia3d.quantizedMesh.QuantizedMeshManager;
+import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.GlobeUtils;
 import lombok.extern.slf4j.Slf4j;

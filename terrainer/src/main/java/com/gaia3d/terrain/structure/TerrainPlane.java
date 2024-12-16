@@ -1,4 +1,4 @@
-package com.gaia3d.basic.structure;
+package com.gaia3d.terrain.structure;
 
 import lombok.NoArgsConstructor;
 import org.joml.Vector3d;

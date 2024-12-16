@@ -1,5 +1,6 @@
 package com.gaia3d.quantizedMesh;
 
+import com.gaia3d.terrain.util.OctNormalFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2f;
 import org.joml.Vector3f;

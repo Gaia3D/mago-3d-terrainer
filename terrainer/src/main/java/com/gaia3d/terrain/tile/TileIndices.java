@@ -1,7 +1,8 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
+import com.gaia3d.terrain.util.TileWgs84Utils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

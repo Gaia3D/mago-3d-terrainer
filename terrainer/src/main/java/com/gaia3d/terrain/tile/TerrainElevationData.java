@@ -1,7 +1,7 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
-import com.gaia3d.basic.structure.GeographicExtension;
-import com.gaia3d.basic.types.InterpolationType;
+import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.command.GlobalOptions;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;

@@ -1,6 +1,7 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
-import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.util.TileWgs84Utils;
 import lombok.Getter;
 import lombok.Setter;
 import org.opengis.referencing.operation.TransformException;

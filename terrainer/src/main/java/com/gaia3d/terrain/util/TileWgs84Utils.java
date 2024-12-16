@@ -1,8 +1,13 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.util;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
-import com.gaia3d.basic.structure.*;
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.TerrainHalfEdge;
+import com.gaia3d.terrain.structure.TerrainMesh;
+import com.gaia3d.terrain.structure.TerrainVertex;
+import com.gaia3d.terrain.tile.TileIndices;
+import com.gaia3d.terrain.tile.TilesRange;
 import com.gaia3d.util.GlobeUtils;
 
 import java.io.File;
@@ -201,7 +206,7 @@ public class TileWgs84Utils {
         return (int) (180.0 / angDeg);
     }
 
-    static List<TilesRange> subDivideTileRange(TilesRange tilesRange, int maxCol, int maxRow, List<TilesRange> resultSubDividedTilesRanges) {
+    public static List<TilesRange> subDivideTileRange(TilesRange tilesRange, int maxCol, int maxRow, List<TilesRange> resultSubDividedTilesRanges) {
         if (resultSubDividedTilesRanges == null) {
             resultSubDividedTilesRanges = new ArrayList<>();
         }
@@ -244,7 +249,7 @@ public class TileWgs84Utils {
         return resultSubDividedTilesRanges;
     }
 
-    static boolean isValidTileIndices(int L, int X, int Y) {
+    public static boolean isValidTileIndices(int L, int X, int Y) {
         // calculate the minX & minY, maxX & maxY for the tile depth(L)
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(L);
 
@@ -372,12 +377,8 @@ public class TileWgs84Utils {
 
                 currL++;
             }
-
             return resultGeoExtend;
         }
-
         return null;
     }
-
-
 }

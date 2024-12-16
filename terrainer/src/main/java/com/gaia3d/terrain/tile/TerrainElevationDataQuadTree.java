@@ -1,6 +1,6 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
-import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.GeographicExtension;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -186,33 +186,4 @@ public class TerrainElevationDataQuadTree {
             }
         }
     }
-
-
-    /*public TerrainElevationData getTerrainElevationData(double lonDeg, double latDeg) {
-        // function used in "TileWgs84 class : public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException, IOException {"
-        // to know the pixelSizeDegree
-        TerrainElevationData resultTerrainElevationData = null;
-
-        for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
-            GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
-            if (geographicExtension.intersects(lonDeg, latDeg)) {
-                resultTerrainElevationData = terrainElevationData;
-                break;
-            }
-        }
-
-        if (resultTerrainElevationData == null) {
-            if (children != null) {
-                // check children
-                for (int j = 0; j < CHILDREN_COUNT; j++) {
-                    if (children[j].geographicExtension.intersects(lonDeg, latDeg)) {
-                        resultTerrainElevationData = children[j].getTerrainElevationData(lonDeg, latDeg);
-                        break;
-                    }
-                }
-            }
-        }
-
-        return resultTerrainElevationData;
-    }*/
 }

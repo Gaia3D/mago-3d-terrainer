@@ -1,4 +1,4 @@
-package com.gaia3d.quantizedMesh;
+package com.gaia3d.terrain.util;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;

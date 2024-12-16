@@ -1,8 +1,9 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
-import com.gaia3d.basic.structure.TerrainTriangle;
-import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.TerrainTriangle;
+import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.Setter;

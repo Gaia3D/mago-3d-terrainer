@@ -1,11 +1,11 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
-import com.gaia3d.basic.structure.*;
-import com.gaia3d.basic.types.TerrainHalfEdgeType;
-import com.gaia3d.basic.types.TerrainObjectStatus;
+import com.gaia3d.terrain.types.TerrainHalfEdgeType;
+import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
+import com.gaia3d.terrain.structure.*;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.Setter;

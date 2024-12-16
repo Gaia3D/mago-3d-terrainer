@@ -1,4 +1,4 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

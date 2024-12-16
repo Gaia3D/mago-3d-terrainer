@@ -1,6 +1,6 @@
 package com.gaia3d.command;
 
-import com.gaia3d.basic.types.InterpolationType;
+import com.gaia3d.terrain.types.InterpolationType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

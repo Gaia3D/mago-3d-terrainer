@@ -1,8 +1,8 @@
-package com.gaia3d.basic.structure;
+package com.gaia3d.terrain.structure;
 
 import com.gaia3d.basic.geometry.GaiaRectangle;
-import com.gaia3d.basic.types.TerrainHalfEdgeType;
-import com.gaia3d.basic.types.TerrainObjectStatus;
+import com.gaia3d.terrain.types.TerrainHalfEdgeType;
+import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import lombok.Getter;

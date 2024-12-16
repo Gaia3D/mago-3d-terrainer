@@ -1,4 +1,4 @@
-package com.gaia3d.tile;
+package com.gaia3d.terrain.tile;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

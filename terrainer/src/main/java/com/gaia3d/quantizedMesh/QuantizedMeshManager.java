@@ -1,9 +1,10 @@
 package com.gaia3d.quantizedMesh;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
-import com.gaia3d.basic.structure.*;
+import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.util.OctNormalFactory;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.tile.TileWgs84;
+import com.gaia3d.terrain.tile.TileWgs84;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
