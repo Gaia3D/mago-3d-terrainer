@@ -14,6 +14,7 @@ import org.joml.Vector2d;
 import org.joml.Vector2i;
 
 import java.awt.image.Raster;
+import java.awt.image.SampleModel;
 
 @Slf4j
 @Getter
@@ -122,7 +123,7 @@ public class TerrainElevationData {
     public double getElevation(double lonDeg, double latDeg, boolean[] intersects) {
         double resultAltitude = 0.0;
 
-        // 1rst check if lon, lat intersects with geoExtension
+        // First check if lon, lat intersects with geoExtension
         if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
             intersects[0] = false;
             return resultAltitude;
@@ -187,5 +188,4 @@ public class TerrainElevationData {
 
         return value0 + factorX * (value1 - value0);
     }
-
 }

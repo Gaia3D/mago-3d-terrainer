@@ -113,7 +113,7 @@ public class QuantizedMesh {
     }
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream, boolean saveNormals) throws IOException {
-        // 1rst save the header
+        // First save the header
         header.saveDataOutputStream(dataOutputStream);
 
         // 2nd save the vertexCount

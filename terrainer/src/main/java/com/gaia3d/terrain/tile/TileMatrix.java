@@ -31,8 +31,9 @@ import static java.lang.Math.abs;
 
 @Slf4j
 public class TileMatrix {
+    private static final double VERTEX_COINCIDENT_ERROR = 0.0000000000001;
+
     private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
-    private final double VERTEXT_COINCIDENT_ERROR = 0.0000000000001;
     private final TilesRange tilesRange;
     private final List<List<TileWgs84>> tilesMatrixRowCol = new ArrayList<>();
     public TileWgs84Manager manager = null;
@@ -64,8 +65,8 @@ public class TileMatrix {
                 continue;
             }
 
-            if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, VERTEXT_COINCIDENT_ERROR, axisToCheck)) {
-                // 1rst, must change the startVertex & endVertex of the halfEdge2
+            if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, VERTEX_COINCIDENT_ERROR, axisToCheck)) {
+                // First, must change the startVertex & endVertex of the halfEdge2
                 TerrainVertex startVertex = halfEdge.getStartVertex();
                 TerrainVertex endVertex = halfEdge.getEndVertex();
 
@@ -115,12 +116,12 @@ public class TileMatrix {
         }
     }
 
-    public void makeMatrixMesh(boolean is1rstGeneration) throws TransformException, IOException {
+    public void makeMatrixMesh(boolean isFirstGeneration) throws TransformException, IOException {
         TileIndices tileIndices = new TileIndices();
 
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
 
-        // 1rst, load or create all the of the matrix
+        // First, load or create all the of the matrix
         // Must load from min tile-1 to max tile+1
         tilesMatrixRowCol.clear();
         int minTileX = tilesRange.getMinTileX() - 1;
@@ -139,7 +140,7 @@ public class TileMatrix {
             for (int X = minTileX; X <= maxTileX; X++) {
                 tileIndices.set(X, Y, tilesRange.getTileDepth());
                 TileWgs84 tile = null;
-                if (is1rstGeneration) {
+                if (isFirstGeneration) {
                     tile = this.manager.loadOrCreateTileWgs84(tileIndices);
                 } else {
                     tile = this.manager.loadTileWgs84(tileIndices);
@@ -390,7 +391,7 @@ public class TileMatrix {
             int minTileDepth = globalOptions.getMinimumTileDepth();
             int maxTileDepth = globalOptions.getMaximumTileDepth();
             if (tileIndices.getL() < maxTileDepth) {
-                // 1rst, mark triangles with the children tile indices
+                // First, mark triangles with the children tile indices
                 boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
                 String imageryType = this.manager.getIMAGINARY_TYPE();
 
@@ -400,7 +401,7 @@ public class TileMatrix {
                 TileIndices childLeftDownTileIndices = tileIndices.getChildLeftDownTileIndices(originIsLeftUp);
                 TileIndices childRightDownTileIndices = tileIndices.getChildRightDownTileIndices(originIsLeftUp);
 
-                // 1rst, classify the triangles of the tile
+                // First, classify the triangles of the tile
                 GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
                 double midLonDeg = geoExtension.getMidLongitudeDeg();
                 double midLatDeg = geoExtension.getMidLatitudeDeg();
@@ -700,11 +701,11 @@ public class TileMatrix {
         Vector3d barycenter = triangle.getBarycenter(this.listVertices, this.listHalfEdges);
         int colIdx = tileRaster.getColumn(barycenter.x);
         int rowIdx = tileRaster.getRow(barycenter.y);
-        double baricenterLonDeg = tileRaster.getLonDeg(colIdx);
-        double baricenterLatDeg = tileRaster.getLatDeg(rowIdx);
+        double barycenterLonDeg = tileRaster.getLonDeg(colIdx);
+        double barycenterLatDeg = tileRaster.getLatDeg(rowIdx);
 
         double elevation = tileRaster.getElevation(colIdx, rowIdx);
-        double planeElevation = plane.getValueZ(baricenterLonDeg, baricenterLatDeg);
+        double planeElevation = plane.getValueZ(barycenterLonDeg, barycenterLatDeg);
 
         double distToPlane = abs(elevation - planeElevation) * cosAng;
 
@@ -860,6 +861,6 @@ public class TileMatrix {
             }
         }
 
-        this.manager.getTerrainElevationDataManager().deleteTileRasters();
+        this.manager.getTerrainElevationDataManager().deleteTileRaster();
     }
 }

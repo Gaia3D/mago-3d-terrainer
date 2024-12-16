@@ -72,7 +72,7 @@ public class TerrainElevationDataQuadTree {
             return;
         }
 
-        // 1rst create child nodes if no exist
+        // First create child nodes if no exist
         if (children == null) {
             children = new TerrainElevationDataQuadTree[4];
             children[0] = new TerrainElevationDataQuadTree(this);

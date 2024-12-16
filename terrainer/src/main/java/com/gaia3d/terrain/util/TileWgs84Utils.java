@@ -320,7 +320,7 @@ public class TileWgs84Utils {
         } else if (imageryType.equals("WEB_MERCATOR")) {
             double webMercatorMaxLatRad = 1.4844222297453324; // = 2*Math.atan(Math.pow(Math.E, Math.PI)) - (Math.PI/2);
 
-            // 1rst, must know how many colums & rows there are in depth "L"
+            // First, must know how many colums & rows there are in depth "L"
             double numCols = Math.pow(2, L);
             double numRows = numCols;
 

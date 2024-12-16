@@ -206,7 +206,7 @@ public class TerrainHalfEdge {
         TerrainVertex startPoint_B = halfEdge.getStartVertex();
         TerrainVertex endPoint_B = halfEdge.getEndVertex();
 
-//        // 1rst do a bounding box check.***
+//        // First do a bounding box check.***
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
         GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
 
@@ -215,7 +215,7 @@ public class TerrainHalfEdge {
                 return false;
             }
         } else if (axisToCheck == 1)
-            // 1rst do a bounding box check.
+            // First do a bounding box check.
         {
             if (!boundingRect_A.intersectsInYAxis(boundingRect_B)) {
                 return false;
@@ -234,7 +234,7 @@ public class TerrainHalfEdge {
         TerrainVertex startPoint_B = halfEdge.getStartVertex();
         TerrainVertex endPoint_B = halfEdge.getEndVertex();
 
-//        // 1rst do a bounding box check.***
+//        // First do a bounding box check.***
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
         GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
 
@@ -259,7 +259,7 @@ public class TerrainHalfEdge {
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
-            // 1rst, save id.***
+            // First, save id.***
             dataOutputStream.writeInt(id);
 
             // 2nd, save startVertex.***

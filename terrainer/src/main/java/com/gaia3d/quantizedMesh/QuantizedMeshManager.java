@@ -21,7 +21,7 @@ public class QuantizedMeshManager {
     private List<TerrainVertex> listVertices = new ArrayList<>();
 
     public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile, boolean calculateNormals) {
-        // 1rst get the quantized mesh header
+        // First get the quantized mesh header
         QuantizedMeshHeader header = new QuantizedMeshHeader();
         TerrainMesh mesh = tile.getMesh();
 

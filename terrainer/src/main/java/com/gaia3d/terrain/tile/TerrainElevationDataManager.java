@@ -100,7 +100,7 @@ public class TerrainElevationDataManager {
         return tileWgs84Raster;
     }
 
-    public void makeAllTileWgs84Rasters(TilesRange tileRange, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
+    public void makeAllTileWgs84Raster(TilesRange tileRange, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
         List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
         for (TileIndices tileIndices : tileIndicesList) {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
@@ -114,7 +114,7 @@ public class TerrainElevationDataManager {
         }
     }
 
-    public void deleteTileRasters() {
+    public void deleteTileRaster() {
         for (TileWgs84Raster tileWgs84Raster : mapIndicesTileRaster.values()) {
             tileWgs84Raster.deleteObjects();
         }
@@ -155,7 +155,7 @@ public class TerrainElevationDataManager {
     }
 
     public void deleteObjects() {
-        this.deleteTileRasters();
+        this.deleteTileRaster();
         this.deleteCoverage();
         if (myGaiaGeoTiffManager != null) {
             myGaiaGeoTiffManager.deleteObjects();

@@ -137,7 +137,7 @@ public class TerrainVertex {
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
-            // 1rst, save id
+            // First, save id
             dataOutputStream.writeInt(id);
             dataOutputStream.writeDouble(position.x);
             dataOutputStream.writeDouble(position.y);

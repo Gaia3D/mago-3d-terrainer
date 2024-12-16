@@ -194,7 +194,7 @@ public class TerrainTriangle {
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
-            // 1rst, save id
+            // First, save id
             dataOutputStream.writeInt(id);
 
             // 2nd, save halfEdge

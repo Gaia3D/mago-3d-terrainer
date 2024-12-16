@@ -75,7 +75,7 @@ public class TerrainMesh {
     }
 
     public void removeDeletedObjects() {
-        // 1rst, check vertices
+        // First, check vertices
         vertices.removeIf(vertex -> vertex.getObjectStatus() == TerrainObjectStatus.DELETED);
 
         // 2nd, check triangles
@@ -86,7 +86,7 @@ public class TerrainMesh {
     }
 
     public void removeDeletedObjectsOriginal() {
-        // 1rst, check vertices
+        // First, check vertices
         int verticesCount = vertices.size();
         for (int i = 0; i < verticesCount; i++) {
             TerrainVertex vertex = vertices.get(i);
@@ -120,7 +120,7 @@ public class TerrainMesh {
     }
 
     public void mergeMesh(TerrainMesh mesh) {
-        // 1rst, add vertices
+        // First, add vertices
         int verticesCount = mesh.vertices.size();
         for (int i = 0; i < verticesCount; i++) {
             TerrainVertex vertex = mesh.vertices.get(i);
@@ -278,7 +278,7 @@ public class TerrainMesh {
 
     public void getTrianglesByTileIndices(TileIndices tileIndices, List<TerrainTriangle> resultTriangles) {
         // This function returns the triangles that intersect the tile
-        // 1rst, get the geographicExtension of the tile
+        // First, get the geographicExtension of the tile
 
         // 2nd, get the triangles that intersect the geographicExtension
         int trianglesCount = triangles.size();
@@ -461,7 +461,7 @@ public class TerrainMesh {
             //                                     +-- longestHEdge
 
             // split the triangle
-            // 1rst, create 2 new triangles
+            // First, create 2 new triangles
 
             //                      oppositeVertex
             //                            / \
@@ -626,7 +626,7 @@ public class TerrainMesh {
             //                                        oppVtx_AdjT
 
             // split the triangle
-            // 1rst, create 4 new triangles
+            // First, create 4 new triangles
             // triangleA
             TerrainHalfEdge halfEdgeA1 = newHalfEdge();
             halfEdgeA1.setType(longestHEdge.getType());
@@ -825,7 +825,7 @@ public class TerrainMesh {
     }
 
     public void addMesh(TerrainMesh mesh) {
-        // 1rst, add vertices
+        // First, add vertices
         int verticesCount = mesh.vertices.size();
         for (int i = 0; i < verticesCount; i++) {
             TerrainVertex vertex = mesh.vertices.get(i);

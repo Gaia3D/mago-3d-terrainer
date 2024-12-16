@@ -55,6 +55,7 @@ public class MaxLevelTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "15",
+                "-calculateNormals",
                 //"-d",
         };
         MagoTerrainerMain.main(args);
@@ -70,6 +71,7 @@ public class MaxLevelTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "16",
+                "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
     }

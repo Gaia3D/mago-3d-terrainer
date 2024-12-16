@@ -47,8 +47,11 @@ public class TileWgs84Manager {
     private int triangleRefinementMaxIterations = 5;
     private TerrainLayer terrainLayer = null;
     private boolean originIsLeftUp = false; // false = origin is left-down (Cesium Tile System)
-    private Map<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<>();
-    private Map<Integer, Double> minTriangleSizeForTileDepthMap = new HashMap<>();
+    /*private Map<Integer, Double> maxTriangleSizeForTileDepthMap = new HashMap<>();
+    private Map<Integer, Double> minTriangleSizeForTileDepthMap = new HashMap<>();*/
+
+    private List<Double> maxTriangleSizeForTileDepthList = new ArrayList<>();
+    private List<Double> minTriangleSizeForTileDepthList = new ArrayList<>();
 
     //private boolean calculateNormals = true;
     private List<TerrainElevationData> terrainElevationDataList = new ArrayList<>();
@@ -68,7 +71,8 @@ public class TileWgs84Manager {
             if (i < 11) {
                 maxSize *= 0.2;
             }
-            maxTriangleSizeForTileDepthMap.put(i, maxSize);
+            //maxTriangleSizeForTileDepthMap.put(i, maxSize);
+            maxTriangleSizeForTileDepthList.add(maxSize);
 
             double minSize = tileSizeMeters * 0.1 / (intensity);
             if (i > 13) {
@@ -80,7 +84,8 @@ public class TileWgs84Manager {
             } else if (i > 10) {
                 minSize *= 0.9;
             }
-            minTriangleSizeForTileDepthMap.put(i, minSize);
+            //minTriangleSizeForTileDepthMap.put(i, minSize);
+            minTriangleSizeForTileDepthList.add(minSize);
         }
 
         // init the map_depth_desiredPixelSizeXinMeters
@@ -113,8 +118,10 @@ public class TileWgs84Manager {
         this.depthGeoTiffFolderPathMap.clear();
         this.depthDesiredPixelSizeXinMetersMap.clear();
         this.depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.clear();
-        this.maxTriangleSizeForTileDepthMap.clear();
-        this.minTriangleSizeForTileDepthMap.clear();
+        //this.maxTriangleSizeForTileDepthMap.clear();
+        //this.minTriangleSizeForTileDepthMap.clear();
+        this.maxTriangleSizeForTileDepthList.clear();
+        this.minTriangleSizeForTileDepthList.clear();
         this.mapNoUsableGeotiffPaths.clear();
     }
 
@@ -186,9 +193,9 @@ public class TileWgs84Manager {
             AtomicInteger counter = new AtomicInteger(0);
             int total = subDividedTilesRanges.size();
             for (TilesRange subDividedTilesRange : subDividedTilesRanges) {
-                // 1rst, make all tilew rastyers.***
+                // First, make all tilew rastyers.***
                 TilesRange expandedTilesRange = subDividedTilesRange.expand1();
-                this.terrainElevationDataManager.makeAllTileWgs84Rasters(expandedTilesRange, this);
+                this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
                 if (this.geoTiffFilesCount > 1) {
                     this.terrainElevationDataManager.deleteGeoTiffManager();
                     this.terrainElevationDataManager.deleteCoverage();
@@ -197,16 +204,15 @@ public class TileWgs84Manager {
                 int progress = counter.incrementAndGet();
                 log.info("[Tile] - {} depth tile progress... [{}/{}]", depth, progress, total);
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
-                boolean is1rstGeneration = depth == minTileDepth;
-                tileMatrix.makeMatrixMesh(is1rstGeneration);
-
+                boolean isFirstGeneration = (depth == minTileDepth);
+                tileMatrix.makeMatrixMesh(isFirstGeneration);
                 tileMatrix.deleteObjects();
 
                 if (this.geoTiffFilesCount > 1) {
                     this.terrainElevationDataManager.deleteGeoTiffManager();
                     this.terrainElevationDataManager.deleteCoverage();
                 }
-                this.terrainElevationDataManager.deleteTileRasters();
+                this.terrainElevationDataManager.deleteTileRaster();
             }
 
             long endTime = System.currentTimeMillis();
@@ -239,11 +245,13 @@ public class TileWgs84Manager {
     }
 
     public double getMaxTriangleSizeForTileDepth(int depth) {
-        return maxTriangleSizeForTileDepthMap.get(depth);
+        //return maxTriangleSizeForTileDepthMap.get(depth);
+        return maxTriangleSizeForTileDepthList.get(depth);
     }
 
     public double getMinTriangleSizeForTileDepth(int depth) {
-        return minTriangleSizeForTileDepthMap.get(depth);
+        //return minTriangleSizeForTileDepthMap.get(depth);
+        return minTriangleSizeForTileDepthList.get(depth);
     }
 
     public double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
@@ -453,7 +461,7 @@ public class TileWgs84Manager {
             throw new RuntimeException("Error: terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
         }
 
-        // 1rst check geoTiff files count
+        // First check geoTiff files count
         List<String> geoTiffFilePaths = new ArrayList<>();
         FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, "tif", geoTiffFilePaths, true);
 
