@@ -1,5 +1,6 @@
 package com.gaia3d.quantizedMesh;
 
+import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.wgs84Tiles.TileWgs84;
@@ -16,8 +17,8 @@ import java.util.List;
  */
 public class QuantizedMeshManager {
 
-    private final List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
-    private List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
+    private final List<TerrainHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+    private List<TerrainVertex> listVerticesMemSave = new ArrayList<>();
 
     /*
         def octDecode(x, y):
@@ -151,11 +152,11 @@ public class QuantizedMeshManager {
     public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile, boolean calculateNormals) {
         // 1rst get the quantized mesh header
         QuantizedMeshHeader header = new QuantizedMeshHeader();
-        GaiaMesh mesh = tile.getMesh();
+        TerrainMesh mesh = tile.getMesh();
 
         if (mesh == null) return null;
 
-        List<GaiaVertex> vertices = mesh.vertices;
+        List<TerrainVertex> vertices = mesh.vertices;
         int vertexCount = vertices.size();
         if (vertexCount == 0) return null;
 
@@ -166,7 +167,7 @@ public class QuantizedMeshManager {
         double minimumHeight = Double.MAX_VALUE;
         double maximumHeight = -Double.MAX_VALUE;
         for (int i = 0; i < vertexCount; i++) {
-            GaiaVertex vertex = vertices.get(i);
+            TerrainVertex vertex = vertices.get(i);
             double height = vertex.getPosition().z;
             if (height < minimumHeight) minimumHeight = height;
             if (height > maximumHeight) maximumHeight = height;
@@ -236,7 +237,7 @@ public class QuantizedMeshManager {
 
 
         for (int i = 0; i < vertexCount; i++) {
-            GaiaVertex vertex = vertices.get(i);
+            TerrainVertex vertex = vertices.get(i);
             double lonDeg = vertex.getPosition().x;
             double latDeg = vertex.getPosition().y;
             double height = vertex.getPosition().z;
@@ -251,7 +252,7 @@ public class QuantizedMeshManager {
         }
 
         for (int i = 0; i < quantizedMesh.getTriangleCount(); i++) {
-            GaiaTriangle triangle = mesh.triangles.get(i);
+            TerrainTriangle triangle = mesh.triangles.get(i);
             this.listVerticesMemSave.clear();
             this.listHalfEdgesMemSave.clear();
             this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
@@ -262,7 +263,7 @@ public class QuantizedMeshManager {
 
         // now, edgesIndices
         // west vertices
-        List<GaiaVertex> westVertices = mesh.getLeftVerticesSortedUpToDown(); // original
+        List<TerrainVertex> westVertices = mesh.getLeftVerticesSortedUpToDown(); // original
         int westVerticesCount = westVertices.size();
         quantizedMesh.setWestIndices(new int[westVerticesCount]);
         quantizedMesh.setWestVertexCount(westVerticesCount);
@@ -271,7 +272,7 @@ public class QuantizedMeshManager {
         }
 
         // south vertices
-        List<GaiaVertex> southVertices = mesh.getDownVerticesSortedLeftToRight();
+        List<TerrainVertex> southVertices = mesh.getDownVerticesSortedLeftToRight();
         int southVerticesCount = southVertices.size();
         quantizedMesh.setSouthIndices(new int[southVerticesCount]);
         quantizedMesh.setSouthVertexCount(southVerticesCount);
@@ -280,7 +281,7 @@ public class QuantizedMeshManager {
         }
 
         // east vertices
-        List<GaiaVertex> eastVertices = mesh.getRightVerticesSortedDownToUp();
+        List<TerrainVertex> eastVertices = mesh.getRightVerticesSortedDownToUp();
         int eastVerticesCount = eastVertices.size();
         quantizedMesh.setEastIndices(new int[eastVerticesCount]);
         quantizedMesh.setEastVertexCount(eastVerticesCount);
@@ -289,7 +290,7 @@ public class QuantizedMeshManager {
         }
 
         // north vertices
-        List<GaiaVertex> northVertices = mesh.getUpVerticesSortedRightToLeft();
+        List<TerrainVertex> northVertices = mesh.getUpVerticesSortedRightToLeft();
         int northVerticesCount = northVertices.size();
         quantizedMesh.setNorthIndices(new int[northVerticesCount]);
         quantizedMesh.setNorthVertexCount(northVerticesCount);
@@ -308,7 +309,7 @@ public class QuantizedMeshManager {
             // Calculate the normals
             quantizedMesh.setOctEncodedNormals(new byte[vertexCount * 2]);
             for (int i = 0; i < vertexCount; i++) {
-                GaiaVertex vertex = vertices.get(i);
+                TerrainVertex vertex = vertices.get(i);
                 Vector3f normal = vertex.getNormal();
                 if (normal == null) {
                     normal = new Vector3f(0, 0, 1);
@@ -366,8 +367,8 @@ public class QuantizedMeshManager {
         double centerLatDeg = centerCartographic.y;
         double centerHeight = centerCartographic.z;
 
-        double centerLonRad = centerLonDeg * GlobeUtils.DEG_TO_RADIAN_FACTOR;
-        double centerLatRad = centerLatDeg * GlobeUtils.DEG_TO_RADIAN_FACTOR;
+        double centerLonRad = centerLonDeg * GlobeUtils.DEGREE_TO_RADIAN_FACTOR;
+        double centerLatRad = centerLatDeg * GlobeUtils.DEGREE_TO_RADIAN_FACTOR;
 
         double cosLat = Math.cos(centerLatRad);
         double sinLat = Math.sin(centerLatRad);

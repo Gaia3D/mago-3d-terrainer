@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 import static java.lang.Math.abs;
 
 @NoArgsConstructor
-public class GaiaLine2D {
+public class TerrainLine2D {
     private double posX;
     private double posY;
     private double dirX;

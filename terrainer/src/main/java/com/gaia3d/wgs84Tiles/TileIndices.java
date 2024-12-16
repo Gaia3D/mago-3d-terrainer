@@ -1,7 +1,7 @@
 package com.gaia3d.wgs84Tiles;
 
-import com.gaia3d.util.io.BigEndianDataInputStream;
-import com.gaia3d.util.io.BigEndianDataOutputStream;
+import com.gaia3d.io.BigEndianDataInputStream;
+import com.gaia3d.io.BigEndianDataOutputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

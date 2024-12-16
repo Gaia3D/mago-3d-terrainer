@@ -20,6 +20,8 @@ import java.awt.image.Raster;
 @Getter
 @Setter
 public class TerrainElevationData {
+    private static final CoordinateReferenceSystem CRS_WGS_84 = DefaultGeographicCRS.WGS84;
+
     private Vector2d pixelSizeMeters;
     // the terrain elevation data is stored in a geotiff file
     private TerrainElevationDataManager terrainElevDataManager = null;
@@ -29,10 +31,9 @@ public class TerrainElevationData {
     private Raster raster = null;
     private double minAltitude = Double.MAX_VALUE;
     private double maxAltitude = Double.MIN_VALUE;
-    private double[] memSaveAlt = new double[1];
-    private CoordinateReferenceSystem memSaveWgs84 = DefaultGeographicCRS.WGS84;
-    private NoDataContainer memSaveNoDataContainer = null;
-    private DirectPosition2D memSavePosWorld = null; // longitude supplied first
+    private double[] altitude = new double[1];
+    private NoDataContainer noDataContainer = null;
+    private DirectPosition2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
     private int geoTiffHeight = -1;
 
@@ -46,8 +47,8 @@ public class TerrainElevationData {
             this.coverage = null;
         }
 
-        if (this.memSaveNoDataContainer != null) {
-            this.memSaveNoDataContainer = null;
+        if (this.noDataContainer != null) {
+            this.noDataContainer = null;
         }
         this.raster = null;
     }
@@ -60,11 +61,9 @@ public class TerrainElevationData {
             this.geographicExtension.deleteObjects();
             this.geographicExtension = null;
         }
-
-        memSaveAlt = null;
-        memSaveWgs84 = null;
-        memSaveNoDataContainer = null;
-        memSavePosWorld = null;
+        altitude = null;
+        noDataContainer = null;
+        worldPosition = null;
     }
 
     public void getPixelSizeDegree(Vector2d resultPixelSize) {
@@ -87,8 +86,8 @@ public class TerrainElevationData {
                 this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
             }
 
-            if (this.memSaveNoDataContainer == null) {
-                this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+            if (this.noDataContainer == null) {
+                this.noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
             }
 
             // determine the grid coordinates of the point
@@ -115,8 +114,8 @@ public class TerrainElevationData {
 //                this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
 //            }
 
-            if (memSaveNoDataContainer != null) {
-                double nodata = memSaveNoDataContainer.getAsSingleValue();
+            if (noDataContainer != null) {
+                double nodata = noDataContainer.getAsSingleValue();
                 if (value == nodata) {
                     return 0.0;
                 }

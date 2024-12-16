@@ -1,8 +1,8 @@
 package com.gaia3d.wgs84Tiles;
 
-import com.gaia3d.basic.structure.GaiaTriangle;
+import com.gaia3d.basic.structure.TerrainTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
-import com.gaia3d.reader.FileUtils;
+import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,7 +30,7 @@ public class TerrainElevationDataManager {
     // manager.***
     TileWgs84Manager tileWgs84Manager = null;
     private List<TerrainElevationData> memSaveTerrainElevDatasArray = new ArrayList<>();
-    private List<GaiaTriangle> memSaveTrianglesArray = new ArrayList<>();
+    private List<TerrainTriangle> memSaveTrianglesArray = new ArrayList<>();
     private Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<>();
     // Inside the folder, there are multiple geoTiff files
 

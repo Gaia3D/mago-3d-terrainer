@@ -1,7 +1,7 @@
 package com.gaia3d.basic.structure;
 
-import com.gaia3d.util.io.BigEndianDataInputStream;
-import com.gaia3d.util.io.BigEndianDataOutputStream;
+import com.gaia3d.io.BigEndianDataInputStream;
+import com.gaia3d.io.BigEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -15,20 +15,20 @@ import java.util.List;
 @Getter
 @Setter
 @Slf4j
-public class GaiaVertex {
-    private GaiaHalfEdge outingHEdge = null;
+public class TerrainVertex {
+    private TerrainHalfEdge outingHEdge = null;
     private Vector3d position = new Vector3d();
     private Vector3f normal = null;
     private int id = -1;
     private int outingHEdgeId = -1;
-    private GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
+    private TerrainObjectStatus objectStatus = TerrainObjectStatus.ACTIVE;
 
     public void deleteObjects() {
         outingHEdge = null;
         position = null;
     }
 
-    public boolean isCoincidentVertex(GaiaVertex vertex, double error) {
+    public boolean isCoincidentVertex(TerrainVertex vertex, double error) {
         if (vertex == null) {
             return false;
         }
@@ -42,14 +42,14 @@ public class GaiaVertex {
         return Math.abs(this.getPosition().x - vertex.getPosition().x) < error && Math.abs(this.getPosition().y - vertex.getPosition().y) < error && Math.abs(this.getPosition().z - vertex.getPosition().z) < error;
     }
 
-    public void avoidOutingHalfEdge(GaiaHalfEdge avoidOutingHalfEdge) {
+    public void avoidOutingHalfEdge(TerrainHalfEdge avoidOutingHalfEdge) {
         // if this outingHEdge is the avoidOutingHalfEdge, then must change it
         if (this.outingHEdge != avoidOutingHalfEdge) {
             return;
         }
 
-        List<GaiaHalfEdge> allOutingHalfEdges = this.getAllOutingHalfEdges();
-        for (GaiaHalfEdge outingHalfEdge : allOutingHalfEdges) {
+        List<TerrainHalfEdge> allOutingHalfEdges = this.getAllOutingHalfEdges();
+        for (TerrainHalfEdge outingHalfEdge : allOutingHalfEdges) {
             if (outingHalfEdge != avoidOutingHalfEdge) {
                 this.outingHEdge = outingHalfEdge;
                 break;
@@ -63,9 +63,9 @@ public class GaiaVertex {
         }
 
         this.normal.set(0, 0, 0);
-        List<GaiaHalfEdge> outingHalfEdges = this.getAllOutingHalfEdges();
-        for (GaiaHalfEdge outingHalfEdge : outingHalfEdges) {
-            GaiaTriangle triangle = outingHalfEdge.getTriangle();
+        List<TerrainHalfEdge> outingHalfEdges = this.getAllOutingHalfEdges();
+        for (TerrainHalfEdge outingHalfEdge : outingHalfEdges) {
+            TerrainTriangle triangle = outingHalfEdge.getTriangle();
             if (triangle == null) {
                 continue;
             }
@@ -81,8 +81,8 @@ public class GaiaVertex {
         this.normal.normalize();
     }
 
-    public List<GaiaHalfEdge> getAllOutingHalfEdges() {
-        List<GaiaHalfEdge> outingHalfEdges = new ArrayList<>();
+    public List<TerrainHalfEdge> getAllOutingHalfEdges() {
+        List<TerrainHalfEdge> outingHalfEdges = new ArrayList<>();
 
         // there are 2 cases: this vertex is interior vertex or boundary vertex, but we dont know
         // 1- interior vertex
@@ -92,19 +92,19 @@ public class GaiaVertex {
             log.warn("This vertex has no outingHEdge. id : {}", this.id);
         }
 
-        GaiaHalfEdge firstHalfEdge = this.outingHEdge;
-        GaiaHalfEdge currHalfEdge = this.outingHEdge;
+        TerrainHalfEdge firstHalfEdge = this.outingHEdge;
+        TerrainHalfEdge currHalfEdge = this.outingHEdge;
         outingHalfEdges.add(this.outingHEdge); // put the first halfEdge
         boolean finished = false;
         boolean isInteriorVertex = true;
         while (!finished) {
-            GaiaHalfEdge twinHalfEdge = currHalfEdge.getTwin();
+            TerrainHalfEdge twinHalfEdge = currHalfEdge.getTwin();
             if (twinHalfEdge == null) {
                 finished = true;
                 isInteriorVertex = false;
                 break;
             }
-            GaiaHalfEdge nextHalfEdge = twinHalfEdge.getNext();
+            TerrainHalfEdge nextHalfEdge = twinHalfEdge.getNext();
             if (nextHalfEdge == null) {
                 finished = true;
                 isInteriorVertex = false;
@@ -124,8 +124,8 @@ public class GaiaVertex {
             currHalfEdge = this.outingHEdge;
             finished = false;
             while (!finished) {
-                GaiaHalfEdge prevHalfEdge = currHalfEdge.getPrev();
-                GaiaHalfEdge twinHalfEdge = prevHalfEdge.getTwin();
+                TerrainHalfEdge prevHalfEdge = currHalfEdge.getPrev();
+                TerrainHalfEdge twinHalfEdge = prevHalfEdge.getTwin();
                 if (twinHalfEdge == null) {
                     finished = true;
                     break;

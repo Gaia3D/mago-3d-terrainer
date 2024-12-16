@@ -1,6 +1,6 @@
 package com.gaia3d.quantizedMesh;
 
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.io.LittleEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,6 +1,6 @@
 package com.gaia3d.quantizedMesh;
 
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
+import com.gaia3d.io.LittleEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -22,12 +22,13 @@ public class QuantizedMesh {
 
     // edge indices
     private int westVertexCount;
-    private int[] westIndices = null;
     private int southVertexCount;
-    private int[] southIndices = null;
     private int eastVertexCount;
-    private int[] eastIndices = null;
     private int northVertexCount;
+
+    private int[] westIndices = null;
+    private int[] southIndices = null;
+    private int[] eastIndices = null;
     private int[] northIndices = null;
 
     // normals data

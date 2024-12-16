@@ -1,15 +1,16 @@
 package com.gaia3d.wgs84Tiles;
 
 
+import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.structure.*;
-import com.gaia3d.basic.types.HalfEdgeType;
+import com.gaia3d.basic.types.TerrainHalfEdgeType;
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.io.BigEndianDataOutputStream;
+import com.gaia3d.io.LittleEndianDataOutputStream;
 import com.gaia3d.quantizedMesh.QuantizedMesh;
 import com.gaia3d.quantizedMesh.QuantizedMeshManager;
-import com.gaia3d.reader.FileUtils;
+import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.util.io.BigEndianDataOutputStream;
-import com.gaia3d.util.io.LittleEndianDataOutputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -35,8 +36,8 @@ public class TileMatrix {
     public TileWgs84Manager manager = null;
     // the tilesMatrixRowCol is a matrix of tiles
     // all the arrays have the same length
-    List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
-    List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+    List<TerrainVertex> listVerticesMemSave = new ArrayList<>();
+    List<TerrainHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
 
     public TileMatrix(TilesRange tilesRange, TileWgs84Manager manager) {
         this.tilesRange = tilesRange;
@@ -54,30 +55,30 @@ public class TileMatrix {
         listHalfEdgesMemSave.clear();
     }
 
-    private boolean setTwinHalfEdgeWithHalfEdgesList(GaiaHalfEdge halfEdge, List<GaiaHalfEdge> halfEdgesList, int axisToCheck) {
+    private boolean setTwinHalfEdgeWithHalfEdgesList(TerrainHalfEdge halfEdge, List<TerrainHalfEdge> halfEdgesList, int axisToCheck) {
         // axisToCheck 0 = x axis, 1 = y axis, 2 = both axis
-        for (GaiaHalfEdge halfEdge2 : halfEdgesList) {
+        for (TerrainHalfEdge halfEdge2 : halfEdgesList) {
             if (halfEdge2.getTwin() != null) {
                 continue;
             }
 
             if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, VERTEXT_COINCIDENT_ERROR, axisToCheck)) {
                 // 1rst, must change the startVertex & endVertex of the halfEdge2
-                GaiaVertex startVertex = halfEdge.getStartVertex();
-                GaiaVertex endVertex = halfEdge.getEndVertex();
+                TerrainVertex startVertex = halfEdge.getStartVertex();
+                TerrainVertex endVertex = halfEdge.getEndVertex();
 
-                GaiaVertex startVertex2 = halfEdge2.getStartVertex();
-                GaiaVertex endVertex2 = halfEdge2.getEndVertex();
+                TerrainVertex startVertex2 = halfEdge2.getStartVertex();
+                TerrainVertex endVertex2 = halfEdge2.getEndVertex();
 
-                List<GaiaHalfEdge> outingHalfEdges_strVertex2 = startVertex2.getAllOutingHalfEdges();
-                List<GaiaHalfEdge> outingHalfEdges_endVertex2 = endVertex2.getAllOutingHalfEdges();
+                List<TerrainHalfEdge> outingHalfEdges_strVertex2 = startVertex2.getAllOutingHalfEdges();
+                List<TerrainHalfEdge> outingHalfEdges_endVertex2 = endVertex2.getAllOutingHalfEdges();
 
-                for (GaiaHalfEdge outingHalfEdge : outingHalfEdges_strVertex2) {
+                for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_strVertex2) {
                     // NOTE : for outingHEdges of startVertex2, must set "startVertex" the endVertex of halfEdge
                     outingHalfEdge.setStartVertex(endVertex);
                 }
 
-                for (GaiaHalfEdge outingHalfEdge : outingHalfEdges_endVertex2) {
+                for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_endVertex2) {
                     // NOTE : for outingHEdges of endVertex2, must set "startVertex" the startVertex of halfEdge
                     outingHalfEdge.setStartVertex(startVertex);
                 }
@@ -87,11 +88,11 @@ public class TileMatrix {
 
                 // now, set as deleted the startVertex2 & endVertex2
                 if (!startVertex2.equals(endVertex)) {
-                    startVertex2.setObjectStatus(GaiaObjectStatus.DELETED);
+                    startVertex2.setObjectStatus(TerrainObjectStatus.DELETED);
                 }
 
                 if (!endVertex2.equals(startVertex)) {
-                    endVertex2.setObjectStatus(GaiaObjectStatus.DELETED);
+                    endVertex2.setObjectStatus(TerrainObjectStatus.DELETED);
                 }
 
                 return true;
@@ -100,8 +101,8 @@ public class TileMatrix {
         return false;
     }
 
-    private void setTwinsBetweenHalfEdges(List<GaiaHalfEdge> listHEdges_A, List<GaiaHalfEdge> listHEdges_B, int axisToCheck) {
-        for (GaiaHalfEdge halfEdge : listHEdges_A) {
+    private void setTwinsBetweenHalfEdges(List<TerrainHalfEdge> listHEdges_A, List<TerrainHalfEdge> listHEdges_B, int axisToCheck) {
+        for (TerrainHalfEdge halfEdge : listHEdges_A) {
             if (halfEdge.getTwin() != null) {
                 //log.info("HalfEdge has a twin.");
                 continue;
@@ -159,16 +160,16 @@ public class TileMatrix {
         int colsCount = tilesMatrixRowCol.get(0).size();
         log.debug("Making TileMatrix columns : {}, rows : {} ", colsCount, rowsCount);
 
-        List<GaiaMesh> rowMeshesList = new ArrayList<>();
+        List<TerrainMesh> rowMeshesList = new ArrayList<>();
         int axisToCheck = 1;
         for (int i = 0; i < rowsCount; i++) {
             List<TileWgs84> rowTilesArray = tilesMatrixRowCol.get(i);
-            GaiaMesh rowMesh = null;
+            TerrainMesh rowMesh = null;
 
             for (int j = 0; j < colsCount; j++) {
                 TileWgs84 tile = rowTilesArray.get(j);
                 if (tile != null) {
-                    GaiaMesh tileMesh = tile.getMesh();
+                    TerrainMesh tileMesh = tile.getMesh();
                     if (rowMesh == null) {
                         rowMesh = tileMesh;
                     } else {
@@ -179,8 +180,8 @@ public class TileMatrix {
                         //  +----------+----------+
                         // merge the tileMesh with the rowMesh
                         // set twins between the right HEdges of the rowMesh and the left HEdges of the tileMesh
-                        List<GaiaHalfEdge> rowMeshRightHalfEdges = rowMesh.getHalfEdgesByType(HalfEdgeType.RIGHT);
-                        List<GaiaHalfEdge> tileMeshLeftHalfEdges = tileMesh.getHalfEdgesByType(HalfEdgeType.LEFT);
+                        List<TerrainHalfEdge> rowMeshRightHalfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.RIGHT);
+                        List<TerrainHalfEdge> tileMeshLeftHalfEdges = tileMesh.getHalfEdgesByType(TerrainHalfEdgeType.LEFT);
 
                         // the c_tile can be null
                         if (!rowMeshRightHalfEdges.isEmpty()) {
@@ -198,9 +199,9 @@ public class TileMatrix {
         }
 
         // now, join all the rowMeshes
-        GaiaMesh resultMesh = null;
+        TerrainMesh resultMesh = null;
         axisToCheck = 0;
-        for (GaiaMesh rowMesh : rowMeshesList) {
+        for (TerrainMesh rowMesh : rowMeshesList) {
             if (rowMesh == null) {
                 continue;
             }
@@ -220,8 +221,8 @@ public class TileMatrix {
                     //  +------------+
                     // merge the rowMesh with the resultMesh
                     // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
-                    List<GaiaHalfEdge> resultMeshDownHalfEdges = resultMesh.getHalfEdgesByType(HalfEdgeType.DOWN);
-                    List<GaiaHalfEdge> rowMeshUpHalfEdges = rowMesh.getHalfEdgesByType(HalfEdgeType.UP);
+                    List<TerrainHalfEdge> resultMeshDownHalfEdges = resultMesh.getHalfEdgesByType(TerrainHalfEdgeType.DOWN);
+                    List<TerrainHalfEdge> rowMeshUpHalfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.UP);
                     // the c_tile can be null
                     if (!resultMeshDownHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
@@ -243,8 +244,8 @@ public class TileMatrix {
                     //  +------------+
                     // merge the rowMesh with the resultMesh
                     // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
-                    List<GaiaHalfEdge> resultMesh_up_halfEdges = resultMesh.getHalfEdgesByType(HalfEdgeType.UP);
-                    List<GaiaHalfEdge> rowMesh_down_halfEdges = rowMesh.getHalfEdgesByType(HalfEdgeType.DOWN);
+                    List<TerrainHalfEdge> resultMesh_up_halfEdges = resultMesh.getHalfEdgesByType(TerrainHalfEdgeType.UP);
+                    List<TerrainHalfEdge> rowMesh_down_halfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.DOWN);
                     // the c_tile can be null
                     if (!resultMesh_up_halfEdges.isEmpty()) {
                         // now, set twins of halfEdges
@@ -274,7 +275,7 @@ public class TileMatrix {
             }
 
             // now save the 9 tiles
-            List<GaiaMesh> separatedMeshes = new ArrayList<>();
+            List<TerrainMesh> separatedMeshes = new ArrayList<>();
             this.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
 
             // save order :
@@ -298,12 +299,12 @@ public class TileMatrix {
         }
     }
 
-    public void saveQuantizedMeshes(List<GaiaMesh> separatedMeshes) throws IOException {
+    public void saveQuantizedMeshes(List<TerrainMesh> separatedMeshes) throws IOException {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         boolean calculateNormals = globalOptions.isCalculateNormals();
 
-        for (GaiaMesh mesh : separatedMeshes) {
-            GaiaTriangle triangle = mesh.triangles.get(0); // take the first triangle
+        for (TerrainMesh mesh : separatedMeshes) {
+            TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
             TileWgs84 tile = new TileWgs84(null, this.manager);
@@ -326,7 +327,7 @@ public class TileMatrix {
         }
     }
 
-    public void saveFile(GaiaMesh mesh, String filePath) throws IOException {
+    public void saveFile(TerrainMesh mesh, String filePath) throws IOException {
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
         FileUtils.createAllFoldersIfNoExist(foldersPath);
 
@@ -340,13 +341,13 @@ public class TileMatrix {
         dataOutputStream.close();
     }
 
-    public boolean saveSeparatedTiles(List<GaiaMesh> separatedMeshes) {
+    public boolean saveSeparatedTiles(List<TerrainMesh> separatedMeshes) {
         int meshesCount = separatedMeshes.size();
         int counter = 0;
         for (int i = 0; i < meshesCount; i++) {
-            GaiaMesh mesh = separatedMeshes.get(i);
+            TerrainMesh mesh = separatedMeshes.get(i);
 
-            GaiaTriangle triangle = mesh.triangles.get(0);
+            TerrainTriangle triangle = mesh.triangles.get(0);
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             String tileTempDirectory = globalOptions.getTileTempPath();
             String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
@@ -369,13 +370,13 @@ public class TileMatrix {
         return true;
     }
 
-    private boolean saveSeparatedChildrenTiles(List<GaiaMesh> separatedMeshes) {
+    private boolean saveSeparatedChildrenTiles(List<TerrainMesh> separatedMeshes) {
         int meshesCount = separatedMeshes.size();
         int counter = 0;
         for (int i = 0; i < meshesCount; i++) {
-            GaiaMesh mesh = separatedMeshes.get(i);
+            TerrainMesh mesh = separatedMeshes.get(i);
 
-            GaiaTriangle triangle = mesh.triangles.get(0); // take the first triangle
+            TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
             if (counter >= 100) {
@@ -401,11 +402,11 @@ public class TileMatrix {
                 GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
                 double midLonDeg = geoExtension.getMidLongitudeDeg();
                 double midLatDeg = geoExtension.getMidLatitudeDeg();
-                List<GaiaTriangle> triangles = mesh.triangles;
-                for (GaiaTriangle gaiaTriangle : triangles) {
+                List<TerrainTriangle> triangles = mesh.triangles;
+                for (TerrainTriangle gaiaTriangle : triangles) {
                     triangle = gaiaTriangle;
 
-                    if (triangle.getObjectStatus() == GaiaObjectStatus.DELETED) {
+                    if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
                         continue;
                     }
 
@@ -431,12 +432,12 @@ public class TileMatrix {
                     }
                 }
 
-                List<GaiaMesh> childMeshes = new ArrayList<>();
+                List<TerrainMesh> childMeshes = new ArrayList<>();
                 this.getSeparatedMeshes(mesh, childMeshes, this.manager.isOriginIsLeftUp());
 
                 // 3- save the 4 children
                 int childMeshesCount = childMeshes.size();
-                for (GaiaMesh childMesh : childMeshes) {
+                for (TerrainMesh childMesh : childMeshes) {
                     triangle = childMesh.triangles.get(0); // take the first triangle
                     TileIndices childTileIndices = triangle.getOwnerTileIndices();
                     String tileTempDirectory = globalOptions.getTileTempPath();
@@ -459,13 +460,13 @@ public class TileMatrix {
         return true;
     }
 
-    private List<GaiaHalfEdge> getHalfEdgesOfTriangles(List<GaiaTriangle> triangles, List<GaiaHalfEdge> resultHalfEdges, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    private List<TerrainHalfEdge> getHalfEdgesOfTriangles(List<TerrainTriangle> triangles, List<TerrainHalfEdge> resultHalfEdges, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         if (resultHalfEdges == null) {
             resultHalfEdges = new ArrayList<>();
         }
         //List<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
         listHalfEdgesMemSave.clear();
-        for (GaiaTriangle triangle : triangles) {
+        for (TerrainTriangle triangle : triangles) {
             triangle.getHalfEdge().getHalfEdgesLoop(listHalfEdgesMemSave);
             resultHalfEdges.addAll(listHalfEdgesMemSave);
             listHalfEdgesMemSave.clear();
@@ -473,14 +474,14 @@ public class TileMatrix {
         return resultHalfEdges;
     }
 
-    private List<GaiaVertex> getVerticesOfTriangles(List<GaiaTriangle> triangles) {
-        List<GaiaVertex> resultVertices = new ArrayList<>();
-        HashMap<GaiaVertex, Integer> map_vertices = new HashMap<>();
-        for (GaiaTriangle triangle : triangles) {
+    private List<TerrainVertex> getVerticesOfTriangles(List<TerrainTriangle> triangles) {
+        List<TerrainVertex> resultVertices = new ArrayList<>();
+        HashMap<TerrainVertex, Integer> map_vertices = new HashMap<>();
+        for (TerrainTriangle triangle : triangles) {
             this.listVerticesMemSave.clear();
             this.listHalfEdgesMemSave.clear();
             this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
-            for (GaiaVertex vertex : this.listVerticesMemSave) {
+            for (TerrainVertex vertex : this.listVerticesMemSave) {
                 if (!map_vertices.containsKey(vertex)) {
                     map_vertices.put(vertex, 1);
                     resultVertices.add(vertex);
@@ -490,15 +491,15 @@ public class TileMatrix {
         return resultVertices;
     }
 
-    public void getSeparatedMeshes(GaiaMesh bigMesh, List<GaiaMesh> resultSeparatedMeshes, boolean originIsLeftUp) {
+    public void getSeparatedMeshes(TerrainMesh bigMesh, List<TerrainMesh> resultSeparatedMeshes, boolean originIsLeftUp) {
         // separate by ownerTile_tileIndices
-        List<GaiaTriangle> triangles = bigMesh.triangles;
-        HashMap<String, List<GaiaTriangle>> map_triangles = new HashMap<>();
-        for (GaiaTriangle triangle : triangles) {
+        List<TerrainTriangle> triangles = bigMesh.triangles;
+        HashMap<String, List<TerrainTriangle>> map_triangles = new HashMap<>();
+        for (TerrainTriangle triangle : triangles) {
             if (triangle.getOwnerTileIndices() != null) {
                 TileIndices tileIndices = triangle.getOwnerTileIndices();
                 String tileIndicesString = tileIndices.getString();
-                List<GaiaTriangle> trianglesList = map_triangles.get(tileIndicesString);
+                List<TerrainTriangle> trianglesList = map_triangles.get(tileIndicesString);
                 if (trianglesList == null) {
                     trianglesList = new ArrayList<>();
                     map_triangles.put(tileIndicesString, trianglesList);
@@ -512,9 +513,9 @@ public class TileMatrix {
 
         // now, create separated meshes
         for (String tileIndicesString : map_triangles.keySet()) {
-            List<GaiaTriangle> trianglesList = map_triangles.get(tileIndicesString);
+            List<TerrainTriangle> trianglesList = map_triangles.get(tileIndicesString);
 
-            GaiaMesh separatedMesh = new GaiaMesh();
+            TerrainMesh separatedMesh = new TerrainMesh();
             separatedMesh.triangles = trianglesList;
             TileIndices tileIndices = trianglesList.get(0).getOwnerTileIndices();
             TileIndices L_tileIndices = tileIndices.getLeftTileIndices(originIsLeftUp);
@@ -524,16 +525,16 @@ public class TileMatrix {
 
             //GaiaBoundingBox bbox = this.getBBoxOfTriangles(trianglesList);
             this.listHalfEdgesMemSave.clear();
-            List<GaiaHalfEdge> halfEdges = new ArrayList<>();
+            List<TerrainHalfEdge> halfEdges = new ArrayList<>();
             halfEdges = this.getHalfEdgesOfTriangles(trianglesList, halfEdges, this.listHalfEdgesMemSave); // note : "halfEdges" if different to "this.listHalfEdgesMemSave"
             // for all HEdges, check the triangle of the twin
             // if the triangle of the twin has different ownerTile_tileIndices, then set the twin as null
             int halfEdges_count = halfEdges.size();
             for (int i = 0; i < halfEdges_count; i++) {
-                GaiaHalfEdge halfEdge = halfEdges.get(i);
-                GaiaHalfEdge twin = halfEdge.getTwin();
+                TerrainHalfEdge halfEdge = halfEdges.get(i);
+                TerrainHalfEdge twin = halfEdge.getTwin();
                 if (twin != null) {
-                    GaiaTriangle twins_triangle = twin.getTriangle();
+                    TerrainTriangle twins_triangle = twin.getTriangle();
                     if (twins_triangle != null) {
                         String twins_triangle_tileIndicesString = twins_triangle.getOwnerTileIndices().getString();
                         if (!twins_triangle_tileIndicesString.equals(tileIndicesString)) {
@@ -544,17 +545,17 @@ public class TileMatrix {
                             // now, for the hedges, must calculate the hedgeType
                             // must know the relative position of the twin triangle's tile
                             if (twins_triangle_tileIndicesString.equals(L_tileIndices.getString())) {
-                                halfEdge.setType(HalfEdgeType.LEFT);
-                                twin.setType(HalfEdgeType.RIGHT);
+                                halfEdge.setType(TerrainHalfEdgeType.LEFT);
+                                twin.setType(TerrainHalfEdgeType.RIGHT);
                             } else if (twins_triangle_tileIndicesString.equals(R_tileIndices.getString())) {
-                                halfEdge.setType(HalfEdgeType.RIGHT);
-                                twin.setType(HalfEdgeType.LEFT);
+                                halfEdge.setType(TerrainHalfEdgeType.RIGHT);
+                                twin.setType(TerrainHalfEdgeType.LEFT);
                             } else if (twins_triangle_tileIndicesString.equals(U_tileIndices.getString())) {
-                                halfEdge.setType(HalfEdgeType.UP);
-                                twin.setType(HalfEdgeType.DOWN);
+                                halfEdge.setType(TerrainHalfEdgeType.UP);
+                                twin.setType(TerrainHalfEdgeType.DOWN);
                             } else if (twins_triangle_tileIndicesString.equals(D_tileIndices.getString())) {
-                                halfEdge.setType(HalfEdgeType.DOWN);
-                                twin.setType(HalfEdgeType.UP);
+                                halfEdge.setType(TerrainHalfEdgeType.DOWN);
+                                twin.setType(TerrainHalfEdgeType.UP);
                             }
                         }
                     }
@@ -569,22 +570,22 @@ public class TileMatrix {
 
     }
 
-    public void recalculateElevation(GaiaMesh gaiaMesh, TilesRange tilesRange) throws TransformException, IOException {
-        List<GaiaTriangle> triangles = new ArrayList<>();
-        gaiaMesh.getTrianglesByTilesRange(tilesRange, triangles, null);
+    public void recalculateElevation(TerrainMesh terrainMesh, TilesRange tilesRange) throws TransformException, IOException {
+        List<TerrainTriangle> triangles = new ArrayList<>();
+        terrainMesh.getTrianglesByTilesRange(tilesRange, triangles, null);
 
-        HashMap<GaiaVertex, GaiaVertex> mapVertices = new HashMap<>();
-        for (GaiaTriangle triangle : triangles) {
+        HashMap<TerrainVertex, TerrainVertex> mapVertices = new HashMap<>();
+        for (TerrainTriangle triangle : triangles) {
             this.listVerticesMemSave.clear();
             this.listHalfEdgesMemSave.clear();
             this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
-            for (GaiaVertex vertex : this.listVerticesMemSave) {
+            for (TerrainVertex vertex : this.listVerticesMemSave) {
                 mapVertices.put(vertex, vertex);
             }
         }
 
         // now make vertices from the hashMap
-        List<GaiaVertex> verticesOfCurrentTile = new ArrayList<>(mapVertices.values());
+        List<TerrainVertex> verticesOfCurrentTile = new ArrayList<>(mapVertices.values());
         TerrainElevationDataManager terrainElevationDataManager = this.manager.getTerrainElevationDataManager();
 
         int verticesCount = verticesOfCurrentTile.size();
@@ -593,14 +594,14 @@ public class TileMatrix {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         int currDepth = tilesRange.getTileDepth();
         for (int i = 0; i < verticesCount; i++) {
-            GaiaVertex vertex = verticesOfCurrentTile.get(i);
+            TerrainVertex vertex = verticesOfCurrentTile.get(i);
             TileWgs84Utils.selectTileIndices(currDepth, vertex.getPosition().x, vertex.getPosition().y, tileIndicesAux, originIsLeftUp);
             vertex.getPosition().z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, vertex.getPosition().x, vertex.getPosition().y);
             //vertex.getPosition().z = terrainElevationDataManager.getElevation(vertex.getPosition().x, vertex.getPosition().y, this.manager.getMemSaveTerrainElevDataList());
         }
     }
 
-    public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException, IOException {
+    public boolean mustRefineTriangle(TerrainTriangle triangle) throws TransformException, IOException {
         if (triangle.isRefineChecked()) {
             return false;
         }
@@ -659,7 +660,7 @@ public class TileMatrix {
             this.listHalfEdgesMemSave.clear();
             this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
             int verticesCount = this.listVerticesMemSave.size();
-            for (GaiaVertex vertex : this.listVerticesMemSave) {
+            for (TerrainVertex vertex : this.listVerticesMemSave) {
                 if (vertex.getPosition().z > maxDiff) {
                     return true;
                 }
@@ -691,7 +692,7 @@ public class TileMatrix {
         // check the barycenter of the triangle
         this.listVerticesMemSave.clear();
         this.listHalfEdgesMemSave.clear();
-        GaiaPlane plane = triangle.getPlane(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+        TerrainPlane plane = triangle.getPlane(this.listVerticesMemSave, this.listHalfEdgesMemSave);
         this.listVerticesMemSave.clear();
         this.listHalfEdgesMemSave.clear();
         Vector3d barycenter = triangle.getBarycenter(this.listVerticesMemSave, this.listHalfEdgesMemSave);
@@ -737,8 +738,8 @@ public class TileMatrix {
         int rowAux = 0;
 
         boolean intersects = false;
-        List<GaiaHalfEdge> memSavehedges = new ArrayList<>();
-        GaiaLine2D memSaveline = new GaiaLine2D();
+        List<TerrainHalfEdge> memSavehedges = new ArrayList<>();
+        TerrainLine2D memSaveline = new TerrainLine2D();
 
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
@@ -790,7 +791,7 @@ public class TileMatrix {
     }
 
 
-    private boolean refineMeshOneIteration(GaiaMesh mesh, TilesRange tilesRange) throws TransformException, IOException {
+    private boolean refineMeshOneIteration(TerrainMesh mesh, TilesRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of 9 different tiles
         // Here refine only the triangles of the current tile
 
@@ -800,9 +801,9 @@ public class TileMatrix {
         int trianglesCount = mesh.triangles.size();
         log.debug("[RefineMesh] Triangles count : {}", trianglesCount);
         for (int i = 0; i < trianglesCount; i++) {
-            GaiaTriangle triangle = mesh.triangles.get(i);
+            TerrainTriangle triangle = mesh.triangles.get(i);
 
-            if (triangle.getObjectStatus() == GaiaObjectStatus.DELETED) {
+            if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
 
@@ -834,7 +835,7 @@ public class TileMatrix {
         return refined;
     }
 
-    public void refineMesh(GaiaMesh mesh, TilesRange tilesRange) throws TransformException, IOException {
+    public void refineMesh(TerrainMesh mesh, TilesRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of n different tiles
         // Here refine only the triangles of the tiles of TilesRange
 

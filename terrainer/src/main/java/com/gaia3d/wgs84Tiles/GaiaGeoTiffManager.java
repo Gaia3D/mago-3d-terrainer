@@ -26,8 +26,8 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class GaiaGeoTiffManager {
-    private int[] memSavePixel = new int[1];
-    private double[] memSaveOriginalUpperLeftCorner = new double[2];
+    private int[] pixel = new int[1];
+    private double[] originalUpperLeftCorner = new double[2];
     private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
     private Map<String, Vector2i> mapPathGridCoverage2dSize = new HashMap<>();
 
@@ -112,8 +112,8 @@ public class GaiaGeoTiffManager {
         Operations ops = new Operations(null);
         resizedCoverage = (GridCoverage2D) ops.scale(originalCoverage, scaleX, scaleY, 0, 0);
 
-        memSaveOriginalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
-        memSaveOriginalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
+        originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
+        originalUpperLeftCorner[1] = envelopeOriginal.getMinimum(1);
 
         return resizedCoverage;
     }

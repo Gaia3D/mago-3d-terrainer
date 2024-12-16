@@ -66,7 +66,7 @@ public class TerrainElevationDataQuadTree {
     }
 
     private void makeTree(int maxDepth) {
-        // if my datas count is less than 2, then return
+        // if my data count is less than 2, then return
         if (terrainElevationDataList.size() < 2) {
             return;
         }

@@ -1,9 +1,9 @@
 package com.gaia3d.wgs84Tiles;
 
-import com.gaia3d.basic.structure.GaiaTriangle;
+import com.gaia3d.basic.structure.TerrainTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.reader.FileUtils;
+import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +51,7 @@ public class TileWgs84Manager {
 
     //private boolean calculateNormals = true;
     private List<TerrainElevationData> memSaveTerrainElevDataList = new ArrayList<>();
-    private List<GaiaTriangle> memSaveTrianglesList = new ArrayList<>();
+    private List<TerrainTriangle> memSaveTrianglesList = new ArrayList<>();
     private Vector2d memSavePixelSizeDegrees = new Vector2d();
     private Map<String, String> mapNoUsableGeotiffPaths = new HashMap<>();
 
@@ -434,7 +434,7 @@ public class TileWgs84Manager {
 
         // now check if exist folders inside the terrainElevationDataFolderPath
         List<String> folderNames = new ArrayList<>();
-        com.gaia3d.reader.FileUtils.getFolderNames(currentFolderPath, folderNames);
+        FileUtils.getFolderNames(currentFolderPath, folderNames);
         String auxFolderPath = currentFolderPath;
         for (String folderName : folderNames) {
             auxFolderPath = currentFolderPath + File.separator + folderName;
@@ -464,14 +464,12 @@ public class TileWgs84Manager {
         this.setGeoTiffFilesCount(geotiffCount);
 
         log.info("[Pre][Resize GeoTiff] resizing geoTiffs Count : {} ", geotiffCount);
-
         if (geotiffCount == 1) {
             this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);
         } else {
             // 2nd resize the geotiffs
             resizeGeotiffSet(terrainElevationDataFolderPath, currentFolderPath);
         }
-
     }
 
     public void resizeGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {

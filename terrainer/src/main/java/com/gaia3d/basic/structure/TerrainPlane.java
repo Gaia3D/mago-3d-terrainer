@@ -4,14 +4,14 @@ import lombok.NoArgsConstructor;
 import org.joml.Vector3d;
 
 @NoArgsConstructor
-public class GaiaPlane {
+public class TerrainPlane {
     // plane : ax + by + cz + d = 0
     private double a = 0;
     private double b = 0;
     private double c = 0;
     private double d = 0;
 
-    public GaiaPlane(Vector3d p0, Vector3d p1, Vector3d p2) {
+    public TerrainPlane(Vector3d p0, Vector3d p1, Vector3d p2) {
         this.set3Points(p0, p1, p2);
     }
 

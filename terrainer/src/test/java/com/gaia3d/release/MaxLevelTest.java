@@ -1,5 +1,6 @@
-package com.gaia3d.command;
+package com.gaia3d.release;
 
+import com.gaia3d.command.MagoTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -8,10 +9,13 @@ import java.io.File;
 @Slf4j
 public class MaxLevelTest {
 
+    private final File INPUT_PATH = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF");
+    private final File OUTPUT_PATH = new File("D:\\data\\mago-server\\output");
+
     @Test
     void sampleSeoulTerrainLevel14() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-14");
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-korea-14");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -26,8 +30,8 @@ public class MaxLevelTest {
 
     @Test
     void sampleSeoulTerrainLevelRS14() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-14");
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-korea-14");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -43,8 +47,8 @@ public class MaxLevelTest {
 
     @Test
     void sampleSeoulTerrainLevel15() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-15");
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-korea-15");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -58,8 +62,8 @@ public class MaxLevelTest {
 
     @Test
     void sampleSeoulTerrainLevel16() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-16");
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-korea-16");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -72,8 +76,8 @@ public class MaxLevelTest {
 
     @Test
     void sampleSeoulTerrainLevel17() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-17");
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-korea-17");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -86,8 +90,8 @@ public class MaxLevelTest {
 
     @Test
     void sampleSeoulTerrainLevel18() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-18");
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-korea-18");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -100,8 +104,8 @@ public class MaxLevelTest {
 
     @Test
     void sampleSeoulCalcNormal() {
-        File inputPath = new File("G:\\E-Drive\\(DEM) Sample", "seoul");
-        File outputPath = new File("D:\\data\\mago-server\\output", "seoul-korea-normal");
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-korea-normal");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -115,7 +119,7 @@ public class MaxLevelTest {
     @Test
     void sampleKoreaCreateLayerJson() {
         //File inputPath = new File("G:\E-Drive\\(DEM) Sample", "korea");
-        File outputPath = new File("D:\\data\\mago-server\\output", "south-korea-15");
+        File outputPath = new File(OUTPUT_PATH, "south-korea-15");
 
         String[] args = new String[]{
                 "-input", outputPath.getAbsolutePath(),

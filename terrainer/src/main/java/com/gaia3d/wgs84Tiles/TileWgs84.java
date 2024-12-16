@@ -1,11 +1,11 @@
 package com.gaia3d.wgs84Tiles;
 
 import com.gaia3d.basic.structure.*;
-import com.gaia3d.basic.types.HalfEdgeType;
+import com.gaia3d.basic.types.TerrainHalfEdgeType;
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.reader.FileUtils;
-import com.gaia3d.util.io.BigEndianDataInputStream;
-import com.gaia3d.util.io.BigEndianDataOutputStream;
+import com.gaia3d.io.BigEndianDataInputStream;
+import com.gaia3d.io.BigEndianDataOutputStream;
+import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ public class TileWgs84 {
     private TileWgs84 parentTile = null;
     private TileIndices tileIndices = null; // if parentTile == null, then this is the root tile.
     private GeographicExtension geographicExtension = null;
-    private GaiaMesh mesh = null;
+    private TerrainMesh mesh = null;
 
     // for current tile, create the 8 neighbor tiles.
     //  +----------+----------+----------+
@@ -45,8 +45,8 @@ public class TileWgs84 {
     private TileWgs84[] neighborTiles = new TileWgs84[8];
     private TileWgs84[] childTiles = new TileWgs84[4];
 
-    private List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
-    private List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+    private List<TerrainVertex> listVerticesMemSave = new ArrayList<>();
+    private List<TerrainHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
 
     public TileWgs84(TileWgs84 parentTile, TileWgs84Manager manager) {
         this.parentTile = parentTile;
@@ -69,7 +69,7 @@ public class TileWgs84 {
         this.childTiles = null;
     }
 
-    public void saveFile(GaiaMesh mesh, String filePath) throws IOException {
+    public void saveFile(TerrainMesh mesh, String filePath) throws IOException {
         String foldersPath = FileUtils.removeFileNameFromPath(filePath);
         FileUtils.createAllFoldersIfNoExist(foldersPath);
         BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(new BufferedOutputStream(new FileOutputStream(filePath)));
@@ -81,19 +81,19 @@ public class TileWgs84 {
     public void loadFile(String filePath) throws IOException {
         BigEndianDataInputStream dataInputStream = new BigEndianDataInputStream(new BufferedInputStream(new FileInputStream(filePath)));
 
-        this.mesh = new GaiaMesh();
+        this.mesh = new TerrainMesh();
         this.mesh.loadDataInputStream(dataInputStream);
         dataInputStream.close();
     }
 
     public void createInitialMesh() throws TransformException, IOException {
         // The initial mesh consists in 4 vertex & 2 triangles
-        this.mesh = new GaiaMesh();
+        this.mesh = new TerrainMesh();
 
-        GaiaVertex vertexLD = this.mesh.newVertex();
-        GaiaVertex vertexRD = this.mesh.newVertex();
-        GaiaVertex vertexRU = this.mesh.newVertex();
-        GaiaVertex vertexLU = this.mesh.newVertex();
+        TerrainVertex vertexLD = this.mesh.newVertex();
+        TerrainVertex vertexRD = this.mesh.newVertex();
+        TerrainVertex vertexRU = this.mesh.newVertex();
+        TerrainVertex vertexLU = this.mesh.newVertex();
 
         TerrainElevationDataManager terrainElevationDataManager = this.manager.getTerrainElevationDataManager();
 
@@ -133,46 +133,46 @@ public class TileWgs84 {
         //   +---------------------+
         // so, the halfEdgeT1V3 is the twin of halfEdgeT2V1
 
-        GaiaTriangle triangle1 = this.mesh.newTriangle();
-        GaiaTriangle triangle2 = this.mesh.newTriangle();
+        TerrainTriangle triangle1 = this.mesh.newTriangle();
+        TerrainTriangle triangle2 = this.mesh.newTriangle();
 
         // Triangle 1
-        GaiaHalfEdge halfEdgeT1V1 = this.mesh.newHalfEdge();
-        GaiaHalfEdge halfEdgeT1V2 = this.mesh.newHalfEdge();
-        GaiaHalfEdge halfEdgeT1V3 = this.mesh.newHalfEdge(); // twin of halfEdgeT2V1
+        TerrainHalfEdge halfEdgeT1V1 = this.mesh.newHalfEdge();
+        TerrainHalfEdge halfEdgeT1V2 = this.mesh.newHalfEdge();
+        TerrainHalfEdge halfEdgeT1V3 = this.mesh.newHalfEdge(); // twin of halfEdgeT2V1
 
         halfEdgeT1V1.setStartVertex(vertexLD);
-        halfEdgeT1V1.setType(HalfEdgeType.DOWN);
+        halfEdgeT1V1.setType(TerrainHalfEdgeType.DOWN);
         halfEdgeT1V2.setStartVertex(vertexRD);
-        halfEdgeT1V2.setType(HalfEdgeType.RIGHT);
+        halfEdgeT1V2.setType(TerrainHalfEdgeType.RIGHT);
         halfEdgeT1V3.setStartVertex(vertexRU);
-        halfEdgeT1V3.setType(HalfEdgeType.INTERIOR);
+        halfEdgeT1V3.setType(TerrainHalfEdgeType.INTERIOR);
 
-        List<GaiaHalfEdge> halfEdges_T1 = new ArrayList<>();
+        List<TerrainHalfEdge> halfEdges_T1 = new ArrayList<>();
         halfEdges_T1.add(halfEdgeT1V1);
         halfEdges_T1.add(halfEdgeT1V2);
         halfEdges_T1.add(halfEdgeT1V3);
 
-        GaiaHalfEdgeUtils.concatenateHalfEdgesLoop(halfEdges_T1);
+        TerrainHalfEdgeUtils.concatenateHalfEdgesLoop(halfEdges_T1);
 
         // Triangle 2
-        GaiaHalfEdge halfEdgeT2V1 = this.mesh.newHalfEdge(); // twin of halfEdgeT1V3
-        GaiaHalfEdge halfEdgeT2V2 = this.mesh.newHalfEdge();
-        GaiaHalfEdge halfEdgeT2V3 = this.mesh.newHalfEdge();
+        TerrainHalfEdge halfEdgeT2V1 = this.mesh.newHalfEdge(); // twin of halfEdgeT1V3
+        TerrainHalfEdge halfEdgeT2V2 = this.mesh.newHalfEdge();
+        TerrainHalfEdge halfEdgeT2V3 = this.mesh.newHalfEdge();
 
         halfEdgeT2V1.setStartVertex(vertexLD);
-        halfEdgeT2V1.setType(HalfEdgeType.INTERIOR);
+        halfEdgeT2V1.setType(TerrainHalfEdgeType.INTERIOR);
         halfEdgeT2V2.setStartVertex(vertexRU);
-        halfEdgeT2V2.setType(HalfEdgeType.UP);
+        halfEdgeT2V2.setType(TerrainHalfEdgeType.UP);
         halfEdgeT2V3.setStartVertex(vertexLU);
-        halfEdgeT2V3.setType(HalfEdgeType.LEFT);
+        halfEdgeT2V3.setType(TerrainHalfEdgeType.LEFT);
 
-        List<GaiaHalfEdge> halfEdgesT2 = new ArrayList<>();
+        List<TerrainHalfEdge> halfEdgesT2 = new ArrayList<>();
         halfEdgesT2.add(halfEdgeT2V1);
         halfEdgesT2.add(halfEdgeT2V2);
         halfEdgesT2.add(halfEdgeT2V3);
 
-        GaiaHalfEdgeUtils.concatenateHalfEdgesLoop(halfEdgesT2);
+        TerrainHalfEdgeUtils.concatenateHalfEdgesLoop(halfEdgesT2);
 
         // now set twins
         halfEdgeT1V3.setTwin(halfEdgeT2V1);
@@ -205,16 +205,16 @@ public class TileWgs84 {
     }
 
 
-    private boolean refineMeshOneIterationInitial(GaiaMesh mesh) throws TransformException, IOException {
+    private boolean refineMeshOneIterationInitial(TerrainMesh mesh) throws TransformException, IOException {
 
         // refine big triangles of the mesh
         boolean refined = false;
         int trianglesCount = mesh.triangles.size();
         log.debug("[RefineMesh] Triangles Count : {}", trianglesCount);
         for (int i = 0; i < trianglesCount; i++) {
-            GaiaTriangle triangle = mesh.triangles.get(i);
+            TerrainTriangle triangle = mesh.triangles.get(i);
 
-            if (triangle.getObjectStatus() == GaiaObjectStatus.DELETED) {
+            if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
 
@@ -238,7 +238,7 @@ public class TileWgs84 {
         return refined;
     }
 
-    public void refineMeshInitial(GaiaMesh mesh) throws TransformException, IOException {
+    public void refineMeshInitial(TerrainMesh mesh) throws TransformException, IOException {
         boolean finished = false;
         int splitCount = 0;
         int maxIterations = 3;

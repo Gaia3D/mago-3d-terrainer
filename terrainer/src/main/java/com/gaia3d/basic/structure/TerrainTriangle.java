@@ -1,13 +1,13 @@
 package com.gaia3d.basic.structure;
 
+import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.io.BigEndianDataInputStream;
+import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.util.io.BigEndianDataInputStream;
-import com.gaia3d.util.io.BigEndianDataOutputStream;
 import com.gaia3d.wgs84Tiles.TileIndices;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.joml.Matrix3d;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
@@ -18,16 +18,16 @@ import java.util.List;
 @Getter
 @Setter
 @Slf4j
-public class GaiaTriangle {
-    public GaiaHalfEdge halfEdge = null; // The half edge structure caused a stack overflow, so we applied a public access controller.
+public class TerrainTriangle {
 
     private int id = -1;
     private int halfEdgeId = -1;
     private Vector3f normal = null;
     private TileIndices ownerTileIndices = new TileIndices(); // this triangle belongs to a tile
-    private GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
+    private TerrainObjectStatus objectStatus = TerrainObjectStatus.ACTIVE;
     private GaiaBoundingBox myBoundingBox = null;
-    private GaiaPlane myPlane = null;
+    private TerrainPlane myPlane = null;
+    public TerrainHalfEdge halfEdge = null; // The half edge structure caused a stack overflow, so we applied a public access controller.
     private int splitDepth = 0;
     private boolean refineChecked = false;
 
@@ -38,39 +38,39 @@ public class GaiaTriangle {
         myPlane = null;
     }
 
-    public void setHalfEdge(GaiaHalfEdge halfEdge) {
+    public void setHalfEdge(TerrainHalfEdge halfEdge) {
         this.halfEdge = halfEdge;
         halfEdge.setTriangleToHEdgesLoop(this);
     }
 
-    public List<GaiaVertex> getVertices(List<GaiaVertex> resultVertices, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public List<TerrainVertex> getVertices(List<TerrainVertex> resultVertices, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         listHalfEdgesMemSave.clear();
         this.halfEdge.getHalfEdgesLoop(listHalfEdgesMemSave);
         if (resultVertices == null) resultVertices = new ArrayList<>();
-        for (GaiaHalfEdge halfEdge : listHalfEdgesMemSave) {
+        for (TerrainHalfEdge halfEdge : listHalfEdgesMemSave) {
             resultVertices.add(halfEdge.getStartVertex());
         }
         listHalfEdgesMemSave.clear();
         return resultVertices;
     }
 
-    public List<Vector3d> getPositions(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public List<Vector3d> getPositions(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         listHalfEdgesMemSave.clear();
         listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
         List<Vector3d> positions = new ArrayList<>();
-        for (GaiaVertex vertex : listVerticesMemSave) {
+        for (TerrainVertex vertex : listVerticesMemSave) {
             positions.add(vertex.getPosition());
         }
         return positions;
     }
 
-    public GaiaBoundingBox getBoundingBox(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public GaiaBoundingBox getBoundingBox(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         listHalfEdgesMemSave.clear();
         if (this.myBoundingBox == null) {
             this.myBoundingBox = new GaiaBoundingBox();
             listVerticesMemSave.clear();
             listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
-            for (GaiaVertex vertex : listVerticesMemSave) {
+            for (TerrainVertex vertex : listVerticesMemSave) {
                 this.myBoundingBox.addPoint(vertex.getPosition());
             }
         }
@@ -78,22 +78,22 @@ public class GaiaTriangle {
         return this.myBoundingBox;
     }
 
-    public GaiaPlane getPlane(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public TerrainPlane getPlane(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         if (this.myPlane == null) {
-            this.myPlane = new GaiaPlane();
+            this.myPlane = new TerrainPlane();
             listVerticesMemSave.clear();
             listHalfEdgesMemSave.clear();
             listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
-            GaiaVertex vertex0 = listVerticesMemSave.get(0);
-            GaiaVertex vertex1 = listVerticesMemSave.get(1);
-            GaiaVertex vertex2 = listVerticesMemSave.get(2);
+            TerrainVertex vertex0 = listVerticesMemSave.get(0);
+            TerrainVertex vertex1 = listVerticesMemSave.get(1);
+            TerrainVertex vertex2 = listVerticesMemSave.get(2);
             this.myPlane.set3Points(vertex0.getPosition(), vertex1.getPosition(), vertex2.getPosition());
         }
 
         return this.myPlane;
     }
 
-    public boolean intersectsPointXY(double pos_x, double pos_y, List<GaiaHalfEdge> memSaveHedges, List<GaiaVertex> listVerticesMemSave, GaiaLine2D memSaveline2D) {
+    public boolean intersectsPointXY(double pos_x, double pos_y, List<TerrainHalfEdge> memSaveHedges, List<TerrainVertex> listVerticesMemSave, TerrainLine2D memSaveline2D) {
         listVerticesMemSave.clear();
         memSaveHedges.clear();
         GaiaBoundingBox boundingBox = this.getBoundingBox(listVerticesMemSave, memSaveHedges);
@@ -105,9 +105,9 @@ public class GaiaTriangle {
         this.halfEdge.getHalfEdgesLoop(memSaveHedges);
         double error = 1e-8;
         int hedgesCount = memSaveHedges.size();
-        GaiaLine2D line2dAux = null;
+        TerrainLine2D line2dAux = null;
         for (int i = 0; i < hedgesCount; i++) {
-            GaiaHalfEdge hedge = memSaveHedges.get(i);
+            TerrainHalfEdge hedge = memSaveHedges.get(i);
             line2dAux = hedge.getLine2DXY();
             byte relativePosition2D_linePoint = line2dAux.relativePositionOfPoint(pos_x, pos_y, error);
 
@@ -125,19 +125,19 @@ public class GaiaTriangle {
         return true;
     }
 
-    public Vector3d getBarycenter(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public Vector3d getBarycenter(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         listVerticesMemSave.clear();
         listHalfEdgesMemSave.clear();
         listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
         Vector3d barycenter = new Vector3d();
-        for (GaiaVertex vertex : listVerticesMemSave) {
+        for (TerrainVertex vertex : listVerticesMemSave) {
             barycenter.add(vertex.getPosition());
         }
         barycenter.mul(1.0 / 3.0);
         return barycenter;
     }
 
-    public List<Vector3d> getSomePointsToCheckForTriangleRefinement(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public List<Vector3d> getSomePointsToCheckForTriangleRefinement(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         List<Vector3d> somePoints = new ArrayList<>();
 
         listHalfEdgesMemSave.clear();
@@ -146,7 +146,7 @@ public class GaiaTriangle {
 
         listHalfEdgesMemSave.clear();
         listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
-        for (GaiaVertex vertex : listVerticesMemSave) {
+        for (TerrainVertex vertex : listVerticesMemSave) {
             Vector3d pos = vertex.getPosition().add(barycenter).mul(0.5);
             somePoints.add(pos);
         }
@@ -156,22 +156,22 @@ public class GaiaTriangle {
 
     public List<Vector3d> getPerimeterPositions(int numInterpolation) {
         List<Vector3d> perimeterPositions = new ArrayList<>();
-        List<GaiaHalfEdge> halfEdges = new ArrayList<>();
+        List<TerrainHalfEdge> halfEdges = new ArrayList<>();
         this.halfEdge.getHalfEdgesLoop(halfEdges);
-        for (GaiaHalfEdge halfEdge : halfEdges) {
+        for (TerrainHalfEdge halfEdge : halfEdges) {
             halfEdge.getInterpolatedPositions(perimeterPositions, numInterpolation);
         }
         halfEdges.clear();
         return perimeterPositions;
     }
 
-    public GaiaHalfEdge getLongestHalfEdge(List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public TerrainHalfEdge getLongestHalfEdge(List<TerrainHalfEdge> listHalfEdgesMemSave) {
         // Note : the length of the halfEdges meaning only the length of the XY plane
         listHalfEdgesMemSave.clear();
         this.halfEdge.getHalfEdgesLoop(listHalfEdgesMemSave);
-        GaiaHalfEdge longestHalfEdge = null;
+        TerrainHalfEdge longestHalfEdge = null;
         double maxLength = 0.0;
-        for (GaiaHalfEdge halfEdge : listHalfEdgesMemSave) {
+        for (TerrainHalfEdge halfEdge : listHalfEdgesMemSave) {
             double length = halfEdge.getSquaredLengthXY();
             if (length > maxLength) {
                 maxLength = length;
@@ -183,7 +183,7 @@ public class GaiaTriangle {
         return longestHalfEdge;
     }
 
-    public double getTriangleMaxSizeInMeters(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public double getTriangleMaxSizeInMeters(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         listHalfEdgesMemSave.clear();
         GaiaBoundingBox bboxTriangle = this.getBoundingBox(listVerticesMemSave, listHalfEdgesMemSave);
         double triangleMaxLengthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
@@ -231,21 +231,21 @@ public class GaiaTriangle {
         this.splitDepth = dataInputStream.readInt();
     }
 
-    public void calculateNormal(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public void calculateNormal(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         listHalfEdgesMemSave.clear();
         calculateNormalWC(listVerticesMemSave, listHalfEdgesMemSave);
     }
 
     public Vector3f getNormal() {
         if (this.normal == null) {
-            List<GaiaVertex> listVerticesMemSave = new ArrayList<>();
-            List<GaiaHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+            List<TerrainVertex> listVerticesMemSave = new ArrayList<>();
+            List<TerrainHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
             return this.getNormal(listVerticesMemSave, listHalfEdgesMemSave);
         }
         return this.normal;
     }
 
-    public Vector3f getNormal(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public Vector3f getNormal(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         if (this.normal == null) {
             listHalfEdgesMemSave.clear();
             calculateNormalWC(listVerticesMemSave, listHalfEdgesMemSave);
@@ -253,7 +253,7 @@ public class GaiaTriangle {
         return this.normal;
     }
 
-    public void calculateNormalWC(List<GaiaVertex> listVerticesMemSave, List<GaiaHalfEdge> listHalfEdgesMemSave) {
+    public void calculateNormalWC(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
         if (this.normal == null) {
             listHalfEdgesMemSave.clear();
             listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);

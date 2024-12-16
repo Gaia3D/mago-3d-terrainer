@@ -49,7 +49,7 @@ public class GaiaGeoTiffUtils {
             double maxLat = envelope.getMaximum(1);
             double midLat = (minLat + maxLat) / 2.0;
             double radius = GlobeUtils.getRadiusAtLatitude(midLat);
-            double degToRadFactor = GlobeUtils.DEG_TO_RADIAN_FACTOR;
+            double degToRadFactor = GlobeUtils.DEGREE_TO_RADIAN_FACTOR;
 
             Envelope envelopeOriginal = coverage.getEnvelope();
             // int degrees

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.io.IOException;
 
+@Deprecated
 @Slf4j
 class MesherMainTest {
     //****************************************************************
@@ -214,7 +215,7 @@ class MesherMainTest {
     }
 
     @Test
-    void main_Seoul_20240912() throws FactoryException, TransformException, IOException {
+    void mainSeoul20240912() throws FactoryException, TransformException, IOException {
         //*******************************************************************
         // Note : the outputFolder must be different from the inputFolder
         //*******************************************************************
@@ -228,7 +229,7 @@ class MesherMainTest {
     }
 
     @Test
-    void main_BangKok_20240919() throws FactoryException, TransformException, IOException {
+    void mainBangKok20240919() throws FactoryException, TransformException, IOException {
         //*******************************************************************
         // Note : the outputFolder must be different from the inputFolder
         //*******************************************************************
@@ -242,7 +243,7 @@ class MesherMainTest {
     }
 
     @Test
-    void main_building_pinchos_mini() throws FactoryException, TransformException, IOException {
+    void mainBuildingPinchosMini() throws FactoryException, TransformException, IOException {
         //*******************************************************************
         // Note : the outputFolder must be different from the inputFolder
         //*******************************************************************

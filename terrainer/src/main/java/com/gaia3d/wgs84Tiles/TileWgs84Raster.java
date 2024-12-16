@@ -36,8 +36,7 @@ public class TileWgs84Raster {
             return -1;
         }
 
-        int resultCol = (int) ((lonDeg - minLonDeg) / deltaLonDeg);
-        return resultCol;
+        return (int) ((lonDeg - minLonDeg) / deltaLonDeg);
     }
 
     public int getRow(double latDeg) {
@@ -48,8 +47,7 @@ public class TileWgs84Raster {
             return -1;
         }
 
-        int resultRow = (int) ((latDeg - minLatDeg) / deltaLatDeg);
-        return resultRow;
+        return (int) ((latDeg - minLatDeg) / deltaLatDeg);
     }
 
     public double getLonDeg(int col) {
@@ -125,8 +123,6 @@ public class TileWgs84Raster {
 
         double semiDeltaLonDeg = deltaLonDeg * 0.5;
         double semiDeltaLatDeg = deltaLatDeg * 0.5;
-
-        boolean[] intersects = new boolean[1];
 
         for (int col = 0; col < rasterWidth; col++) {
             double lonDeg = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;

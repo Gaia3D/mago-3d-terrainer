@@ -1,4 +1,4 @@
-package com.gaia3d.reader;
+package com.gaia3d.util;
 
 import lombok.extern.slf4j.Slf4j;
 

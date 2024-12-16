@@ -1,9 +1,9 @@
 package com.gaia3d.basic.structure;
 
-
-import com.gaia3d.basic.types.HalfEdgeType;
-import com.gaia3d.util.io.BigEndianDataInputStream;
-import com.gaia3d.util.io.BigEndianDataOutputStream;
+import com.gaia3d.basic.geometry.GaiaRectangle;
+import com.gaia3d.basic.types.TerrainHalfEdgeType;
+import com.gaia3d.io.BigEndianDataInputStream;
+import com.gaia3d.io.BigEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -17,22 +17,22 @@ import java.util.List;
 @Slf4j
 @Getter
 @Setter
-public class GaiaHalfEdge {
+public class TerrainHalfEdge {
     private int id = -1;
 
-    private GaiaVertex startVertex = null;
-    private GaiaHalfEdge next = null;
-    private GaiaHalfEdge twin = null;
-    private GaiaTriangle triangle = null;
+    private TerrainVertex startVertex = null;
+    private TerrainHalfEdge next = null;
+    private TerrainHalfEdge twin = null;
+    private TerrainTriangle triangle = null;
 
     private int startVertexId = -1;
     private int nextId = -1;
     private int twinId = -1;
     private int triangleId = -1;
 
-    private HalfEdgeType type = HalfEdgeType.UNKNOWN;
-    private GaiaObjectStatus objectStatus = GaiaObjectStatus.ACTIVE;
-    private GaiaLine2D line2D = null;
+    private TerrainHalfEdgeType type = TerrainHalfEdgeType.UNKNOWN;
+    private TerrainObjectStatus objectStatus = TerrainObjectStatus.ACTIVE;
+    private TerrainLine2D line2D = null;
     private GaiaRectangle boundingRect = null;
 
     public void deleteObjects() {
@@ -43,34 +43,34 @@ public class GaiaHalfEdge {
         line2D = null;
     }
 
-    public void setTwin(GaiaHalfEdge twin) {
+    public void setTwin(TerrainHalfEdge twin) {
         this.twin = twin;
         if (twin != null) {
             twin.twin = this;
         }
     }
 
-    public void setTriangle(GaiaTriangle triangle) {
+    public void setTriangle(TerrainTriangle triangle) {
         this.triangle = triangle;
         //triangle.setHalfEdge(this);
         triangle.halfEdge = this;
     }
 
-    public void setTriangleToHEdgesLoop(GaiaTriangle triangle) {
-        List<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
+    public void setTriangleToHEdgesLoop(TerrainTriangle triangle) {
+        List<TerrainHalfEdge> halfEdgesLoop = new ArrayList<>();
         this.getHalfEdgesLoop(halfEdgesLoop);
-        for (GaiaHalfEdge halfEdge : halfEdgesLoop) {
+        for (TerrainHalfEdge halfEdge : halfEdgesLoop) {
             halfEdge.setTriangle(triangle);
         }
         halfEdgesLoop.clear();
     }
 
-    public void setStartVertex(GaiaVertex startVertex) {
+    public void setStartVertex(TerrainVertex startVertex) {
         this.startVertex = startVertex;
         startVertex.setOutingHEdge(this);
     }
 
-    public GaiaVertex getEndVertex() {
+    public TerrainVertex getEndVertex() {
         if (next != null) {
             return next.getStartVertex();
         } else {
@@ -83,13 +83,13 @@ public class GaiaHalfEdge {
         }
     }
 
-    public GaiaHalfEdge getPrev() {
-        GaiaHalfEdge thisHalfEdge = this;
-        GaiaHalfEdge currHalfEdge = this;
-        GaiaHalfEdge prevHalfEdge = null;
+    public TerrainHalfEdge getPrev() {
+        TerrainHalfEdge thisHalfEdge = this;
+        TerrainHalfEdge currHalfEdge = this;
+        TerrainHalfEdge prevHalfEdge = null;
         boolean finished = false;
         while (!finished) {
-            GaiaHalfEdge nextHalfEdge = currHalfEdge.next;
+            TerrainHalfEdge nextHalfEdge = currHalfEdge.next;
             if (nextHalfEdge == null) {
                 return null;
             }
@@ -105,9 +105,9 @@ public class GaiaHalfEdge {
         return prevHalfEdge;
     }
 
-    public GaiaLine2D getLine2DXY() {
+    public TerrainLine2D getLine2DXY() {
         if (this.line2D == null) {
-            this.line2D = new GaiaLine2D();
+            this.line2D = new TerrainLine2D();
             Vector3d startPos = this.getStartVertex().getPosition();
             Vector3d endPos = this.getEndVertex().getPosition();
             this.line2D.setBy2Points(startPos.x, startPos.y, endPos.x, endPos.y);
@@ -116,13 +116,13 @@ public class GaiaHalfEdge {
         return this.line2D;
     }
 
-    public void getHalfEdgesLoop(List<GaiaHalfEdge> halfEdgesLoop) {
-        GaiaHalfEdge currHalfEdge = this;
-        GaiaHalfEdge firstHalfEdge = this;
+    public void getHalfEdgesLoop(List<TerrainHalfEdge> halfEdgesLoop) {
+        TerrainHalfEdge currHalfEdge = this;
+        TerrainHalfEdge firstHalfEdge = this;
         halfEdgesLoop.add(currHalfEdge);
         boolean finished = false;
         while (!finished) {
-            GaiaHalfEdge nextHalfEdge = currHalfEdge.next;
+            TerrainHalfEdge nextHalfEdge = currHalfEdge.next;
             if (nextHalfEdge == null) {
                 finished = true;
                 break;
@@ -197,24 +197,24 @@ public class GaiaHalfEdge {
         return this.boundingRect;
     }
 
-    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error, int axisToCheck) {
+    public boolean isHalfEdgePossibleTwin(TerrainHalfEdge halfEdge, double error, int axisToCheck) {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
-        GaiaVertex startPoint_A = this.getStartVertex();
-        GaiaVertex endPoint_A = this.getEndVertex();
+        TerrainVertex startPoint_A = this.getStartVertex();
+        TerrainVertex endPoint_A = this.getEndVertex();
 
-        GaiaVertex startPoint_B = halfEdge.getStartVertex();
-        GaiaVertex endPoint_B = halfEdge.getEndVertex();
+        TerrainVertex startPoint_B = halfEdge.getStartVertex();
+        TerrainVertex endPoint_B = halfEdge.getEndVertex();
 
 //        // 1rst do a bounding box check.***
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
         GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
 
-        if (axisToCheck == 0) // x axis
-        {
+        if (axisToCheck == 0) {
             if (!boundingRect_A.intersectsInXAxis(boundingRect_B)) {
                 return false;
             }
-        } else if (axisToCheck == 1) // y axis
+        } else if (axisToCheck == 1)
+            // 1rst do a bounding box check.
         {
             if (!boundingRect_A.intersectsInYAxis(boundingRect_B)) {
                 return false;
@@ -225,13 +225,13 @@ public class GaiaHalfEdge {
         return startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error);
     }
 
-    public boolean isHalfEdgePossibleTwin(GaiaHalfEdge halfEdge, double error) {
+    public boolean isHalfEdgePossibleTwin(TerrainHalfEdge halfEdge, double error) {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
-        GaiaVertex startPoint_A = this.getStartVertex();
-        GaiaVertex endPoint_A = this.getEndVertex();
+        TerrainVertex startPoint_A = this.getStartVertex();
+        TerrainVertex endPoint_A = this.getEndVertex();
 
-        GaiaVertex startPoint_B = halfEdge.getStartVertex();
-        GaiaVertex endPoint_B = halfEdge.getEndVertex();
+        TerrainVertex startPoint_B = halfEdge.getStartVertex();
+        TerrainVertex endPoint_B = halfEdge.getEndVertex();
 
 //        // 1rst do a bounding box check.***
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
@@ -253,7 +253,7 @@ public class GaiaHalfEdge {
         this.twinId = dataInputStream.readInt();
         this.triangleId = dataInputStream.readInt();
         int typeValue = dataInputStream.readInt();
-        this.type = HalfEdgeType.fromValue(typeValue);
+        this.type = TerrainHalfEdgeType.fromValue(typeValue);
     }
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {

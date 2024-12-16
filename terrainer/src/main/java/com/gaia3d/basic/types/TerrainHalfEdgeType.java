@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum HalfEdgeType {
+public enum TerrainHalfEdgeType {
 
     //           UP
     //      +----------+
@@ -24,8 +24,8 @@ public enum HalfEdgeType {
 
     private final int value;
 
-    public static HalfEdgeType fromValue(int value) {
-        for (HalfEdgeType type : HalfEdgeType.values()) {
+    public static TerrainHalfEdgeType fromValue(int value) {
+        for (TerrainHalfEdgeType type : TerrainHalfEdgeType.values()) {
             if (type.value == value) {
                 return type;
             }
