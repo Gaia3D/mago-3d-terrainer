@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

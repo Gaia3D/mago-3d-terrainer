@@ -232,8 +232,5 @@ public class QuantizedMesh {
             dataOutputStream.writeInt(extensionLength);
             dataOutputStream.write(octEncodedNormals);
         }
-
-
     }
-
 }

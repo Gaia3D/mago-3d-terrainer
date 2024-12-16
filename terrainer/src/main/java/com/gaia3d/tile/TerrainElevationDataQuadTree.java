@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.basic.structure.GeographicExtension;
 import lombok.Getter;
@@ -12,10 +12,11 @@ import java.util.List;
 public class TerrainElevationDataQuadTree {
     private static final int CHILDREN_COUNT = 4;
     private int depth = 0;
+
     // A region is represented by multiple small geoTiff files
     // Here, we use a quadtree to represent a region
     // The quadtree is a tree data structure in which each internal node has exactly four children
-    private TerrainElevationDataQuadTree parent = null;
+    private TerrainElevationDataQuadTree parent;
     private GeographicExtension geographicExtension = new GeographicExtension();
     private TerrainElevationDataQuadTree[] children = null;
     private List<TerrainElevationData> terrainElevationDataList = new ArrayList<>();
@@ -168,7 +169,7 @@ public class TerrainElevationDataQuadTree {
         makeTree(maxDepth);
     }
 
-    public void getTerrainElevationDatasArray(double lonDeg, double latDeg, List<TerrainElevationData> resultTerrainElevDataArray) {
+    public void getTerrainElevationDataArray(double lonDeg, double latDeg, List<TerrainElevationData> resultTerrainElevDataArray) {
         for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
             GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
             if (geographicExtension.intersects(lonDeg, latDeg)) {
@@ -179,7 +180,7 @@ public class TerrainElevationDataQuadTree {
         if (children != null) {
             for (int j = 0; j < CHILDREN_COUNT; j++) {
                 if (children[j].geographicExtension.intersects(lonDeg, latDeg)) {
-                    children[j].getTerrainElevationDatasArray(lonDeg, latDeg, resultTerrainElevDataArray);
+                    children[j].getTerrainElevationDataArray(lonDeg, latDeg, resultTerrainElevDataArray);
                     break;
                 }
             }
@@ -187,7 +188,7 @@ public class TerrainElevationDataQuadTree {
     }
 
 
-    public TerrainElevationData getTerrainElevationData(double lonDeg, double latDeg) {
+    /*public TerrainElevationData getTerrainElevationData(double lonDeg, double latDeg) {
         // function used in "TileWgs84 class : public boolean mustRefineTriangle(GaiaTriangle triangle) throws TransformException, IOException {"
         // to know the pixelSizeDegree
         TerrainElevationData resultTerrainElevationData = null;
@@ -213,5 +214,5 @@ public class TerrainElevationDataQuadTree {
         }
 
         return resultTerrainElevationData;
-    }
+    }*/
 }

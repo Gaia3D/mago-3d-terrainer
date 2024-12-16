@@ -1,9 +1,10 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.basic.types.TerrainHalfEdgeType;
+import com.gaia3d.basic.types.TerrainObjectStatus;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.io.LittleEndianDataOutputStream;
@@ -36,8 +37,8 @@ public class TileMatrix {
     public TileWgs84Manager manager = null;
     // the tilesMatrixRowCol is a matrix of tiles
     // all the arrays have the same length
-    List<TerrainVertex> listVerticesMemSave = new ArrayList<>();
-    List<TerrainHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+    List<TerrainVertex> listVertices = new ArrayList<>();
+    List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
 
     public TileMatrix(TilesRange tilesRange, TileWgs84Manager manager) {
         this.tilesRange = tilesRange;
@@ -51,8 +52,8 @@ public class TileMatrix {
             }
         }
 
-        listVerticesMemSave.clear();
-        listHalfEdgesMemSave.clear();
+        listVertices.clear();
+        listHalfEdges.clear();
     }
 
     private boolean setTwinHalfEdgeWithHalfEdgesList(TerrainHalfEdge halfEdge, List<TerrainHalfEdge> halfEdgesList, int axisToCheck) {
@@ -269,9 +270,9 @@ public class TileMatrix {
 
             // check if you must calculate normals
             if (globalOptions.isCalculateNormals()) {
-                this.listVerticesMemSave.clear();
-                this.listHalfEdgesMemSave.clear();
-                resultMesh.calculateNormals(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+                this.listVertices.clear();
+                this.listHalfEdges.clear();
+                resultMesh.calculateNormals(this.listVertices, this.listHalfEdges);
             }
 
             // now save the 9 tiles
@@ -361,7 +362,7 @@ public class TileMatrix {
             try {
                 saveFile(mesh, tileFullPath);
             } catch (IOException e) {
-                log.error(e.getMessage());
+                log.error("Error:", e);
                 return false;
             }
             counter++;
@@ -410,9 +411,9 @@ public class TileMatrix {
                         continue;
                     }
 
-                    this.listVerticesMemSave.clear();
-                    this.listHalfEdgesMemSave.clear();
-                    Vector3d barycenter = triangle.getBarycenter(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+                    this.listVertices.clear();
+                    this.listHalfEdges.clear();
+                    Vector3d barycenter = triangle.getBarycenter(this.listVertices, this.listHalfEdges);
                     if (barycenter.x < midLonDeg) {
                         if (barycenter.y < midLatDeg) {
                             // LD_Tile
@@ -449,7 +450,7 @@ public class TileMatrix {
                         //log.debug("Saving children tiles... L : " + childTileIndices.getL() + " i : " + j + " / " + childMeshesCount);
                         saveFile(childMesh, childTileFullPath); // original
                     } catch (IOException e) {
-                        log.error(e.getMessage());
+                        log.error("Error:", e);
                         return false;
                     }
                 }
@@ -460,16 +461,16 @@ public class TileMatrix {
         return true;
     }
 
-    private List<TerrainHalfEdge> getHalfEdgesOfTriangles(List<TerrainTriangle> triangles, List<TerrainHalfEdge> resultHalfEdges, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    private List<TerrainHalfEdge> getHalfEdgesOfTriangles(List<TerrainTriangle> triangles, List<TerrainHalfEdge> resultHalfEdges, List<TerrainHalfEdge> listHalfEdges) {
         if (resultHalfEdges == null) {
             resultHalfEdges = new ArrayList<>();
         }
         //List<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
-        listHalfEdgesMemSave.clear();
+        listHalfEdges.clear();
         for (TerrainTriangle triangle : triangles) {
-            triangle.getHalfEdge().getHalfEdgesLoop(listHalfEdgesMemSave);
-            resultHalfEdges.addAll(listHalfEdgesMemSave);
-            listHalfEdgesMemSave.clear();
+            triangle.getHalfEdge().getHalfEdgesLoop(listHalfEdges);
+            resultHalfEdges.addAll(listHalfEdges);
+            listHalfEdges.clear();
         }
         return resultHalfEdges;
     }
@@ -478,10 +479,10 @@ public class TileMatrix {
         List<TerrainVertex> resultVertices = new ArrayList<>();
         HashMap<TerrainVertex, Integer> map_vertices = new HashMap<>();
         for (TerrainTriangle triangle : triangles) {
-            this.listVerticesMemSave.clear();
-            this.listHalfEdgesMemSave.clear();
-            this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
-            for (TerrainVertex vertex : this.listVerticesMemSave) {
+            this.listVertices.clear();
+            this.listHalfEdges.clear();
+            this.listVertices = triangle.getVertices(this.listVertices, this.listHalfEdges);
+            for (TerrainVertex vertex : this.listVertices) {
                 if (!map_vertices.containsKey(vertex)) {
                     map_vertices.put(vertex, 1);
                     resultVertices.add(vertex);
@@ -524,9 +525,9 @@ public class TileMatrix {
             TileIndices D_tileIndices = tileIndices.getDownTileIndices(originIsLeftUp);
 
             //GaiaBoundingBox bbox = this.getBBoxOfTriangles(trianglesList);
-            this.listHalfEdgesMemSave.clear();
+            this.listHalfEdges.clear();
             List<TerrainHalfEdge> halfEdges = new ArrayList<>();
-            halfEdges = this.getHalfEdgesOfTriangles(trianglesList, halfEdges, this.listHalfEdgesMemSave); // note : "halfEdges" if different to "this.listHalfEdgesMemSave"
+            halfEdges = this.getHalfEdgesOfTriangles(trianglesList, halfEdges, this.listHalfEdges); // note : "halfEdges" if different to "this.listHalfEdges"
             // for all HEdges, check the triangle of the twin
             // if the triangle of the twin has different ownerTile_tileIndices, then set the twin as null
             int halfEdges_count = halfEdges.size();
@@ -576,10 +577,10 @@ public class TileMatrix {
 
         HashMap<TerrainVertex, TerrainVertex> mapVertices = new HashMap<>();
         for (TerrainTriangle triangle : triangles) {
-            this.listVerticesMemSave.clear();
-            this.listHalfEdgesMemSave.clear();
-            this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
-            for (TerrainVertex vertex : this.listVerticesMemSave) {
+            this.listVertices.clear();
+            this.listHalfEdges.clear();
+            this.listVertices = triangle.getVertices(this.listVertices, this.listHalfEdges);
+            for (TerrainVertex vertex : this.listVertices) {
                 mapVertices.put(vertex, vertex);
             }
         }
@@ -597,7 +598,7 @@ public class TileMatrix {
             TerrainVertex vertex = verticesOfCurrentTile.get(i);
             TileWgs84Utils.selectTileIndices(currDepth, vertex.getPosition().x, vertex.getPosition().y, tileIndicesAux, originIsLeftUp);
             vertex.getPosition().z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, vertex.getPosition().x, vertex.getPosition().y);
-            //vertex.getPosition().z = terrainElevationDataManager.getElevation(vertex.getPosition().x, vertex.getPosition().y, this.manager.getMemSaveTerrainElevDataList());
+            //vertex.getPosition().z = terrainElevationDataManager.getElevation(vertex.getPosition().x, vertex.getPosition().y, this.manager.getTerrainElevDataList());
         }
     }
 
@@ -610,9 +611,9 @@ public class TileMatrix {
         TileIndices tileIndices = triangle.getOwnerTileIndices();
 
         // check if the triangle must be refined
-        this.listVerticesMemSave.clear();
-        this.listHalfEdgesMemSave.clear();
-        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+        this.listVertices.clear();
+        this.listHalfEdges.clear();
+        GaiaBoundingBox bboxTriangle = triangle.getBoundingBox(this.listVertices, this.listHalfEdges);
         double bboxMaxLength = bboxTriangle.getLongestDistanceXY();
         double equatorialRadius = GlobeUtils.EQUATORIAL_RADIUS;
         double bboxMaxLengthInMeters = Math.toRadians(bboxMaxLength) * equatorialRadius;
@@ -633,9 +634,9 @@ public class TileMatrix {
 
         // if the triangle size is very small, then do not refine**********************
         // Calculate the maxLength of the triangle in meters
-        this.listVerticesMemSave.clear();
-        this.listHalfEdgesMemSave.clear();
-        double triangleMaxLengthMeters = triangle.getTriangleMaxSizeInMeters(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+        this.listVertices.clear();
+        this.listHalfEdges.clear();
+        double triangleMaxLengthMeters = triangle.getTriangleMaxSizeInMeters(this.listVertices, this.listHalfEdges);
         double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
 
 
@@ -656,11 +657,11 @@ public class TileMatrix {
         GeographicExtension rootGeographicExtension = terrainElevationDataManager.getRootGeographicExtension();
         if (!rootGeographicExtension.intersectsBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY())) {
             // Need check only the 3 vertex of the triangle
-            this.listVerticesMemSave.clear();
-            this.listHalfEdgesMemSave.clear();
-            this.listVerticesMemSave = triangle.getVertices(this.listVerticesMemSave, this.listHalfEdgesMemSave);
-            int verticesCount = this.listVerticesMemSave.size();
-            for (TerrainVertex vertex : this.listVerticesMemSave) {
+            this.listVertices.clear();
+            this.listHalfEdges.clear();
+            this.listVertices = triangle.getVertices(this.listVertices, this.listHalfEdges);
+            int verticesCount = this.listVertices.size();
+            for (TerrainVertex vertex : this.listVertices) {
                 if (vertex.getPosition().z > maxDiff) {
                     return true;
                 }
@@ -690,12 +691,12 @@ public class TileMatrix {
         }
 
         // check the barycenter of the triangle
-        this.listVerticesMemSave.clear();
-        this.listHalfEdgesMemSave.clear();
-        TerrainPlane plane = triangle.getPlane(this.listVerticesMemSave, this.listHalfEdgesMemSave);
-        this.listVerticesMemSave.clear();
-        this.listHalfEdgesMemSave.clear();
-        Vector3d barycenter = triangle.getBarycenter(this.listVerticesMemSave, this.listHalfEdgesMemSave);
+        this.listVertices.clear();
+        this.listHalfEdges.clear();
+        TerrainPlane plane = triangle.getPlane(this.listVertices, this.listHalfEdges);
+        this.listVertices.clear();
+        this.listHalfEdges.clear();
+        Vector3d barycenter = triangle.getBarycenter(this.listVertices, this.listHalfEdges);
         int colIdx = tileRaster.getColumn(barycenter.x);
         int rowIdx = tileRaster.getRow(barycenter.y);
         double baricenterLonDeg = tileRaster.getLonDeg(colIdx);
@@ -738,8 +739,8 @@ public class TileMatrix {
         int rowAux = 0;
 
         boolean intersects = false;
-        List<TerrainHalfEdge> memSavehedges = new ArrayList<>();
-        TerrainLine2D memSaveline = new TerrainLine2D();
+        List<TerrainHalfEdge> halfEdges = new ArrayList<>();
+        TerrainLine2D line2d = new TerrainLine2D();
 
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
@@ -768,21 +769,21 @@ public class TileMatrix {
 
                 distToPlane = abs(elevationFloat - planeElevation) * cosAng;
                 if (distToPlane > maxDiff) {
-                    this.listVerticesMemSave.clear();
-                    intersects = triangle.intersectsPointXY(pos_x, pos_y, memSavehedges, this.listVerticesMemSave, memSaveline);
+                    this.listVertices.clear();
+                    intersects = triangle.intersectsPointXY(pos_x, pos_y, halfEdges, this.listVertices, line2d);
 
                     if (!intersects) {
                         continue;
                     }
                     log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
-                    memSavehedges.clear();
+                    halfEdges.clear();
                     return true;
                 }
                 rowAux++;
             }
             colAux++;
         }
-        memSavehedges.clear();
+        halfEdges.clear();
 
         triangle.setRefineChecked(true);
 
@@ -812,16 +813,16 @@ public class TileMatrix {
             }
 
             if (mustRefineTriangle(triangle)) {
-                this.manager.getMemSaveTrianglesList().clear();
-                this.listHalfEdgesMemSave.clear();
-                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getMemSaveTrianglesList(), this.listHalfEdgesMemSave);
-                this.listHalfEdgesMemSave.clear();
+                this.manager.getTriangleList().clear();
+                this.listHalfEdges.clear();
+                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges);
+                this.listHalfEdges.clear();
 
-                if (!this.manager.getMemSaveTrianglesList().isEmpty()) {
+                if (!this.manager.getTriangleList().isEmpty()) {
                     splitCount++;
                     refined = true;
                 }
-                this.manager.getMemSaveTrianglesList().clear();
+                this.manager.getTriangleList().clear();
             }
         }
 

@@ -1,6 +1,5 @@
 package com.gaia3d.command;
 
-import com.gaia3d.process.ProcessOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.Options;
 import org.apache.logging.log4j.Level;
@@ -87,8 +86,8 @@ public class Configurator {
 
     public static Options createOptions() {
         Options options = new Options();
-        for (ProcessOptions processOptions : ProcessOptions.values()) {
-            options.addOption(processOptions.getShortName(), processOptions.getLongName(), processOptions.isArgRequired(), processOptions.getDescription());
+        for (CommandOptions commandOptions : CommandOptions.values()) {
+            options.addOption(commandOptions.getShortName(), commandOptions.getLongName(), commandOptions.isArgRequired(), commandOptions.getDescription());
         }
         return options;
     }

@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
@@ -59,7 +59,7 @@ public class TileIndices {
             dataOutputStream.writeInt(L);
 
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Error:", e);
         }
     }
 

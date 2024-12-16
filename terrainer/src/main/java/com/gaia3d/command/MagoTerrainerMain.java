@@ -1,11 +1,10 @@
 package com.gaia3d.command;
 
 
-import com.gaia3d.process.ProcessOptions;
 import com.gaia3d.util.DecimalUtils;
-import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
-import com.gaia3d.wgs84Tiles.TerrainLayer;
-import com.gaia3d.wgs84Tiles.TileWgs84Manager;
+import com.gaia3d.tile.TerrainElevationDataManager;
+import com.gaia3d.tile.TerrainLayer;
+import com.gaia3d.tile.TileWgs84Manager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
@@ -24,19 +23,19 @@ public class MagoTerrainerMain {
             Options options = Configurator.createOptions();
             CommandLineParser parser = new DefaultParser();
             CommandLine command = parser.parse(Configurator.createOptions(), args);
-            boolean isHelp = command.hasOption(ProcessOptions.HELP.getArgName());
-            boolean hasLogPath = command.hasOption(ProcessOptions.LOG.getArgName());
+            boolean isHelp = command.hasOption(CommandOptions.HELP.getArgName());
+            boolean hasLogPath = command.hasOption(CommandOptions.LOG.getArgName());
 
-            if (command.hasOption(ProcessOptions.DEBUG.getArgName())) {
+            if (command.hasOption(CommandOptions.DEBUG.getArgName())) {
                 Configurator.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
                 if (hasLogPath) {
-                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(ProcessOptions.LOG.getArgName()));
+                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(CommandOptions.LOG.getArgName()));
                 }
                 Configurator.setLevel(Level.DEBUG);
             } else {
                 Configurator.initConsoleLogger();
                 if (hasLogPath) {
-                    Configurator.initFileLogger(null, command.getOptionValue(ProcessOptions.LOG.getArgName()));
+                    Configurator.initFileLogger(null, command.getOptionValue(CommandOptions.LOG.getArgName()));
                 }
                 Configurator.setLevel(Level.INFO);
             }
@@ -112,7 +111,7 @@ public class MagoTerrainerMain {
         log.info("[Pre][Split GeoTiff] Finished GeoTiff Splitting files.");
 
         log.info("[Pre][Resize GeoTiff] Start GeoTiff Resizing files.");
-        tileWgs84Manager.processResizeGeotiffs(globalOptions.getInputPath(), null);
+        tileWgs84Manager.processResizeGeoTiffs(globalOptions.getInputPath(), null);
         log.info("[Pre][Resize GeoTiff] Finished GeoTiff Resizing files.");
 
         log.info("[Pre][Terrain Elevation Data] Start making terrain elevation data.");
@@ -174,6 +173,7 @@ public class MagoTerrainerMain {
                 FileUtils.deleteDirectory(splitTempFolder);
             } catch (IOException e) {
                 log.error("[Post]Failed to delete splitTempFolder.", e);
+                log.error("Error:", e);
                 throw new RuntimeException(e);
             }
         }
@@ -185,6 +185,7 @@ public class MagoTerrainerMain {
                 FileUtils.deleteDirectory(resizedTempFolder);
             } catch (IOException e) {
                 log.error("[Post]Failed to delete resizedTempFolder.", e);
+                log.error("Error:", e);
                 throw new RuntimeException(e);
             }
         }

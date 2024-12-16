@@ -1,7 +1,6 @@
 package com.gaia3d.command;
 
-import com.gaia3d.process.ProcessOptions;
-import com.gaia3d.wgs84Tiles.InterpolationType;
+import com.gaia3d.basic.types.InterpolationType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -65,36 +64,36 @@ public class GlobalOptions {
     }
 
     public static void init(CommandLine command) throws IOException {
-        if (command.hasOption(ProcessOptions.INPUT.getArgName())) {
-            instance.setInputPath(command.getOptionValue(ProcessOptions.INPUT.getArgName()));
+        if (command.hasOption(CommandOptions.INPUT.getArgName())) {
+            instance.setInputPath(command.getOptionValue(CommandOptions.INPUT.getArgName()));
             validateInputPath(new File(instance.getInputPath()).toPath());
         } else {
             throw new IllegalArgumentException("Please enter the value of the input argument.");
         }
 
-        if (command.hasOption(ProcessOptions.OUTPUT.getArgName())) {
-            String outputPath = command.getOptionValue(ProcessOptions.OUTPUT.getArgName());
+        if (command.hasOption(CommandOptions.OUTPUT.getArgName())) {
+            String outputPath = command.getOptionValue(CommandOptions.OUTPUT.getArgName());
             validateOutputPath(new File(outputPath).toPath());
 
             instance.setOutputPath(outputPath);
             instance.setResizedTiffTempPath(outputPath + File.separator + "ResizedTiffTemp");
             instance.setTileTempPath(outputPath + File.separator + "TileTemp");
-            String inputPath = command.getOptionValue(ProcessOptions.INPUT.getArgName());
+            String inputPath = command.getOptionValue(CommandOptions.INPUT.getArgName());
             instance.setSplitTiffTempPath(inputPath + File.separator + "SplitTiffTemp");
         } else {
             throw new IllegalArgumentException("Please enter the value of the output argument.");
         }
 
-        if (command.hasOption(ProcessOptions.LOG.getArgName())) {
-            instance.setLogPath(command.getOptionValue(ProcessOptions.LOG.getArgName()));
+        if (command.hasOption(CommandOptions.LOG.getArgName())) {
+            instance.setLogPath(command.getOptionValue(CommandOptions.LOG.getArgName()));
         }
 
-        if (command.hasOption(ProcessOptions.DEBUG.getArgName())) {
+        if (command.hasOption(CommandOptions.DEBUG.getArgName())) {
             instance.setDebugMode(true);
         }
 
-        if (command.hasOption(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
-            int maxDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName()));
+        if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
+            int maxDepth = Integer.parseInt(command.getOptionValue(CommandOptions.MAXIMUM_TILE_DEPTH.getArgName()));
             if (maxDepth < 0) {
                 log.warn("* Maximum tile depth is less than 0. Set to 0.");
                 maxDepth = 0;
@@ -102,13 +101,13 @@ public class GlobalOptions {
                 log.warn("* Maximum tile depth is greater than 22. Set to 22.");
                 maxDepth = 22;
             }
-            instance.setMaximumTileDepth(Integer.parseInt(command.getOptionValue(ProcessOptions.MAXIMUM_TILE_DEPTH.getArgName())));
+            instance.setMaximumTileDepth(Integer.parseInt(command.getOptionValue(CommandOptions.MAXIMUM_TILE_DEPTH.getArgName())));
         } else {
             instance.setMaximumTileDepth(DEFAULT_MAXIMUM_TILE_DEPTH);
         }
 
-        if (command.hasOption(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName())) {
-            int minDepth = Integer.parseInt(command.getOptionValue(ProcessOptions.MINIMUM_TILE_DEPTH.getArgName()));
+        if (command.hasOption(CommandOptions.MINIMUM_TILE_DEPTH.getArgName())) {
+            int minDepth = Integer.parseInt(command.getOptionValue(CommandOptions.MINIMUM_TILE_DEPTH.getArgName()));
             if (minDepth < 0) {
                 log.warn("* Minimum tile depth is less than 0. Set to 0.");
                 minDepth = 0;
@@ -124,7 +123,7 @@ public class GlobalOptions {
             instance.setMinimumTileDepth(DEFAULT_MINIMUM_TILE_DEPTH);
         }
 
-        if (command.hasOption(ProcessOptions.JSON.getArgName())) {
+        if (command.hasOption(CommandOptions.JSON.getArgName())) {
             instance.setLayerJsonGenerate(true);
         }
 
@@ -132,8 +131,8 @@ public class GlobalOptions {
             throw new IllegalArgumentException("Minimum tile depth must be less than or equal to maximum tile depth.");
         }
 
-        if (command.hasOption(ProcessOptions.INTERPOLATION_TYPE.getArgName())) {
-            String interpolationType = command.getOptionValue(ProcessOptions.INTERPOLATION_TYPE.getArgName());
+        if (command.hasOption(CommandOptions.INTERPOLATION_TYPE.getArgName())) {
+            String interpolationType = command.getOptionValue(CommandOptions.INTERPOLATION_TYPE.getArgName());
             InterpolationType type;
             try {
                 type =  InterpolationType.fromString(interpolationType);
@@ -146,20 +145,20 @@ public class GlobalOptions {
             instance.setInterpolationType(DEFAULT_INTERPOLATION_TYPE);
         }
 
-        if (command.hasOption(ProcessOptions.TILING_MOSAIC_SIZE.getArgName())) {
-            instance.setMosaicSize(Integer.parseInt(command.getOptionValue(ProcessOptions.TILING_MOSAIC_SIZE.getArgName())));
+        if (command.hasOption(CommandOptions.TILING_MOSAIC_SIZE.getArgName())) {
+            instance.setMosaicSize(Integer.parseInt(command.getOptionValue(CommandOptions.TILING_MOSAIC_SIZE.getArgName())));
         } else {
             instance.setMosaicSize(DEFAULT_MOSAIC_SIZE);
         }
 
-        if (command.hasOption(ProcessOptions.RASTER_MAXIMUM_SIZE.getArgName())) {
-            instance.setMaxRasterSize(Integer.parseInt(command.getOptionValue(ProcessOptions.RASTER_MAXIMUM_SIZE.getArgName())));
+        if (command.hasOption(CommandOptions.RASTER_MAXIMUM_SIZE.getArgName())) {
+            instance.setMaxRasterSize(Integer.parseInt(command.getOptionValue(CommandOptions.RASTER_MAXIMUM_SIZE.getArgName())));
         } else {
             instance.setMaxRasterSize(DEFAULT_MAX_RASTER_SIZE);
         }
 
-        if (command.hasOption(ProcessOptions.INTENSITY.getArgName())) {
-            double intensity = Double.parseDouble(command.getOptionValue(ProcessOptions.INTENSITY.getArgName()));
+        if (command.hasOption(CommandOptions.INTENSITY.getArgName())) {
+            double intensity = Double.parseDouble(command.getOptionValue(CommandOptions.INTENSITY.getArgName()));
             if (intensity < 1) {
                 log.warn("* Intensity value is less than 1. Set to 1.");
                 intensity = 1;
@@ -172,7 +171,7 @@ public class GlobalOptions {
             instance.setIntensity(DEFAULT_INTENSITY);
         }
 
-        instance.setCalculateNormals(command.hasOption(ProcessOptions.CALCULATE_NORMALS.getArgName()));
+        instance.setCalculateNormals(command.hasOption(CommandOptions.CALCULATE_NORMALS.getArgName()));
         printGlobalOptions();
     }
 

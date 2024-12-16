@@ -22,7 +22,7 @@ public class TerrainPlane {
         a = normal.x;
         b = normal.y;
         c = normal.z;
-        d = -(a * p0.x + b * p0.y + c * p0.z);
+        d = -((a * p0.x) + (b * p0.y) + (c * p0.z)); // d = - (ax0 + by0 + cz0)
     }
 
     public double getValueZ(double x, double y) {

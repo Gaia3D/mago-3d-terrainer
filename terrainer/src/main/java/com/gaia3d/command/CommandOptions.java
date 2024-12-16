@@ -1,10 +1,10 @@
-package com.gaia3d.process;
+package com.gaia3d.command;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum ProcessOptions {
+public enum CommandOptions {
     HELP("help", "h", "help", false, "Print this message"),
 
     INPUT("input", "i", "input", true, "Input folder path"),
@@ -30,7 +30,7 @@ public enum ProcessOptions {
     private final boolean argRequired;
     private final String description;
 
-    public static ProcessOptions[] getAllOptions() {
-        return ProcessOptions.values();
+    public static CommandOptions[] getAllOptions() {
+        return CommandOptions.values();
     }
 }

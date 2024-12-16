@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.basic.structure.GeographicExtension;
 import lombok.Getter;
@@ -129,7 +129,7 @@ public class TileWgs84Raster {
             for (int row = 0; row < rasterHeight; row++) {
                 double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
                 int idx = row * rasterWidth + col;
-                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, this.manager.getMemSaveTerrainElevDataList());
+                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, this.manager.getTerrainElevationDataList());
             }
         }
     }

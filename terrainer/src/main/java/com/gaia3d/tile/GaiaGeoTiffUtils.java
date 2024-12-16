@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.basic.structure.GeographicExtension;
 import com.gaia3d.util.GlobeUtils;

@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.structure.*;
@@ -259,11 +259,11 @@ public class TileWgs84Utils {
         return Y >= 0 && Y < numTilesY;
     }
 
-    public static boolean checkTileTest(TerrainMesh mesh, double error, boolean originIsLeftUp, List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public static boolean checkTileTest(TerrainMesh mesh, double error, boolean originIsLeftUp, List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
         List<TerrainVertex> resultVertices = new ArrayList<>();
-        listVerticesMemSave.clear();
-        listHalfEdgesMemSave.clear();
-        mesh.getVerticesByTriangles(resultVertices, listVerticesMemSave, listHalfEdgesMemSave);
+        listVertices.clear();
+        listHalfEdges.clear();
+        mesh.getVerticesByTriangles(resultVertices, listVertices, listHalfEdges);
 
         if (resultVertices.size() != mesh.vertices.size()) {
             return false;

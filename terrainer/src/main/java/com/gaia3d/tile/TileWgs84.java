@@ -1,7 +1,8 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.basic.structure.*;
 import com.gaia3d.basic.types.TerrainHalfEdgeType;
+import com.gaia3d.basic.types.TerrainObjectStatus;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
@@ -45,8 +46,8 @@ public class TileWgs84 {
     private TileWgs84[] neighborTiles = new TileWgs84[8];
     private TileWgs84[] childTiles = new TileWgs84[4];
 
-    private List<TerrainVertex> listVerticesMemSave = new ArrayList<>();
-    private List<TerrainHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
+    private List<TerrainVertex> listVertices = new ArrayList<>();
+    private List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
 
     public TileWgs84(TileWgs84 parentTile, TileWgs84Manager manager) {
         this.parentTile = parentTile;
@@ -107,10 +108,10 @@ public class TileWgs84 {
         double elevMaxLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, maxLonDeg, maxLatDeg);
         double elevMinLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, minLonDeg, maxLatDeg);
 
-//        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg, this.manager.getMemSaveTerrainElevDataList());
-//        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg, this.manager.getMemSaveTerrainElevDataList());
-//        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg, this.manager.getMemSaveTerrainElevDataList());
-//        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg, this.manager.getMemSaveTerrainElevDataList());
+//        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg, this.manager.getTerrainElevDataList());
+//        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg, this.manager.getTerrainElevDataList());
+//        double elevMaxLonMaxLat = terrainElevationDataManager.getElevation(maxLonDeg, maxLatDeg, this.manager.getTerrainElevDataList());
+//        double elevMinLonMaxLat = terrainElevationDataManager.getElevation(minLonDeg, maxLatDeg, this.manager.getTerrainElevDataList());
 
         vertexLD.setPosition(new Vector3d(minLonDeg, minLatDeg, elevMinLonMinLat));
         vertexRD.setPosition(new Vector3d(maxLonDeg, minLatDeg, elevMaxLonMinLat));
@@ -219,17 +220,17 @@ public class TileWgs84 {
             }
 
             log.debug("[RefineMesh] FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH");
-            this.manager.getMemSaveTrianglesList().clear();
-            this.listHalfEdgesMemSave.clear();
-            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getMemSaveTrianglesList(), this.listHalfEdgesMemSave);
-            this.listHalfEdgesMemSave.clear();
+            this.manager.getTriangleList().clear();
+            this.listHalfEdges.clear();
+            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges);
+            this.listHalfEdges.clear();
 
-            if (!this.manager.getMemSaveTrianglesList().isEmpty()) {
+            if (!this.manager.getTriangleList().isEmpty()) {
                 refined = true;
             }
         }
 
-        this.manager.getMemSaveTrianglesList().clear();
+        this.manager.getTriangleList().clear();
         if (refined) {
             mesh.removeDeletedObjects();
             mesh.setObjectsIdInList();

@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -222,7 +222,7 @@ public class TerrainLayer {
             JsonNode jsonNode = new ObjectMapper().readTree(objectNodeRoot.toString());
             objectMapper.writeValue(new File(fullFileName), jsonNode);
         } catch (IOException e) {
-            log.error(e.getMessage());
+            log.error("Error:", e);
         }
     }
 

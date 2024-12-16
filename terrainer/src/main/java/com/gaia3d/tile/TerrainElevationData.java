@@ -1,6 +1,7 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.basic.structure.GeographicExtension;
+import com.gaia3d.basic.types.InterpolationType;
 import com.gaia3d.command.GlobalOptions;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
@@ -9,10 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.awt.image.Raster;
 
@@ -20,8 +19,6 @@ import java.awt.image.Raster;
 @Getter
 @Setter
 public class TerrainElevationData {
-    private static final CoordinateReferenceSystem CRS_WGS_84 = DefaultGeographicCRS.WGS84;
-
     private Vector2d pixelSizeMeters;
     // the terrain elevation data is stored in a geotiff file
     private TerrainElevationDataManager terrainElevDataManager = null;
@@ -109,10 +106,8 @@ public class TerrainElevationData {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
             } catch (Exception e) {
                 log.error("[getGridValue : Exception] Error in getGridValue", e);
+                log.error("Error:", e);
             }
-//            if (this.memSaveNoDataContainer == null) {
-//                this.memSaveNoDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-//            }
 
             if (noDataContainer != null) {
                 double nodata = noDataContainer.getAsSingleValue();
@@ -164,28 +159,22 @@ public class TerrainElevationData {
     }
 
     private double calcBilinearInterpolation(double x, double y, int geoTiffWidth, int geoTiffHeight) {
-        int rasterHeight = geoTiffHeight;
-        int rasterWidth = geoTiffWidth;
+        int column = (int) (x * geoTiffWidth);
+        int row = (int) (y * geoTiffHeight);
 
-        int column = (int) (x * rasterWidth);
-        int row = (int) (y * rasterHeight);
-
-        double fx = x * rasterWidth - column;
-        double fy = y * rasterHeight - row;
+        double factorX = x * geoTiffWidth - column;
+        double factorY = y * geoTiffHeight - row;
 
         int columnNext = column + 1;
         int rowNext = row + 1;
 
-        if (columnNext >= rasterWidth) {
-            columnNext = rasterWidth - 1;
+        if (columnNext >= geoTiffWidth) {
+            columnNext = geoTiffWidth - 1;
         }
 
-        if (rowNext >= rasterHeight) {
-            rowNext = rasterHeight - 1;
+        if (rowNext >= geoTiffHeight) {
+            rowNext = geoTiffHeight - 1;
         }
-
-        double factorX = fx;
-        double factorY = fy;
 
         // interpolation bilinear.***
         double value00 = this.getGridValue(column, row);

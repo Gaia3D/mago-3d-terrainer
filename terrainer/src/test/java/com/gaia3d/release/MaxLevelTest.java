@@ -15,7 +15,7 @@ public class MaxLevelTest {
     @Test
     void sampleSeoulTerrainLevel14() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-korea-14");
+        File outputPath = new File(OUTPUT_PATH, "seoul-14");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -31,7 +31,7 @@ public class MaxLevelTest {
     @Test
     void sampleSeoulTerrainLevelRS14() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-korea-14");
+        File outputPath = new File(OUTPUT_PATH, "seoul-14");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -48,7 +48,7 @@ public class MaxLevelTest {
     @Test
     void sampleSeoulTerrainLevel15() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-korea-15");
+        File outputPath = new File(OUTPUT_PATH, "seoul-15");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -63,7 +63,7 @@ public class MaxLevelTest {
     @Test
     void sampleSeoulTerrainLevel16() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-korea-16");
+        File outputPath = new File(OUTPUT_PATH, "seoul-16");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -77,7 +77,7 @@ public class MaxLevelTest {
     @Test
     void sampleSeoulTerrainLevel17() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-korea-17");
+        File outputPath = new File(OUTPUT_PATH, "seoul-17");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -91,7 +91,7 @@ public class MaxLevelTest {
     @Test
     void sampleSeoulTerrainLevel18() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-korea-18");
+        File outputPath = new File(OUTPUT_PATH, "seoul-18");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -105,13 +105,30 @@ public class MaxLevelTest {
     @Test
     void sampleSeoulCalcNormal() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-korea-normal");
+        File outputPath = new File(OUTPUT_PATH, "seoul-10-normal");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "11",
+                "-max", "10",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleSouthKorea() {
+        File inputPath = new File(INPUT_PATH, "korea");
+        File outputPath = new File(OUTPUT_PATH, "korea-10");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "10",
+                "-calculateNormals",
+                //"-d",
         };
         MagoTerrainerMain.main(args);
     }

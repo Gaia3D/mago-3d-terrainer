@@ -1,6 +1,5 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
-import com.gaia3d.command.GlobalOptions;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -35,7 +34,6 @@ public class GaiaGeoTiffManager {
         if (mapPathGridCoverage2d.containsKey(geoTiffFilePath)) {
             return mapPathGridCoverage2d.get(geoTiffFilePath);
         }
-        GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         int gridCoverage2dCount = mapPathGridCoverage2d.size();
         if (gridCoverage2dCount > 0) {
@@ -53,7 +51,7 @@ public class GaiaGeoTiffManager {
             coverage = reader.read(null);
             reader.dispose();
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Error:", e);
         }
 
         mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
@@ -134,7 +132,7 @@ public class GaiaGeoTiffManager {
             Operations ops = new Operations(null);
             subGridCoverage2D = (GridCoverage2D) ops.crop(originalGridCoverage2D, tileEnvelope);
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Error:", e);
         }
         return subGridCoverage2D;
     }

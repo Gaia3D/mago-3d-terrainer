@@ -2,6 +2,7 @@ package com.gaia3d.basic.structure;
 
 import com.gaia3d.basic.geometry.GaiaRectangle;
 import com.gaia3d.basic.types.TerrainHalfEdgeType;
+import com.gaia3d.basic.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import lombok.Getter;
@@ -291,7 +292,7 @@ public class TerrainHalfEdge {
             int type_int = type.getValue();
             dataOutputStream.writeInt(type_int);
         } catch (Exception e) {
-            log.error("{}", e.getMessage());
+            log.error("Error:", e);
         }
     }
 

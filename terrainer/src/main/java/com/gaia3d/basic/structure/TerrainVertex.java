@@ -1,5 +1,6 @@
 package com.gaia3d.basic.structure;
 
+import com.gaia3d.basic.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import lombok.Getter;
@@ -32,13 +33,6 @@ public class TerrainVertex {
         if (vertex == null) {
             return false;
         }
-
-        // Test debug:***
-        /*double xDiff = Math.abs(this.getPosition().x - vertex.getPosition().x);
-        double yDiff = Math.abs(this.getPosition().y - vertex.getPosition().y);
-        double zDiff = Math.abs(this.getPosition().z - vertex.getPosition().z);*/
-        // end test debug
-
         return Math.abs(this.getPosition().x - vertex.getPosition().x) < error && Math.abs(this.getPosition().y - vertex.getPosition().y) < error && Math.abs(this.getPosition().z - vertex.getPosition().z) < error;
     }
 
@@ -156,7 +150,7 @@ public class TerrainVertex {
                 dataOutputStream.writeInt(-1);
             }
         } catch (Exception e) {
-            log.error("{}", e.getMessage());
+            log.error("Error:", e);
         }
     }
 

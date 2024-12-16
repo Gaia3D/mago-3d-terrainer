@@ -1,4 +1,4 @@
-package com.gaia3d.wgs84Tiles;
+package com.gaia3d.tile;
 
 import com.gaia3d.basic.structure.TerrainTriangle;
 import com.gaia3d.basic.structure.GeographicExtension;
@@ -50,9 +50,9 @@ public class TileWgs84Manager {
     private Map<Integer, Double> minTriangleSizeForTileDepthMap = new HashMap<>();
 
     //private boolean calculateNormals = true;
-    private List<TerrainElevationData> memSaveTerrainElevDataList = new ArrayList<>();
-    private List<TerrainTriangle> memSaveTrianglesList = new ArrayList<>();
-    private Vector2d memSavePixelSizeDegrees = new Vector2d();
+    private List<TerrainElevationData> terrainElevationDataList = new ArrayList<>();
+    private List<TerrainTriangle> triangleList = new ArrayList<>();
+    private Vector2d pixelSizeDegrees = new Vector2d();
     private Map<String, String> mapNoUsableGeotiffPaths = new HashMap<>();
 
     // constructor
@@ -101,12 +101,12 @@ public class TileWgs84Manager {
             this.terrainLayer = null;
         }
 
-        if (this.memSaveTerrainElevDataList != null) {
-            this.memSaveTerrainElevDataList.clear();
+        if (this.terrainElevationDataList != null) {
+            this.terrainElevationDataList.clear();
         }
 
-        if (this.memSaveTrianglesList != null) {
-            this.memSaveTrianglesList.clear();
+        if (this.triangleList != null) {
+            this.triangleList.clear();
         }
 
         this.depthGeoTiffFolderPathMap.clear();
@@ -199,7 +199,6 @@ public class TileWgs84Manager {
                 boolean is1rstGeneration = depth == minTileDepth;
                 tileMatrix.makeMatrixMesh(is1rstGeneration);
 
-                // now delete the tileMatrix to free memory.
                 tileMatrix.deleteObjects();
 
                 if (this.geoTiffFilesCount > 1) {
@@ -350,7 +349,6 @@ public class TileWgs84Manager {
 
         // 2nd resize the geotiffs
         splitGeotiffSet(terrainElevationDataFolderPath, currentFolderPath);
-
     }
 
     public void splitGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
@@ -424,8 +422,7 @@ public class TileWgs84Manager {
                             writer.write(tileCoverage, null);
                             writer.dispose();
                         } catch (IOException e) {
-                            System.err.println("Error al guardar el archivo GeoTIFF: " + e.getMessage());
-                            e.printStackTrace();
+                            log.error("Error:", e);
                         }
                     }
                 }
@@ -441,12 +438,11 @@ public class TileWgs84Manager {
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
             splitGeotiffSet(folderPath, auxFolderPath);
         }
-
         System.gc();
     }
 
 
-    public void processResizeGeotiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException {
+    public void processResizeGeoTiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
         File terrainElevationDataFolder = new File(terrainElevationDataFolderPath);
         if (!terrainElevationDataFolder.exists()) {
             log.error("terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);

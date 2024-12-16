@@ -2,11 +2,12 @@ package com.gaia3d.basic.structure;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.types.TerrainHalfEdgeType;
+import com.gaia3d.basic.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
-import com.gaia3d.wgs84Tiles.TerrainElevationDataManager;
-import com.gaia3d.wgs84Tiles.TileIndices;
-import com.gaia3d.wgs84Tiles.TilesRange;
+import com.gaia3d.tile.TerrainElevationDataManager;
+import com.gaia3d.tile.TileIndices;
+import com.gaia3d.tile.TilesRange;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
@@ -292,12 +293,12 @@ public class TerrainMesh {
         }
     }
 
-    public void getVerticesByTriangles(List<TerrainVertex> resultVertices, List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public void getVerticesByTriangles(List<TerrainVertex> resultVertices, List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
         Map<TerrainVertex, TerrainVertex> mapVertices = new HashMap<>();
         for (TerrainTriangle triangle : triangles) {
-            listHalfEdgesMemSave.clear();
-            listVerticesMemSave.clear();
-            List<TerrainVertex> vertices = triangle.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
+            listHalfEdges.clear();
+            listVertices.clear();
+            List<TerrainVertex> vertices = triangle.getVertices(listVertices, listHalfEdges);
             for (TerrainVertex vertex : vertices) {
                 mapVertices.put(vertex, vertex);
             }
@@ -353,13 +354,13 @@ public class TerrainMesh {
         return true;
     }
 
-    public boolean checkMesh(List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public boolean checkMesh(List<TerrainHalfEdge> listHalfEdges) {
         for (TerrainTriangle triangle : triangles) {
             if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
-            listHalfEdgesMemSave.clear();
-            TerrainHalfEdge halfEdge = triangle.getLongestHalfEdge(listHalfEdgesMemSave);
+            listHalfEdges.clear();
+            TerrainHalfEdge halfEdge = triangle.getLongestHalfEdge(listHalfEdges);
             if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 return false;
             }
@@ -373,9 +374,9 @@ public class TerrainMesh {
                     return false;
                 }
                 if (adjacentTriangle.getSplitDepth() == triangle.getSplitDepth()) {
-                    listHalfEdgesMemSave.clear();
-                    TerrainHalfEdge adjacentTriangleLongestHalfEdge = adjacentTriangle.getLongestHalfEdge(listHalfEdgesMemSave);
-                    listHalfEdgesMemSave.clear();
+                    listHalfEdges.clear();
+                    TerrainHalfEdge adjacentTriangleLongestHalfEdge = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
+                    listHalfEdges.clear();
                     if (adjacentTriangleLongestHalfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                         return false;
                     }
@@ -389,16 +390,16 @@ public class TerrainMesh {
         return true;
     }
 
-    public void calculateNormals(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public void calculateNormals(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
         // here we calculate the normals of the triangles and the vertices
         int trianglesCount = triangles.size();
         for (TerrainTriangle triangle : triangles) {
             if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
-            listVerticesMemSave.clear();
-            listHalfEdgesMemSave.clear();
-            triangle.calculateNormal(listVerticesMemSave, listHalfEdgesMemSave);
+            listVertices.clear();
+            listHalfEdges.clear();
+            triangle.calculateNormal(listVertices, listHalfEdges);
         }
 
         // once all triangles have their normals calculated, we can calculate the normals of the vertices
@@ -411,18 +412,18 @@ public class TerrainMesh {
     }
 
 
-    public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles, List<TerrainHalfEdge> listHalfEdgesMemSave) throws TransformException, IOException {
+    public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles, List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
 
-        listHalfEdgesMemSave.clear();
-        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdgesMemSave);
+        listHalfEdges.clear();
+        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges);
         if (adjacentTriangle == null) {
             // the triangle is border triangle, so is splittable
-            listHalfEdgesMemSave.clear();
-            TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdgesMemSave);
+            listHalfEdges.clear();
+            TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
             TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
             TerrainHalfEdge nextHEdge = longestHEdge.getNext();
 
@@ -436,10 +437,8 @@ public class TerrainMesh {
 
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
-            double elevation = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
-            //double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
 
-            midPosition.z = elevation;
+            midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
             TerrainVertex midVertex = newVertex();
             midVertex.setPosition(midPosition);
 
@@ -569,13 +568,13 @@ public class TerrainMesh {
             //                                          \  /
             //                                       oppVtx_AdjT
 
-            listHalfEdgesMemSave.clear();
-            TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdgesMemSave);
+            listHalfEdges.clear();
+            TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
             TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
             TerrainHalfEdge nextHEdge = longestHEdge.getNext();
 
-            listHalfEdgesMemSave.clear();
-            TerrainHalfEdge longestHEdgeAdjT = adjacentTriangle.getLongestHalfEdge(listHalfEdgesMemSave);
+            listHalfEdges.clear();
+            TerrainHalfEdge longestHEdgeAdjT = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
             TerrainHalfEdge prevHEdgeAdjT = longestHEdgeAdjT.getPrev();
             TerrainHalfEdge nextHEdgeAdjT = longestHEdgeAdjT.getNext();
 
@@ -600,9 +599,7 @@ public class TerrainMesh {
 
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
-            double elevation = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
-            //double elevation = terrainElevationDataManager.getElevation(midPosition.x, midPosition.y, terrainElevationDataManager.getMemSaveTerrainElevDatasArray());
-            midPosition.z = elevation;
+            midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
 
             midVertex.setPosition(midPosition);
 
@@ -774,14 +771,14 @@ public class TerrainMesh {
         }
     }
 
-    public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainHalfEdge> listHalfEdgesMemSave) throws TransformException, IOException {
+    public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
 
-        listHalfEdgesMemSave.clear();
-        TerrainHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge(listHalfEdgesMemSave);
+        listHalfEdges.clear();
+        TerrainHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge(listHalfEdges);
         TerrainHalfEdge twin = longestHEdge.getTwin();
 
         if (twin == null) {
@@ -792,8 +789,8 @@ public class TerrainMesh {
 
         double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError
 
-        listHalfEdgesMemSave.clear();
-        TerrainHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge(listHalfEdgesMemSave);
+        listHalfEdges.clear();
+        TerrainHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
 
         if (longestHEdgeOfAdjacentTriangle.getTwin() == longestHEdge) {
             return adjacentTriangle;
@@ -801,28 +798,28 @@ public class TerrainMesh {
             // here is error
         } else {
             // first split the adjacentTriangle;
-            terrainElevationDataManager.getMemSaveTrianglesArray().clear();
-            listHalfEdgesMemSave.clear();
-            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getMemSaveTrianglesArray(), listHalfEdgesMemSave);
-            listHalfEdgesMemSave.clear();
+            terrainElevationDataManager.getTrianglesArray().clear();
+            listHalfEdges.clear();
+            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges);
+            listHalfEdges.clear();
 
             // now search the new adjacentTriangle for the targetTriangle
 
-            int newTrianglesCount = terrainElevationDataManager.getMemSaveTrianglesArray().size();
+            int newTrianglesCount = terrainElevationDataManager.getTrianglesArray().size();
             for (int i = 0; i < newTrianglesCount; i++) {
-                TerrainTriangle newTriangle = terrainElevationDataManager.getMemSaveTrianglesArray().get(i);
-                listHalfEdgesMemSave.clear();
-                TerrainHalfEdge longestHEdgeOfNewTriangle = newTriangle.getLongestHalfEdge(listHalfEdgesMemSave);
+                TerrainTriangle newTriangle = terrainElevationDataManager.getTrianglesArray().get(i);
+                listHalfEdges.clear();
+                TerrainHalfEdge longestHEdgeOfNewTriangle = newTriangle.getLongestHalfEdge(listHalfEdges);
                 if (longestHEdgeOfNewTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError)) {
-                    terrainElevationDataManager.getMemSaveTrianglesArray().clear();
+                    terrainElevationDataManager.getTrianglesArray().clear();
                     return newTriangle;
                 }
             }
-            terrainElevationDataManager.getMemSaveTrianglesArray().clear();
+            terrainElevationDataManager.getTrianglesArray().clear();
             // if not found, then is error.!!!
         }
 
-        listHalfEdgesMemSave.clear();
+        listHalfEdges.clear();
 
         return null;
     }

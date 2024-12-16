@@ -1,10 +1,11 @@
 package com.gaia3d.basic.structure;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.basic.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.wgs84Tiles.TileIndices;
+import com.gaia3d.tile.TileIndices;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -43,34 +44,34 @@ public class TerrainTriangle {
         halfEdge.setTriangleToHEdgesLoop(this);
     }
 
-    public List<TerrainVertex> getVertices(List<TerrainVertex> resultVertices, List<TerrainHalfEdge> listHalfEdgesMemSave) {
-        listHalfEdgesMemSave.clear();
-        this.halfEdge.getHalfEdgesLoop(listHalfEdgesMemSave);
+    public List<TerrainVertex> getVertices(List<TerrainVertex> resultVertices, List<TerrainHalfEdge> listHalfEdges) {
+        listHalfEdges.clear();
+        this.halfEdge.getHalfEdgesLoop(listHalfEdges);
         if (resultVertices == null) resultVertices = new ArrayList<>();
-        for (TerrainHalfEdge halfEdge : listHalfEdgesMemSave) {
+        for (TerrainHalfEdge halfEdge : listHalfEdges) {
             resultVertices.add(halfEdge.getStartVertex());
         }
-        listHalfEdgesMemSave.clear();
+        listHalfEdges.clear();
         return resultVertices;
     }
 
-    public List<Vector3d> getPositions(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
-        listHalfEdgesMemSave.clear();
-        listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
+    public List<Vector3d> getPositions(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
+        listHalfEdges.clear();
+        listVertices = this.getVertices(listVertices, listHalfEdges);
         List<Vector3d> positions = new ArrayList<>();
-        for (TerrainVertex vertex : listVerticesMemSave) {
+        for (TerrainVertex vertex : listVertices) {
             positions.add(vertex.getPosition());
         }
         return positions;
     }
 
-    public GaiaBoundingBox getBoundingBox(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
-        listHalfEdgesMemSave.clear();
+    public GaiaBoundingBox getBoundingBox(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
+        listHalfEdges.clear();
         if (this.myBoundingBox == null) {
             this.myBoundingBox = new GaiaBoundingBox();
-            listVerticesMemSave.clear();
-            listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
-            for (TerrainVertex vertex : listVerticesMemSave) {
+            listVertices.clear();
+            listVertices = this.getVertices(listVertices, listHalfEdges);
+            for (TerrainVertex vertex : listVertices) {
                 this.myBoundingBox.addPoint(vertex.getPosition());
             }
         }
@@ -78,75 +79,75 @@ public class TerrainTriangle {
         return this.myBoundingBox;
     }
 
-    public TerrainPlane getPlane(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public TerrainPlane getPlane(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
         if (this.myPlane == null) {
             this.myPlane = new TerrainPlane();
-            listVerticesMemSave.clear();
-            listHalfEdgesMemSave.clear();
-            listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
-            TerrainVertex vertex0 = listVerticesMemSave.get(0);
-            TerrainVertex vertex1 = listVerticesMemSave.get(1);
-            TerrainVertex vertex2 = listVerticesMemSave.get(2);
+            listVertices.clear();
+            listHalfEdges.clear();
+            listVertices = this.getVertices(listVertices, listHalfEdges);
+            TerrainVertex vertex0 = listVertices.get(0);
+            TerrainVertex vertex1 = listVertices.get(1);
+            TerrainVertex vertex2 = listVertices.get(2);
             this.myPlane.set3Points(vertex0.getPosition(), vertex1.getPosition(), vertex2.getPosition());
         }
 
         return this.myPlane;
     }
 
-    public boolean intersectsPointXY(double pos_x, double pos_y, List<TerrainHalfEdge> memSaveHedges, List<TerrainVertex> listVerticesMemSave, TerrainLine2D memSaveline2D) {
-        listVerticesMemSave.clear();
-        memSaveHedges.clear();
-        GaiaBoundingBox boundingBox = this.getBoundingBox(listVerticesMemSave, memSaveHedges);
-        if (!boundingBox.intersectsPointXY(pos_x, pos_y)) {
+    public boolean intersectsPointXY(double posX, double posY, List<TerrainHalfEdge> halfEdges, List<TerrainVertex> listVertices, TerrainLine2D line2D) {
+        listVertices.clear();
+        halfEdges.clear();
+        GaiaBoundingBox boundingBox = this.getBoundingBox(listVertices, halfEdges);
+        if (!boundingBox.intersectsPointXY(posX, posY)) {
             return false;
         }
 
-        memSaveHedges.clear();
-        this.halfEdge.getHalfEdgesLoop(memSaveHedges);
+        halfEdges.clear();
+        this.halfEdge.getHalfEdgesLoop(halfEdges);
         double error = 1e-8;
-        int hedgesCount = memSaveHedges.size();
+        int hedgesCount = halfEdges.size();
         TerrainLine2D line2dAux = null;
         for (int i = 0; i < hedgesCount; i++) {
-            TerrainHalfEdge hedge = memSaveHedges.get(i);
+            TerrainHalfEdge hedge = halfEdges.get(i);
             line2dAux = hedge.getLine2DXY();
-            byte relativePosition2D_linePoint = line2dAux.relativePositionOfPoint(pos_x, pos_y, error);
+            byte relativePosition2D_linePoint = line2dAux.relativePositionOfPoint(posX, posY, error);
 
             // relative positions :
             // 0 : point is on the line.
             // 1 : point is on the left side of the line.
             // 2 : point is on the right side of the line.
             if (relativePosition2D_linePoint == 2) {
-                memSaveHedges.clear();
+                halfEdges.clear();
                 return false;
             }
         }
 
-        memSaveHedges.clear();
+        halfEdges.clear();
         return true;
     }
 
-    public Vector3d getBarycenter(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
-        listVerticesMemSave.clear();
-        listHalfEdgesMemSave.clear();
-        listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
+    public Vector3d getBarycenter(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
+        listVertices.clear();
+        listHalfEdges.clear();
+        listVertices = this.getVertices(listVertices, listHalfEdges);
         Vector3d barycenter = new Vector3d();
-        for (TerrainVertex vertex : listVerticesMemSave) {
+        for (TerrainVertex vertex : listVertices) {
             barycenter.add(vertex.getPosition());
         }
         barycenter.mul(1.0 / 3.0);
         return barycenter;
     }
 
-    public List<Vector3d> getSomePointsToCheckForTriangleRefinement(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public List<Vector3d> getSomePointsToCheckForTriangleRefinement(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
         List<Vector3d> somePoints = new ArrayList<>();
 
-        listHalfEdgesMemSave.clear();
-        Vector3d barycenter = this.getBarycenter(listVerticesMemSave, listHalfEdgesMemSave);
+        listHalfEdges.clear();
+        Vector3d barycenter = this.getBarycenter(listVertices, listHalfEdges);
         somePoints.add(barycenter);
 
-        listHalfEdgesMemSave.clear();
-        listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
-        for (TerrainVertex vertex : listVerticesMemSave) {
+        listHalfEdges.clear();
+        listVertices = this.getVertices(listVertices, listHalfEdges);
+        for (TerrainVertex vertex : listVertices) {
             Vector3d pos = vertex.getPosition().add(barycenter).mul(0.5);
             somePoints.add(pos);
         }
@@ -165,27 +166,27 @@ public class TerrainTriangle {
         return perimeterPositions;
     }
 
-    public TerrainHalfEdge getLongestHalfEdge(List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public TerrainHalfEdge getLongestHalfEdge(List<TerrainHalfEdge> listHalfEdges) {
         // Note : the length of the halfEdges meaning only the length of the XY plane
-        listHalfEdgesMemSave.clear();
-        this.halfEdge.getHalfEdgesLoop(listHalfEdgesMemSave);
+        listHalfEdges.clear();
+        this.halfEdge.getHalfEdgesLoop(listHalfEdges);
         TerrainHalfEdge longestHalfEdge = null;
         double maxLength = 0.0;
-        for (TerrainHalfEdge halfEdge : listHalfEdgesMemSave) {
+        for (TerrainHalfEdge halfEdge : listHalfEdges) {
             double length = halfEdge.getSquaredLengthXY();
             if (length > maxLength) {
                 maxLength = length;
                 longestHalfEdge = halfEdge;
             }
         }
-        listHalfEdgesMemSave.clear();
+        listHalfEdges.clear();
 
         return longestHalfEdge;
     }
 
-    public double getTriangleMaxSizeInMeters(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
-        listHalfEdgesMemSave.clear();
-        GaiaBoundingBox bboxTriangle = this.getBoundingBox(listVerticesMemSave, listHalfEdgesMemSave);
+    public double getTriangleMaxSizeInMeters(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
+        listHalfEdges.clear();
+        GaiaBoundingBox bboxTriangle = this.getBoundingBox(listVertices, listHalfEdges);
         double triangleMaxLengthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
         double triangleMaxLengthRad = Math.toRadians(triangleMaxLengthDeg);
         return triangleMaxLengthRad * GlobeUtils.EQUATORIAL_RADIUS;
@@ -216,7 +217,7 @@ public class TerrainTriangle {
             dataOutputStream.writeInt(splitDepth);
 
         } catch (Exception e) {
-            log.error("{}", e.getMessage());
+            log.error("Error:", e);
         }
     }
 
@@ -231,35 +232,35 @@ public class TerrainTriangle {
         this.splitDepth = dataInputStream.readInt();
     }
 
-    public void calculateNormal(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
-        listHalfEdgesMemSave.clear();
-        calculateNormalWC(listVerticesMemSave, listHalfEdgesMemSave);
+    public void calculateNormal(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
+        listHalfEdges.clear();
+        calculateNormalWC(listVertices, listHalfEdges);
     }
 
     public Vector3f getNormal() {
         if (this.normal == null) {
-            List<TerrainVertex> listVerticesMemSave = new ArrayList<>();
-            List<TerrainHalfEdge> listHalfEdgesMemSave = new ArrayList<>();
-            return this.getNormal(listVerticesMemSave, listHalfEdgesMemSave);
+            List<TerrainVertex> listVertices = new ArrayList<>();
+            List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
+            return this.getNormal(listVertices, listHalfEdges);
         }
         return this.normal;
     }
 
-    public Vector3f getNormal(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public Vector3f getNormal(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
         if (this.normal == null) {
-            listHalfEdgesMemSave.clear();
-            calculateNormalWC(listVerticesMemSave, listHalfEdgesMemSave);
+            listHalfEdges.clear();
+            calculateNormalWC(listVertices, listHalfEdges);
         }
         return this.normal;
     }
 
-    public void calculateNormalWC(List<TerrainVertex> listVerticesMemSave, List<TerrainHalfEdge> listHalfEdgesMemSave) {
+    public void calculateNormalWC(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
         if (this.normal == null) {
-            listHalfEdgesMemSave.clear();
-            listVerticesMemSave = this.getVertices(listVerticesMemSave, listHalfEdgesMemSave);
-            Vector3d p0 = listVerticesMemSave.get(0).getPosition();
-            Vector3d p1 = listVerticesMemSave.get(1).getPosition();
-            Vector3d p2 = listVerticesMemSave.get(2).getPosition();
+            listHalfEdges.clear();
+            listVertices = this.getVertices(listVertices, listHalfEdges);
+            Vector3d p0 = listVertices.get(0).getPosition();
+            Vector3d p1 = listVertices.get(1).getPosition();
+            Vector3d p2 = listVertices.get(2).getPosition();
 
             Vector3d p0WC = GlobeUtils.geographicToCartesianWgs84(p0);
             Vector3d p1WC = GlobeUtils.geographicToCartesianWgs84(p1);
