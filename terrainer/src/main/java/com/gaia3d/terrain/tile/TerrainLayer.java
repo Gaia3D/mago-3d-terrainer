@@ -173,8 +173,8 @@ public class TerrainLayer {
         this.bounds[3] = maxLat;
     }
 
-    public void saveJsonFile(String outputDirectory, String tilejsonFileName) {
-        String fullFileName = outputDirectory + File.separator + tilejsonFileName;
+    public void saveJsonFile(String outputDirectory, String layerJsonName) {
+        String fullFileName = outputDirectory + File.separator + layerJsonName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
 
         ObjectMapper objectMapper = new ObjectMapper();

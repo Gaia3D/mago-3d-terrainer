@@ -49,7 +49,7 @@ public class MagoTerrainerMain {
 
             GlobalOptions.init(command);
             GlobalOptions globalOptions = GlobalOptions.getInstance();
-            if (globalOptions.isLayerJsonGenerate()) {
+            /*if (globalOptions.isLayerJsonGenerate()) {
                 log.info("[Generate][layer.json] Start generating layer.json.");
 
                 TerrainLayer terrainLayer = new TerrainLayer();
@@ -62,7 +62,7 @@ public class MagoTerrainerMain {
                 terrainLayer.saveJsonFile(globalOptions.getInputPath(), "layer.json");
                 log.info("[Generate][layer.json] Finished generating layer.json.");
                 return;
-            }
+            }*/
 
             if (GlobalOptions.getInstance().isLayerJsonGenerate()) {
                 log.info("[Generate][layer.json] Start generating layer.json.");

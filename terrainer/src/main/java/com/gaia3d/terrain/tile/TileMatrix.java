@@ -26,6 +26,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.abs;
 
@@ -247,12 +249,12 @@ public class TileMatrix {
                     //  +------------+
                     // merge the rowMesh with the resultMesh
                     // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
-                    List<TerrainHalfEdge> resultMesh_up_halfEdges = resultMesh.getHalfEdgesByType(TerrainHalfEdgeType.UP);
-                    List<TerrainHalfEdge> rowMesh_down_halfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.DOWN);
+                    List<TerrainHalfEdge> resultMeshUpHalfEdges = resultMesh.getHalfEdgesByType(TerrainHalfEdgeType.UP);
+                    List<TerrainHalfEdge> rowMeshDownHalfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.DOWN);
                     // the c_tile can be null
-                    if (!resultMesh_up_halfEdges.isEmpty()) {
+                    if (!resultMeshUpHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
-                        this.setTwinsBetweenHalfEdges(resultMesh_up_halfEdges, rowMesh_down_halfEdges, axisToCheck);
+                        this.setTwinsBetweenHalfEdges(resultMeshUpHalfEdges, rowMeshDownHalfEdges, axisToCheck);
 
                         // now, merge the row mesh to the result mesh.
                         resultMesh.removeDeletedObjects();
@@ -312,7 +314,7 @@ public class TileMatrix {
 
             TileWgs84 tile = new TileWgs84(null, this.manager);
             tile.setTileIndices(tileIndices);
-            String imageryType = this.manager.getIMAGINARY_TYPE();
+            String imageryType = this.manager.getImaginaryType();
             tile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
             tile.setMesh(mesh);
 
@@ -393,7 +395,7 @@ public class TileMatrix {
             if (tileIndices.getL() < maxTileDepth) {
                 // First, mark triangles with the children tile indices
                 boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
-                String imageryType = this.manager.getIMAGINARY_TYPE();
+                String imageryType = this.manager.getImaginaryType();
 
                 // 2- make the 4 children
                 TileIndices childLightUpTileIndices = tileIndices.getChildLeftUpTileIndices(originIsLeftUp);
@@ -682,13 +684,13 @@ public class TileMatrix {
         if (tileIndices.getL() > 10) {
 
             Vector3f triangleNormalWC = triangle.getNormal(); // this is normalWC
-            Vector3d triangleNornalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
+            Vector3d triangleNormalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
             GeographicExtension geographicExtension = tileRaster.getGeographicExtension();
             Vector3d centerGeoCoord = geographicExtension.getMidPoint();
             double[] centerCartesian = GlobeUtils.geographicToCartesianWgs84(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z);
             Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPointWgs84(centerCartesian[0], centerCartesian[1], centerCartesian[2]);
 
-            double angRad = triangleNornalDouble.angle(normalAtCartesian);
+            double angRad = triangleNormalDouble.angle(normalAtCartesian);
             cosAng = (float) Math.cos(angRad);
         }
 
@@ -734,8 +736,8 @@ public class TileMatrix {
         double deltaLonDeg = tileRaster.getDeltaLonDeg();
         double deltaLatDeg = tileRaster.getDeltaLatDeg();
 
-        double pos_x;
-        double pos_y;
+        double posX;
+        double posY;
 
         int colAux = 0;
         int rowAux = 0;
@@ -746,7 +748,7 @@ public class TileMatrix {
 
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
-            pos_x = startLonDeg + colAux * deltaLonDeg;
+            posX = startLonDeg + colAux * deltaLonDeg;
             for (int row = startRow; row <= endRow; row++) {
 
                 // skip the 4 corners of the triangle's bounding rectangle
@@ -763,16 +765,16 @@ public class TileMatrix {
                     rowAux++;
                     continue;
                 }
-                pos_y = startLatDeg + rowAux * deltaLatDeg;
+                posY = startLatDeg + rowAux * deltaLatDeg;
 
                 float elevationFloat = tileRaster.getElevation(col, row);
 
-                planeElevation = plane.getValueZ(pos_x, pos_y);
+                planeElevation = plane.getValueZ(posX, posY);
 
                 distToPlane = abs(elevationFloat - planeElevation) * cosAng;
                 if (distToPlane > maxDiff) {
                     this.listVertices.clear();
-                    intersects = triangle.intersectsPointXY(pos_x, pos_y, halfEdges, this.listVertices, line2d);
+                    intersects = triangle.intersectsPointXY(posX, posY, halfEdges, this.listVertices, line2d);
 
                     if (!intersects) {
                         continue;
@@ -799,8 +801,8 @@ public class TileMatrix {
         // Here refine only the triangles of the current tile
 
         // refine the mesh
-        boolean refined = false;
-        int splitCount = 0;
+        AtomicBoolean refined = new AtomicBoolean(false);
+        AtomicInteger splitCount = new AtomicInteger();
         int trianglesCount = mesh.triangles.size();
         log.debug("[RefineMesh] Triangles count : {}", trianglesCount);
         for (int i = 0; i < trianglesCount; i++) {
@@ -813,7 +815,6 @@ public class TileMatrix {
             if (!tilesRange.intersects(triangle.getOwnerTileIndices())) {
                 continue;
             }
-
             if (mustRefineTriangle(triangle)) {
                 this.manager.getTriangleList().clear();
                 this.listHalfEdges.clear();
@@ -821,21 +822,20 @@ public class TileMatrix {
                 this.listHalfEdges.clear();
 
                 if (!this.manager.getTriangleList().isEmpty()) {
-                    splitCount++;
-                    refined = true;
+                    splitCount.getAndIncrement();
+                    refined.set(true);
                 }
                 this.manager.getTriangleList().clear();
             }
         }
 
-        if (refined) {
+        if (refined.get()) {
             log.debug("Removing deleted Meshes : Splited count : {}", splitCount);
             mesh.removeDeletedObjects();
             mesh.setObjectsIdInList();
         }
 
-
-        return refined;
+        return refined.get();
     }
 
     public void refineMesh(TerrainMesh mesh, TilesRange tilesRange) throws TransformException, IOException {

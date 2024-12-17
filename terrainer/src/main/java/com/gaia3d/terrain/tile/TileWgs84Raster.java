@@ -24,7 +24,7 @@ public class TileWgs84Raster {
         this.tileIndices = tileIndices;
         this.manager = manager;
 
-        String imageryType = manager.getIMAGINARY_TYPE();
+        String imageryType = manager.getImaginaryType();
         boolean originIsLeftUp = manager.isOriginIsLeftUp();
         this.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
     }
@@ -103,7 +103,7 @@ public class TileWgs84Raster {
         this.elevations = null;
     }
 
-    public void makeElevations(TerrainElevationDataManager terrainElevationDataManager, int rasterWidth, int rasterHeight) throws TransformException, IOException {
+    public void makeElevations(TerrainElevationDataManager terrainElevationDataManager, int rasterWidth, int rasterHeight) {
         this.rasterWidth = rasterWidth;
         this.rasterHeight = rasterHeight;
 

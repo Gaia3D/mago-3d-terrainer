@@ -58,14 +58,12 @@ public class TerrainElevationDataManager {
         return myGaiaGeoTiffManager;
     }
 
-
     public void MakeUniqueTerrainElevationData() throws IOException, FactoryException, TransformException {
         log.debug("MakeUniqueTerrainElevationData() started");
 
         if (uniqueGeoTiffFilePath == null) {
             return;
         }
-
 
         if (myGaiaGeoTiffManager == null) {
             myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
@@ -87,27 +85,26 @@ public class TerrainElevationDataManager {
         log.debug("MakeUniqueTerrainElevationData() ended");
     }
 
-    public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
+    public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) {
         TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
         if (tileWgs84Raster == null) {
             tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
-            int tileRasterWidth = tileWgs84Manager.getTILE_RASTER_SIZE();
-            int tileRasterHeight = tileWgs84Manager.getTILE_RASTER_SIZE();
+            int tileRasterWidth = tileWgs84Manager.getRasterTileSize();
+            int tileRasterHeight = tileWgs84Manager.getRasterTileSize();
             tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
             mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
         }
-
         return tileWgs84Raster;
     }
 
-    public void makeAllTileWgs84Raster(TilesRange tileRange, TileWgs84Manager tileWgs84Manager) throws TransformException, IOException {
+    public void makeAllTileWgs84Raster(TilesRange tileRange, TileWgs84Manager tileWgs84Manager) {
         List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
         for (TileIndices tileIndices : tileIndicesList) {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
             if (tileWgs84Raster == null) {
                 tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
-                int tileRasterWidth = tileWgs84Manager.getTILE_RASTER_SIZE();
-                int tileRasterHeight = tileWgs84Manager.getTILE_RASTER_SIZE();
+                int tileRasterWidth = tileWgs84Manager.getRasterTileSize();
+                int tileRasterHeight = tileWgs84Manager.getRasterTileSize();
                 tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
                 mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
             }
@@ -122,7 +119,6 @@ public class TerrainElevationDataManager {
         mapIndicesTileRaster.clear();
 
     }
-
 
     public GeographicExtension getRootGeographicExtension() {
         if (this.geoTiffFilesCount == 1) {
@@ -175,17 +171,12 @@ public class TerrainElevationDataManager {
     public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager, double lonDeg, double latDeg) {
         double resultElevation = 0.0;
         TileWgs84Raster tileWgs84Raster = null;
-        try {
-            tileWgs84Raster = this.getTileWgs84Raster(tileIndices, tileWgs84Manager);
-            resultElevation = tileWgs84Raster.getElevationBilinear(lonDeg, latDeg);
-        } catch (TransformException | IOException e) {
-            log.error("Error:", e);
-        }
-
+        tileWgs84Raster = this.getTileWgs84Raster(tileIndices, tileWgs84Manager);
+        resultElevation = tileWgs84Raster.getElevationBilinear(lonDeg, latDeg);
         return resultElevation;
     }
 
-    public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDatasArray) throws TransformException, IOException {
+    public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         double resultElevation = 0.0;
 
         if (this.geoTiffFilesCount == 1) {
@@ -201,11 +192,11 @@ public class TerrainElevationDataManager {
             return resultElevation;
         }
 
-        terrainElevDatasArray.clear();
-        rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDatasArray);
+        terrainElevDataArray.clear();
+        rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDataArray);
 
         intersects[0] = false;
-        for (TerrainElevationData terrainElevationData : terrainElevDatasArray) {
+        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (!intersects[0]) {
                 continue;

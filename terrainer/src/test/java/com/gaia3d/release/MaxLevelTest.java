@@ -77,6 +77,91 @@ public class MaxLevelTest {
     }
 
     @Test
+    void sampleSeoulTerrainLevel15Mosaic4() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-15-4");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-log", outputPath.getAbsolutePath() + "/log.txt",
+                "-min", "0",
+                "-max", "15",
+                "-calculateNormals",
+                "-mosaicSize", "4",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleSeoulTerrainLevel15Mosaic16() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-15-16");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-log", outputPath.getAbsolutePath() + "/log.txt",
+                "-min", "0",
+                "-max", "15",
+                "-calculateNormals",
+                "-mosaicSize", "16",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleSeoulTerrainLevel16Mosaic32() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-16");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-log", outputPath.getAbsolutePath() + "/log.txt",
+                "-min", "0",
+                "-max", "16",
+                "-calculateNormals",
+                //"-d",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleSeoulTerrainLevel15Mosaic64() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-15-64");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-log", outputPath.getAbsolutePath() + "/log.txt",
+                "-min", "0",
+                "-max", "15",
+                "-calculateNormals",
+                "-mosaicSize", "64",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleSeoulTerrainLevel156Mosaic128() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-15-128");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-log", outputPath.getAbsolutePath() + "/log.txt",
+                "-min", "0",
+                "-max", "15",
+                "-calculateNormals",
+                "-mosaicSize", "128",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void sampleSeoulTerrainLevel17() {
         File inputPath = new File(INPUT_PATH, "seoul");
         File outputPath = new File(OUTPUT_PATH, "seoul-17");

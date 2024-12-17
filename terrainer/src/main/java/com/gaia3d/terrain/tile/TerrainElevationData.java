@@ -138,14 +138,14 @@ public class TerrainElevationData {
         int geoTiffRasterWidth = size.x;
 
         GlobalOptions globalOptions = GlobalOptions.getInstance();
-        if (globalOptions.getInterpolationType() == InterpolationType.NEAREST) {
+        if (globalOptions.getInterpolationType().equals(InterpolationType.BILINEAR)) {
+            intersects[0] = true;
+            resultAltitude = calcBilinearInterpolation(unitaryX, unitaryY, geoTiffRasterWidth, geoTiffRasterHeight);
+        } else {
             intersects[0] = true;
             int column = (int) (unitaryX * geoTiffRasterWidth); // nearest column
             int row = (int) (unitaryY * geoTiffRasterHeight); // nearest row
             resultAltitude = calcNearestInterpolation(column, row);
-        } else {
-            intersects[0] = true;
-            resultAltitude = calcBilinearInterpolation(unitaryX, unitaryY, geoTiffRasterWidth, geoTiffRasterHeight); // new.***
         }
 
         // update min, max altitude
