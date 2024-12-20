@@ -46,7 +46,7 @@ java -jar mago-3d-terrainer.jar -input "/input_path/geotiff_folder" -output "/ou
 ### 타일 레스터 최대 크기 설정
 타일 레스터 최대 크기를 설정하여 변환할 수 있습니다.
 원본 래스터 데이터의 최대 크기를 지정합니다.
-레스터 최대 크기보다 큰 레스터 데이터는 미리 분할하여 작업하게 됩니다.
+레스터 최대 크기보다 큰 레스터 데이터는 처음에 분할하여 작업하게 됩니다.
 ```
 java -jar mago-3d-terrainer.jar -input "/input_path/geotiff_folder" -output "/output_path/terrain_tiles_output" -rasterMaxSize 8192
 ```
@@ -54,7 +54,7 @@ java -jar mago-3d-terrainer.jar -input "/input_path/geotiff_folder" -output "/ou
 ### 타일 모자이크 크기 설정
 타일 모자이크 크기를 설정하여 변환할 수 있습니다.
 타일 모자이크는 타일링에 필요한 레스터 타일의 버퍼 사이즈를 의미합니다.
-모자이크 사이즈를 높이면 변환 속도를 단축시킬 수 있지만 메모리 사용량이 큰 폭으로 늘어납니다.
+모자이크 사이즈를 높이면 변환 속도를 약간 단축시킬 수 있지만 메모리 사용량이 늘어납니다.
 ```
 java -jar mago-3d-terrainer.jar -input "/input_path/geotiff_folder" -output "/output_path/terrain_tiles_output" -mosaicSize 32
 ```
