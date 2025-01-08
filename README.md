@@ -10,17 +10,17 @@ Cesium Terrain Tiles의 기본 Terrain 데이터인 quantized-mesh와 호환됩�
 OCG의 표준 포맷인 GeoTIFF 파일을 공간정보 레스터 데이터를 손쉽게 quantized-mesh 데이터로 변환할 수 있습니다.
 
 ### 주요 기능:
-- 편리한 변환: GeoTIFF 데이터를 간단한 커맨드 없이 변환할 수 있습니다.
+- 편리한 변환: GeoTIFF 파일을 복잡한 커맨드 없이 변환할 수 있습니다.
 - 높은 정확도: 높은 정확도의 quantized-mesh 데이터를 생성합니다.
 - 다수의 데이터 변환: 다수의 GeoTIFF 데이터를 한 번에 변환할 수 있습니다.
 - 상세옵션 조절: 최소/최대 타일 깊이, 타일 레스터 최대 크기, 타일 모자이크 크기, 타일생성 강도, 보간방법 등 다양한 상세옵션을 제공합니다.
 
 ### 사용법:
-기본적으로 코드 수정 시 terrainer프로젝트의 gradle script인 jar를 통해 runnable jar를 생성할 수 있습니다.   
-/terrainer/dist/ 디렉토리에는 미리 빌드된 jar가 준비 되어있습니다.
+기본적으로 코드 수정 시 mago-3d-terrainer 프로젝트의 gradle script를 통해 runnable jar를 빌드할 수 있습니다.
+/mago-3d-terrainer/dist/ 디렉토리에는 매 버전에 따라 미리 빌드된 jar가 준비 되어있습니다.
 - mago-3d-terrainer-1.X.X.jar
 
-빌드 시 사용된 java 버전은 jdk 17 입니다.**
+빌드 시 사용된 java 버전은 openjdk 17 입니다.**
 
 아래는 Help 코드를 실행시킨 예시입니다.
 ```
