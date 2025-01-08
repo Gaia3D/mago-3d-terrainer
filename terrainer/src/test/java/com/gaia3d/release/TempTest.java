@@ -191,4 +191,35 @@ public class TempTest {
         };
         MagoTerrainerMain.main(args);
     }
+
+    @Test
+    void sampleNearest() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-nearest-16");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
+                "-interpolationType", "nearest",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleBilinear() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-bilinear-16");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "15",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
 }
