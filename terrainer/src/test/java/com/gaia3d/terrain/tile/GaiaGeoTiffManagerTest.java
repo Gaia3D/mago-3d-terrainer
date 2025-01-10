@@ -1,0 +1,52 @@
+package com.gaia3d.terrain.tile;
+
+import com.gaia3d.command.Configurator;
+import lombok.extern.slf4j.Slf4j;
+import org.geotools.coverage.grid.GridCoordinates2D;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.processing.Operations;
+import org.geotools.gce.geotiff.GeoTiffReader;
+import org.geotools.geometry.DirectPosition2D;
+import org.geotools.geometry.Envelope2D;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.opengis.geometry.DirectPosition;
+import org.opengis.geometry.Envelope;
+import org.opengis.parameter.GeneralParameterValue;
+
+import javax.media.jai.Interpolation;
+import java.io.File;
+
+@Slf4j
+class GaiaGeoTiffManagerTest {
+
+    @Test
+    void test() {
+        Configurator.initConsoleLogger();
+        GridCoverage2D coverage = null;
+        try {
+            File file = new File("C:\\Users\\znkim\\Downloads\\seoul-100.tif");
+            GeoTiffReader reader = new GeoTiffReader(file);
+            Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
+            coverage = (GridCoverage2D) Operations.DEFAULT.interpolate(reader.read(null), interpolation);
+            double[] resolution = new double[2];
+
+            DirectPosition worldPosition = new DirectPosition2D(DefaultGeographicCRS.WGS84, 126.977491, 37.659025);
+            double[] altitude = new double[1];
+            try {
+                coverage.evaluate(worldPosition, altitude);
+            } catch (Exception e) {
+                log.error("Error : {}", e.getMessage());
+                log.warn("Failed to evaluate terrain height", e);
+            }
+
+            log.info("Altitude: {}", altitude[0]);
+        } catch (Exception e) {
+            log.error("Error:", e);
+        }
+    }
+
+}

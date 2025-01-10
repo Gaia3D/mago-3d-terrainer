@@ -201,7 +201,7 @@ public class TempTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "16",
+                "-max", "15",
                 "-interpolationType", "nearest",
                 "-calculateNormals",
         };
