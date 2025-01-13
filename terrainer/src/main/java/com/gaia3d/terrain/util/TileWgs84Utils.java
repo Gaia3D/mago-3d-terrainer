@@ -7,7 +7,7 @@ import com.gaia3d.terrain.structure.TerrainHalfEdge;
 import com.gaia3d.terrain.structure.TerrainMesh;
 import com.gaia3d.terrain.structure.TerrainVertex;
 import com.gaia3d.terrain.tile.TileIndices;
-import com.gaia3d.terrain.tile.TilesRange;
+import com.gaia3d.terrain.tile.TileRange;
 import com.gaia3d.util.GlobeUtils;
 
 import java.io.File;
@@ -114,7 +114,7 @@ public class TileWgs84Utils {
         return resultTileIndices;
     }
 
-    public static void selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, TilesRange tilesRange, boolean originIsLeftUp) {
+    public static void selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, TileRange tilesRange, boolean originIsLeftUp) {
         // Given a geographic rectangle (minLon, minLat, maxLon, maxLat) & a depth, this function returns all
         // tilesIndices intersected by the rectangle for the specific depth.**
         TileIndices leftDownTileName = TileWgs84Utils.selectTileIndices(depth, minLon, minLat, null, originIsLeftUp);
@@ -194,7 +194,7 @@ public class TileWgs84Utils {
         return (int) (180.0 / angDeg);
     }
 
-    public static List<TilesRange> subDivideTileRange(TilesRange tilesRange, int maxCol, int maxRow, List<TilesRange> resultSubDividedTilesRanges) {
+    public static List<TileRange> subDivideTileRange(TileRange tilesRange, int maxCol, int maxRow, List<TileRange> resultSubDividedTilesRanges) {
         if (resultSubDividedTilesRanges == null) {
             resultSubDividedTilesRanges = new ArrayList<>();
         }
@@ -223,7 +223,7 @@ public class TileWgs84Utils {
 
         for (int i = 0; i < colsSubDividedCount; i++) {
             for (int j = 0; j < rowsSubDividedCount; j++) {
-                TilesRange subDividedTilesRange = new TilesRange();
+                TileRange subDividedTilesRange = new TileRange();
                 subDividedTilesRange.setTileDepth(tilesRange.getTileDepth());
                 subDividedTilesRange.setMinTileX(tilesRange.getMinTileX() + (int) (i * colsSubDividedSize));
                 subDividedTilesRange.setMaxTileX(tilesRange.getMinTileX() + (int) ((i + 1) * colsSubDividedSize) - 1);

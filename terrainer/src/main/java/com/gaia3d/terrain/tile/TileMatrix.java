@@ -7,8 +7,8 @@ import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.io.LittleEndianDataOutputStream;
-import com.gaia3d.quantizedMesh.QuantizedMesh;
-import com.gaia3d.quantizedMesh.QuantizedMeshManager;
+import com.gaia3d.quantized.mesh.QuantizedMesh;
+import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
@@ -36,7 +36,7 @@ public class TileMatrix {
     private static final double VERTEX_COINCIDENT_ERROR = 0.0000000000001;
 
     private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
-    private final TilesRange tilesRange;
+    private final TileRange tilesRange;
     private final List<List<TileWgs84>> tilesMatrixRowCol = new ArrayList<>();
     public TileWgs84Manager manager = null;
     // the tilesMatrixRowCol is a matrix of tiles
@@ -44,7 +44,7 @@ public class TileMatrix {
     List<TerrainVertex> listVertices = new ArrayList<>();
     List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
 
-    public TileMatrix(TilesRange tilesRange, TileWgs84Manager manager) {
+    public TileMatrix(TileRange tilesRange, TileWgs84Manager manager) {
         this.tilesRange = tilesRange;
         this.manager = manager;
     }
@@ -575,7 +575,7 @@ public class TileMatrix {
 
     }
 
-    public void recalculateElevation(TerrainMesh terrainMesh, TilesRange tilesRange) throws TransformException, IOException {
+    public void recalculateElevation(TerrainMesh terrainMesh, TileRange tilesRange) throws TransformException, IOException {
         List<TerrainTriangle> triangles = new ArrayList<>();
         terrainMesh.getTrianglesByTilesRange(tilesRange, triangles, null);
 
@@ -796,7 +796,7 @@ public class TileMatrix {
     }
 
 
-    private boolean refineMeshOneIteration(TerrainMesh mesh, TilesRange tilesRange) throws TransformException, IOException {
+    private boolean refineMeshOneIteration(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of 9 different tiles
         // Here refine only the triangles of the current tile
 
@@ -838,7 +838,7 @@ public class TileMatrix {
         return refined.get();
     }
 
-    public void refineMesh(TerrainMesh mesh, TilesRange tilesRange) throws TransformException, IOException {
+    public void refineMesh(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of n different tiles
         // Here refine only the triangles of the tiles of TilesRange
 

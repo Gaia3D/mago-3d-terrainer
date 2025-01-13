@@ -43,7 +43,9 @@ public class MagoTerrainerMain {
             printStart();
 
             if (isHelp) {
-                new HelpFormatter().printHelp("Mago 3D Quantized Mesher", options);
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.setWidth(200);
+                formatter.printHelp("mago 3DTerrainer help", options);
                 return;
             }
 

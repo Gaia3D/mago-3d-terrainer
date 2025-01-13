@@ -3,6 +3,8 @@ package com.gaia3d.terrain.tile;
 import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
+import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
@@ -167,7 +169,7 @@ public class TileWgs84Manager {
         long startTime = System.currentTimeMillis();
         Date startDate = new Date(startTime);
 
-        TilesRange tilesRange = new TilesRange();
+        TileRange tilesRange = new TileRange();
 
         if (depth == 0) {
             // in this case, the tile is the world. L0X0Y0 & L0X1Y0
@@ -199,18 +201,18 @@ public class TileWgs84Manager {
         }
 
         int mosaicSize = globalOptions.getMosaicSize();
-        List<TilesRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, mosaicSize, mosaicSize, null);
+        List<TileRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, mosaicSize, mosaicSize, null);
 
         log.info("[Tile][{}] Start making tile meshes - Divided Tiles Size: {}", depth, subDividedTilesRanges.size());
         AtomicInteger counter = new AtomicInteger(0);
 
         int total = subDividedTilesRanges.size();
-        for (TilesRange subDividedTilesRange : subDividedTilesRanges) {
+        for (TileRange subDividedTilesRange : subDividedTilesRanges) {
             int progress = counter.incrementAndGet();
             // First, make all tile raster.***
 
             log.info("[Tile][{}][{}/{}] make wgs84 raster all tiles...", depth, progress, total);
-            TilesRange expandedTilesRange = subDividedTilesRange.expand1();
+            TileRange expandedTilesRange = subDividedTilesRange.expand1();
             this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
             if (this.geoTiffFilesCount > 1) {
                 this.terrainElevationDataManager.deleteGeoTiffManager();

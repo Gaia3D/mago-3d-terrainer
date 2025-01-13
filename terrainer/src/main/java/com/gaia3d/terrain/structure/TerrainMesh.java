@@ -7,7 +7,7 @@ import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TileIndices;
-import com.gaia3d.terrain.tile.TilesRange;
+import com.gaia3d.terrain.tile.TileRange;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
@@ -848,7 +848,7 @@ public class TerrainMesh {
 
     }
 
-    public void getTrianglesByTilesRange(TilesRange tilesRange, List<TerrainTriangle> resultTriangles, Map<String, List<TerrainTriangle>> mapTileIndicesTriangles) {
+    public void getTrianglesByTilesRange(TileRange tilesRange, List<TerrainTriangle> resultTriangles, Map<String, List<TerrainTriangle>> mapTileIndicesTriangles) {
         int trianglesCount = triangles.size();
         for (TerrainTriangle triangle : triangles) {
             if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {

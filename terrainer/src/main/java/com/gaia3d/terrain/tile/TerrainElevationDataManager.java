@@ -2,6 +2,8 @@ package com.gaia3d.terrain.tile;
 
 import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
+import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -97,7 +99,7 @@ public class TerrainElevationDataManager {
         return tileWgs84Raster;
     }
 
-    public void makeAllTileWgs84Raster(TilesRange tileRange, TileWgs84Manager tileWgs84Manager) {
+    public void makeAllTileWgs84Raster(TileRange tileRange, TileWgs84Manager tileWgs84Manager) {
         List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
         for (TileIndices tileIndices : tileIndicesList) {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());

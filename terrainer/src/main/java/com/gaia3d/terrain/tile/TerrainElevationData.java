@@ -1,6 +1,7 @@
 package com.gaia3d.terrain.tile;
 
 import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.command.GlobalOptions;
 import it.geosolutions.jaiext.range.NoDataContainer;
@@ -14,7 +15,6 @@ import org.joml.Vector2d;
 import org.joml.Vector2i;
 
 import java.awt.image.Raster;
-import java.awt.image.SampleModel;
 
 @Slf4j
 @Getter

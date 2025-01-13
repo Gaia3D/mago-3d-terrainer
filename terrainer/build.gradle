@@ -71,7 +71,7 @@ jib {
     }
     to {
         image = "gaia3d/mago-3d-terrainer"
-        tags = ["latest", project.version]
+        tags = ["latest", project.version] as List<String>
     }
     container {
         appRoot = "/mago-3d-terrainer"
@@ -115,6 +115,6 @@ shadowJar {
         attributes 'Implementation-Vendor-Id': 'com.gaia3d'
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
-    archiveFileName = "mago-3d-terrainer-${project.version}-shadow.jar"
+    archiveFileName = "mago-3d-terrainer-${project.version}.jar"
     destinationDirectory.set(file("${projectDir}/dist"))
 }

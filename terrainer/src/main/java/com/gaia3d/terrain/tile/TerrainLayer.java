@@ -17,7 +17,7 @@ import java.util.*;
 @Setter
 @Slf4j
 public class TerrainLayer {
-    private final List<TilesRange> available = new ArrayList<>();
+    private final List<TileRange> available = new ArrayList<>();
     private String tilejson = null;
     private String name = null;
     private String description = null;
@@ -36,10 +36,10 @@ public class TerrainLayer {
         this.setDefault();
     }
 
-    public HashMap<Integer, TilesRange> getTilesRangeMap() {
-        HashMap<Integer, TilesRange> tilesRangeMap = new HashMap<>();
+    public HashMap<Integer, TileRange> getTilesRangeMap() {
+        HashMap<Integer, TileRange> tilesRangeMap = new HashMap<>();
 
-        for (TilesRange tilesRange : this.available) {
+        for (TileRange tilesRange : this.available) {
             tilesRangeMap.put(tilesRange.getTileDepth(), tilesRange);
         }
 
@@ -124,7 +124,7 @@ public class TerrainLayer {
                         }
                     }
                 }
-                TilesRange tilesRange = new TilesRange();
+                TileRange tilesRange = new TileRange();
                 tilesRange.setTileDepth(tileDepth);
                 tilesRange.setMinTileX(Collections.min(tileX));
                 tilesRange.setMaxTileX(Collections.max(tileX));
@@ -135,7 +135,7 @@ public class TerrainLayer {
         }
         log.info("Available tiles: {}", available);
         log.info("DepthZ: {}", depthZ);
-        available.sort(Comparator.comparingInt(TilesRange::getTileDepth));
+        available.sort(Comparator.comparingInt(TileRange::getTileDepth));
 
         // calc bounds
         double minLon = -180.0;
@@ -143,7 +143,7 @@ public class TerrainLayer {
         double minLat = -90.0;
         double maxLat = 90.0;
 
-        TilesRange lastTilesRange = available.get(available.size() - 1);
+        TileRange lastTilesRange = available.get(available.size() - 1);
         int lastTileDepth = lastTilesRange.getTileDepth();
         int lastMinTileX = lastTilesRange.getMinTileX();
         int lastMaxTileX = lastTilesRange.getMaxTileX();
@@ -201,9 +201,9 @@ public class TerrainLayer {
         }
 
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
-        HashMap<Integer, TilesRange> tilesRangeMap = this.getTilesRangeMap();
+        HashMap<Integer, TileRange> tilesRangeMap = this.getTilesRangeMap();
         for (Integer tileDepth : tilesRangeMap.keySet()) {
-            TilesRange tilesRange = tilesRangeMap.get(tileDepth);
+            TileRange tilesRange = tilesRangeMap.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
             objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
