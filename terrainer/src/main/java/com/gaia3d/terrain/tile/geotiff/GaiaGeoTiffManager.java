@@ -155,5 +155,5 @@ public class GaiaGeoTiffManager {
 
         return targetCoverage;
     }
-    
+
 }

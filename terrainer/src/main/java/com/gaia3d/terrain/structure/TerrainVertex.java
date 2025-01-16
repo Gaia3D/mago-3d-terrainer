@@ -56,7 +56,7 @@ public class TerrainVertex {
             this.normal = new Vector3f();
         }
 
-        this.normal.set(0, 0, 0);
+        this.normal.set(0, 0, 1);
         List<TerrainHalfEdge> outingHalfEdges = this.getAllOutingHalfEdges();
         for (TerrainHalfEdge outingHalfEdge : outingHalfEdges) {
             TerrainTriangle triangle = outingHalfEdge.getTriangle();
@@ -119,8 +119,12 @@ public class TerrainVertex {
             finished = false;
             while (!finished) {
                 TerrainHalfEdge prevHalfEdge = currHalfEdge.getPrev();
+                if(prevHalfEdge == null || prevHalfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                    finished = true;
+                    break;
+                }
                 TerrainHalfEdge twinHalfEdge = prevHalfEdge.getTwin();
-                if (twinHalfEdge == null) {
+                if (twinHalfEdge == null || twinHalfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                     finished = true;
                     break;
                 }

@@ -779,6 +779,9 @@ public class TerrainMesh {
 
         listHalfEdges.clear();
         TerrainHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge(listHalfEdges);
+        if(longestHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+            return null;
+        }
         TerrainHalfEdge twin = longestHEdge.getTwin();
 
         if (twin == null) {
@@ -786,6 +789,9 @@ public class TerrainMesh {
         }
 
         TerrainTriangle adjacentTriangle = twin.getTriangle();
+        if(adjacentTriangle == null) {
+            return null;
+        }
 
         double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError
 

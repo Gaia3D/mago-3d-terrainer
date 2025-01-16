@@ -91,6 +91,8 @@ public class MagoTerrainerMain {
         } catch (IOException e) {
             log.error("Failed to run process, Please check the arguments.", e);
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         printEnd();
         Configurator.destroyLogger();
@@ -103,10 +105,14 @@ public class MagoTerrainerMain {
      * @throws FactoryException   if a factory error occurs.
      * @throws TransformException if a transform error occurs.
      */
-    private static void execute() throws IOException, FactoryException, TransformException {
+    private static void execute() throws Exception {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
+
+        //log.info("[Pre][Change GeoTiff] Start changing GeoTiff to 4326.");
+        //tileWgs84Manager.processChangeTo4326Geotiffs(globalOptions.getInputPath(), globalOptions.getTileTempPath());
+        //log.info("[Pre][Change GeoTiff] Finished changing GeoTiff to 4326.");
 
         log.info("[Pre][Split GeoTiff] Start GeoTiff Splitting files.");
         tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());

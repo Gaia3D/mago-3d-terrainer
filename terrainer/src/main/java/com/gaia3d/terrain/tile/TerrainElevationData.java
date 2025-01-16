@@ -103,6 +103,10 @@ public class TerrainElevationData {
         if (raster != null) {
             try {
                 value = raster.getSampleDouble(x, y, 0);
+                // check if value is NaN
+                if (Double.isNaN(value)) {
+                    return 0.0;
+                }
             } catch (ArrayIndexOutOfBoundsException e) {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
             } catch (Exception e) {
@@ -147,7 +151,9 @@ public class TerrainElevationData {
 //            int row = (int) (unitaryY * geoTiffRasterHeight); // nearest row
 
             int column = (int) Math.floor(unitaryX * geoTiffRasterWidth);
-            int row = (int) Math.ceil(unitaryY * geoTiffRasterHeight);
+            //int column = (int) Math.ceil(unitaryX * geoTiffRasterWidth);
+            //int row = (int) Math.ceil(unitaryY * geoTiffRasterHeight);
+            int row = (int) Math.floor(unitaryY * geoTiffRasterHeight);
 
             resultAltitude = calcNearestInterpolation(column, row);
         }
@@ -168,7 +174,9 @@ public class TerrainElevationData {
 //        int row = (int) (y * geoTiffHeight);
 
         int column = (int) Math.floor(x * geoTiffWidth);
-        int row = (int) Math.ceil(y * geoTiffHeight);
+        //int column = (int) Math.ceil(x * geoTiffWidth);
+        //int row = (int) Math.ceil(y * geoTiffHeight);
+        int row = (int) Math.floor(y * geoTiffHeight);
 
         double factorX = x * geoTiffWidth - column;
         double factorY = y * geoTiffHeight - row;
