@@ -222,4 +222,37 @@ public class TempTest {
         };
         MagoTerrainerMain.main(args);
     }
+
+
+    @Test
+    void sampleDebug() {
+        File inputPath = new File(INPUT_PATH, "debug");
+        File outputPath = new File(OUTPUT_PATH, "debug-terrain-temp");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "18",
+                "-intensity", "4",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDem05() {
+        File inputPath = new File("D:\\dem05-wgs84");
+        File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-crop");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-intensity", "4",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
 }
