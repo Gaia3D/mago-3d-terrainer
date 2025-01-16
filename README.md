@@ -36,7 +36,7 @@ usage: mago 3DTerrainer help
  -d,--debug                      Debug Mode, print more detail log
  -h,--help                       Print this message
  -i,--input <arg>                Input folder path
- -is,--intensity <arg>           Mesh refinement strength. (default : 2.0)
+ -is,--intensity <arg>           Mesh refinement strength. (default : 4.0)
  -it,--interpolationType <arg>   Interpolation type (nearest, bilinear) (default : bilinear)
  -j,--json                       Generate only layer.json from terrain data
  -l,--log <arg>                  Log file path
@@ -120,7 +120,7 @@ usage: mago 3DTerrainer help
  -d,--debug                      Debug Mode, print more detail log
  -h,--help                       Print this message
  -i,--input <arg>                Input folder path
- -is,--intensity <arg>           Mesh refinement strength. (default : 2.0)
+ -is,--intensity <arg>           Mesh refinement strength. (default : 4.0)
  -it,--interpolationType <arg>   Interpolation type (nearest, bilinear) (default : bilinear)
  -j,--json                       Generate only layer.json from terrain data
  -l,--log <arg>                  Log file path
