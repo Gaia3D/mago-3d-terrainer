@@ -10,10 +10,14 @@ import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.CRS;
 import org.joml.Vector2i;
+import org.opengis.coverage.Coverage;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -137,4 +141,19 @@ public class GaiaGeoTiffManager {
         }
         return subGridCoverage2D;
     }
+
+    public static GridCoverage2D reprojectGridCoverage(GridCoverage2D sourceCoverage, CoordinateReferenceSystem targetCRS) throws Exception {
+        // Obtén los CRS de origen y destino
+        CoordinateReferenceSystem sourceCRS = sourceCoverage.getCoordinateReferenceSystem();
+
+        // Crea la transformación entre CRS
+        MathTransform transform = CRS.findMathTransform(sourceCRS, targetCRS, true);
+
+        // Reproyecta el GridCoverage2D
+        Operations ops = Operations.DEFAULT;
+        GridCoverage2D targetCoverage = (GridCoverage2D) ops.resample(sourceCoverage, targetCRS);
+
+        return targetCoverage;
+    }
+    
 }
