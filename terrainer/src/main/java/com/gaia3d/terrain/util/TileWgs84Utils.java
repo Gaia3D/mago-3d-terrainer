@@ -35,25 +35,25 @@ public class TileWgs84Utils {
         } else if (depth == 9) {
             result = tileSize * 0.01;
         } else if (depth == 10) {
-            result = tileSize * 0.01;
+            result = tileSize * 0.015;
         } else if (depth == 11) {
             result = tileSize * 0.02;
         } else if (depth == 12) {
-            result = tileSize * 0.04;
+            result = tileSize * 0.03;
         } else if (depth == 13) {
-            result = tileSize * 0.06;
+            result = tileSize * 0.04;
         } else if (depth == 14) {
-            result = tileSize * 0.07;
+            result = tileSize * 0.045;
         } else if (depth == 15) {
-            result = tileSize * 0.08;
+            result = tileSize * 0.045;
         } else if (depth == 16) {
-            result = tileSize * 0.10;
+            result = tileSize * 0.05;
         } else if (depth == 17) {
-            result = tileSize * 0.14;
+            result = tileSize * 0.055;
         } else if (depth == 18) {
-            result = tileSize * 0.23;
+            result = tileSize * 0.06;
         } else {
-            result = tileSize * 0.25;
+            result = tileSize * 0.065;
         }
         return result / globalOptions.getIntensity();
     }

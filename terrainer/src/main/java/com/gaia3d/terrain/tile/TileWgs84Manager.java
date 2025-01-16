@@ -79,17 +79,8 @@ public class TileWgs84Manager {
             double minSize = tileSizeMeters * 0.1 / (intensity);
 
             if (i > 12) {
-                minSize *= 1.5;
-            } else if (i > 10) {
                 minSize *= 1.25;
             }
-
-            /*if (i > 13) {
-                minSize *= 0.8;
-            } else if (i > 10) {
-                minSize *= 0.9;
-            }*/
-            //minTriangleSizeForTileDepthMap.put(i, minSize);
             minTriangleSizeForTileDepthList.add(minSize);
         }
 
@@ -193,7 +184,7 @@ public class TileWgs84Manager {
             int mosaicSize = globalOptions.getMosaicSize();
             List<TileRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, mosaicSize, mosaicSize, null);
 
-            log.info("[Tile][{}] Start making tile meshes - Divided Tiles Size: {}", depth, subDividedTilesRanges.size());
+            log.info("[Tile][{}/{}] Start making tile meshes - Divided Tiles Size: {}", depth, maxTileDepth, subDividedTilesRanges.size());
             AtomicInteger counter = new AtomicInteger(0);
 
             int total = subDividedTilesRanges.size();
@@ -201,7 +192,7 @@ public class TileWgs84Manager {
                 int progress = counter.incrementAndGet();
                 // First, make all tile raster.***
 
-                log.info("[Tile][{}][{}/{}] make wgs84 raster all tiles...", depth, progress, total);
+                log.info("[Tile][{}/{}][{}/{}] make wgs84 raster all tiles...", depth, maxTileDepth, progress, total);
                 TileRange expandedTilesRange = subDividedTilesRange.expand1();
                 this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
                 if (this.geoTiffFilesCount > 1) {
@@ -209,7 +200,7 @@ public class TileWgs84Manager {
                     this.terrainElevationDataManager.deleteCoverage();
                 }
 
-                log.info("[Tile][{}][{}/{}] process tiling...", depth, progress, total);
+                log.info("[Tile][{}/{}][{}/{}] process tiling...", depth, maxTileDepth, progress, total);
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
 
                 boolean isFirstGeneration = (depth == minTileDepth);
@@ -224,7 +215,7 @@ public class TileWgs84Manager {
             }
 
             long endTime = System.currentTimeMillis();
-            log.info("[Tile][{}] - End making tile meshes : Duration: {} ms}", depth, timeFormat(endTime - startTime));
+            log.info("[Tile][{}/{}] - End making tile meshes : Duration: {} ms}", depth, maxTileDepth, timeFormat(endTime - startTime));
 
             String javaHeapSize = System.getProperty("java.vm.name") + " " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB";
             // java vm이 사용할 수 있는 총 메모리(bytes), -Xmx

@@ -210,7 +210,7 @@ public class TempTest {
     @Test
     void sampleBilinear() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-bilinear-16");
+        File outputPath = new File(OUTPUT_PATH, "seoul-bilinear-15");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -226,13 +226,13 @@ public class TempTest {
     @Test
     void sampleDebug() {
         File inputPath = new File(INPUT_PATH, "debug");
-        File outputPath = new File(OUTPUT_PATH, "debug-terrain-temp-18");
+        File outputPath = new File(OUTPUT_PATH, "debug-terrain-temp-15-16");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "18",
+                "-max", "15",
                 "-intensity", "4",
                 "-calculateNormals",
         };
