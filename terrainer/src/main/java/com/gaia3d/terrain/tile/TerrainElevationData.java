@@ -147,12 +147,7 @@ public class TerrainElevationData {
             resultAltitude = calcBilinearInterpolation(unitaryX, unitaryY, geoTiffRasterWidth, geoTiffRasterHeight);
         } else {
             intersects[0] = true;
-//            int column = (int) (unitaryX * geoTiffRasterWidth); // nearest column
-//            int row = (int) (unitaryY * geoTiffRasterHeight); // nearest row
-
             int column = (int) Math.floor(unitaryX * geoTiffRasterWidth);
-            //int column = (int) Math.ceil(unitaryX * geoTiffRasterWidth);
-            //int row = (int) Math.ceil(unitaryY * geoTiffRasterHeight);
             int row = (int) Math.floor(unitaryY * geoTiffRasterHeight);
 
             resultAltitude = calcNearestInterpolation(column, row);
@@ -170,12 +165,7 @@ public class TerrainElevationData {
     }
 
     private double calcBilinearInterpolation(double x, double y, int geoTiffWidth, int geoTiffHeight) {
-//        int column = (int) (x * geoTiffWidth);
-//        int row = (int) (y * geoTiffHeight);
-
         int column = (int) Math.floor(x * geoTiffWidth);
-        //int column = (int) Math.ceil(x * geoTiffWidth);
-        //int row = (int) Math.ceil(y * geoTiffHeight);
         int row = (int) Math.floor(y * geoTiffHeight);
 
         double factorX = x * geoTiffWidth - column;
