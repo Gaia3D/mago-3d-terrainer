@@ -110,9 +110,9 @@ public class MagoTerrainerMain {
 
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
 
-        //log.info("[Pre][Change GeoTiff] Start changing GeoTiff to 4326.");
-        //tileWgs84Manager.processChangeTo4326Geotiffs(globalOptions.getInputPath(), globalOptions.getTileTempPath());
-        //log.info("[Pre][Change GeoTiff] Finished changing GeoTiff to 4326.");
+//        log.info("[Pre][Change GeoTiff] Start changing GeoTiff to 4326.");
+//        tileWgs84Manager.processChangeTo4326Geotiffs(globalOptions.getInputPath(), globalOptions.getTileTempPath());
+//        log.info("[Pre][Change GeoTiff] Finished changing GeoTiff to 4326.");
 
         log.info("[Pre][Split GeoTiff] Start GeoTiff Splitting files.");
         tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());

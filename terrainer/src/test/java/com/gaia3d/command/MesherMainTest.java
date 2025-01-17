@@ -292,22 +292,37 @@ class MesherMainTest {
         //*******************************************************************
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(17);
+        String maxTileDepth = String.valueOf(12);
         String refinementStrength = String.valueOf(4);
-//        String originalGeoTiffFolderPath = "D:/data/DEM/allKoreaSouthJinHun_20250115";
-//        String outputDirectory = "D:/data/mago-server/output/result_allKoreaSouthJinHun_20250115";
+        String originalGeoTiffFolderPath = "D:/data/DEM/allKoreaSouthJinHun_20250115";
+        String outputDirectory = "D:/data/mago-server/output/result_allKoreaSouthJinHun_20250115";
 
 //        String originalGeoTiffFolderPath = "D:/data/DEM/busanLittle05_5186";
 //        String outputDirectory = "D:/data/mago-server/output/result_busanLittle05_5186";
 
-        String originalGeoTiffFolderPath = "D:/data/DEM/yeosu-4326";
-        String outputDirectory = "D:/data/mago-server/output/result_yeosu-4326";
+//        String originalGeoTiffFolderPath = "D:/data/DEM/yeosu-4326";
+//        String outputDirectory = "D:/data/mago-server/output/result_yeosu-4326";
 
 //        String originalGeoTiffFolderPath = "D:/data/DEM/20250116-dem05-4326/dem05-wgs84";
 //        String outputDirectory = "D:\\data\\DEM\\20250116-dem05-4326\\dem05-wgs84-crop";
 
 //        String originalGeoTiffFolderPath = "D:/data/DEM/seoul2geoTiffs";
 //        String outputDirectory = "D:/data/mago-server/output/result_seoul2geoTiffs";
+
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void korea_westSouth() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(12);
+        String refinementStrength = String.valueOf(4);
+        String originalGeoTiffFolderPath = "D:/data/DEM/korea_westSouth_5186";
+        String outputDirectory = "D:/data/mago-server/output/result_korea_westSouth_5186";
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }

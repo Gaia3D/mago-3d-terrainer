@@ -372,50 +372,53 @@ public class TileWgs84Manager {
         List<String> geoTiffFileNames = new ArrayList<>();
         FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
 
+        String tileTempPath = globalOptions.getTileTempPath();
+
         if (currentFolderPath == null) {
             currentFolderPath = "";
         }
 
         GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-
-        CoordinateReferenceSystem crsTarget = null;
-        CoordinateReferenceSystem crsWgs84 = null;
-        MathTransform targetToWgs = null;
-        GeometryFactory gf = new GeometryFactory();
+        CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
 
         // now load all geotiff and make geotiff geoExtension data
         for (String geoTiffFileName : geoTiffFileNames) {
             String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
             GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
 
-            // check the size of the raster image of the coverage.***
-            int width = originalGridCoverage2D.getRenderedImage().getWidth();
-            int height = originalGridCoverage2D.getRenderedImage().getHeight();
-
-            ReferencedEnvelope envelope = new ReferencedEnvelope(originalGridCoverage2D.getEnvelope());
-
-            if (envelope.getCoordinateReferenceSystem() instanceof GeographicCRS) {
-                // in this case, do nothing
-                continue;
-            }
-
             String geoTiffRawFileName = geoTiffFileName.substring(0, geoTiffFileName.length() - 4);
             String outputFilePath = geoTiffRawFileName + "_4326.tif";
 
             // check if "outputFilePath" already exists
             File outputFile = new File(terrainElevationDataFolderPath, outputFilePath);
-            if (outputFile.exists()) {
+//            if (outputFile.exists()) {
+//                continue;
+//            }
+
+            CoordinateReferenceSystem sourceCRS = originalGridCoverage2D.getCoordinateReferenceSystem();
+            if(sourceCRS.equals(crsWgs84)) {
+                // in this case, do nothing
                 continue;
             }
-
-            crsTarget = originalGridCoverage2D.getCoordinateReferenceSystem2D();
-            crsWgs84 = CRS.decode("EPSG:4326", true);
             GridCoverage2D coverage4326 = gaiaGeoTiffManager.reprojectGridCoverage(originalGridCoverage2D, crsWgs84);
 
             // save the coverage4326 as geotiff
-            gaiaGeoTiffManager.saveGridCoverage2D(coverage4326, outputFile.getAbsolutePath());
+            if(coverage4326 != null) {
+                gaiaGeoTiffManager.saveGridCoverage2D(coverage4326, outputFile.getAbsolutePath());
+            }
             int hola = 0;
         }
+
+        // now check if exist folders inside the terrainElevationDataFolderPath
+        List<String> folderNames = new ArrayList<>();
+        FileUtils.getFolderNames(currentFolderPath, folderNames);
+        String auxFolderPath = "";
+        for (String folderName : folderNames) {
+            auxFolderPath = currentFolderPath + File.separator + folderName;
+            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
+            changeTo4326Geotiffs(folderPath, auxFolderPath);
+        }
+        System.gc();
     }
 
     public void processSplitGeotiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException {
