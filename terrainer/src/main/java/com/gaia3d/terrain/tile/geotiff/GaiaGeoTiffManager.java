@@ -1,6 +1,9 @@
 package com.gaia3d.terrain.tile.geotiff;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
+import com.gaia3d.util.FileUtils;
+import com.gaia3d.util.StringUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -34,10 +37,18 @@ public class GaiaGeoTiffManager {
     private double[] originalUpperLeftCorner = new double[2];
     private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
     private Map<String, Vector2i> mapPathGridCoverage2dSize = new HashMap<>();
+    private Map<String, String> mapGeoTiffToGeoTiff4326 = new HashMap<>();
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
         if (mapPathGridCoverage2d.containsKey(geoTiffFilePath)) {
             return mapPathGridCoverage2d.get(geoTiffFilePath);
+        }
+
+        if(mapGeoTiffToGeoTiff4326.containsKey(geoTiffFilePath)) {
+            String geoTiff4326FilePath = mapGeoTiffToGeoTiff4326.get(geoTiffFilePath);
+            if(mapPathGridCoverage2d.containsKey(geoTiff4326FilePath)) {
+                return mapPathGridCoverage2d.get(geoTiff4326FilePath);
+            }
         }
 
         int gridCoverage2dCount = mapPathGridCoverage2d.size();
@@ -59,6 +70,51 @@ public class GaiaGeoTiffManager {
             log.error("Error:", e);
         }
 
+        // check if the coverage is in EPSG:4326. If not, reproject it.***
+        CoordinateReferenceSystem crs = null;
+        try {
+            crs = coverage.getCoordinateReferenceSystem();
+        } catch (Exception e) {
+            log.error("Error:", e);
+        }
+
+        if (crs != null) {
+            String crsCode = crs.getIdentifiers().iterator().next().toString();
+            if (!crsCode.equals("EPSG:4326")) {
+                // reproject the coverage to EPSG:4326
+                log.info("Reprojecting the coverage to EPSG:4326...");
+                String geoTiff4326FolderPath = GlobalOptions.getInstance().getTileTempPath() + File.separator + "temp4326";
+                String geoTiff4326FileName = StringUtils.getRawFileName(StringUtils.getFileNameFromPath(geoTiffFilePath)) + "_4326.tif";
+                String geoTiff4326FilePath = geoTiff4326FolderPath + File.separator + geoTiff4326FileName;
+                // check if exist the file "geoTiff4326FilePath".***
+                if (!FileUtils.isFileExists(geoTiff4326FilePath)) {
+                    FileUtils.createAllFoldersIfNoExist(geoTiff4326FolderPath);
+                    try {
+                        coverage = reprojectGridCoverage(coverage, CRS.decode("EPSG:4326"));
+                        log.info("Saving the reprojected coverage to EPSG:4326...");
+                        saveGridCoverage2D(coverage, geoTiff4326FilePath);
+                        mapGeoTiffToGeoTiff4326.put(geoTiffFilePath, geoTiff4326FilePath);
+                    } catch (Exception e) {
+                        log.error("Error:", e);
+                    }
+                }
+                else {
+                    // load the coverage from the file
+                    try {
+                        File file = new File(geoTiff4326FilePath);
+                        GeoTiffReader reader = new GeoTiffReader(file);
+                        log.info("Loading the reprojected coverage from EPSG:4326...");
+                        coverage = reader.read(null);
+                        reader.dispose();
+                    } catch (Exception e) {
+                        log.error("Error:", e);
+                    }
+                }
+            }
+        }
+        // end check if the coverage is in EPSG:4326. If not, reproject it.***
+
+        // save the coverage
         mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
 
         // save the width and height of the coverage
@@ -68,7 +124,7 @@ public class GaiaGeoTiffManager {
         Vector2i size = new Vector2i(width, height);
         mapPathGridCoverage2dSize.put(geoTiffFilePath, size);
 
-
+        log.info("Loaded the geoTiff file ok");
         return coverage;
     }
 
