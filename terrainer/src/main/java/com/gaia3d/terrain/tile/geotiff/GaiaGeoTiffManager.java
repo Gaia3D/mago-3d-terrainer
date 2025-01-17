@@ -98,7 +98,9 @@ public class GaiaGeoTiffManager {
                 // reproject the coverage to EPSG:4326
                 log.info("Reprojecting the coverage to EPSG:4326...");
                 String geoTiff4326FolderPath = GlobalOptions.getInstance().getTileTempPath() + File.separator + "temp4326";
-                String geoTiff4326FileName = StringUtils.getRawFileName(StringUtils.getFileNameFromPath(geoTiffFilePath)) + "_4326.tif";
+                File originalFile = new File(geoTiffFilePath);
+                String originalFileName = originalFile.getName();
+                String geoTiff4326FileName = StringUtils.getRawFileName(originalFileName) + "_4326.tif";
                 String geoTiff4326FilePath = geoTiff4326FolderPath + File.separator + geoTiff4326FileName;
                 // check if exist the file "geoTiff4326FilePath".***
                 if (!FileUtils.isFileExists(geoTiff4326FilePath)) {
