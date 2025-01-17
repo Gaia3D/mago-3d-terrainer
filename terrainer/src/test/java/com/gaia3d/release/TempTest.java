@@ -127,15 +127,14 @@ public class TempTest {
     @Test
     void sample14Intensity2() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-14-intensity-2");
+        File outputPath = new File(OUTPUT_PATH, "seoul-15-intensity-2");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "14",
-                "-intensity", "2.0",
-                "-mosaicSize", "64",
+                "-max", "15",
+                "-intensity", "4.0",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -227,7 +226,7 @@ public class TempTest {
     @Test
     void sampleDebug() {
         File inputPath = new File(INPUT_PATH, "debug");
-        File outputPath = new File(OUTPUT_PATH, "debug-terrain-temp");
+        File outputPath = new File(OUTPUT_PATH, "debug-terrain-temp-18");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -249,7 +248,7 @@ public class TempTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "14",
+                "-max", "10",
                 "-intensity", "4",
                 "-calculateNormals",
         };
