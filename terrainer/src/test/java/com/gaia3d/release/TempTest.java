@@ -226,14 +226,28 @@ public class TempTest {
     @Test
     void sampleDebug() {
         File inputPath = new File(INPUT_PATH, "debug");
-        File outputPath = new File(OUTPUT_PATH, "debug-terrain-temp-15-16");
+        File outputPath = new File(OUTPUT_PATH, "debug-terrain-5186-16");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "15",
-                "-intensity", "4",
+                "-max", "16",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDem05Parts() {
+        File inputPath = new File("D:\\dem05-wgs84-parts");
+        File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-parts");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -242,15 +256,29 @@ public class TempTest {
     @Test
     void sampleDem05() {
         File inputPath = new File("D:\\dem05-wgs84");
-        File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-crop");
+        File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-korea-all");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "10",
-                "-intensity", "4",
+                "-max", "14",
                 "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDemJSON() {
+        File inputPath = new File("D:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
+        File outputPath = new File("D:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-json",
         };
         MagoTerrainerMain.main(args);
     }

@@ -78,8 +78,20 @@ public class TileWgs84Manager {
 
             double minSize = tileSizeMeters * 0.1 / (intensity);
 
-            if (i > 12) {
+            if (i > 17) {
+                minSize *= 0.75;
+            } else if (i > 15) {
+                minSize *= 1.0;
+            } else if (i > 14) {
+                minSize *= 1.125;
+            } else if (i > 13) {
                 minSize *= 1.25;
+            } else if (i > 12) {
+                minSize *= 1.25;
+            }else if (i > 10) {
+                minSize *= 1.25;
+            } else {
+                minSize *= 1.0;
             }
             minTriangleSizeForTileDepthList.add(minSize);
         }

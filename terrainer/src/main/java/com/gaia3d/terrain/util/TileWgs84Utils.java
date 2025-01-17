@@ -31,29 +31,29 @@ public class TileWgs84Utils {
         if (depth < 5) {
             result = tileSize * 0.01;
         } else if (depth <= 8) {
-            result = tileSize * 0.01;
-        } else if (depth == 9) {
-            result = tileSize * 0.01;
-        } else if (depth == 10) {
             result = tileSize * 0.015;
-        } else if (depth == 11) {
+        } else if (depth == 9) {
             result = tileSize * 0.02;
-        } else if (depth == 12) {
+        } else if (depth == 10) {
             result = tileSize * 0.03;
-        } else if (depth == 13) {
+        } else if (depth == 11) {
             result = tileSize * 0.04;
-        } else if (depth == 14) {
-            result = tileSize * 0.045;
-        } else if (depth == 15) {
-            result = tileSize * 0.045;
-        } else if (depth == 16) {
+        } else if (depth == 12) {
             result = tileSize * 0.05;
-        } else if (depth == 17) {
-            result = tileSize * 0.055;
-        } else if (depth == 18) {
+        } else if (depth == 13) {
             result = tileSize * 0.06;
-        } else {
+        } else if (depth == 14) {
+            result = tileSize * 0.06;
+        } else if (depth == 15) {
+            result = tileSize * 0.06;
+        } else if (depth == 16) {
             result = tileSize * 0.065;
+        } else if (depth == 17) {
+            result = tileSize * 0.07;
+        } else if (depth == 18) {
+            result = tileSize * 0.07;
+        } else {
+            result = tileSize * 0.07;
         }
         return result / globalOptions.getIntensity();
     }
