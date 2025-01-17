@@ -19,14 +19,15 @@ import org.opengis.coverage.Coverage;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -79,8 +80,21 @@ public class GaiaGeoTiffManager {
         }
 
         if (crs != null) {
-            String crsCode = crs.getIdentifiers().iterator().next().toString();
-            if (!crsCode.equals("EPSG:4326")) {
+            String crsCode = null;
+            Set<ReferenceIdentifier> identifiers = crs.getIdentifiers();
+            if(identifiers != null) {
+                Iterator<ReferenceIdentifier> iterator = identifiers.iterator();
+                if(iterator.hasNext()) {
+                    crsCode = iterator.next().toString();
+                }
+                else{
+                    crsCode = crs.getName().toString();
+                }
+            }
+            else{
+                crsCode = crs.getName().toString();
+            }
+            if (crsCode != null && !crsCode.equals("EPSG:4326")) {
                 // reproject the coverage to EPSG:4326
                 log.info("Reprojecting the coverage to EPSG:4326...");
                 String geoTiff4326FolderPath = GlobalOptions.getInstance().getTileTempPath() + File.separator + "temp4326";
@@ -91,7 +105,7 @@ public class GaiaGeoTiffManager {
                     FileUtils.createAllFoldersIfNoExist(geoTiff4326FolderPath);
                     try {
                         coverage = reprojectGridCoverage(coverage, CRS.decode("EPSG:4326"));
-                        log.info("Saving the reprojected coverage to EPSG:4326...");
+                        log.debug("Saving the reprojected coverage to EPSG:4326...");
                         saveGridCoverage2D(coverage, geoTiff4326FilePath);
                         mapGeoTiffToGeoTiff4326.put(geoTiffFilePath, geoTiff4326FilePath);
                     } catch (Exception e) {
@@ -103,7 +117,7 @@ public class GaiaGeoTiffManager {
                     try {
                         File file = new File(geoTiff4326FilePath);
                         GeoTiffReader reader = new GeoTiffReader(file);
-                        log.info("Loading the reprojected coverage from EPSG:4326...");
+                        log.debug("Loading the reprojected coverage from EPSG:4326...");
                         coverage = reader.read(null);
                         reader.dispose();
                     } catch (Exception e) {
@@ -124,7 +138,7 @@ public class GaiaGeoTiffManager {
         Vector2i size = new Vector2i(width, height);
         mapPathGridCoverage2dSize.put(geoTiffFilePath, size);
 
-        log.info("Loaded the geoTiff file ok");
+        log.debug("Loaded the geoTiff file ok");
         return coverage;
     }
 
@@ -181,7 +195,8 @@ public class GaiaGeoTiffManager {
         // now save the newCoverage as geotiff
         File outputFile = new File(outputFilePath);
         FileOutputStream outputStream = new FileOutputStream(outputFile);
-        GeoTiffWriter writer = new GeoTiffWriter(outputStream);
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+        GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
         writer.write(coverage, null);
         writer.dispose();
         outputStream.close();

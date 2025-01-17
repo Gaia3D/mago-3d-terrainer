@@ -319,10 +319,10 @@ class MesherMainTest {
         //*******************************************************************
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(12);
+        String maxTileDepth = String.valueOf(17);
         String refinementStrength = String.valueOf(4);
-        String originalGeoTiffFolderPath = "D:/data/DEM/korea_westSouth_5186";
-        String outputDirectory = "D:/data/mago-server/output/result_korea_westSouth_5186";
+        String originalGeoTiffFolderPath = "D:/data/DEM/korea_westSounth_verySmall_5186";
+        String outputDirectory = "D:/data/mago-server/output/result_korea_westSounth_verySmall_5186";
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
