@@ -75,7 +75,7 @@ public class MagoTerrainerMain {
                 log.info("[Generate] Start Terrainer process.");
                 execute();
                 log.info("[Generate] Finished Terrainer process.");
-                if (!globalOptions.isDebugMode()) {
+                if (!globalOptions.isLeaveTemp()) {
                     cleanTemp();
                 }
             }
@@ -166,10 +166,10 @@ public class MagoTerrainerMain {
         File tileTempFolder = new File(globalOptions.getTileTempPath());
         if (tileTempFolder.exists() && tileTempFolder.isDirectory()) {
             try {
-                log.info("[Post]Deleting tileTempFolder");
+                log.info("[Post] Deleting tileTempFolder");
                 FileUtils.deleteDirectory(tileTempFolder);
             } catch (IOException e) {
-                log.error("[Post]Failed to delete tileTempFolder.", e);
+                log.error("[Post] Failed to delete tileTempFolder.", e);
                 throw new RuntimeException(e);
             }
         }
@@ -177,10 +177,10 @@ public class MagoTerrainerMain {
         File splitTempFolder = new File(globalOptions.getSplitTiffTempPath());
         if (splitTempFolder.exists() && splitTempFolder.isDirectory()) {
             try {
-                log.info("[Post]Deleting splitTempFolder");
+                log.info("[Post] Deleting splitTempFolder");
                 FileUtils.deleteDirectory(splitTempFolder);
             } catch (IOException e) {
-                log.error("[Post]Failed to delete splitTempFolder.", e);
+                log.error("[Post] Failed to delete splitTempFolder.", e);
                 log.error("Error:", e);
                 throw new RuntimeException(e);
             }
@@ -189,10 +189,10 @@ public class MagoTerrainerMain {
         File resizedTempFolder = new File(globalOptions.getResizedTiffTempPath());
         if (resizedTempFolder.exists() && resizedTempFolder.isDirectory()) {
             try {
-                log.info("[Post]Deleting resizedTempFolder");
+                log.info("[Post] Deleting resizedTempFolder");
                 FileUtils.deleteDirectory(resizedTempFolder);
             } catch (IOException e) {
-                log.error("[Post]Failed to delete resizedTempFolder.", e);
+                log.error("[Post] Failed to delete resizedTempFolder.", e);
                 log.error("Error:", e);
                 throw new RuntimeException(e);
             }

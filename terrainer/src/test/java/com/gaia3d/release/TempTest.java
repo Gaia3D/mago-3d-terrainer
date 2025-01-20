@@ -254,7 +254,7 @@ public class TempTest {
     }
 
     @Test
-    void sampleDem05() {
+    void sampleDem5m4326() {
         File inputPath = new File("D:\\dem05-wgs84");
         File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-korea-all");
 
@@ -263,6 +263,52 @@ public class TempTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "14",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDem5m5186() {
+        File inputPath = new File("D:\\dem05-wgs84");
+        File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-korea-all");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDem5m5186Part() {
+        File inputPath = new File("D:\\dem05-5186-part-real");
+        File outputPath = new File(OUTPUT_PATH, "dem05-5186-part-real");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
+                "-leaveTemp",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDem30m5186Part() {
+        File inputPath = new File("D:\\dem30-5186");
+        File outputPath = new File(OUTPUT_PATH, "dem30-5186");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "12",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);

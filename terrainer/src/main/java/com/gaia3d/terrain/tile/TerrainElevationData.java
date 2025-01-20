@@ -105,7 +105,7 @@ public class TerrainElevationData {
                 value = raster.getSampleDouble(x, y, 0);
                 // check if value is NaN
                 if (Double.isNaN(value)) {
-                    return 0.0;
+                    return Float.MIN_VALUE;
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
@@ -149,7 +149,6 @@ public class TerrainElevationData {
             intersects[0] = true;
             int column = (int) Math.floor(unitaryX * geoTiffRasterWidth);
             int row = (int) Math.floor(unitaryY * geoTiffRasterHeight);
-
             resultAltitude = calcNearestInterpolation(column, row);
         }
 

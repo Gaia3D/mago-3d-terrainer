@@ -185,7 +185,6 @@ public class TerrainElevationDataManager {
             if (uniqueTerrainElevationData == null) {
                 return resultElevation;
             }
-
             resultElevation = uniqueTerrainElevationData.getElevation(lonDeg, latDeg, intersects);
             return resultElevation;
         }
@@ -209,9 +208,17 @@ public class TerrainElevationDataManager {
             }
 
             resultElevation = elevation;
-            break;
+
+            // if there is first elevation data, break
+            if (resultElevation != Float.MIN_VALUE) {
+                break;
+            }
         }
 
+        if (resultElevation == Float.MIN_VALUE) {
+            // if there is no elevation data, return 0.0
+            resultElevation = 0.0;
+        }
         return resultElevation;
     }
 

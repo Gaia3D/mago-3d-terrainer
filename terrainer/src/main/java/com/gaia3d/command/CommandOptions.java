@@ -11,6 +11,7 @@ public enum CommandOptions {
     OUTPUT("output", "o", "output", true, "Output folder path"),
     LOG("log", "l", "log", true, "Log file path"),
     DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
+    LEAVE_TEMP("leaveTemp", "lt", "leaveTemp", false, "Leave temporary files for debugging"),
     JSON("json", "j", "json", false, "Generate only layer.json from terrain data"),
 
     // for terrain generation

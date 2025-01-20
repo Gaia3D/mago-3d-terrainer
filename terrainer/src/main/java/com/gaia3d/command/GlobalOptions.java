@@ -35,6 +35,7 @@ public class GlobalOptions {
     private String programInfo;
     private boolean layerJsonGenerate = false;
     private boolean debugMode = false;
+    private boolean leaveTemp = false;
 
     private long startTime = 0;
     private long endTime = 0;
@@ -90,6 +91,10 @@ public class GlobalOptions {
 
         if (command.hasOption(CommandOptions.DEBUG.getArgName())) {
             instance.setDebugMode(true);
+        }
+
+        if (command.hasOption(CommandOptions.LEAVE_TEMP.getArgName())) {
+            instance.setLeaveTemp(true);
         }
 
         if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
