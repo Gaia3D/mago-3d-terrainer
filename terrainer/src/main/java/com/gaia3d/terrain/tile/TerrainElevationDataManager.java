@@ -203,16 +203,17 @@ public class TerrainElevationDataManager {
                 continue;
             }
 
-            if (elevation < 0.0) {
+            if (elevation <= 0.0) {
                 elevation = 0.0;
+                continue;
             }
 
             resultElevation = elevation;
-
+            break;
             // if there is first elevation data, break
-            if (resultElevation != Float.MIN_VALUE) {
+            /*if (resultElevation != Float.MIN_VALUE) {
                 break;
-            }
+            }*/
         }
 
         if (resultElevation == Float.MIN_VALUE) {

@@ -105,7 +105,7 @@ public class TerrainElevationData {
                 value = raster.getSampleDouble(x, y, 0);
                 // check if value is NaN
                 if (Double.isNaN(value)) {
-                    return Float.MIN_VALUE;
+                    return 0.0;
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);

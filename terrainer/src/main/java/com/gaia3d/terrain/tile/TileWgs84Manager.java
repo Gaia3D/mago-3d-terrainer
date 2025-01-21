@@ -15,6 +15,7 @@ import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.opengis.referencing.FactoryException;
@@ -509,13 +510,21 @@ public class TileWgs84Manager {
 
                         ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(minX, maxX, minY, maxY, envelope.getCoordinateReferenceSystem());
                         GridCoverage2D tileCoverage = gaiaGeoTiffManager.extractSubGridCoverage2D(originalGridCoverage2D, tileEnvelope);
+
                         try {
+                            // reprojection
+                            CoordinateReferenceSystem wgs84 = DefaultGeographicCRS.WGS84;
+                            tileCoverage = gaiaGeoTiffManager.reprojectGridCoverage(tileCoverage, wgs84);
+
                             GeoTiffWriter writer = new GeoTiffWriter(outputFile);
                             log.info("[Pre][Split GeoTiff][{}/{}] Writing split geotiff: {}", splitCount, totalSplits, outputFile.getAbsolutePath());
                             writer.write(tileCoverage, null);
                             writer.dispose();
                         } catch (IOException e) {
                             log.error("Error:", e);
+                        } catch (Exception e) {
+                            log.error("Error:", e);
+                            throw new RuntimeException(e);
                         }
                     }
                 }
