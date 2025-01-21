@@ -197,24 +197,24 @@ public class TerrainElevationDataManager {
         rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDataArray);
 
         intersects[0] = false;
+        double candidateElevation = 0.0;
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (!intersects[0]) {
                 continue;
             }
 
-            if (elevation <= 0.0) {
+            /*if (elevation <= 0.0) {
                 elevation = 0.0;
                 continue;
-            }
-
-            resultElevation = elevation;
-            break;
-            // if there is first elevation data, break
-            /*if (resultElevation != Float.MIN_VALUE) {
-                break;
             }*/
+
+            candidateElevation = Math.max(candidateElevation, elevation);
+            /*resultElevation = elevation;
+            break;*/
         }
+
+        resultElevation = candidateElevation;
 
         if (resultElevation == Float.MIN_VALUE) {
             // if there is no elevation data, return 0.0

@@ -151,7 +151,6 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "4.0",
-                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -308,7 +307,7 @@ public class TempTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "12",
+                "-max", "14",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);

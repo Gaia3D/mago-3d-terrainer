@@ -1,6 +1,7 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.Configurator;
+import it.geosolutions.jaiext.JAIExt;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -9,6 +10,7 @@ import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriteParams;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import org.geotools.image.ImageWorker;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
@@ -19,22 +21,79 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.MathTransform2D;
+import org.opengis.referencing.operation.TransformException;
 
 import javax.media.jai.Warp;
 import javax.media.jai.WarpAffine;
 import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 @Slf4j
 class GaiaGeoTiffManagerTest {
+
+    /*static {
+        JAIExt.initJAIEXT();
+    }*/
+
+    @Test
+    void reprojection() {
+        Configurator.initConsoleLogger();
+
+        //JAIExt.registerJAIDescriptor("Warp");
+        //JAIExt.registerJAIEXTDescriptor("Warp");
+
+        //File inputFile = new File("D:\\dem30-5186\\dem30-5186-part.tif"); // 5186
+        File inputFile = new File("D:\\dem05-5186-part-real\\dem05-parts-5186-crop.tif"); // 5186
+        //File inputFile = new File("D:\\dem05-5186\\dem05.tif"); // 5186
+
+        File outputFile = new File("D:\\", inputFile.getName());
+        CoordinateReferenceSystem targetCRS = DefaultGeographicCRS.WGS84;
+        /*try {
+            targetCRS = CRS.decode("EPSG:4326");
+        } catch (FactoryException e) {
+            throw new RuntimeException(e);
+        }*/
+
+        GeoTiffReprojector reprojector = new GeoTiffReprojector();
+        GridCoverage2D source = reprojector.readGeoTiff(inputFile);
+        //GridCoverage2D target = reprojector.wrap(source, targetCRS);
+        //GridCoverage2D target = reprojector.affine(source, targetCRS);
+        //GridCoverage2D target = reprojector.reproject(source, targetCRS);
+        //GridCoverage2D target = reprojector.reproject2(source, targetCRS);
+
+        List<GridCoverage2D> reprojectedTiles = null;
+        try {
+            List<GridCoverage2D> tiles =  reprojector.splitCoverageIntoTiles(inputFile, source, 512);
+
+            ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+            reprojectedTiles = pool.submit(() -> tiles.parallelStream()
+                    .map(tile -> reprojector.reprojectTile(tile, targetCRS))
+                    .collect(Collectors.toList())
+            ).get();
+        } catch (TransformException | IOException | InterruptedException | ExecutionException e) {
+            log.error("Failed to reproject tiles", e);
+            throw new RuntimeException(e);
+        }
+
+        reprojectedTiles.forEach(tile -> {
+            File tileFile = new File(outputFile.getParent(), UUID.randomUUID().toString() + ".tif");
+            reprojector.writeGeoTiff(tile, tileFile);
+        });
+    }
+
 
     @Test
     void warp() {
         Configurator.initConsoleLogger();
 
-        File inputFile = new File("D:\\dem30-5186\\dem30-5186-part.tif"); // 5186
-        //File inputFile = new File("D:\\dem05-5186-part-real\\dem05-parts-5186.tif"); // 5186
+        //File inputFile = new File("D:\\dem30-5186\\dem30-5186-part.tif"); // 5186
+        File inputFile = new File("D:\\dem05-5186-part-real\\dem05-parts-5186.tif"); // 5186
         //File inputFile = new File("D:\\dem05-5186\\dem05.tif"); // 5186
         File outputFile = new File("D:\\result-01.tif"); // 4326
 
@@ -56,7 +115,7 @@ class GaiaGeoTiffManagerTest {
         try {
             targetCRS = CRS.decode("EPSG:3857");
         } catch (FactoryException e) {
-            log.error("Failed to decode EPSG:4326", e);
+            log.error("Failed to decode EPSG:3857", e);
             throw new RuntimeException(e);
         }
 
@@ -99,7 +158,20 @@ class GaiaGeoTiffManagerTest {
 
 
 
-        GridCoverage2D targetCoverage = (GridCoverage2D) Operations.DEFAULT.resample(gridCoverage2D, targetCRS);
+        //GridCoverage2D targetCoverage = (GridCoverage2D) Operations.DEFAULT.resample(gridCoverage2D, targetCRS);
+
+
+        boolean jaiExtEnabled = ImageWorker.isJaiExtEnabled();
+        log.info("JAI-EXT enabled: {}", jaiExtEnabled);
+
+        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
+        //GridCoverage2D targetCoverage = gaiaGeoTiffManager.executeResampling(gridCoverage2D, targetCRS);
+        GridCoverage2D targetCoverage = null;
+        try {
+            targetCoverage = gaiaGeoTiffManager.reprojectGridCoverage(gridCoverage2D, targetCRS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
 
         //separate(gridCoverage2D);

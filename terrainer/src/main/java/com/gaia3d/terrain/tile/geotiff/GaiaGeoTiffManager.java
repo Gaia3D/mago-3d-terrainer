@@ -8,33 +8,29 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.geotools.coverage.grid.GeneralGridEnvelope;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.processing.Operations;
+import org.geotools.coverage.processing.operation.Resample;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.geotools.referencing.operation.transform.AffineTransform2D;
-import org.geotools.referencing.operation.transform.WarpTransform2D;
-import org.geotools.referencing.operation.transform.WarpTransform2DProvider;
 import org.joml.Vector2i;
-import org.opengis.coverage.Coverage;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
+import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.crs.GeographicCRS;
 import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.MathTransform2D;
 
-import javax.media.jai.Warp;
-import javax.media.jai.WarpAffine;
-import java.awt.geom.AffineTransform;
-import java.io.*;
+import java.awt.image.RenderedImage;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,6 +41,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Slf4j
 public class GaiaGeoTiffManager {
+    private final String PROJECTION_CRS = "EPSG:3857";
     private int[] pixel = new int[1];
     private double[] originalUpperLeftCorner = new double[2];
     private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
@@ -62,10 +59,12 @@ public class GaiaGeoTiffManager {
 
         if (mapGeoTiffToGeoTiff4326.containsKey(geoTiffFilePath)) {
             String geoTiff4326FilePath = mapGeoTiffToGeoTiff4326.get(geoTiffFilePath);
-            if(mapPathGridCoverage2d.containsKey(geoTiff4326FilePath)) {
+            if (mapPathGridCoverage2d.containsKey(geoTiff4326FilePath)) {
                 return mapPathGridCoverage2d.get(geoTiff4326FilePath);
             }
         }
+
+        log.info("Loading the geoTiff file: {}", geoTiffFilePath);
 
         int gridCoverage2dCount = mapPathGridCoverage2d.size();
         if (gridCoverage2dCount > 0) {
@@ -97,55 +96,55 @@ public class GaiaGeoTiffManager {
         if (crs != null) {
             String crsCode = null;
             Set<ReferenceIdentifier> identifiers = crs.getIdentifiers();
-            if(identifiers != null) {
+            if (identifiers != null) {
                 Iterator<ReferenceIdentifier> iterator = identifiers.iterator();
-                if(iterator.hasNext()) {
+                if (iterator.hasNext()) {
                     crsCode = iterator.next().toString();
-                }
-                else{
+                } else {
                     crsCode = crs.getName().toString();
                 }
-            }
-            else{
+            } else {
                 crsCode = crs.getName().toString();
             }
 
-            if (reprojection && crsCode != null && !crsCode.equals("EPSG:4326")) {
+            /*if (reprojection && crsCode != null && !crsCode.equals(PROJECTION_CRS)) {
                 // reproject the coverage to EPSG:4326
-                log.info("Reprojecting the coverage to EPSG:4326...");
-                String geoTiff4326FolderPath = GlobalOptions.getInstance().getTileTempPath() + File.separator + "temp4326";
+                log.info("Reprojecting the coverage to {}", PROJECTION_CRS);
+                String geoTiff4326FolderPath = GlobalOptions.getInstance().getTileTempPath() + File.separator + "reprojection";
                 File originalFile = new File(geoTiffFilePath);
                 String originalFileName = originalFile.getName();
-                String geoTiff4326FileName = StringUtils.getRawFileName(originalFileName) + "_4326.tif";
+                String geoTiff4326FileName = StringUtils.getRawFileName(originalFileName) + "_reprojection.tif";
                 String geoTiff4326FilePath = geoTiff4326FolderPath + File.separator + geoTiff4326FileName;
                 // check if exist the file "geoTiff4326FilePath".***
                 if (!FileUtils.isFileExists(geoTiff4326FilePath)) {
                     FileUtils.createAllFoldersIfNoExist(geoTiff4326FolderPath);
                     try {
-                        coverage = reprojectGridCoverage(coverage, CRS.decode("EPSG:4326"));
-                        log.debug("Saving the reprojected coverage to EPSG:4326...");
+                        GeoTiffReprojector reprojector = new GeoTiffReprojector();
+                        coverage = reprojector.reproject(coverage, CRS.decode(PROJECTION_CRS));
+                        //coverage = executeResampling(coverage, CRS.decode(PROJECTION_CRS));
+                        log.info("Saving the reprojected coverage to {}", PROJECTION_CRS);
                         saveGridCoverage2D(coverage, geoTiff4326FilePath);
                         mapGeoTiffToGeoTiff4326.put(geoTiffFilePath, geoTiff4326FilePath);
                     } catch (Exception e) {
                         log.error("Error:", e);
                     }
-                }
-                else {
+                } else {
                     // load the coverage from the file
                     try {
                         File file = new File(geoTiff4326FilePath);
                         GeoTiffReader reader = new GeoTiffReader(file);
-                        log.debug("Loading the reprojected coverage from EPSG:4326...");
+                        log.info("Loading the reprojected coverage from {}", PROJECTION_CRS);
                         coverage = reader.read(null);
                         reader.dispose();
+                        mapGeoTiffToGeoTiff4326.put(geoTiffFilePath, geoTiff4326FilePath);
                     } catch (Exception e) {
                         log.error("Error:", e);
                     }
                 }
-            }
+            }*/
         }
 
-            // check if the coverage is in EPSG:4326. If not, reproject it.***
+        // check if the coverage is in EPSG:4326. If not, reproject it.***
             /*if (crsCode != null && !crsCode.equals("EPSG:4326")) {
                 // reproject the coverage to EPSG:4326
                 log.info("Reprojecting the coverage to EPSG:4326...");
@@ -296,6 +295,24 @@ public class GaiaGeoTiffManager {
             log.error("Error:", e);
         }
         return subGridCoverage2D;
+    }
+
+    public GridCoverage2D executeResampling(GridCoverage2D sourceCoverage, CoordinateReferenceSystem targetCRS) {
+        RenderedImage image = sourceCoverage.getRenderedImage();
+        int width = image.getWidth();
+        int height = image.getHeight();
+        GeneralGridEnvelope newGridRange = new GeneralGridEnvelope(new int[]{0, 0}, new int[]{width, height});
+        GridGeometry2D newGridGeometry = new GridGeometry2D(newGridRange, sourceCoverage.getEnvelope());
+
+        //CoordinateReferenceSystem targetCRS = DefaultGeographicCRS.WGS84_3D;
+        Resample resample = new Resample();
+        ParameterValueGroup resampleParameters = resample.getParameters();
+        resampleParameters.parameter("Source").setValue(sourceCoverage);
+        if (targetCRS != null) {
+            resampleParameters.parameter("CoordinateReferenceSystem").setValue(targetCRS);
+        }
+        resampleParameters.parameter("GridGeometry").setValue(newGridGeometry);
+        return (GridCoverage2D) resample.doOperation(resampleParameters, null);
     }
 
     public GridCoverage2D reprojectGridCoverage(GridCoverage2D sourceCoverage, CoordinateReferenceSystem targetCRS) throws Exception {
