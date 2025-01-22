@@ -7,6 +7,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +47,8 @@ public class GlobalOptions {
 
     private String inputPath;
     private String outputPath;
+
+    private String standardizeTempPath;
     private String resizedTiffTempPath;
     private String splitTiffTempPath;
     private String tileTempPath;
@@ -56,6 +60,7 @@ public class GlobalOptions {
     private boolean calculateNormals;
 
     private double intensity;
+    private CoordinateReferenceSystem targetCRS = DefaultGeographicCRS.WGS84;
 
     public static GlobalOptions getInstance() {
         if (instance.javaVersionInfo == null) {
@@ -79,8 +84,8 @@ public class GlobalOptions {
             instance.setOutputPath(outputPath);
             instance.setResizedTiffTempPath(outputPath + File.separator + "resized");
             instance.setTileTempPath(outputPath + File.separator + "temp");
-            String inputPath = command.getOptionValue(CommandOptions.INPUT.getArgName());
             instance.setSplitTiffTempPath(outputPath + File.separator + "split");
+            instance.setStandardizeTempPath(outputPath + File.separator + "standardization");
         } else {
             throw new IllegalArgumentException("Please enter the value of the output argument.");
         }

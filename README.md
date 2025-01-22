@@ -78,8 +78,6 @@ Supports compatibility with LTS (Long-term support) versions of the JDK, such as
 - **geotools** (Geospatial data library): <https://github.com/geotools/geotools>
 - **proj4j** (Converting coordinate reference systems): <https://github.com/locationtech/proj4j>
 
-Translated with DeepL.com (free version)
-
 ---
 
 mago 3DTerrainer 

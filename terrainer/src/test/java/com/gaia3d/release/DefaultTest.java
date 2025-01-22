@@ -35,7 +35,6 @@ public class DefaultTest {
                 "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
-        FileUtils.deleteDirectory(outputPath);
     }
 
     @Test

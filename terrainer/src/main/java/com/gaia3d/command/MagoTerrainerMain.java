@@ -110,21 +110,12 @@ public class MagoTerrainerMain {
 
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
 
-//        log.info("[Pre][Change GeoTiff] Start changing GeoTiff to 4326.");
-//        tileWgs84Manager.processChangeTo4326Geotiffs(globalOptions.getInputPath(), globalOptions.getTileTempPath());
-//        log.info("[Pre][Change GeoTiff] Finished changing GeoTiff to 4326.");
-
-        log.info("[Pre][Reproject] Start GeoTiff Reprojection files.");
-        tileWgs84Manager.processReprojectGeotiffs(globalOptions.getInputPath(), globalOptions.getTileTempPath());
-        log.info("[Pre][Reproject] Finished GeoTiff Reprojection files.");
-
-
-        //log.info("[Pre][Split GeoTiff] Start GeoTiff Splitting files.");
-        //tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());
-        //log.info("[Pre][Split GeoTiff] Finished GeoTiff Splitting files.");
+        log.info("[Pre][Standardization] Start GeoTiff Standardization files.");
+        tileWgs84Manager.processStandardizeRasters();
+        log.info("[Pre][Standardization] Finished GeoTiff Standardization files.");
 
         log.info("[Pre][Resize] Start GeoTiff Resizing files.");
-        tileWgs84Manager.processResizeGeoTiffs(globalOptions.getInputPath(), null);
+        tileWgs84Manager.processResizeRasters(globalOptions.getInputPath(), null);
         log.info("[Pre][Resize] Finished GeoTiff Resizing files.");
 
         log.info("[Tile] Start generate terrain elevation data.");

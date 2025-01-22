@@ -8,7 +8,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
 @Getter
 @Setter
 @AllArgsConstructor
-public class GeoTiffTemp {
-    private String fileName;
+public class RasterInfo {
+    private String name;
     private GridCoverage2D gridCoverage2D;
 }

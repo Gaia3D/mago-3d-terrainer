@@ -58,5 +58,3 @@ Increasing the mosaic size can slightly speed up the conversion, but at the cost
 ```
 java -jar mago-3d-terrainer.jar -input “/input_path/geotiff_folder” -output “/output_path/terrain_tiles_output” -mosaicSize 32
 ```
-
-Translated with DeepL.com (free version)
