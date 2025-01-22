@@ -127,8 +127,6 @@ public class TileWgs84Manager {
         this.depthGeoTiffFolderPathMap.clear();
         this.depthDesiredPixelSizeXinMetersMap.clear();
         this.depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.clear();
-        //this.maxTriangleSizeForTileDepthMap.clear();
-        //this.minTriangleSizeForTileDepthMap.clear();
         this.maxTriangleSizeForTileDepthList.clear();
         this.minTriangleSizeForTileDepthList.clear();
         this.mapNoUsableGeotiffPaths.clear();
@@ -457,7 +455,6 @@ public class TileWgs84Manager {
         geoTiffFileNames.forEach(geoTiffFileName -> {
             File inputFile = new File(geoTiffFileName);
             GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName, false);
-
             GeoTiffReprojector geoTiffReprojector = new GeoTiffReprojector();
             geoTiffReprojector.reprojectMain(originalGridCoverage2D, inputFile, tempFolder, targetCRS);
         });
@@ -472,7 +469,6 @@ public class TileWgs84Manager {
             log.error("terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
             throw new RuntimeException("Error: terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
         }
-
         // 2nd resize the geotiffs
         splitGeotiffSet(terrainElevationDataFolderPath, currentFolderPath);
     }
@@ -506,20 +502,10 @@ public class TileWgs84Manager {
             int cols = (int) Math.ceil(width / maxPixelsWidth);
             int rows = (int) Math.ceil(height / maxPixelsWidth);
 
-            /*if (cols == 1 && rows == 1) {
-                // in this case, do nothing
-                continue;
-            }*/
-
-            if (width <= maxPixelsWidth && height <= maxPixelsWidth) {
-                // in this case, do nothing
+            if (width < maxPixelsWidth && height < maxPixelsWidth) {
                 log.info("[Pre][Split GeoTiff] The geotiff is smaller than the maxPixelsWidth: {}", geoTiffFilePath);
-/*                Map<String, GridCoverage2D> coverage2d = gaiaGeoTiffManager.getMapPathGridCoverage2d();
-                coverage2d.remove(geoTiffFilePath);
-                gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath, false);*/
             } else {
                 log.info("[Pre][Split GeoTiff] Splitting geoTiff: {}", geoTiffFilePath);
-                // the "geoTiffFileName" is no usable. Instead, use the split geoTiffs.***
                 this.addNoUsableGeotiffPath(geoTiffFilePath);
                 double tileWidth = envelope.getWidth() / cols;
                 double tileHeight = envelope.getHeight() / rows;

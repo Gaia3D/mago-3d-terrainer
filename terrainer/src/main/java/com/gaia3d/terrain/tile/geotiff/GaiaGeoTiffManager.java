@@ -64,7 +64,7 @@ public class GaiaGeoTiffManager {
             }
         }
 
-        log.info("Loading the geoTiff file: {}", geoTiffFilePath);
+        log.info("[Raster] loading the geoTiff file: {}", geoTiffFilePath);
 
         int gridCoverage2dCount = mapPathGridCoverage2d.size();
         if (gridCoverage2dCount > 0) {

@@ -1,25 +1,22 @@
 package com.gaia3d.terrain.tile.geotiff;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.tile.GaiaThreadPool;
 import lombok.extern.slf4j.Slf4j;
-import org.geotools.coverage.grid.*;
-import org.geotools.coverage.grid.io.AbstractGridFormat;
-import org.geotools.coverage.grid.io.GridCoverage2DReader;
-import org.geotools.coverage.grid.io.GridFormatFinder;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
+import org.geotools.coverage.grid.GridEnvelope2D;
+import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.coverage.processing.operation.Affine;
 import org.geotools.coverage.processing.operation.Warp;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
-import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
-import org.opengis.coverage.grid.GridCoverageReader;
 import org.opengis.coverage.grid.GridEnvelope;
-import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.coverage.processing.Operation;
 import org.opengis.geometry.Envelope;
 import org.opengis.parameter.ParameterValueGroup;
@@ -31,14 +28,17 @@ import org.opengis.referencing.operation.TransformException;
 
 import javax.media.jai.Interpolation;
 import java.awt.geom.AffineTransform;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -46,15 +46,17 @@ import java.util.stream.Collectors;
 public class GeoTiffReprojector {
 
     public void reprojectMain(GridCoverage2D source, File inputFile, File outputPath, CoordinateReferenceSystem targetCRS) {
-        List<GridCoverage2D> reprojectedTiles = null;
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        List<GeoTiffTemp> reprojectedTiles = null;
         try {
-            List<GridCoverage2D> tiles = splitCoverageIntoTiles(inputFile, source, 1024);
-
+            List<GeoTiffTemp> tiles = splitCoverageIntoTiles(inputFile, source, globalOptions.getMaxRasterSize());
             ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-            reprojectedTiles = pool.submit(() -> tiles.parallelStream()
-                    .map(tile -> reprojectTile(tile, targetCRS))
-                    .collect(Collectors.toList())
-            ).get();
+            reprojectedTiles = pool.submit(() -> tiles.parallelStream().map(tile -> {
+                GridCoverage2D gridCoverage2D = tile.getGridCoverage2D();
+                tile.setGridCoverage2D(reprojectTile(gridCoverage2D, targetCRS));
+                return tile;
+            }
+            ).collect(Collectors.toList())).get();
         } catch (TransformException | IOException | InterruptedException | ExecutionException e) {
             log.error("Failed to reproject tiles", e);
             throw new RuntimeException(e);
@@ -63,24 +65,20 @@ public class GeoTiffReprojector {
         int total = reprojectedTiles.size();
         AtomicInteger count = new AtomicInteger(0);
         GaiaThreadPool gaiaThreadPool = new GaiaThreadPool();
-        List<Runnable> tasks = reprojectedTiles.stream()
-                .map(tile -> (Runnable) () -> {
-                    File tileFile = new File(outputPath, UUID.randomUUID() + ".tif");
-                    log.info("[Reprojected Tile][{}/{}] : {}", count.incrementAndGet(), total, tileFile.getAbsolutePath());
-                    writeGeoTiff(tile, tileFile);
-                }).collect(Collectors.toList());
+        List<Runnable> tasks = reprojectedTiles.stream().map(tile -> (Runnable) () -> {
+            String tileName = tile.getFileName();
+            GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
+            int index = count.incrementAndGet();
+            File tileFile = new File(outputPath, tileName + ".tif");
+            log.info("[Pre][Reproject][{}/{}] : {}", index, total, tileFile.getAbsolutePath());
+            writeGeoTiff(reprojectedTile, tileFile);
+        }).collect(Collectors.toList());
         try {
             gaiaThreadPool.execute(tasks);
         } catch (InterruptedException e) {
             log.error("Failed to execute tasks", e);
             throw new RuntimeException(e);
         }
-
-        /*reprojectedTiles.forEach(tile -> {
-            File tileFile = new File(outputPath, UUID.randomUUID().toString() + ".tif");
-            log.info("[Reprojected Tile] : {}", tileFile.getAbsolutePath());
-            writeGeoTiff(tile, tileFile);
-        });*/
     }
 
     public GridCoverage2D reproject2(GridCoverage2D coverage, CoordinateReferenceSystem targetCRS) {
@@ -99,7 +97,7 @@ public class GeoTiffReprojector {
             params.parameter("Source").setValue(coverage);
             params.parameter("CoordinateReferenceSystem").setValue(targetCRS);
             params.parameter("GridGeometry").setValue(null); // 기본 그리드 사용
-            params.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+            params.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_BILINEAR));
 
             return (GridCoverage2D) processor.doOperation(params);
         } catch (Exception e) {
@@ -212,44 +210,65 @@ public class GeoTiffReprojector {
 
     public void writeGeoTiff(GridCoverage2D coverage, File outputFile) {
         try {
-            GeoTiffWriter writer = new GeoTiffWriter(outputFile);
+            if (outputFile.exists() && outputFile.length() > 0) {
+                log.info("File already exists : {}", outputFile.getAbsolutePath());
+                return;
+            }
+            FileOutputStream outputStream = new FileOutputStream(outputFile);
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+            GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
             writer.write(coverage, null);
             writer.dispose();
+            //coverage.dispose(true);
+            outputStream.close();
         } catch (Exception e) {
             log.error("Failed to write GeoTiff file. ", e);
         }
     }
 
+    public void getImageBuffer(GridCoverage2D coverage) {
+        RenderedImage image = coverage.getRenderedImage();
+        Raster raster = image.getData();
+        int width = raster.getWidth();
+        int height = raster.getHeight();
+        float[] pixels = new float[width * height];
+
+        int minX = raster.getMinX();
+        int minY = raster.getMinY();
+        raster.getPixels(minX, minY, width, height, pixels);
+
+        log.info("Image width : {}", width);
+        log.info("Image height : {}", height);
+    }
+
 
     // 타일 분할 메서드
-    public List<GridCoverage2D> splitCoverageIntoTiles(File inputFile, GridCoverage2D coverage, int tileSize) throws TransformException, IOException {
-
-        AbstractGridFormat format = GridFormatFinder.findFormat(inputFile);
-        GridCoverageReader reader = format.getReader(inputFile);
-
-        List<GridCoverage2D> tiles = new ArrayList<>();
+    public List<GeoTiffTemp> splitCoverageIntoTiles(File inputFile, GridCoverage2D coverage, int tileSize) throws TransformException, IOException {
+        List<GeoTiffTemp> tiles = new ArrayList<>();
 
         GridGeometry2D gridGeometry = coverage.getGridGeometry();
         GridEnvelope gridRange = gridGeometry.getGridRange();
         int width = gridRange.getSpan(0);
         int height = gridRange.getSpan(1);
 
+        int margin = 4; // 4 pixel margin
         for (int x = 0; x < width; x += tileSize) {
             for (int y = 0; y < height; y += tileSize) {
                 int xMax = Math.min(x + tileSize, width);
                 int yMax = Math.min(y + tileSize, height);
 
-                // 해당 영역의 타일 범위 추출
-                ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(
-                        gridGeometry.gridToWorld(new GridEnvelope2D(x, y, xMax - x, yMax - y)),
-                        coverage.getCoordinateReferenceSystem()
-                );
+                // when the tile is not at the edge, add margin
+                if ((x + tileSize) < width) {
+                    xMax += margin;
+                }
+                if ((y + tileSize) < height) {
+                    yMax += margin;
+                }
 
-                //ParameterValueGroup params = reader.getFormat().getReadParameters();
-                //params.parameter("Envelope").setValue(tileEnvelope);
-                //GridCoverage2D tile = (GridCoverage2D) reader.read(params);
-
-                GridCoverage2D tile = cropCoverage(coverage, tileEnvelope);
+                ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(gridGeometry.gridToWorld(new GridEnvelope2D(x, y, xMax - x, yMax - y)), coverage.getCoordinateReferenceSystem());
+                GridCoverage2D gridCoverage2D = cropCoverage(coverage, tileEnvelope);
+                String tileName = gridCoverage2D.getName() + "-" + x / tileSize + "-" + y / tileSize;
+                GeoTiffTemp tile = new GeoTiffTemp(tileName, gridCoverage2D);
                 tiles.add(tile);
             }
         }
@@ -258,7 +277,6 @@ public class GeoTiffReprojector {
 
     public GridCoverage2D cropCoverage(GridCoverage2D coverage, ReferencedEnvelope envelope) {
         try {
-            CoverageProcessor processor = CoverageProcessor.getInstance();
             Operations ops = Operations.DEFAULT;
             return (GridCoverage2D) ops.crop(coverage, envelope);
         } catch (Exception e) {
@@ -270,7 +288,11 @@ public class GeoTiffReprojector {
     public GridCoverage2D reprojectTile(GridCoverage2D tile, CoordinateReferenceSystem targetCRS) {
         try {
             CoordinateReferenceSystem sourceCRS = tile.getCoordinateReferenceSystem();
-            if (sourceCRS.equals(targetCRS)) {
+
+            String sourceCRSCode = sourceCRS.getIdentifiers().iterator().next().getCode();
+            String targetCRSCode = targetCRS.getIdentifiers().iterator().next().getCode();
+
+            if (sourceCRSCode.equals(targetCRSCode)) {
                 return tile;
             }
 
@@ -280,9 +302,11 @@ public class GeoTiffReprojector {
             ParameterValueGroup params = operation.getParameters();
             params.parameter("Source").setValue(tile);
             params.parameter("CoordinateReferenceSystem").setValue(targetCRS);
+            //params.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_BILINEAR)); // Bilinear interpolation is slow
             params.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_NEAREST));
 
-            return (GridCoverage2D) processor.doOperation(params);
+            GridCoverage2D reprojectedTile = (GridCoverage2D) processor.doOperation(params);
+            return reprojectedTile;
         } catch (Exception e) {
             log.error("Failed to reproject tile", e);
             return tile;

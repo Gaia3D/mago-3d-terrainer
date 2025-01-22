@@ -114,20 +114,20 @@ public class MagoTerrainerMain {
 //        tileWgs84Manager.processChangeTo4326Geotiffs(globalOptions.getInputPath(), globalOptions.getTileTempPath());
 //        log.info("[Pre][Change GeoTiff] Finished changing GeoTiff to 4326.");
 
-        log.info("[Pre][Reproject GeoTiff] Start GeoTiff Reprojection files.");
+        log.info("[Pre][Reproject] Start GeoTiff Reprojection files.");
         tileWgs84Manager.processReprojectGeotiffs(globalOptions.getInputPath(), globalOptions.getTileTempPath());
-        log.info("[Pre][Reproject GeoTiff] Finished GeoTiff Reprojection files.");
+        log.info("[Pre][Reproject] Finished GeoTiff Reprojection files.");
 
 
-        log.info("[Pre][Split GeoTiff] Start GeoTiff Splitting files.");
-        tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());
-        log.info("[Pre][Split GeoTiff] Finished GeoTiff Splitting files.");
+        //log.info("[Pre][Split GeoTiff] Start GeoTiff Splitting files.");
+        //tileWgs84Manager.processSplitGeotiffs(globalOptions.getInputPath(), globalOptions.getSplitTiffTempPath());
+        //log.info("[Pre][Split GeoTiff] Finished GeoTiff Splitting files.");
 
-        log.info("[Pre][Resize GeoTiff] Start GeoTiff Resizing files.");
+        log.info("[Pre][Resize] Start GeoTiff Resizing files.");
         tileWgs84Manager.processResizeGeoTiffs(globalOptions.getInputPath(), null);
-        log.info("[Pre][Resize GeoTiff] Finished GeoTiff Resizing files.");
+        log.info("[Pre][Resize] Finished GeoTiff Resizing files.");
 
-        log.info("[Pre][Terrain Elevation Data] Start making terrain elevation data.");
+        log.info("[Tile] Start generate terrain elevation data.");
         tileWgs84Manager.setTerrainElevationDataManager(new TerrainElevationDataManager());
         tileWgs84Manager.getTerrainElevationDataManager().setTileWgs84Manager(tileWgs84Manager);
         tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
@@ -138,14 +138,15 @@ public class MagoTerrainerMain {
         } else {
             tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree();
         }
-        log.info("[Pre][Terrain Elevation Data] Finished making terrain elevation data.");
+        log.info("[Tile] Finished generate terrain elevation data.");
 
         log.info("[Tile] Start making tile meshes.");
         tileWgs84Manager.makeTileMeshes();
         log.info("[Tile] Finished making tile meshes.");
 
+        log.info("[Post][Clear] Start deleting memory objects.");
         tileWgs84Manager.deleteObjects();
-        System.gc();
+        log.info("[Post][Clear] Finished deleting memory objects.");
     }
 
     /**

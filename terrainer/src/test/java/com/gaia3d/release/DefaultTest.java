@@ -32,6 +32,7 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "10",
+                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
         FileUtils.deleteDirectory(outputPath);
@@ -49,9 +50,9 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "12",
+                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
-        FileUtils.deleteDirectory(outputPath);
     }
 
     @Test
@@ -67,9 +68,9 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "10",
                 "-interpolationType", "nearest",
+                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
-        FileUtils.deleteDirectory(outputPath);
     }
 
     @Test
@@ -85,9 +86,9 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "12",
                 "-interpolationType", "nearest",
+                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
-        FileUtils.deleteDirectory(outputPath);
     }
 
     @Test
@@ -103,9 +104,9 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "12",
                 //"-d",
+                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
-        FileUtils.deleteDirectory(outputPath);
     }
 
     @Test
@@ -121,9 +122,9 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "12",
                 //"-d",
+                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
-        FileUtils.deleteDirectory(outputPath);
     }
 
     @Test
@@ -136,6 +137,7 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-output", outputPath.getAbsolutePath(),
                 "-max", "12",
+                "-leaveTemp",
         };
 
         try {
@@ -155,6 +157,7 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-max", "12",
+                "-leaveTemp",
         };
 
         try {
@@ -176,6 +179,7 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "12",
                 "-max", "5",
+                "-leaveTemp",
         };
 
         try {
@@ -184,4 +188,20 @@ public class DefaultTest {
             log.error("", e);
         }
     }
+
+    /*@Test
+    void deleteTemp() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile(), "output");
+        File multiSamplePath = new File(Objects.requireNonNull(classLoader.getResource("multi-sample")).getFile(), "output");
+        File anotherCrsSamplePath = new File(Objects.requireNonNull(classLoader.getResource("another-crs-sample")).getFile(), "output");
+
+        try {
+            FileUtils.deleteDirectory(samplePath);
+            FileUtils.deleteDirectory(multiSamplePath);
+            FileUtils.deleteDirectory(anotherCrsSamplePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }*/
 }
