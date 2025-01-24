@@ -54,8 +54,6 @@ public class GaiaGeoTiffManager {
             }
         }
 
-        log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
-
         int gridCoverage2dCount = mapPathGridCoverage2d.size();
         if (gridCoverage2dCount > 0) {
             // delete the first one
@@ -65,6 +63,7 @@ public class GaiaGeoTiffManager {
             mapPathGridCoverage2d.remove(firstKey);
         }
 
+        log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
         GridCoverage2D coverage = null;
         try {
             File file = new File(geoTiffFilePath);

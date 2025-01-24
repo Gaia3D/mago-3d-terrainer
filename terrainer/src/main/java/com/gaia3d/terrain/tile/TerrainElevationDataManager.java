@@ -1,8 +1,10 @@
 package com.gaia3d.terrain.tile;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
+import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
@@ -29,6 +31,8 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationDataManager {
+    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+
     private TileWgs84Manager tileWgs84Manager = null;
     private List<TerrainElevationData> terrainElevationDataArray = new ArrayList<>();
     private List<TerrainTriangle> trianglesArray = new ArrayList<>();
@@ -196,7 +200,11 @@ public class TerrainElevationDataManager {
         terrainElevDataArray.clear();
         rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDataArray);
 
+        double noDataValue = globalOptions.getNoDataValue();
+        PriorityType priorityType = globalOptions.getPriorityType();
+
         intersects[0] = false;
+        double pixelAreaAux = Double.MAX_VALUE;
         double candidateElevation = 0.0;
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
@@ -204,22 +212,22 @@ public class TerrainElevationDataManager {
                 continue;
             }
 
-            /*if (elevation <= 0.0) {
-                elevation = 0.0;
-                continue;
-            }*/
-
-            candidateElevation = Math.max(candidateElevation, elevation);
-            /*resultElevation = elevation;
-            break;*/
+            /* check if the priority is resolution */
+            if (priorityType.equals(PriorityType.RESOLUTION)) {
+                double pixelArea = terrainElevationData.getPixelArea();
+                boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is higher resolution
+                if (isHigherResolution) {
+                    if (noDataValue != 0.0) {
+                        candidateElevation = elevation;
+                        pixelAreaAux = pixelArea;
+                    }
+                }
+            } else {
+                candidateElevation = Math.max(candidateElevation, elevation);
+            }
         }
 
         resultElevation = candidateElevation;
-
-        if (resultElevation == Float.MIN_VALUE) {
-            // if there is no elevation data, return 0.0
-            resultElevation = 0.0;
-        }
         return resultElevation;
     }
 

@@ -177,6 +177,7 @@ public class RasterStandardizer {
             params.parameter("Source").setValue(sourceCoverage);
             params.parameter("CoordinateReferenceSystem").setValue(targetCRS);
             params.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_NEAREST)); // INTERP_BILINEAR
+            /*params.parameter("BackgroundValues").setValue(new double[] {0.0});*/
 
             return (GridCoverage2D) processor.doOperation(params);
         } catch (Exception e) {

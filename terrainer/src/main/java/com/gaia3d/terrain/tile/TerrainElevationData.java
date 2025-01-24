@@ -20,6 +20,8 @@ import java.awt.image.Raster;
 @Getter
 @Setter
 public class TerrainElevationData {
+    private GlobalOptions globalOptions = GlobalOptions.getInstance();
+
     private Vector2d pixelSizeMeters;
     // the terrain elevation data is stored in a geotiff file
     private TerrainElevationDataManager terrainElevDataManager = null;
@@ -34,6 +36,7 @@ public class TerrainElevationData {
     private DirectPosition2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
     private int geoTiffHeight = -1;
+
 
     public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
         this.terrainElevDataManager = terrainElevationDataManager;
@@ -62,6 +65,10 @@ public class TerrainElevationData {
         altitude = null;
         noDataContainer = null;
         worldPosition = null;
+    }
+
+    public double getPixelArea() {
+        return this.pixelSizeMeters.x * this.pixelSizeMeters.y;
     }
 
     public void getPixelSizeDegree(Vector2d resultPixelSize) {
@@ -105,7 +112,7 @@ public class TerrainElevationData {
                 value = raster.getSampleDouble(x, y, 0);
                 // check if value is NaN
                 if (Double.isNaN(value)) {
-                    return 0.0;
+                    return globalOptions.getNoDataValue();
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
@@ -117,7 +124,7 @@ public class TerrainElevationData {
             if (noDataContainer != null) {
                 double nodata = noDataContainer.getAsSingleValue();
                 if (value == nodata) {
-                    return 0.0;
+                    return globalOptions.getNoDataValue();
                 }
             }
         }
@@ -150,6 +157,12 @@ public class TerrainElevationData {
             int column = (int) Math.floor(unitaryX * geoTiffRasterWidth);
             int row = (int) Math.floor(unitaryY * geoTiffRasterHeight);
             resultAltitude = calcNearestInterpolation(column, row);
+        }
+
+        double noDataValue = globalOptions.getNoDataValue();
+        if (resultAltitude == noDataValue) {
+            intersects[0] = false;
+            return resultAltitude;
         }
 
         // update min, max altitude
@@ -186,6 +199,16 @@ public class TerrainElevationData {
         double value01 = this.getGridValue(column, rowNext);
         double value10 = this.getGridValue(columnNext, row);
         double value11 = this.getGridValue(columnNext, rowNext);
+
+        /* check noDataValue */
+        double noDataValue = globalOptions.getNoDataValue();
+        if (value01 == noDataValue || value10 == noDataValue || value11 == noDataValue) {
+            if (value00 == noDataValue) {
+                return noDataValue;
+            } else {
+                return value00;
+            }
+        }
 
         double value0 = value00 * (1.0 - factorY) + value01 * factorY;
         double value1 = value10 * (1.0 - factorY) + value11 * factorY;

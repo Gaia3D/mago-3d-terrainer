@@ -1,6 +1,7 @@
 package com.gaia3d.command;
 
 import com.gaia3d.terrain.types.InterpolationType;
+import com.gaia3d.terrain.types.PriorityType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -32,6 +33,8 @@ public class GlobalOptions {
     private static final int DEFAULT_MAX_RASTER_SIZE = 8192; // 8192
     private static final double DEFAULT_INTENSITY = 4.0;
 
+    private double noDataValue = -8612;
+
     private String version;
     private String javaVersionInfo;
     private String programInfo;
@@ -58,6 +61,7 @@ public class GlobalOptions {
     private int maximumTileDepth;
     private InterpolationType interpolationType;
     private boolean calculateNormals;
+    private PriorityType priorityType;
 
     private double intensity;
     private CoordinateReferenceSystem targetCRS = DefaultGeographicCRS.WGS84;
@@ -155,6 +159,20 @@ public class GlobalOptions {
             instance.setInterpolationType(DEFAULT_INTERPOLATION_TYPE);
         }
 
+        if (command.hasOption(CommandOptions.PRIORITY_TYPE.getArgName())) {
+            String priorityType = command.getOptionValue(CommandOptions.PRIORITY_TYPE.getArgName());
+            PriorityType type;
+            try {
+                type =  PriorityType.fromString(priorityType);
+            } catch (IllegalArgumentException e) {
+                log.warn("* Priority type is not valid. Set to normal.");
+                type = PriorityType.RESOLUTION;
+            }
+            instance.setPriorityType(type);
+        } else {
+            instance.setPriorityType(PriorityType.RESOLUTION);
+        }
+
         if (command.hasOption(CommandOptions.TILING_MOSAIC_SIZE.getArgName())) {
             instance.setMosaicSize(Integer.parseInt(command.getOptionValue(CommandOptions.TILING_MOSAIC_SIZE.getArgName())));
         } else {
@@ -193,7 +211,9 @@ public class GlobalOptions {
         log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
         log.info("Intensity: {}", instance.getIntensity());
         log.info("Interpolation Type: {}", instance.getInterpolationType());
+        log.info("Priority Type: {}", instance.getPriorityType());
         log.info("Calculate Normals: {}", instance.isCalculateNormals());
+        log.info("----------------------------------------");
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());

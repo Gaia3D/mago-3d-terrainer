@@ -20,6 +20,7 @@ public enum CommandOptions {
     INTENSITY("intensity", "is", "intensity", true,"Mesh refinement strength. (default : 4.0)"),
     CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Add terrain octVertexNormals for lighting effect"),
     INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear) (default : bilinear)"),
+    PRIORITY_TYPE("priorityType", "pt", "priorityType", true, "Priority type () (default : distance)"),
 
     // for optimization
     TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic buffer size per tile. (default : 32)"),
