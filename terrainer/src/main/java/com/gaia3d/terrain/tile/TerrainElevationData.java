@@ -202,7 +202,8 @@ public class TerrainElevationData {
 
         /* check noDataValue */
         double noDataValue = globalOptions.getNoDataValue();
-        if (value01 == noDataValue || value10 == noDataValue || value11 == noDataValue) {
+        boolean hasNoData = (value00 == noDataValue) || (value01 == noDataValue) || (value10 == noDataValue) || (value11 == noDataValue);
+        if (hasNoData) {
             if (value00 == noDataValue) {
                 return noDataValue;
             } else {
