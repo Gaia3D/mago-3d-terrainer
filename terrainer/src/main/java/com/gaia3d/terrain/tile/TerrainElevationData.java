@@ -4,6 +4,7 @@ import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,8 +14,11 @@ import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
+import org.opengis.coverage.Coverage;
+import org.opengis.referencing.FactoryException;
 
 import java.awt.image.Raster;
+import java.io.File;
 
 @Slf4j
 @Getter
@@ -36,7 +40,6 @@ public class TerrainElevationData {
     private DirectPosition2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
     private int geoTiffHeight = -1;
-
 
     public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
         this.terrainElevDataManager = terrainElevationDataManager;
@@ -68,6 +71,20 @@ public class TerrainElevationData {
     }
 
     public double getPixelArea() {
+        File file = new File(this.geotiffFilePath);
+        String fileName = file.getName();
+
+        File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
+        File tempFile = new File(standardizationTempPath, fileName);
+        if (tempFile.exists() && !file.equals(tempFile)) {
+            try {
+                GridCoverage2D coverage = this.terrainElevDataManager.getGaiaGeoTiffManager().loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
+                Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
+                return originalArea.x * originalArea.y;
+            } catch (FactoryException e) {
+                log.error("[getPixelArea : FactoryException] Error in getPixelArea", e);
+            }
+        }
         return this.pixelSizeMeters.x * this.pixelSizeMeters.y;
     }
 

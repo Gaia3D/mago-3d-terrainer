@@ -30,7 +30,7 @@ public class GlobalOptions {
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
     private static final int DEFAULT_MOSAIC_SIZE = 32;
-    private static final int DEFAULT_MAX_RASTER_SIZE = 8192; // 8192
+    private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
     private static final double DEFAULT_INTENSITY = 4.0;
 
     private double noDataValue = -8612;

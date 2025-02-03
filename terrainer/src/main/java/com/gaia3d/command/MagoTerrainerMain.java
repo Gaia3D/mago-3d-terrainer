@@ -167,7 +167,6 @@ public class MagoTerrainerMain {
                 FileUtils.deleteDirectory(tileTempFolder);
             } catch (IOException e) {
                 log.error("[Post] Failed to delete tileTempFolder.", e);
-                throw new RuntimeException(e);
             }
         }
 
@@ -178,8 +177,6 @@ public class MagoTerrainerMain {
                 FileUtils.deleteDirectory(splitTempFolder);
             } catch (IOException e) {
                 log.error("[Post] Failed to delete splitTempFolder.", e);
-                log.error("Error:", e);
-                throw new RuntimeException(e);
             }
         }
 
@@ -190,8 +187,6 @@ public class MagoTerrainerMain {
                 FileUtils.deleteDirectory(resizedTempFolder);
             } catch (IOException e) {
                 log.error("[Post] Failed to delete resizedTempFolder.", e);
-                log.error("Error:", e);
-                throw new RuntimeException(e);
             }
         }
     }
