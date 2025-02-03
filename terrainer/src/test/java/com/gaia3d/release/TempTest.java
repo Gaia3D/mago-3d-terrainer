@@ -10,7 +10,7 @@ import java.io.File;
 public class TempTest {
 
     private final File INPUT_PATH = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF");
-    private final File OUTPUT_PATH = new File("D:\\data\\mago-server\\output");
+    private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
     void sejong14Intensity1() {
@@ -313,8 +313,8 @@ public class TempTest {
 
     @Test
     void sampleDemJSON() {
-        File inputPath = new File("D:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
-        File outputPath = new File("D:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
+        File inputPath = new File("E:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
+        File outputPath = new File("E:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -352,6 +352,51 @@ public class TempTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "14",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void ws2dem1m() {
+        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\wangsuk2_1m");
+        File outputPath = new File(OUTPUT_PATH, "ws2-dem-1m");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sangjiUniversity() {
+        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\sangji-university");
+        File outputPath = new File(OUTPUT_PATH, "sangji-university");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sangjiUniversity5186() {
+        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\sangji-university-5186");
+        File outputPath = new File(OUTPUT_PATH, "sangji-university-5186");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);

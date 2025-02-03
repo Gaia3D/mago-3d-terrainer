@@ -10,7 +10,7 @@ import java.io.File;
 public class TerrainerReleaseTest {
 
     private final File INPUT_PATH = new File("D:\\data\\mago-3d-terrainer\\release-sample");
-    private final File OUTPUT_PATH = new File("D:\\data\\mago-server\\output");
+    private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
     void multiNearest() {
@@ -22,7 +22,7 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "13",
+                "-max", "12",
                 "-intensity", "4",
                 "-interpolation", "nearest",
                 "-calculateNormals",

@@ -10,7 +10,7 @@ import java.io.File;
 public class MaxLevelTest {
 
     private final File INPUT_PATH = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF");
-    private final File OUTPUT_PATH = new File("D:\\data\\mago-server\\output");
+    private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
     void sampleSeoulTerrainLevel14() {
