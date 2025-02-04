@@ -71,20 +71,6 @@ public class TerrainElevationData {
     }
 
     public double getPixelArea() {
-        File file = new File(this.geotiffFilePath);
-        String fileName = file.getName();
-
-        File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
-        File tempFile = new File(standardizationTempPath, fileName);
-        if (tempFile.exists() && !file.equals(tempFile)) {
-            try {
-                GridCoverage2D coverage = this.terrainElevDataManager.getGaiaGeoTiffManager().loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
-                Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
-                return originalArea.x * originalArea.y;
-            } catch (FactoryException e) {
-                log.error("[getPixelArea : FactoryException] Error in getPixelArea", e);
-            }
-        }
         return this.pixelSizeMeters.x * this.pixelSizeMeters.y;
     }
 

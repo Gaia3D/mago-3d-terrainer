@@ -43,6 +43,25 @@ public class TerrainerReleaseTest {
                 "-max", "14",
                 "-interpolation", "bilinear",
                 "-calculateNormals",
+                "-leaveTemp",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void multiResolutionNodata() {
+        String name = "multi-resolution-nodata";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "15",
+                "-interpolation", "nearest",
+                "-calculateNormals",
+                "-leaveTemp"
         };
         MagoTerrainerMain.main(args);
     }

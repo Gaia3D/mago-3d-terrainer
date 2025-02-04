@@ -7,6 +7,12 @@ It is compatible with quantized-mesh, the native terrain data of Cesium Terrain 
 It can easily convert GeoTIFF files, the standard format of OCG, into quantized-mesh data.   
 See: https://github.com/CesiumGS/quantized-mesh
 
+![Static Badge](https://img.shields.io/badge/Gaia3D%2C%20Inc-blue?style=flat-square)
+![Static Badge](https://img.shields.io/badge/3DTiles-green?style=flat-square&logo=Cesium)
+![Static Badge](https://img.shields.io/badge/Jdk17-red?style=flat-square&logo=openjdk)
+![Static Badge](https://img.shields.io/badge/Gradle-darkorange?style=flat-square&logo=gradle)
+![Static Badge](https://img.shields.io/badge/Docker%20Image-blue?style=flat-square&logo=docker)
+
 ### Key features:
 - Convenient conversion: convert GeoTIFF files without complicated commands.
 - High accuracy: Generate quantized-mesh data with high accuracy.
@@ -43,7 +49,7 @@ usage: mago 3DTerrainer help
  -max,--maxDepth <arg>           Maximum tile depth (range : 0 ~ 22) (default : 14)
  -min,--minDepth <arg>           Minimum tile depth (range : 0 ~ 22) (default : 0)
  -mr,--rasterMaxSize <arg>       Maximum raster size for split function. (default : 8192)
- -ms,--mosaicSize <arg>          Tiling mosaic buffer size per tile. (default : 32)
+ -ms,--mosaicSize <arg>          Tiling mosaic buffer size per tile. (default : 16)
  -o,--output <arg>               Output folder path
 ```
 This is a simple Quantized-mesh conversion code with the required argument values.
@@ -125,7 +131,7 @@ usage: mago 3DTerrainer help
  -max,--maxDepth <arg>           Maximum tile depth (range : 0 ~ 22) (default : 14)
  -min,--minDepth <arg>           Minimum tile depth (range : 0 ~ 22) (default : 0)
  -mr,--rasterMaxSize <arg>       Maximum raster size for split function. (default : 8192)
- -ms,--mosaicSize <arg>          Tiling mosaic buffer size per tile. (default : 32)
+ -ms,--mosaicSize <arg>          Tiling mosaic buffer size per tile. (default : 16)
  -o,--output <arg>               Output folder path
 ```
 

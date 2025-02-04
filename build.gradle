@@ -1,6 +1,6 @@
 subprojects {
     group "com.gaia3d"
-    version '1.9.0-beta' // release, beta, alpha
+    version '1.9.1-beta' // release, beta, alpha
     apply plugin: 'java'
 
     dependencies {

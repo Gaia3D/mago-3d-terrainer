@@ -216,7 +216,6 @@ public class TerrainElevationDataManager {
 
             /* check if the priority is resolution */
             if (priorityType.equals(PriorityType.RESOLUTION)) {
-                String fileName = new File(terrainElevationData.getGeotiffFilePath()).getName();
                 double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFilePath());
                 //double pixelArea = terrainElevationData.getPixelArea();
                 boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is higher resolution
