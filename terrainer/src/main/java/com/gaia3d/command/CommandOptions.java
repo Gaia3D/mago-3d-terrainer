@@ -23,7 +23,7 @@ public enum CommandOptions {
     PRIORITY_TYPE("priorityType", "pt", "priorityType", true, "Priority type () (default : distance)"),
 
     // for optimization
-    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic buffer size per tile. (default : 32)"),
+    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic buffer size per tile. (default : 16)"),
     RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", "rasterMaxSize", true, "Maximum raster size for split function. (default : 8192)");
 
     private final String longName;
