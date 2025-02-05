@@ -187,20 +187,4 @@ public class DefaultTest {
             log.error("", e);
         }
     }
-
-    /*@Test
-    void deleteTemp() {
-        ClassLoader classLoader = getClass().getClassLoader();
-        File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile(), "output");
-        File multiSamplePath = new File(Objects.requireNonNull(classLoader.getResource("multi-sample")).getFile(), "output");
-        File anotherCrsSamplePath = new File(Objects.requireNonNull(classLoader.getResource("another-crs-sample")).getFile(), "output");
-
-        try {
-            FileUtils.deleteDirectory(samplePath);
-            FileUtils.deleteDirectory(multiSamplePath);
-            FileUtils.deleteDirectory(anotherCrsSamplePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }*/
 }
