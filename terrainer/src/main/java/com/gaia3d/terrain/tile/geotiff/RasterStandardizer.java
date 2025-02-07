@@ -13,6 +13,7 @@ import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.coverage.grid.GridEnvelope;
+import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.coverage.processing.Operation;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.ReferenceIdentifier;
@@ -20,6 +21,8 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
 import javax.media.jai.Interpolation;
+import javax.media.jai.JAI;
+import javax.media.jai.TileCache;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.BufferedOutputStream;
@@ -27,6 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -41,6 +45,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @NoArgsConstructor
 public class RasterStandardizer {
+
+    static {
+        System.setProperty("com.sun.media.jai.disableMediaLib", "false");
+        TileCache tileCache = JAI.getDefaultInstance().getTileCache();
+        tileCache.setMemoryCapacity(1024 * 1024 * 512); // 512MB
+        tileCache.setMemoryThreshold(0.75f);
+    }
 
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
 
@@ -172,7 +183,6 @@ public class RasterStandardizer {
         try {
             CoverageProcessor processor = CoverageProcessor.getInstance();
             Operation operation = processor.getOperation("Resample");
-
             ParameterValueGroup params = operation.getParameters();
             params.parameter("Source").setValue(sourceCoverage);
             params.parameter("CoordinateReferenceSystem").setValue(targetCRS);
