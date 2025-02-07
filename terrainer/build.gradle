@@ -85,8 +85,17 @@ jib {
                 "-XX:InitialRAMPercentage=50.0",
                 "-XX:MaxRAMPercentage=50.0"
         ]
+        entrypoint = ["java", "-jar", "/app/mago-3d-terrainer-${project.version}.jar"]
     }
-}
+    extraDirectories {
+        paths {
+            path {
+                from = file("build/libs")
+                into = "/app"
+            }
+        }
+    }
+    }
 
 // jar task
 jar {
