@@ -292,7 +292,7 @@ class MesherMainTest {
         //*******************************************************************
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(12);
+        String maxTileDepth = String.valueOf(13);
         String refinementStrength = String.valueOf(4);
         String originalGeoTiffFolderPath = "D:/data/DEM/allKoreaSouthJinHun_20250115";
         String outputDirectory = "D:/data/mago-server/output/result_allKoreaSouthJinHun_20250115";
