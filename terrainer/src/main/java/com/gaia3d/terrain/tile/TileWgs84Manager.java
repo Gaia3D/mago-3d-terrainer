@@ -1,27 +1,25 @@
 package com.gaia3d.terrain.tile;
 
-import com.gaia3d.terrain.structure.TerrainTriangle;
-import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
+import com.gaia3d.terrain.tile.geotiff.RasterStandardizer;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.util.DecimalUtils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
-import org.geotools.gce.geotiff.GeoTiffWriter;
-import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.joml.Vector2d;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.crs.GeographicCRS;
 import org.opengis.referencing.crs.ProjectedCRS;
-import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.File;
@@ -33,10 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Setter
 @Slf4j
 public class TileWgs84Manager {
+    private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final int rasterTileSize = 256;
     private final String imaginaryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
-
-    private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
     // For each depth level, use a different folder
     private final Map<Integer, String> depthGeoTiffFolderPathMap = new HashMap<>();
     private final Map<Integer, Double> depthDesiredPixelSizeXinMetersMap = new HashMap<>();
@@ -60,6 +57,8 @@ public class TileWgs84Manager {
     private List<TerrainTriangle> triangleList = new ArrayList<>();
     private Vector2d pixelSizeDegrees = new Vector2d();
     private Map<String, String> mapNoUsableGeotiffPaths = new HashMap<>();
+
+    private GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
 
     // constructor
     public TileWgs84Manager() {
@@ -88,7 +87,7 @@ public class TileWgs84Manager {
                 minSize *= 1.25;
             } else if (i > 12) {
                 minSize *= 1.25;
-            }else if (i > 10) {
+            } else if (i > 10) {
                 minSize *= 1.25;
             } else {
                 minSize *= 1.0;
@@ -126,13 +125,10 @@ public class TileWgs84Manager {
         this.depthGeoTiffFolderPathMap.clear();
         this.depthDesiredPixelSizeXinMetersMap.clear();
         this.depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap.clear();
-        //this.maxTriangleSizeForTileDepthMap.clear();
-        //this.minTriangleSizeForTileDepthMap.clear();
         this.maxTriangleSizeForTileDepthList.clear();
         this.minTriangleSizeForTileDepthList.clear();
         this.mapNoUsableGeotiffPaths.clear();
     }
-
 
 
     public void makeTileMeshes() throws IOException, TransformException, FactoryException {
@@ -196,15 +192,13 @@ public class TileWgs84Manager {
             int mosaicSize = globalOptions.getMosaicSize();
             List<TileRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, mosaicSize, mosaicSize, null);
 
-            log.info("[Tile][{}/{}] Start making tile meshes - Divided Tiles Size: {}", depth, maxTileDepth, subDividedTilesRanges.size());
+            log.info("[Tile][{}/{}] Start generating tile meshes - Divided Tiles Size: {}", depth, maxTileDepth, subDividedTilesRanges.size());
             AtomicInteger counter = new AtomicInteger(0);
 
             int total = subDividedTilesRanges.size();
             for (TileRange subDividedTilesRange : subDividedTilesRanges) {
                 int progress = counter.incrementAndGet();
-                // First, make all tile raster.***
-
-                log.info("[Tile][{}/{}][{}/{}] make wgs84 raster all tiles...", depth, maxTileDepth, progress, total);
+                log.info("[Tile][{}/{}][{}/{}] generate wgs84 raster all tiles...", depth, maxTileDepth, progress, total);
                 TileRange expandedTilesRange = subDividedTilesRange.expand1();
                 this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
                 if (this.geoTiffFilesCount > 1) {
@@ -227,27 +221,26 @@ public class TileWgs84Manager {
             }
 
             long endTime = System.currentTimeMillis();
-            log.info("[Tile][{}/{}] - End making tile meshes : Duration: {} ms}", depth, maxTileDepth, timeFormat(endTime - startTime));
+            log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));
 
             String javaHeapSize = System.getProperty("java.vm.name") + " " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB";
-            // java vm이 사용할 수 있는 총 메모리(bytes), -Xmx
-            long maxMem = Runtime.getRuntime().maxMemory() / 1024 / 1024;
-            // java vm에 할당된 총 메모리
-            long totalMem = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-            // java vm이 추가로 할당 가능한 메모리
-            long freeMem = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-            // 현재 사용 중인 메모리
-            long usedMem = totalMem - freeMem;
-            // 퍼센트
-            double pct = (double) (usedMem * 100) / maxMem;
-            log.info("[Tile] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", javaHeapSize, maxMem, totalMem, freeMem, usedMem, pct);
+            // jvm heap size
+            String maxMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().maxMemory());
+            // jvm total memory
+            String totalMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory());
+            // jvm free memory
+            String freeMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory());
+            // jvm used memory
+            String usedMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+            log.info("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
-        // finally save the terrainLayer.json
         terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
     }
 
     public String timeFormat(long time) {
+
+
         long ms = time % 1000;
         long s = (time / 1000) % 60;
         long m = (time / (1000 * 60)) % 60;
@@ -356,176 +349,46 @@ public class TileWgs84Manager {
         this.mapNoUsableGeotiffPaths.put(noUsableGeotiffPath, noUsableGeotiffPath);
     }
 
-    public void processChangeTo4326Geotiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws Exception {
-        File terrainElevationDataFolder = new File(terrainElevationDataFolderPath);
-        if (!terrainElevationDataFolder.exists()) {
-            log.error("terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);
-            throw new RuntimeException("Error: terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);
-        } else if (!terrainElevationDataFolder.isDirectory()) {
-            log.error("terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
-            throw new RuntimeException("Error: terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
+    public void processStandardizeRasters() {
+        String inputPath = globalOptions.getInputPath();
+        File inputFolder = new File(inputPath);
+
+        List<String> rasterFileNames = new ArrayList<>();
+        if (inputFolder.exists() && inputFolder.isDirectory()) {
+            FileUtils.getFilePathsByExtension(inputPath, ".tif", rasterFileNames, true);
+        } else if (inputFolder.exists() && inputFolder.isFile()) {
+            if (inputPath.endsWith(".tif")) {
+                rasterFileNames.add(inputPath);
+            }
+        } else {
+            log.error("Input path is not exist or not a directory: {}", inputPath);
+            throw new RuntimeException("Error: Input path is not exist or not a directory: " + inputPath);
         }
 
-        // 1st change the geotiffs to 4326
-        changeTo4326Geotiffs(terrainElevationDataFolderPath, currentFolderPath);
+        if (rasterFileNames.isEmpty()) {
+            log.error("No GeoTiff files found in the input path: {}", inputPath);
+            throw new RuntimeException("Error: No GeoTiff files found in the input path: " + inputPath);
+        }
+
+        standardizeRasters(rasterFileNames);
     }
 
-    private void changeTo4326Geotiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws Exception {
-        // load all geoTiffFiles
-        List<String> geoTiffFileNames = new ArrayList<>();
-        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
-
-        String tileTempPath = globalOptions.getTileTempPath();
-
-        if (currentFolderPath == null) {
-            currentFolderPath = "";
+    public void standardizeRasters(List<String> geoTiffFileNames) {
+        String tempPath = globalOptions.getStandardizeTempPath();
+        File tempFolder = new File(tempPath);
+        if (!tempFolder.exists() && tempFolder.mkdirs()) {
+            log.debug("Created standardization folder: {}", tempFolder.getAbsolutePath());
         }
+        globalOptions.setInputPath(tempFolder.getAbsolutePath());
 
-        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-        CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
-
-        // now load all geotiff and make geotiff geoExtension data
-        for (String geoTiffFileName : geoTiffFileNames) {
-            String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
-            GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
-
-            String geoTiffRawFileName = geoTiffFileName.substring(0, geoTiffFileName.length() - 4);
-            String outputFilePath = geoTiffRawFileName + "_4326.tif";
-
-            // check if "outputFilePath" already exists
-            File outputFile = new File(terrainElevationDataFolderPath, outputFilePath);
-//            if (outputFile.exists()) {
-//                continue;
-//            }
-
-            CoordinateReferenceSystem sourceCRS = originalGridCoverage2D.getCoordinateReferenceSystem();
-            if(sourceCRS.equals(crsWgs84)) {
-                // in this case, do nothing
-                continue;
-            }
-            GridCoverage2D coverage4326 = gaiaGeoTiffManager.reprojectGridCoverage(originalGridCoverage2D, crsWgs84);
-
-            // save the coverage4326 as geotiff
-            if(coverage4326 != null) {
-                gaiaGeoTiffManager.saveGridCoverage2D(coverage4326, outputFile.getAbsolutePath());
-            }
-            int hola = 0;
-        }
-
-        // now check if exist folders inside the terrainElevationDataFolderPath
-        List<String> folderNames = new ArrayList<>();
-        FileUtils.getFolderNames(currentFolderPath, folderNames);
-        String auxFolderPath = "";
-        for (String folderName : folderNames) {
-            auxFolderPath = currentFolderPath + File.separator + folderName;
-            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
-            changeTo4326Geotiffs(folderPath, auxFolderPath);
-        }
-        System.gc();
+        geoTiffFileNames.forEach(geoTiffFileName -> {
+            GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
+            RasterStandardizer rasterStandardizer = new RasterStandardizer();
+            rasterStandardizer.standardize(originalGridCoverage2D, tempFolder);
+        });
     }
 
-    public void processSplitGeotiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException, TransformException {
-        File terrainElevationDataFolder = new File(terrainElevationDataFolderPath);
-        if (!terrainElevationDataFolder.exists()) {
-            log.error("terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);
-            throw new RuntimeException("Error: terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);
-        } else if (!terrainElevationDataFolder.isDirectory()) {
-            log.error("terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
-            throw new RuntimeException("Error: terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
-        }
-
-        // 2nd resize the geotiffs
-        splitGeotiffSet(terrainElevationDataFolderPath, currentFolderPath);
-    }
-
-    public void splitGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
-        // load all geoTiffFiles
-        List<String> geoTiffFileNames = new ArrayList<>();
-        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
-
-        if (currentFolderPath == null) {
-            currentFolderPath = "";
-        }
-
-        int maxPixelsWidth = globalOptions.getMaxRasterSize();
-
-        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-        String splitTiffTempPath = globalOptions.getSplitTiffTempPath();
-
-        // create the splitTiffTempPath if no exists
-        FileUtils.createAllFoldersIfNoExist(splitTiffTempPath);
-
-        // now load all geotiff and make geotiff geoExtension data
-        for (String geoTiffFileName : geoTiffFileNames) {
-            String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
-            GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
-
-            // check the size of the raster image of the coverage.***
-            int width = originalGridCoverage2D.getRenderedImage().getWidth();
-            int height = originalGridCoverage2D.getRenderedImage().getHeight();
-
-            ReferencedEnvelope envelope = new ReferencedEnvelope(originalGridCoverage2D.getEnvelope());
-
-            int cols = (int) Math.ceil(width / maxPixelsWidth);
-            int rows = (int) Math.ceil(height / maxPixelsWidth);
-
-            if (cols == 1 && rows == 1) {
-                // in this case, do nothing
-                continue;
-            }
-
-            if (width <= maxPixelsWidth && height <= maxPixelsWidth) {
-                // in this case, do nothing
-            } else {
-                // the "geoTiffFileName" is no usable. Instead, use the split geoTiffs.***
-                this.addNoUsableGeotiffPath(geoTiffFilePath);
-                double tileWidth = envelope.getWidth() / cols;
-                double tileHeight = envelope.getHeight() / rows;
-
-                for (int row = 0; row < rows; row++) {
-                    for (int col = 0; col < cols; col++) {
-                        String geoTiffRawFileName = geoTiffFileName.substring(0, geoTiffFileName.length() - 4);
-                        String outputFilePath = geoTiffRawFileName + "_" + row + "_" + col + ".tif";
-
-                        // check if "outputFilePath" already exists
-                        File outputFile = new File(splitTiffTempPath, outputFilePath);
-                        if (outputFile.exists()) {
-                            continue;
-                        }
-
-                        double minX = envelope.getMinX() + col * tileWidth;
-                        double minY = envelope.getMinY() + row * tileHeight;
-                        double maxX = minX + tileWidth;
-                        double maxY = minY + tileHeight;
-
-                        ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(minX, maxX, minY, maxY, envelope.getCoordinateReferenceSystem());
-                        GridCoverage2D tileCoverage = gaiaGeoTiffManager.extractSubGridCoverage2D(originalGridCoverage2D, tileEnvelope);
-                        try {
-                            GeoTiffWriter writer = new GeoTiffWriter(outputFile);
-                            writer.write(tileCoverage, null);
-                            writer.dispose();
-                        } catch (IOException e) {
-                            log.error("Error:", e);
-                        }
-                    }
-                }
-            }
-        }
-
-        // now check if exist folders inside the terrainElevationDataFolderPath
-        List<String> folderNames = new ArrayList<>();
-        FileUtils.getFolderNames(currentFolderPath, folderNames);
-        String auxFolderPath = currentFolderPath;
-        for (String folderName : folderNames) {
-            auxFolderPath = currentFolderPath + File.separator + folderName;
-            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
-            splitGeotiffSet(folderPath, auxFolderPath);
-        }
-        System.gc();
-    }
-
-
-    public void processResizeGeoTiffs(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
+    public void processResizeRasters(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
         File terrainElevationDataFolder = new File(terrainElevationDataFolderPath);
         if (!terrainElevationDataFolder.exists()) {
             log.error("terrainElevationDataFolder is not exist: " + terrainElevationDataFolderPath);
@@ -547,24 +410,25 @@ public class TileWgs84Manager {
             this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);
         } else {
             // 2nd resize the geotiffs
-            resizeGeotiffSet(terrainElevationDataFolderPath, currentFolderPath);
+            resizeRasters(terrainElevationDataFolderPath, currentFolderPath);
         }
     }
 
-    public void resizeGeotiffSet(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
+    public void resizeRasters(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
         // load all geoTiffFiles
         List<String> geoTiffFileNames = new ArrayList<>();
         FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
+        CoordinateReferenceSystem targetCRS = CRS.decode("EPSG:3857");
 
         if (currentFolderPath == null) {
             currentFolderPath = "";
         }
 
-        GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
-
         // now load all geotiff and make geotiff geoExtension data
         int geoTiffFilesSize = geoTiffFileNames.size();
         int geoTiffFilesCount = 0;
+
+        // TODO : Multi-threading
         for (String geoTiffFileName : geoTiffFileNames) {
             log.info("[Pre][Resize GeoTiff][{}/{}] resizing geoTiff : {} ", ++geoTiffFilesCount, geoTiffFilesSize, geoTiffFileName);
             String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
@@ -580,7 +444,6 @@ public class TileWgs84Manager {
             if (!(crsTarget instanceof ProjectedCRS || crsTarget instanceof GeographicCRS)) {
                 log.error("The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems");
                 throw new GeoTiffException(null, "The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems", null);
-                //continue;
             }
 
             Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(originalGridCoverage2D);
@@ -612,7 +475,6 @@ public class TileWgs84Manager {
 
                 // in this case, resize the geotiff
                 GridCoverage2D resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
-
                 FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
 
@@ -621,18 +483,15 @@ public class TileWgs84Manager {
                 String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
                 this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
             }
-
-
         }
 
         // now check if exist folders inside the terrainElevationDataFolderPath
         List<String> folderNames = new ArrayList<>();
         FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
-        String auxFolderPath = currentFolderPath;
         for (String folderName : folderNames) {
-            auxFolderPath = currentFolderPath + File.separator + folderName;
+            String auxFolderPath = currentFolderPath + File.separator + folderName;
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
-            resizeGeotiffSet(folderPath, auxFolderPath);
+            resizeRasters(folderPath, auxFolderPath);
         }
 
         System.gc();

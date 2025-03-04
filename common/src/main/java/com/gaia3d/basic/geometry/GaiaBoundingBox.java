@@ -10,6 +10,7 @@ import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * GaiaBoundingBox is a class to store the bounding box of a geometry.
@@ -41,6 +42,16 @@ public class GaiaBoundingBox implements Serializable {
 
     public Vector3d getVolume() {
         return new Vector3d(maxX - minX, maxY - minY, maxZ - minZ);
+    }
+
+    public void set(GaiaBoundingBox bbox) {
+        this.minX = bbox.minX;
+        this.minY = bbox.minY;
+        this.minZ = bbox.minZ;
+        this.maxX = bbox.maxX;
+        this.maxY = bbox.maxY;
+        this.maxZ = bbox.maxZ;
+        this.isInit = bbox.isInit;
     }
 
     public void addPoint(double x, double y, double z) {
@@ -218,5 +229,12 @@ public class GaiaBoundingBox implements Serializable {
     public double getLongestDistanceXY() {
         Vector3d volume = getVolume();
         return Math.sqrt(volume.x * volume.x + volume.y * volume.y);
+    }
+
+    public void setFromPoints(List<Vector3d> transformedVertices) {
+        this.isInit = false;
+        for (Vector3d vertex : transformedVertices) {
+            addPoint(vertex);
+        }
     }
 }

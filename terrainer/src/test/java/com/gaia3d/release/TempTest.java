@@ -10,7 +10,7 @@ import java.io.File;
 public class TempTest {
 
     private final File INPUT_PATH = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF");
-    private final File OUTPUT_PATH = new File("D:\\data\\mago-server\\output");
+    private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
     void sejong14Intensity1() {
@@ -117,8 +117,6 @@ public class TempTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "14",
-                "-intensity", "1.0",
-                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -151,7 +149,6 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-intensity", "4.0",
-                "-mosaicSize", "64",
                 "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
@@ -254,7 +251,7 @@ public class TempTest {
     }
 
     @Test
-    void sampleDem05() {
+    void sampleDem5m4326() {
         File inputPath = new File("D:\\dem05-wgs84");
         File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-korea-all");
 
@@ -269,9 +266,55 @@ public class TempTest {
     }
 
     @Test
+    void sampleDem5m5186() {
+        File inputPath = new File("D:\\dem05-wgs84");
+        File outputPath = new File(OUTPUT_PATH, "dem05-wgs84-korea-all");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDem5m5186Part() {
+        File inputPath = new File("D:\\dem05-5186-part-real");
+        File outputPath = new File(OUTPUT_PATH, "dem05-5186-part-real-new-14");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-leaveTemp",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleDem30m5186Part() {
+        File inputPath = new File("D:\\dem30-5186");
+        File outputPath = new File(OUTPUT_PATH, "dem30-5186");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void sampleDemJSON() {
-        File inputPath = new File("D:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
-        File outputPath = new File("D:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
+        File inputPath = new File("E:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
+        File outputPath = new File("E:\\data\\mago-server\\output\\dem05-wgs84-korea-all-14");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -279,6 +322,82 @@ public class TempTest {
                 "-min", "0",
                 "-max", "14",
                 "-json",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void dem5m4326() {
+        File inputPath = new File("D:\\korea-5m-4326-bilinear");
+        File outputPath = new File(OUTPUT_PATH, "korea-5m-4326-bilinear");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-leaveTemp",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void dem5m5186parts() {
+        File inputPath = new File("D:\\dem05-5186-parts");
+        File outputPath = new File(OUTPUT_PATH, "korea-5m-5186-parts");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void ws2dem1m() {
+        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\wangsuk2_1m");
+        File outputPath = new File(OUTPUT_PATH, "ws2-dem-1m");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sangjiUniversity() {
+        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\sangji-university");
+        File outputPath = new File(OUTPUT_PATH, "sangji-university");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sangjiUniversity5186() {
+        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\sangji-university-5186");
+        File outputPath = new File(OUTPUT_PATH, "sangji-university-5186");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "16",
+                "-calculateNormals",
         };
         MagoTerrainerMain.main(args);
     }

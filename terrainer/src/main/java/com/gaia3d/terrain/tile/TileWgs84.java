@@ -21,9 +21,8 @@ import java.util.List;
 @Setter
 @Slf4j
 public class TileWgs84 {
-    private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
-    private TileWgs84Manager manager = null;
-    private TileWgs84 parentTile = null;
+    private TileWgs84Manager manager;
+    private TileWgs84 parentTile;
     private TileIndices tileIndices = null; // if parentTile == null, then this is the root tile.
     private GeographicExtension geographicExtension = null;
     private TerrainMesh mesh = null;
@@ -42,7 +41,6 @@ public class TileWgs84 {
     //  | leftDown | downTile | right    |
     //  |   Tile   |          | DownTile |
     //  +----------+----------+----------+
-
     private TileWgs84[] neighborTiles = new TileWgs84[8];
     private TileWgs84[] childTiles = new TileWgs84[4];
 

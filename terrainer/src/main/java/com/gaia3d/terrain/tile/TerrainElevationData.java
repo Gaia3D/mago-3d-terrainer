@@ -4,6 +4,7 @@ import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,13 +14,18 @@ import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
+import org.opengis.coverage.Coverage;
+import org.opengis.referencing.FactoryException;
 
 import java.awt.image.Raster;
+import java.io.File;
 
 @Slf4j
 @Getter
 @Setter
 public class TerrainElevationData {
+    private GlobalOptions globalOptions = GlobalOptions.getInstance();
+
     private Vector2d pixelSizeMeters;
     // the terrain elevation data is stored in a geotiff file
     private TerrainElevationDataManager terrainElevDataManager = null;
@@ -64,6 +70,10 @@ public class TerrainElevationData {
         worldPosition = null;
     }
 
+    public double getPixelArea() {
+        return this.pixelSizeMeters.x * this.pixelSizeMeters.y;
+    }
+
     public void getPixelSizeDegree(Vector2d resultPixelSize) {
         double imageWidth = this.coverage.getRenderedImage().getWidth();
         double imageHeight = this.coverage.getRenderedImage().getHeight();
@@ -105,7 +115,7 @@ public class TerrainElevationData {
                 value = raster.getSampleDouble(x, y, 0);
                 // check if value is NaN
                 if (Double.isNaN(value)) {
-                    return 0.0;
+                    return globalOptions.getNoDataValue();
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
@@ -117,7 +127,7 @@ public class TerrainElevationData {
             if (noDataContainer != null) {
                 double nodata = noDataContainer.getAsSingleValue();
                 if (value == nodata) {
-                    return 0.0;
+                    return globalOptions.getNoDataValue();
                 }
             }
         }
@@ -149,8 +159,13 @@ public class TerrainElevationData {
             intersects[0] = true;
             int column = (int) Math.floor(unitaryX * geoTiffRasterWidth);
             int row = (int) Math.floor(unitaryY * geoTiffRasterHeight);
-
             resultAltitude = calcNearestInterpolation(column, row);
+        }
+
+        double noDataValue = globalOptions.getNoDataValue();
+        if (resultAltitude == noDataValue) {
+            intersects[0] = false;
+            return resultAltitude;
         }
 
         // update min, max altitude
@@ -187,6 +202,17 @@ public class TerrainElevationData {
         double value01 = this.getGridValue(column, rowNext);
         double value10 = this.getGridValue(columnNext, row);
         double value11 = this.getGridValue(columnNext, rowNext);
+
+        /* check noDataValue */
+        double noDataValue = globalOptions.getNoDataValue();
+        boolean hasNoData = (value00 == noDataValue) || (value01 == noDataValue) || (value10 == noDataValue) || (value11 == noDataValue);
+        if (hasNoData) {
+            if (value00 == noDataValue) {
+                return noDataValue;
+            } else {
+                return value00;
+            }
+        }
 
         double value0 = value00 * (1.0 - factorY) + value01 * factorY;
         double value1 = value10 * (1.0 - factorY) + value11 * factorY;

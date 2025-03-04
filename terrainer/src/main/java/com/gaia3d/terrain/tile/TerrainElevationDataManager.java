@@ -1,8 +1,10 @@
 package com.gaia3d.terrain.tile;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
+import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
@@ -11,6 +13,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.CRS;
+import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -29,10 +32,13 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationDataManager {
+    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+
     private TileWgs84Manager tileWgs84Manager = null;
     private List<TerrainElevationData> terrainElevationDataArray = new ArrayList<>();
     private List<TerrainTriangle> trianglesArray = new ArrayList<>();
     private Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<>();
+    private Map<String, Double> gridAreaMap = new HashMap<>();
 
     // Inside the folder, there are multiple geoTiff files
     private String terrainElevationDataFolderPath;
@@ -185,7 +191,6 @@ public class TerrainElevationDataManager {
             if (uniqueTerrainElevationData == null) {
                 return resultElevation;
             }
-
             resultElevation = uniqueTerrainElevationData.getElevation(lonDeg, latDeg, intersects);
             return resultElevation;
         }
@@ -197,21 +202,35 @@ public class TerrainElevationDataManager {
         terrainElevDataArray.clear();
         rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDataArray);
 
+        double noDataValue = globalOptions.getNoDataValue();
+        PriorityType priorityType = globalOptions.getPriorityType();
+
         intersects[0] = false;
+        double pixelAreaAux = Double.MAX_VALUE;
+        double candidateElevation = 0.0;
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (!intersects[0]) {
                 continue;
             }
 
-            if (elevation < 0.0) {
-                elevation = 0.0;
+            /* check if the priority is resolution */
+            if (priorityType.equals(PriorityType.RESOLUTION)) {
+                double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFilePath());
+                //double pixelArea = terrainElevationData.getPixelArea();
+                boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is higher resolution
+                if (isHigherResolution) {
+                    if (noDataValue != 0.0) {
+                        candidateElevation = elevation;
+                        pixelAreaAux = pixelArea;
+                    }
+                }
+            } else {
+                candidateElevation = Math.max(candidateElevation, elevation);
             }
-
-            resultElevation = elevation;
-            break;
         }
 
+        resultElevation = candidateElevation;
         return resultElevation;
     }
 
@@ -273,6 +292,31 @@ public class TerrainElevationDataManager {
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
             loadAllGeoTiff(folderPath);
         }
+    }
+
+    public Double putAndGetGridAreaMap(String path) {
+        Double pixelArea = 0.0d;
+        File file = new File(path);
+        String fileName = file.getName();
+        if (gridAreaMap.containsKey(fileName)) {
+            return gridAreaMap.get(fileName);
+        }
+
+        File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
+        File tempFile = new File(standardizationTempPath, fileName);
+
+        if (tempFile.exists() && !file.equals(tempFile)) {
+            try {
+                GaiaGeoTiffManager gaiaGeoTiffManager = this.getGaiaGeoTiffManager();
+                GridCoverage2D coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
+                Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
+                pixelArea = originalArea.x * originalArea.y;
+            } catch (FactoryException e) {
+                log.error("[getPixelArea : FactoryException] Error in getPixelArea", e);
+            }
+        }
+        gridAreaMap.put(fileName, pixelArea);
+        return gridAreaMap.get(fileName);
     }
 
     public void deleteGeoTiffManager() {

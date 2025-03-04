@@ -1,12 +1,15 @@
 package com.gaia3d.command;
 
 import com.gaia3d.terrain.types.InterpolationType;
+import com.gaia3d.terrain.types.PriorityType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,15 +29,18 @@ public class GlobalOptions {
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
-    private static final int DEFAULT_MOSAIC_SIZE = 32;
+    private static final int DEFAULT_MOSAIC_SIZE = 16;
     private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
     private static final double DEFAULT_INTENSITY = 4.0;
+
+    private double noDataValue = -8612;
 
     private String version;
     private String javaVersionInfo;
     private String programInfo;
     private boolean layerJsonGenerate = false;
     private boolean debugMode = false;
+    private boolean leaveTemp = false;
 
     private long startTime = 0;
     private long endTime = 0;
@@ -44,6 +50,8 @@ public class GlobalOptions {
 
     private String inputPath;
     private String outputPath;
+
+    private String standardizeTempPath;
     private String resizedTiffTempPath;
     private String splitTiffTempPath;
     private String tileTempPath;
@@ -53,8 +61,10 @@ public class GlobalOptions {
     private int maximumTileDepth;
     private InterpolationType interpolationType;
     private boolean calculateNormals;
+    private PriorityType priorityType;
 
     private double intensity;
+    private CoordinateReferenceSystem targetCRS = DefaultGeographicCRS.WGS84;
 
     public static GlobalOptions getInstance() {
         if (instance.javaVersionInfo == null) {
@@ -76,10 +86,10 @@ public class GlobalOptions {
             validateOutputPath(new File(outputPath).toPath());
 
             instance.setOutputPath(outputPath);
-            instance.setResizedTiffTempPath(outputPath + File.separator + "ResizedTiffTemp");
-            instance.setTileTempPath(outputPath + File.separator + "TileTemp");
-            String inputPath = command.getOptionValue(CommandOptions.INPUT.getArgName());
-            instance.setSplitTiffTempPath(inputPath + File.separator + "SplitTiffTemp");
+            instance.setResizedTiffTempPath(outputPath + File.separator + "resized");
+            instance.setTileTempPath(outputPath + File.separator + "temp");
+            instance.setSplitTiffTempPath(outputPath + File.separator + "split");
+            instance.setStandardizeTempPath(outputPath + File.separator + "standardization");
         } else {
             throw new IllegalArgumentException("Please enter the value of the output argument.");
         }
@@ -90,6 +100,10 @@ public class GlobalOptions {
 
         if (command.hasOption(CommandOptions.DEBUG.getArgName())) {
             instance.setDebugMode(true);
+        }
+
+        if (command.hasOption(CommandOptions.LEAVE_TEMP.getArgName())) {
+            instance.setLeaveTemp(true);
         }
 
         if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
@@ -145,6 +159,20 @@ public class GlobalOptions {
             instance.setInterpolationType(DEFAULT_INTERPOLATION_TYPE);
         }
 
+        if (command.hasOption(CommandOptions.PRIORITY_TYPE.getArgName())) {
+            String priorityType = command.getOptionValue(CommandOptions.PRIORITY_TYPE.getArgName());
+            PriorityType type;
+            try {
+                type =  PriorityType.fromString(priorityType);
+            } catch (IllegalArgumentException e) {
+                log.warn("* Priority type is not valid. Set to normal.");
+                type = PriorityType.RESOLUTION;
+            }
+            instance.setPriorityType(type);
+        } else {
+            instance.setPriorityType(PriorityType.RESOLUTION);
+        }
+
         if (command.hasOption(CommandOptions.TILING_MOSAIC_SIZE.getArgName())) {
             instance.setMosaicSize(Integer.parseInt(command.getOptionValue(CommandOptions.TILING_MOSAIC_SIZE.getArgName())));
         } else {
@@ -183,7 +211,9 @@ public class GlobalOptions {
         log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
         log.info("Intensity: {}", instance.getIntensity());
         log.info("Interpolation Type: {}", instance.getInterpolationType());
+        log.info("Priority Type: {}", instance.getPriorityType());
         log.info("Calculate Normals: {}", instance.isCalculateNormals());
+        log.info("----------------------------------------");
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
