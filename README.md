@@ -74,7 +74,7 @@ docker pull gaia3d/mago-3d-terrainer
 ```
 #### Running command:
 ```
-docker run --rm -v “/workspace:/workspace” gaia3d/mago-3d-terrainer -input C:\data\geotiff-sample -output C:\data\geotiff-terrain-output -maxDepth 16
+docker run --rm -v “/workspace:/workspace” gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
 ```
 
 ## Supported Java versions
@@ -82,7 +82,7 @@ Supports long-term support (LTS) versions of the JDK, including JDK17 and JDK21.
 
 ## License
 - mago 3DTerrainer is licensed under the MPL2.0 license (<https://www.mozilla.org/en-US/MPL/2.0/>).
-- If you do not want to release your modified code under the MPL2.0 license, you can follow a commercial license. In that case, please contact sales@gaia3d.com으로.
+- If you do not want to release your modified code under the MPL2.0 license, you can follow a commercial license. In that case, please contact sales@gaia3d.com.
 
 ## Library dependencies
 - **JOML** (Java OpenGL Math Library): <https://github.com/JOML-CI/JOML>

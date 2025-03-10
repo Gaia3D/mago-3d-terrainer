@@ -75,7 +75,7 @@ mago 3DTerrainer는 도커 이미지로도 사용이 가능합니다.
 docker pull gaia3d/mago-3d-terrainer
 ```
 ```
-docker run --rm -v "/workspace:/workspace" gaia3d/mago-3d-terrainer -input C:\data\geotiff-sample -output C:\data\geotiff-terrain-output -maxDepth 14
+docker run --rm -v “/workspace:/workspace” gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
 ```
 
 ## 지원하는 자바 버전
