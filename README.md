@@ -74,7 +74,7 @@ docker pull gaia3d/mago-3d-terrainer
 ```
 #### Running command:
 ```
-docker run --rm -v “/workspace:/workspace” gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
+docker run --rm -v "/workspace:/workspace" gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
 ```
 
 ## Supported Java versions
