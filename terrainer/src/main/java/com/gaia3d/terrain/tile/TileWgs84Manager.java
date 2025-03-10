@@ -186,6 +186,10 @@ public class TileWgs84Manager {
                 this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
                 this.terrainElevationDataManager.setTileWgs84Manager(this);
                 this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+
+                log.info("********** GEOTIFF FOLDER PATH FOR {} DEPTH = {}", depth, this.depthGeoTiffFolderPathMap.get(depth));
+
+
                 this.terrainElevationDataManager.makeTerrainQuadTree();
             }
 
@@ -453,11 +457,11 @@ public class TileWgs84Manager {
                 double desiredPixelSizeYinMeters = desiredPixelSizeXinMeters;
 
                 //****************************************************************************************
-                if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
+                /*if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
                     // In this case just assign the originalGeoTiffFolderPath
                     this.depthGeoTiffFolderPathMap.put(depth, globalOptions.getInputPath());
                     continue;
-                }
+                }*/
 
                 String depthStr = String.valueOf(depth);
                 String resizedGeoTiffFolderPath = globalOptions.getResizedTiffTempPath() + File.separator + depthStr + File.separator + currentFolderPath;
@@ -472,10 +476,14 @@ public class TileWgs84Manager {
                 }
 
                 // in this case, resize the geotiff
-                GridCoverage2D resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
-                FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
-                gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
 
+                GridCoverage2D resizedGridCoverage2D;
+                if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
+                    resizedGridCoverage2D = originalGridCoverage2D;
+                } else {
+                    resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
+                }
+                gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
                 resizedGridCoverage2D.dispose(true);
 
                 String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;

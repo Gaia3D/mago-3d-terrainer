@@ -24,6 +24,8 @@ public class TerrainerReleaseTest {
                 "-min", "0",
                 "-max", "14",
                 "-calculateNormals",
+                "-leaveTemp",
+                "-log", new File(outputPath, "log.txt").getAbsolutePath()
         };
         MagoTerrainerMain.main(args);
     }
