@@ -22,7 +22,7 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "14",
+                "-max", "16",
                 "-calculateNormals",
                 "-leaveTemp",
                 "-log", new File(outputPath, "log.txt").getAbsolutePath()

@@ -477,14 +477,17 @@ public class TileWgs84Manager {
 
                 // in this case, resize the geotiff
 
+                FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 GridCoverage2D resizedGridCoverage2D;
                 if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
                     resizedGridCoverage2D = originalGridCoverage2D;
+                    // copy the original geotiff to the resizedGeoTiffFilePath
+                    org.apache.commons.io.FileUtils.copyFile(new File(geoTiffFilePath), new File(resizedGeoTiffFilePath));
                 } else {
                     resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
+                    gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
+                    resizedGridCoverage2D.dispose(true);
                 }
-                gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
-                resizedGridCoverage2D.dispose(true);
 
                 String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
                 this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
