@@ -13,6 +13,8 @@ See: https://github.com/CesiumGS/quantized-mesh
 ![Static Badge](https://img.shields.io/badge/Gradle-darkorange?style=flat-square&logo=gradle)
 ![Static Badge](https://img.shields.io/badge/Docker%20Image-blue?style=flat-square&logo=docker)
 
+![images2-mini](https://github.com/user-attachments/assets/be2b046a-3a79-4415-a16f-a0607976c62c)
+
 ## Key features
 - Convenient conversion: convert GeoTIFF files without complicated commands.
 - High accuracy: Generate quantized-mesh data with high accuracy.
