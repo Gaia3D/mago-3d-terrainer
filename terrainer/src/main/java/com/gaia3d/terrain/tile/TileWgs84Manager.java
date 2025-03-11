@@ -60,6 +60,9 @@ public class TileWgs84Manager {
 
     private GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
 
+    // the list of standardized geotiff files. This the real input for the terrain elevation data.***
+    private List<File> standardizedGeoTiffFiles = new ArrayList<>();
+
     // constructor
     public TileWgs84Manager() {
         double intensity = globalOptions.getIntensity();
@@ -186,7 +189,7 @@ public class TileWgs84Manager {
                 this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
                 this.terrainElevationDataManager.setTileWgs84Manager(this);
                 this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
-                this.terrainElevationDataManager.makeTerrainQuadTree();
+                this.terrainElevationDataManager.makeTerrainQuadTree(depth);
             }
 
             int mosaicSize = globalOptions.getMosaicSize();
@@ -369,6 +372,14 @@ public class TileWgs84Manager {
         }
 
         standardizeRasters(rasterFileNames);
+
+        // now make the list of standardized geotiff files (20250311 jinho seongdo).***
+        File tempFolder = new File(globalOptions.getStandardizeTempPath());
+        File[] children = tempFolder.listFiles();
+        this.getStandardizedGeoTiffFiles().clear();
+        for (File child : children) {
+            this.getStandardizedGeoTiffFiles().add(child);
+        }
     }
 
     public void standardizeRasters(List<String> geoTiffFileNames) {
@@ -455,6 +466,9 @@ public class TileWgs84Manager {
                 //****************************************************************************************
                 if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
                     // In this case just assign the originalGeoTiffFolderPath
+                    //*********************************************************************************
+                    // note : globalOptions.getInputPath() = globalOptions.getStandardizeTempPath().***
+                    //*********************************************************************************
                     this.depthGeoTiffFolderPathMap.put(depth, globalOptions.getInputPath());
                     continue;
                 }

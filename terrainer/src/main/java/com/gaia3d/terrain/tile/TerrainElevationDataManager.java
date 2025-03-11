@@ -53,9 +53,12 @@ public class TerrainElevationDataManager {
     private boolean[] intersects = {false};
     private List<String> geoTiffFileNames = new ArrayList<>();
 
-    public void makeTerrainQuadTree() throws FactoryException, TransformException, IOException {
+    public void makeTerrainQuadTree(int depth) throws FactoryException, TransformException, IOException {
+        String geoTiffFolderPath = tileWgs84Manager.getDepthGeoTiffFolderPathMap().get(depth);
+        List<File> standardizedGeoTiffFiles = tileWgs84Manager.getStandardizedGeoTiffFiles();
+
         // load all geoTiffFiles & make a quadTree
-        loadAllGeoTiff(terrainElevationDataFolderPath);
+        loadAllGeoTiff(terrainElevationDataFolderPath, standardizedGeoTiffFiles);
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreeMaxDepth);
     }
 
@@ -234,8 +237,77 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
-    private void loadAllGeoTiff(String terrainElevationDataFolderPath) throws FactoryException, TransformException {
-        // load all geoTiffFiles
+    private void loadAllGeoTiff(String terrainElevationDataFolderPath, List<File> standardizedGeoTiffFiles) throws FactoryException, TransformException {
+        // recursively load all geoTiff files
+        geoTiffFileNames.clear();
+        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
+
+        if (myGaiaGeoTiffManager == null) {
+            myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
+        }
+        GeometryFactory gf = new GeometryFactory();
+
+        if (rootTerrainElevationDataQuadTree == null) {
+            rootTerrainElevationDataQuadTree = new TerrainElevationDataQuadTree(null);
+        }
+
+        // now load all geotiff and make geotiff geoExtension data
+        GridCoverage2D gridCoverage2D = null;
+        String geoTiffFileName = null;
+        String geoTiffFilePath = null;
+
+        CoordinateReferenceSystem crsTarget = null;
+        CoordinateReferenceSystem crsWgs84 = null;
+        MathTransform targetToWgs = null;
+
+        Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
+
+        //for (String memSaveGeoTiffFileName : geoTiffFileNames) { // original.***
+        for (File geoTiffFile : standardizedGeoTiffFiles) {
+            geoTiffFileName = geoTiffFile.getName();
+
+            // check if "geoTiffFileName" exist in the "geoTiffFileNames" list
+            if (!geoTiffFileNames.contains(geoTiffFileName)) {
+                // if no exist, use the standardize file.***
+                geoTiffFilePath = geoTiffFile.getAbsolutePath();
+            }
+            else {
+                geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
+            }
+
+            // check if this geoTiff is usable
+            if (mapNoUsableGeotiffPaths.containsKey(geoTiffFilePath)) {
+                continue;
+            }
+
+            TerrainElevationData terrainElevationData = new TerrainElevationData(this);
+
+            gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
+
+            crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
+            crsWgs84 = CRS.decode("EPSG:4326", true);
+            targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
+
+            GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, terrainElevationData.getGeographicExtension());
+            terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
+
+            rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
+            gridCoverage2D.dispose(true);
+
+        }
+
+        // now check if exist folders inside the terrainElevationDataFolderPath
+        List<String> folderNames = new ArrayList<>();
+        FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
+        for (String folderName : folderNames) {
+            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
+            loadAllGeoTiff(folderPath, standardizedGeoTiffFiles);
+        }
+    }
+
+    private void loadAllGeoTiff_original(String terrainElevationDataFolderPath) throws FactoryException, TransformException {
+        // recursively load all geoTiff files
         geoTiffFileNames.clear();
         FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
 
@@ -290,7 +362,7 @@ public class TerrainElevationDataManager {
         FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
         for (String folderName : folderNames) {
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
-            loadAllGeoTiff(folderPath);
+            loadAllGeoTiff_original(folderPath);
         }
     }
 

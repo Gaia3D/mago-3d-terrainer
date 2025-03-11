@@ -127,7 +127,8 @@ public class MagoTerrainerMain {
             tileWgs84Manager.getTerrainElevationDataManager().setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
             tileWgs84Manager.getTerrainElevationDataManager().MakeUniqueTerrainElevationData();
         } else {
-            tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree();
+            int depth = 0;
+            tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree(depth);
         }
         log.info("[Tile] Finished generate terrain elevation data.");
 
