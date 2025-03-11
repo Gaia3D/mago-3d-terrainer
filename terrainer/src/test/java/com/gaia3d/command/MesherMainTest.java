@@ -352,7 +352,7 @@ class MesherMainTest {
         // 2 levels of geoTiff files. The 1rst is 1m of definition and the 2nd is 5m of definition.
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(15);
+        String maxTileDepth = String.valueOf(17);
         String refinementStrength = String.valueOf(4);
         String originalGeoTiffFolderPath = "D:/data/DEM/changWon_20250310";
         String outputDirectory = "D:/data/mago-server/output/result_changWon_20250310";
