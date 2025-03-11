@@ -90,12 +90,12 @@ jib {
     extraDirectories {
         paths {
             path {
-                from = file("build/libs")
+                from = file("dist")
                 into = "/app"
             }
         }
     }
-    }
+}
 
 // jar task
 jar {

@@ -239,8 +239,6 @@ public class TileWgs84Manager {
     }
 
     public String timeFormat(long time) {
-
-
         long ms = time % 1000;
         long s = (time / 1000) % 60;
         long m = (time / (1000 * 60)) % 60;
