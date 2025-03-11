@@ -326,9 +326,43 @@ class MesherMainTest {
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
+
+    @Test
+    void jiRiWon_20250224() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        // 2 levels of geoTiff files. The 1rst is 1m of definition and the 2nd is 5m of definition.
+
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(14);
+        String refinementStrength = String.valueOf(4);
+        String originalGeoTiffFolderPath = "D:/data/DEM/(20250224) 지리원 DEM";
+        String outputDirectory = "D:/data/mago-server/output/result_jiRiWon_20250224";
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void changWon_20250224() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        // 2 levels of geoTiff files. The 1rst is 1m of definition and the 2nd is 5m of definition.
+
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(16);
+        String refinementStrength = String.valueOf(4);
+        String originalGeoTiffFolderPath = "D:/data/DEM/changWon_20250310";
+        String outputDirectory = "D:/data/mago-server/output/result_changWon_20250310";
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
     
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
-        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn"};
+        String logPath = outputPath + "/log.txt";
+
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-leaveTemp"};
         MagoTerrainerMain.main(args);
     }
 }
