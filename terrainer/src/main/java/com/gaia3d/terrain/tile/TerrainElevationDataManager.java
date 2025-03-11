@@ -54,7 +54,6 @@ public class TerrainElevationDataManager {
     private List<String> geoTiffFileNames = new ArrayList<>();
 
     public void makeTerrainQuadTree(int depth) throws FactoryException, TransformException, IOException {
-        String geoTiffFolderPath = tileWgs84Manager.getDepthGeoTiffFolderPathMap().get(depth);
         List<File> standardizedGeoTiffFiles = tileWgs84Manager.getStandardizedGeoTiffFiles();
 
         // load all geoTiffFiles & make a quadTree
@@ -262,7 +261,6 @@ public class TerrainElevationDataManager {
 
         Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
 
-        //for (String memSaveGeoTiffFileName : geoTiffFileNames) { // original.***
         for (File geoTiffFile : standardizedGeoTiffFiles) {
             geoTiffFileName = geoTiffFile.getName();
 

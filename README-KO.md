@@ -13,6 +13,8 @@ OCG의 표준 포맷인 GeoTIFF 파일을 공간정보 레스터 데이터를 �
 ![Static Badge](https://img.shields.io/badge/Gradle-darkorange?style=flat-square&logo=gradle)
 ![Static Badge](https://img.shields.io/badge/Docker%20Image-blue?style=flat-square&logo=docker)
 
+![images2-mini](https://github.com/user-attachments/assets/be2b046a-3a79-4415-a16f-a0607976c62c)
+
 ## 주요 기능
 - 편리한 변환: GeoTIFF 파일을 복잡한 커맨드 없이 변환할 수 있습니다.
 - 높은 정확도: 높은 정확도의 quantized-mesh 데이터를 생성합니다.
@@ -75,7 +77,7 @@ mago 3DTerrainer는 도커 이미지로도 사용이 가능합니다.
 docker pull gaia3d/mago-3d-terrainer
 ```
 ```
-docker run --rm -v “/workspace:/workspace” gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
+docker run --rm -v "/workspace:/workspace" gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
 ```
 
 ## 지원하는 자바 버전

@@ -455,23 +455,11 @@ public class TileWgs84Manager {
                 throw new GeoTiffException(null, "The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems", null);
             }
 
-            Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(originalGridCoverage2D);
-
             int minTileDepth = globalOptions.getMinimumTileDepth();
             int maxTileDepth = globalOptions.getMaximumTileDepth();
             for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
                 double desiredPixelSizeXinMeters = this.depthDesiredPixelSizeXinMetersMap.get(depth);
                 double desiredPixelSizeYinMeters = desiredPixelSizeXinMeters;
-
-                //****************************************************************************************
-                if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
-                    // In this case just assign the originalGeoTiffFolderPath
-                    //*********************************************************************************
-                    // note : globalOptions.getInputPath() = globalOptions.getStandardizeTempPath().***
-                    //*********************************************************************************
-                    this.depthGeoTiffFolderPathMap.put(depth, globalOptions.getInputPath());
-                    continue;
-                }
 
                 String depthStr = String.valueOf(depth);
                 String resizedGeoTiffFolderPath = globalOptions.getResizedTiffTempPath() + File.separator + depthStr + File.separator + currentFolderPath;
@@ -489,7 +477,6 @@ public class TileWgs84Manager {
                 GridCoverage2D resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
                 FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
-
                 resizedGridCoverage2D.dispose(true);
 
                 String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
