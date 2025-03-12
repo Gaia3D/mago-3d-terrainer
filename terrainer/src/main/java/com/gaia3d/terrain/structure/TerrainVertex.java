@@ -56,7 +56,7 @@ public class TerrainVertex {
             this.normal = new Vector3f();
         }
 
-        this.normal.set(0, 0, 1);
+        this.normal.set(0, 0, 0);
         List<TerrainHalfEdge> outingHalfEdges = this.getAllOutingHalfEdges();
         for (TerrainHalfEdge outingHalfEdge : outingHalfEdges) {
             TerrainTriangle triangle = outingHalfEdge.getTriangle();
@@ -70,6 +70,12 @@ public class TerrainVertex {
             }
 
             this.normal.add(normal);
+        }
+
+        // if this vertex has no normal, then set default normal
+        if (this.normal.equals(0, 0, 0)) {
+            log.warn("This vertex has no normal. id : {}", this.id);
+            this.normal.set(0, 0, 1);
         }
 
         this.normal.normalize();
