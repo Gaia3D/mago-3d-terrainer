@@ -1,6 +1,7 @@
 package com.gaia3d.command;
 
 
+import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.util.DecimalUtils;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TerrainLayer;
@@ -51,20 +52,6 @@ public class MagoTerrainerMain {
 
             GlobalOptions.init(command);
             GlobalOptions globalOptions = GlobalOptions.getInstance();
-            /*if (globalOptions.isLayerJsonGenerate()) {
-                log.info("[Generate][layer.json] Start generating layer.json.");
-
-                TerrainLayer terrainLayer = new TerrainLayer();
-                terrainLayer.setDefault();
-                terrainLayer.setBounds(new double[]{-180.0, -90.0, 180.0, 90.0}); // temp
-                terrainLayer.generateAvailableTiles(globalOptions.getInputPath());
-                if (globalOptions.isCalculateNormals()) {
-                    terrainLayer.addExtension("octvertexnormals");
-                }
-                terrainLayer.saveJsonFile(globalOptions.getInputPath(), "layer.json");
-                log.info("[Generate][layer.json] Finished generating layer.json.");
-                return;
-            }*/
 
             if (GlobalOptions.getInstance().isLayerJsonGenerate()) {
                 log.info("[Generate][layer.json] Start generating layer.json.");
@@ -139,6 +126,8 @@ public class MagoTerrainerMain {
         log.info("[Post][Clear] Start deleting memory objects.");
         tileWgs84Manager.deleteObjects();
         log.info("[Post][Clear] Finished deleting memory objects.");
+
+        globalOptions.getReporter().writeReportFile(new File(globalOptions.getOutputPath()));
     }
 
     /**
@@ -222,10 +211,17 @@ public class MagoTerrainerMain {
      */
     private static void printEnd() {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
-        long startTime = globalOptions.getStartTime();
-        long endTime = System.currentTimeMillis();
+        Reporter reporter = globalOptions.getReporter();
+        long duration = reporter.getDuration();
         log.info("----------------------------------------");
-        log.info("End Process Time : {}", DecimalUtils.millisecondToDisplayTime(endTime - startTime));
+        log.info("[Report Summary]");
+        log.info("Info : {}", reporter.getInfoCount());
+        log.info("Warning : {}", reporter.getWarningCount());
+        log.info("Error : {}", reporter.getErrorCount());
+        log.info("Fatal : {}", reporter.getFatalCount());
+        log.info("Total Report Count : {}", reporter.getReportList().size());
+        log.info("[Process Summary]");
+        log.info("End Process Time : {}", DecimalUtils.millisecondToDisplayTime(duration));
         log.info("----------------------------------------");
     }
 }

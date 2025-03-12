@@ -1,5 +1,6 @@
 package com.gaia3d.command;
 
+import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.types.PriorityType;
 import lombok.Getter;
@@ -33,6 +34,7 @@ public class GlobalOptions {
     private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
     private static final double DEFAULT_INTENSITY = 4.0;
 
+    private Reporter reporter;
     private double noDataValue = -8612;
 
     private String version;
@@ -69,6 +71,7 @@ public class GlobalOptions {
     public static GlobalOptions getInstance() {
         if (instance.javaVersionInfo == null) {
             initVersionInfo();
+            instance.reporter = new Reporter("mago-3d-terrainer", instance.getVersion());
         }
         return instance;
     }

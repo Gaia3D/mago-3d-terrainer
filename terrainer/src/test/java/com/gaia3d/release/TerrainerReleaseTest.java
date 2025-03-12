@@ -22,7 +22,7 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "16",
+                "-max", "13",
                 "-calculateNormals",
                 "-leaveTemp",
                 "-log", new File(outputPath, "log.txt").getAbsolutePath()
@@ -30,6 +30,21 @@ public class TerrainerReleaseTest {
         MagoTerrainerMain.main(args);
     }
 
+    @Test
+    void multiBilinear() {
+        String name = "multi-resolution";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_bilinear");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "10",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
 
     @Test
     void multiNearest() {
