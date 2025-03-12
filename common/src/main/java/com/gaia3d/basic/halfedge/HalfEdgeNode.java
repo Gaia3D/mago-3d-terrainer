@@ -2,6 +2,7 @@ package com.gaia3d.basic.halfedge;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.model.GaiaMaterial;
+import com.gaia3d.basic.model.GaiaScene;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -124,7 +125,7 @@ public class HalfEdgeNode implements Serializable {
     }
 
     public GaiaBoundingBox calculateBoundingBox(GaiaBoundingBox resultBBox) {
-//        if(resultBBox == null) {
+//        if (resultBBox == null) {
 //            resultBBox = new GaiaBoundingBox();
 //        }
 //        for (HalfEdgeMesh mesh : meshes) {
@@ -215,9 +216,6 @@ public class HalfEdgeNode implements Serializable {
                 clonedNode.children.add(clonedChild);
             }
         }
-        if (boundingBox != null && clonedNode != null) {
-            clonedNode.boundingBox = boundingBox.clone();
-        }
         return clonedNode;
     }
 
@@ -258,7 +256,7 @@ public class HalfEdgeNode implements Serializable {
             }
 
         } catch (Exception e) {
-            log.error("Error Log : ", e);
+            log.error("[ERROR] Error Log : ", e);
         }
     }
 
@@ -285,7 +283,7 @@ public class HalfEdgeNode implements Serializable {
             }
 
         } catch (Exception e) {
-            log.error("Error Log : ", e);
+            log.error("[ERROR] Error Log : ", e);
         }
     }
 
@@ -295,6 +293,15 @@ public class HalfEdgeNode implements Serializable {
         }
         for (HalfEdgeNode child : children) {
             child.scissorTextures(materials);
+        }
+    }
+
+    public void scissorTexturesByMotherScene(List<GaiaMaterial> materials, List<GaiaMaterial> motherMaterials) {
+        for (HalfEdgeMesh mesh : meshes) {
+            mesh.scissorTexturesByMotherScene(materials, motherMaterials);
+        }
+        for (HalfEdgeNode child : children) {
+            child.scissorTexturesByMotherScene(materials, motherMaterials);
         }
     }
 
@@ -372,15 +379,6 @@ public class HalfEdgeNode implements Serializable {
         }
     }
 
-    public void splitFacesByBestPlanesToProject() {
-        for (HalfEdgeMesh mesh : meshes) {
-            mesh.splitFacesByBestPlanesToProject();
-        }
-        for (HalfEdgeNode child : children) {
-            child.splitFacesByBestPlanesToProject();
-        }
-    }
-
     public void extractPrimitives(List<HalfEdgePrimitive> resultPrimitives) {
         for (HalfEdgeMesh mesh : meshes) {
             mesh.extractPrimitives(resultPrimitives);
@@ -400,5 +398,73 @@ public class HalfEdgeNode implements Serializable {
         }
     }
 
+    public double calculateArea() {
+        double area = 0;
+        for (HalfEdgeMesh mesh : meshes) {
+            area += mesh.calculateArea();
+        }
+        for (HalfEdgeNode child : children) {
+            area += child.calculateArea();
+        }
+        return area;
+    }
 
+
+    public int deleteDegeneratedFaces() {
+        int deletedFaces = 0;
+        for (HalfEdgeMesh mesh : meshes) {
+            deletedFaces += mesh.deleteDegeneratedFaces();
+        }
+        for (HalfEdgeNode child : children) {
+            deletedFaces += child.deleteDegeneratedFaces();
+        }
+        return deletedFaces;
+    }
+
+    public void translateTexCoordsToPositiveQuadrant() {
+        for (HalfEdgeMesh mesh : meshes) {
+            mesh.translateTexCoordsToPositiveQuadrant();
+        }
+        for (HalfEdgeNode child : children) {
+            child.translateTexCoordsToPositiveQuadrant();
+        }
+    }
+
+    public void updateVerticesList() {
+        for (HalfEdgeMesh mesh : meshes) {
+            mesh.updateVerticesList();
+        }
+        for (HalfEdgeNode child : children) {
+            child.updateVerticesList();
+        }
+    }
+
+    public void updateFacesList() {
+        for (HalfEdgeMesh mesh : meshes) {
+            mesh.updateFacesList();
+        }
+        for (HalfEdgeNode child : children) {
+            child.updateFacesList();
+        }
+    }
+
+    public int getFacesCount() {
+        int facesCount = 0;
+        for (HalfEdgeMesh mesh : meshes) {
+            facesCount += mesh.getFacesCount();
+        }
+        for (HalfEdgeNode child : children) {
+            facesCount += child.getFacesCount();
+        }
+        return facesCount;
+    }
+
+    public void getIntersectedFacesByPlane(PlaneType planeType, Vector3d planePosition, List<HalfEdgeFace> resultFaces, double error) {
+        for (HalfEdgeMesh mesh : meshes) {
+            mesh.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
+        }
+        for (HalfEdgeNode child : children) {
+            child.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
+        }
+    }
 }

@@ -47,6 +47,14 @@ public class GaiaTexture extends TextureStructure implements Serializable {
     private int textureId = -1;
 
     public void loadImage() {
+        if (path == null || parentPath == null) {
+            return;
+        }
+
+        // check for empty strings
+        if (path.isEmpty() || parentPath.isEmpty()) {
+            return;
+        }
         Path diffusePath = new File(path).toPath();
         String imagePath = parentPath + File.separator + diffusePath;
         if (this.bufferedImage == null) {
@@ -67,7 +75,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
             ImageIO.setUseCache(false);
             ImageIO.write(bufferedImage, imageExtension, file);
         } catch (IOException e) {
-            log.error("Error : ", e);
+            log.error("[ERROR] :", e);
         }
     }
 
@@ -97,7 +105,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
             fileName = fileName.replace(".JPEG", ".png");
             imageFile = new File(imageFile.getParent(), fileName);
             if (!imageFile.exists()) {
-                log.error("Image file not found : {}", imageFile.getAbsolutePath());
+                log.error("[ERROR] Image file not found : {}", imageFile.getAbsolutePath());
                 return null;
             }
         }
@@ -106,7 +114,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
         try (BufferedInputStream stream = new BufferedInputStream(new FileInputStream(imageFile))) {
             image = ImageIO.read(stream);
         } catch (IOException e) {
-            log.error("Error : ", e);
+            log.error("[ERROR] :", e);
         }
         return image;
     }
@@ -133,7 +141,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
 
     public void loadImage(float scaleFactor) {
         loadImage();
-        if(this.bufferedImage!= null) {
+        if (this.bufferedImage!= null) {
             int resizeWidth = (int) (this.bufferedImage.getWidth() * scaleFactor);
             int resizeHeight = (int) (this.bufferedImage.getHeight() * scaleFactor);
             resizeWidth = ImageUtils.getNearestPowerOfTwo(resizeWidth);
@@ -146,10 +154,10 @@ public class GaiaTexture extends TextureStructure implements Serializable {
     }
 
     public void resizeImage(int width, int height) {
-        if(this.bufferedImage == null) {
+        if (this.bufferedImage == null) {
             loadImage();
         }
-        if(this.bufferedImage == null) {
+        if (this.bufferedImage == null) {
             return;
         }
         ImageResizer imageResizer = new ImageResizer();
@@ -158,9 +166,9 @@ public class GaiaTexture extends TextureStructure implements Serializable {
 
     public BufferedImage getBufferedImage() {
         if (this.bufferedImage == null) {
-            File fullPath = new File(this.parentPath, this.path);
-            log.info("[Load Image IO] : {}", fullPath.getAbsolutePath());
-            loadImage();
+            if (this.parentPath != null && this.path != null) {
+                loadImage();
+            }
         }
         return this.bufferedImage;
     }

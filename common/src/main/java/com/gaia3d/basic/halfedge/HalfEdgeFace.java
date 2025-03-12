@@ -1,5 +1,6 @@
 package com.gaia3d.basic.halfedge;
 
+import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.geometry.GaiaRectangle;
 import com.gaia3d.util.GeometryUtils;
 import lombok.Getter;
@@ -27,16 +28,16 @@ public class HalfEdgeFace implements Serializable {
     private int id = -1;
     private int halfEdgeId = -1;
 
-    // auxiliary variables.***
-    private int classifyId = -1; // use to classify the face for some purpose.***
-    private PlaneType bestPlaneToProject; // use to classify the face for some purpose.***
-    private CameraDirectionType cameraDirectionType; // use to classify the face for some purpose.***
-
+    // auxiliary variables
+    private int classifyId = -1; // use to classify the face for some purpose
+    private PlaneType bestPlaneToProject; // use to classify the face for some purpose
+    private CameraDirectionType cameraDirectionType; // use to classify the face for some purpose
     public void copyFrom(HalfEdgeFace face) {
         if (face == null) {
             return;
         }
-        // do not copy pointers.***
+
+        // do not copy pointers
         if (face.normal != null) {
             this.normal = new Vector3d(face.normal);
         }
@@ -63,11 +64,25 @@ public class HalfEdgeFace implements Serializable {
         return HalfEdgeUtils.calculateAspectRatioAsTriangle(a, b, c);
     }
 
+    public double calculateArea()
+    {
+        List<HalfEdge> halfEdgesLoop = this.getHalfEdgesLoop(null);
+        if (halfEdgesLoop == null || halfEdgesLoop.size() < 3) {
+            return 0.0;
+        }
+
+        HalfEdgeVertex a = halfEdgesLoop.get(0).getStartVertex();
+        HalfEdgeVertex b = halfEdgesLoop.get(1).getStartVertex();
+        HalfEdgeVertex c = halfEdgesLoop.get(2).getStartVertex();
+
+        return HalfEdgeUtils.calculateArea(a, b, c);
+    }
+
     public PlaneType calculateBestPlaneToProject() {
         Vector3d normal = this.calculatePlaneNormal();
 //        Vector3d zAxis = new Vector3d(0, 0, 1);
 //        double dotProd = normal.dot(zAxis);
-//        if(dotProd > 0.5){
+//        if (dotProd > 0.5) {
 //            this.bestPlaneToProject = PlaneType.XY;
 //            return this.bestPlaneToProject;
 //        }
@@ -101,6 +116,13 @@ public class HalfEdgeFace implements Serializable {
         this.normal = v0.cross(v1, this.normal);
         this.normal.normalize();
 
+        return this.normal;
+    }
+
+    public Vector3d getPlaneNormal() {
+        if (this.normal == null) {
+            this.normal = this.calculatePlaneNormal();
+        }
         return this.normal;
     }
 
@@ -143,7 +165,7 @@ public class HalfEdgeFace implements Serializable {
             resultBaricenter = new Vector3d();
         }
 
-        // init.***
+        // init
         resultBaricenter.set(0, 0, 0);
 
         int verticesSize = vertices.size();
@@ -166,7 +188,7 @@ public class HalfEdgeFace implements Serializable {
     }
 
     public boolean isDegenerated() {
-        // if area is 0, then is degenerated.***
+        // if area is 0, then is degenerated
         List<HalfEdge> halfEdgesLoop = this.getHalfEdgesLoop(null);
         if (halfEdgesLoop == null) {
             return true;
@@ -182,9 +204,7 @@ public class HalfEdgeFace implements Serializable {
     }
 
     public boolean isApplauseFace(HalfEdgeFace face) {
-        //*****************************************************************
         // Note : 2 faces are applause faces if they have same vertices.
-        //*****************************************************************
         if (face == null) {
             return false;
         }
@@ -284,7 +304,7 @@ public class HalfEdgeFace implements Serializable {
 
         for (HalfEdgeFace adjacentFace : adjacentFaces) {
             if (adjacentFace != null) {
-                // check if is visited.***
+                // check if is visited
                 if (mapVisitedFaces.get(adjacentFace) == null) {
                     resultWeldedFaces.add(adjacentFace);
                 }
@@ -299,7 +319,7 @@ public class HalfEdgeFace implements Serializable {
             return false;
         }
 
-//        if(mapVisitedFaces.get(this) != null)
+//        if (mapVisitedFaces.get(this) != null)
 //        {
 //            return false;
 //        }
@@ -314,7 +334,7 @@ public class HalfEdgeFace implements Serializable {
 
         for (HalfEdgeFace adjacentFace : adjacentFaces) {
             if (adjacentFace != null) {
-                // check if is visited.***
+                // check if is visited
                 if (mapVisitedFaces.get(adjacentFace) == null) {
                     adjacentFace.getWeldedFacesRecursive(resultWeldedFaces, mapVisitedFaces);
                 }
@@ -357,4 +377,35 @@ public class HalfEdgeFace implements Serializable {
         return resultRectangle;
     }
 
+    public boolean intersectsPlane(PlaneType planeType, Vector3d planePosition, double error) {
+        List<HalfEdge> halfEdgesLoop = this.getHalfEdgesLoop(null);
+        if (halfEdgesLoop == null) {
+            return false;
+        }
+
+        boolean intersects = false;
+        for (HalfEdge halfEdge : halfEdgesLoop) {
+            intersects = halfEdge.intersectsPlane(planeType, planePosition, error);
+            if (intersects) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public GaiaBoundingBox getBoundingBox() {
+        List<HalfEdgeVertex> vertices = this.getVertices(null);
+        if (vertices == null) {
+            return null;
+        }
+
+        GaiaBoundingBox resultBBox = new GaiaBoundingBox();
+
+        for (HalfEdgeVertex vertex : vertices) {
+            resultBBox.addPoint(vertex.getPosition());
+        }
+
+        return resultBBox;
+    }
 }

@@ -14,10 +14,10 @@ public class GillotinePacker {
     private final GaiaRectangle currentBoundary;
     private double candidateArea = 0.0;
 
-    public GillotinePacker(int width, int height) {
-        this.width = width;
-        this.height = height;
-        freeRectangles.add(new GaiaRectangle(0, 0, width, height));
+    public GillotinePacker() {
+        this.width = 0;
+        this.height = 0;
+        //freeRectangles.add(new GaiaRectangle(0, 0, 0, 0));
         currentBoundary = new GaiaRectangle(0, 0, 0, 0);
     }
 
@@ -50,7 +50,9 @@ public class GillotinePacker {
                         bestRect = freeRect;
                     }
                     GaiaRectangle candidateTotalBoundary = new GaiaRectangle(currentBoundary);
-                    GaiaRectangle placedRect = new GaiaRectangle(freeRect.getMinX(), freeRect.getMinY(), freeRect.getMinX() + rectWidth, freeRect.getMinY() + rectHeight);
+                    double freeMinX = freeRect.getMinX();
+                    double freeMinY = freeRect.getMinY();
+                    GaiaRectangle placedRect = new GaiaRectangle(freeMinX, freeMinY, freeMinX + rectWidth, freeMinY + rectHeight);
                     candidateTotalBoundary.addBoundingRectangle(placedRect);
                     double currTotalArea = candidateTotalBoundary.getArea();
                     //double areaFit = freeRect.getArea() - rect.getOriginBoundary().getArea();
@@ -60,7 +62,7 @@ public class GillotinePacker {
                         bestRect = freeRect;
                         break;
                     } else {
-//                        if(areaFit < bestAreaFit) {
+//                        if (areaFit < bestAreaFit) {
 //                            bestAreaFit = areaFit;
 //                            bestIndex = i;
 //                            bestRect = freeRect;
@@ -80,7 +82,7 @@ public class GillotinePacker {
         }
 
         if (bestRect == null) {
-            // in this case, create a new free rect.***
+            // in this case, create a new free rect
             GaiaRectangle newFreeRect = createNewFreeRectangle(rect.getOriginBoundary());
             freeRectangles.add(newFreeRect);
             bestRect = newFreeRect;
@@ -88,21 +90,21 @@ public class GillotinePacker {
         }
 
 
-        // set position to rect.***
+        // set position to rect
         rect.setBatchedBoundary(new GaiaRectangle(bestRect.getMinX(), bestRect.getMinY(), bestRect.getMinX() + rectWidth, bestRect.getMinY() + rectHeight));
         placedRectangles.add(rect);
 
         currentBoundary.addBoundingRectangle(rect.getBatchedBoundary());
         candidateArea = currentBoundary.getArea();
 
-        // split the free rect.***
+        // split the free rect
         splitFreeRects(bestRect, rect.getBatchedBoundary());
 
         return true;
     }
 
     private GaiaRectangle createNewFreeRectangle(GaiaRectangle rectangleToPut) {
-        // 1rst, calculate the current boundary.***
+        // 1rst, calculate the current boundary
         GaiaRectangle currBoundaryPlacedRect = new GaiaRectangle(0, 0, 0, 0);
         for (GaiaTextureScissorData rect : placedRectangles) {
             currBoundaryPlacedRect.addBoundingRectangle(rect.getBatchedBoundary());
@@ -129,7 +131,7 @@ public class GillotinePacker {
         int bottomHeight = (int) (freeRect.getHeight() - placedRect.getHeight());
 
         if (rigthWidth < bottomHeight) {
-            // split the free rect horizontally.***
+            // split the free rect horizontally
             double x = freeRect.getMinX() + placedRect.getWidth();
             double y = freeRect.getMinY();
             GaiaRectangle freeRect1 = new GaiaRectangle(x, y, x + rigthWidth, y + placedRect.getHeight());
@@ -139,7 +141,7 @@ public class GillotinePacker {
             freeRectangles.add(freeRect1);
             freeRectangles.add(freeRect2);
         } else {
-            // split the free rect vertically.***
+            // split the free rect vertically
             double x = freeRect.getMinX();
             double y = freeRect.getMinY() + placedRect.getHeight();
             GaiaRectangle freeRect1 = new GaiaRectangle(x, y, x + placedRect.getWidth(), y + bottomHeight);

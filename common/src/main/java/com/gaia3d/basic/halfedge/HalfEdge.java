@@ -28,7 +28,7 @@ public class HalfEdge implements Serializable {
     private int nextId = -1;
     private int startVertexId = -1;
     private int faceId = -1;
-    private int classifyId = -1; // auxiliary variable.***
+    private int classifyId = -1; // auxiliary variable
 
     public void setStartVertex(HalfEdgeVertex startVertex) {
         this.startVertex = startVertex;
@@ -170,8 +170,8 @@ public class HalfEdge implements Serializable {
     }
 
     public boolean isDegeneratedByPositions() {
-        double squaredLength = this.getSquaredLength();
-        return squaredLength < 0.0000001;
+        double length = this.getLength();
+        return length < 0.0001;
     }
 
     public void breakRelations() {
@@ -221,9 +221,7 @@ public class HalfEdge implements Serializable {
     }
 
     public boolean getIntersectionByPlane(PlaneType planeType, Vector3d planePosition, HalfEdgeVertex resultIntesectionVertex, double error) {
-        //**************************************************************
-        // Note : for OBLIQUE planes, override this method.
-        //**************************************************************
+        // for OBLIQUE planes, override this method.
         boolean intersection = false;
 
         if (planeType == PlaneType.XY) {
@@ -256,7 +254,15 @@ public class HalfEdge implements Serializable {
             return false;
         }
 
-        // check if the halfEdge is parallel to the plane
+//        // check if the halfEdge is parallel to the plane
+//        Vector3d hedgeDir = this.getVector(null);
+//        hedgeDir.normalize();
+//        Vector3d planeNormal = new Vector3d(0, 0, 1);
+//        double dot = hedgeDir.dot(planeNormal);
+//        double angDeg = Math.toDegrees(Math.acos(dot));
+//        if (angDeg > 70.0) {
+//            return false;
+//        }
         if (Math.abs(startVertexPosition.z - endVertexPosition.z) < error) {
             return false;
         }
@@ -266,9 +272,11 @@ public class HalfEdge implements Serializable {
         resultIntersectionPoint.set(startVertexPosition.x + t * (endVertexPosition.x - startVertexPosition.x), startVertexPosition.y + t * (endVertexPosition.y - startVertexPosition.y), planePosition.z);
 
         // check if the intersection point is in the range of the halfEdge
-        if (resultIntersectionPoint.x < Math.min(startVertexPosition.x, endVertexPosition.x) - error) {
-            return false;
-        } else if (resultIntersectionPoint.x > Math.max(startVertexPosition.x, endVertexPosition.x) + error) {
+        // check z
+        double z = resultIntersectionPoint.z;
+        double minZ = Math.min(startVertex.getPosition().z, getEndVertex().getPosition().z);
+        double maxZ = Math.max(startVertex.getPosition().z, getEndVertex().getPosition().z);
+        if (z < minZ + error || z > maxZ - error) {
             return false;
         }
 
@@ -329,6 +337,14 @@ public class HalfEdge implements Serializable {
         }
 
         // check if the halfEdge is parallel to the plane
+//        Vector3d hedgeDir = this.getVector(null);
+//        hedgeDir.normalize();
+//        Vector3d planeNormal = new Vector3d(1, 0, 0);
+//        double dot = hedgeDir.dot(planeNormal);
+//        double angDeg = Math.toDegrees(Math.acos(dot));
+//        if (angDeg > 70.0) {
+//            return false;
+//        }
         if (Math.abs(startVertexPosition.x - endVertexPosition.x) < error) {
             return false;
         }
@@ -340,9 +356,11 @@ public class HalfEdge implements Serializable {
         // t represents
 
         // check if the intersection point is in the range of the halfEdge
-        if (resultIntersectionPoint.y < Math.min(startVertexPosition.y, endVertexPosition.y) - error) {
-            return false;
-        } else if (resultIntersectionPoint.y > Math.max(startVertexPosition.y, endVertexPosition.y) + error) {
+        // check x
+        double x = resultIntersectionPoint.x;
+        double minX = Math.min(startVertex.getPosition().x, getEndVertex().getPosition().x);
+        double maxX = Math.max(startVertex.getPosition().x, getEndVertex().getPosition().x);
+        if (x < minX + error || x > maxX - error) {
             return false;
         }
 
@@ -402,7 +420,15 @@ public class HalfEdge implements Serializable {
             return false;
         }
 
-        // check if the halfEdge is parallel to the plane
+//        // check if the halfEdge is parallel to the plane
+//        Vector3d hedgeDir = this.getVector(null);
+//        hedgeDir.normalize();
+//        Vector3d planeNormal = new Vector3d(0, 1, 0);
+//        double dot = hedgeDir.dot(planeNormal);
+//        double angDeg = Math.toDegrees(Math.acos(dot));
+//        if (angDeg > 70.0) {
+//            return false;
+//        }
         if (Math.abs(startVertexPosition.y - endVertexPosition.y) < error) {
             return false;
         }
@@ -412,9 +438,11 @@ public class HalfEdge implements Serializable {
         resultIntersectionPoint.set(startVertexPosition.x + t * (endVertexPosition.x - startVertexPosition.x), planePosition.y, startVertexPosition.z + t * (endVertexPosition.z - startVertexPosition.z));
 
         // check if the intersection point is in the range of the halfEdge
-        if (resultIntersectionPoint.x < Math.min(startVertexPosition.x, endVertexPosition.x) - error) {
-            return false;
-        } else if (resultIntersectionPoint.x > Math.max(startVertexPosition.x, endVertexPosition.x) + error) {
+        // check y
+        double y = resultIntersectionPoint.y;
+        double minY = Math.min(startVertex.getPosition().y, getEndVertex().getPosition().y);
+        double maxY = Math.max(startVertex.getPosition().y, getEndVertex().getPosition().y);
+        if (y < minY + error || y > maxY - error) {
             return false;
         }
 
@@ -508,4 +536,54 @@ public class HalfEdge implements Serializable {
             throw new RuntimeException(e);
         }
     }
+
+    public boolean intersectsPlane(PlaneType planeType, Vector3d planePosition, double error) {
+        Vector3d startVertexPosition = startVertex.getPosition();
+        Vector3d endVertexPosition = getEndVertex().getPosition();
+
+        // 1rst, check if the startPoint or endPoint touches the plane
+        if (planeType == PlaneType.XY) {
+            if (Math.abs(startVertexPosition.z - planePosition.z) < error) {
+                return false;
+            } else if (Math.abs(endVertexPosition.z - planePosition.z) < error) {
+                return false;
+            }
+        }
+        else if (planeType == PlaneType.YZ) {
+            if (Math.abs(startVertexPosition.x - planePosition.x) < error) {
+                return false;
+            } else if (Math.abs(endVertexPosition.x - planePosition.x) < error) {
+                return false;
+            }
+        }
+        else if (planeType == PlaneType.XZ) {
+            if (Math.abs(startVertexPosition.y - planePosition.y) < error) {
+                return false;
+            } else if (Math.abs(endVertexPosition.y - planePosition.y) < error) {
+                return false;
+            }
+        }
+
+        if (planeType == PlaneType.XY) {
+            // check if startZ and endZ are on the same side of the plane
+            if ((startVertexPosition.z - planePosition.z) * (endVertexPosition.z - planePosition.z) > 0) {
+                return false;
+            }
+        }
+        else if (planeType == PlaneType.YZ) {
+            // check if startX and endX are on the same side of the plane
+            if ((startVertexPosition.x - planePosition.x) * (endVertexPosition.x - planePosition.x) > 0) {
+                return false;
+            }
+        }
+        else if (planeType == PlaneType.XZ) {
+            // check if startY and endY are on the same side of the plane
+            if ((startVertexPosition.y - planePosition.y) * (endVertexPosition.y - planePosition.y) > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 }
