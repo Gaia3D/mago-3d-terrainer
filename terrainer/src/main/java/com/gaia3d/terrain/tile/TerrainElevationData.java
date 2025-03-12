@@ -104,10 +104,6 @@ public class TerrainElevationData {
                 this.coverage.dispose(true);
                 this.coverage = null;
             }
-
-            if (gaiaGeoTiffManager != null) {
-                gaiaGeoTiffManager.deleteObjects();
-            }
         }
 
         if (raster != null) {

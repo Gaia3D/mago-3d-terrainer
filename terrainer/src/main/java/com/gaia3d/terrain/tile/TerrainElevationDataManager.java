@@ -109,6 +109,29 @@ public class TerrainElevationDataManager {
 
     public void makeAllTileWgs84Raster(TileRange tileRange, TileWgs84Manager tileWgs84Manager) {
         List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
+
+        // 1rst, delete from the mapIndicesTileRaster the tiles that are not in the tileIndicesList.***
+        List<String> tileIndicesStringList = new ArrayList<>(mapIndicesTileRaster.keySet());
+        int reusedRasterTilesCount = 0;
+        for (String tileIndicesString : tileIndicesStringList) {
+            boolean isExist = false;
+            for (TileIndices tileIndices : tileIndicesList) {
+                if (tileIndicesString.equals(tileIndices.getString())) {
+                    isExist = true;
+                    reusedRasterTilesCount++;
+                    break;
+                }
+            }
+
+            if (!isExist) {
+                TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndicesString);
+                tileWgs84Raster.deleteObjects();
+                mapIndicesTileRaster.remove(tileIndicesString);
+            }
+        }
+
+        log.info("ReusedRasterTilesCount = {}", reusedRasterTilesCount + " / " + mapIndicesTileRaster.size());
+
         for (TileIndices tileIndices : tileIndicesList) {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
             if (tileWgs84Raster == null) {

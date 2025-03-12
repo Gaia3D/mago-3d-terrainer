@@ -37,18 +37,19 @@ public class GaiaGeoTiffManager {
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
         if (mapPathGridCoverage2d.containsKey(geoTiffFilePath)) {
+            log.info("ReUsing the GeoTiff coverage : {}", geoTiffFilePath);
             return mapPathGridCoverage2d.get(geoTiffFilePath);
         }
 
         if (mapGeoTiffToGeoTiff4326.containsKey(geoTiffFilePath)) {
             String geoTiff4326FilePath = mapGeoTiffToGeoTiff4326.get(geoTiffFilePath);
             if (mapPathGridCoverage2d.containsKey(geoTiff4326FilePath)) {
+                log.info("ReUsing the GeoTiff coverage 4326: {}", geoTiffFilePath);
                 return mapPathGridCoverage2d.get(geoTiff4326FilePath);
             }
         }
 
-        int gridCoverage2dCount = mapPathGridCoverage2d.size();
-        if (gridCoverage2dCount > 0) {
+        while (mapPathGridCoverage2d.size() > 3) {
             // delete the first one
             String firstKey = mapPathGridCoverage2d.keySet().iterator().next();
             GridCoverage2D firstCoverage = mapPathGridCoverage2d.get(firstKey);

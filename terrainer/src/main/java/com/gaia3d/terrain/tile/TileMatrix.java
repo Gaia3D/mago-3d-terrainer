@@ -860,7 +860,5 @@ public class TileMatrix {
                 finished = true;
             }
         }
-
-        this.manager.getTerrainElevationDataManager().deleteTileRaster();
     }
 }
