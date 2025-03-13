@@ -18,10 +18,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 @Setter
@@ -34,6 +31,7 @@ public class GaiaGeoTiffManager {
     private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
     private Map<String, Vector2i> mapPathGridCoverage2dSize = new HashMap<>();
     private Map<String, String> mapGeoTiffToGeoTiff4326 = new HashMap<>();
+    private List<String> pathList = new ArrayList<>(); // used to delete the oldest coverage
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
         if (mapPathGridCoverage2d.containsKey(geoTiffFilePath)) {
@@ -49,12 +47,19 @@ public class GaiaGeoTiffManager {
             }
         }
 
-        while (mapPathGridCoverage2d.size() > 3) {
-            // delete the first one
-            String firstKey = mapPathGridCoverage2d.keySet().iterator().next();
-            GridCoverage2D firstCoverage = mapPathGridCoverage2d.get(firstKey);
-            firstCoverage.dispose(true);
-            mapPathGridCoverage2d.remove(firstKey);
+        while (mapPathGridCoverage2d.size() > 4) {
+            // delete the old coverage. Check the pathList. the 1rst is the oldest
+            String oldestPath = pathList.get(0);
+            GridCoverage2D oldestCoverage = mapPathGridCoverage2d.get(oldestPath);
+            oldestCoverage.dispose(true);
+            mapPathGridCoverage2d.remove(oldestPath);
+            mapPathGridCoverage2dSize.remove(oldestPath);
+            pathList.remove(0);
+
+//            String firstKey = mapPathGridCoverage2d.keySet().iterator().next();
+//            GridCoverage2D firstCoverage = mapPathGridCoverage2d.get(firstKey);
+//            firstCoverage.dispose(true);
+//            mapPathGridCoverage2d.remove(firstKey);
         }
 
         log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
@@ -70,6 +75,7 @@ public class GaiaGeoTiffManager {
 
         // save the coverage
         mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
+        pathList.add(geoTiffFilePath);
 
         // save the width and height of the coverage
         GridGeometry gridGeometry = coverage.getGridGeometry();

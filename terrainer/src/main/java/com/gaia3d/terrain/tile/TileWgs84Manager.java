@@ -205,7 +205,6 @@ public class TileWgs84Manager {
                 TileRange expandedTilesRange = subDividedTilesRange.expand1();
                 this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
                 if (this.geoTiffFilesCount > 1) {
-                    //this.terrainElevationDataManager.deleteGeoTiffManager();
                     this.terrainElevationDataManager.deleteCoverage();
                 }
 
@@ -217,10 +216,8 @@ public class TileWgs84Manager {
                 tileMatrix.deleteObjects();
 
                 if (this.geoTiffFilesCount > 1) {
-                    //this.terrainElevationDataManager.deleteGeoTiffManager();
                     this.terrainElevationDataManager.deleteCoverage();
                 }
-                //this.terrainElevationDataManager.deleteTileRaster();
             }
 
             this.terrainElevationDataManager.deleteGeoTiffManager();

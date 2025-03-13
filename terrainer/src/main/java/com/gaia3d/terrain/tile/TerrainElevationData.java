@@ -120,6 +120,10 @@ public class TerrainElevationData {
                 log.error("Error:", e);
             }
 
+            if (this.noDataContainer == null && coverage != null) {
+                this.noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+            }
+
             if (noDataContainer != null) {
                 double nodata = noDataContainer.getAsSingleValue();
                 if (value == nodata) {

@@ -112,6 +112,7 @@ public class TerrainElevationDataManager {
 
         // 1rst, delete from the mapIndicesTileRaster the tiles that are not in the tileIndicesList.***
         List<String> tileIndicesStringList = new ArrayList<>(mapIndicesTileRaster.keySet());
+        int initialSize = mapIndicesTileRaster.size();
         int reusedRasterTilesCount = 0;
         for (String tileIndicesString : tileIndicesStringList) {
             boolean isExist = false;
@@ -130,7 +131,7 @@ public class TerrainElevationDataManager {
             }
         }
 
-        log.info("ReusedRasterTilesCount = {}", reusedRasterTilesCount + " / " + mapIndicesTileRaster.size());
+        log.info("ReusedRasterTilesCount = {}", reusedRasterTilesCount + " / " + initialSize);
 
         for (TileIndices tileIndices : tileIndicesList) {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
@@ -324,66 +325,6 @@ public class TerrainElevationDataManager {
         for (String folderName : folderNames) {
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
             loadAllGeoTiff(folderPath, standardizedGeoTiffFiles);
-        }
-    }
-
-    private void loadAllGeoTiff_original(String terrainElevationDataFolderPath) throws FactoryException, TransformException {
-        // recursively load all geoTiff files
-        geoTiffFileNames.clear();
-        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
-
-        if (myGaiaGeoTiffManager == null) {
-            myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
-        }
-        GeometryFactory gf = new GeometryFactory();
-
-        if (rootTerrainElevationDataQuadTree == null) {
-            rootTerrainElevationDataQuadTree = new TerrainElevationDataQuadTree(null);
-        }
-
-        // now load all geotiff and make geotiff geoExtension data
-        GridCoverage2D gridCoverage2D = null;
-        String geoTiffFileName = null;
-        String geoTiffFilePath = null;
-
-        CoordinateReferenceSystem crsTarget = null;
-        CoordinateReferenceSystem crsWgs84 = null;
-        MathTransform targetToWgs = null;
-
-        Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
-
-        for (String memSaveGeoTiffFileName : geoTiffFileNames) {
-            geoTiffFileName = memSaveGeoTiffFileName;
-            geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
-
-            // check if this geoTiff is usable
-            if (mapNoUsableGeotiffPaths.containsKey(geoTiffFilePath)) {
-                continue;
-            }
-
-            TerrainElevationData terrainElevationData = new TerrainElevationData(this);
-
-            gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
-            terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
-
-            crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
-            crsWgs84 = CRS.decode("EPSG:4326", true);
-            targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
-
-            GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, terrainElevationData.getGeographicExtension());
-            terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
-
-            rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
-            gridCoverage2D.dispose(true);
-
-        }
-
-        // now check if exist folders inside the terrainElevationDataFolderPath
-        List<String> folderNames = new ArrayList<>();
-        FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
-        for (String folderName : folderNames) {
-            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
-            loadAllGeoTiff_original(folderPath);
         }
     }
 
