@@ -63,7 +63,10 @@ public class HalfEdgeMesh implements Serializable {
             resultBBox = new GaiaBoundingBox();
         }
         for (HalfEdgePrimitive primitive : primitives) {
-            resultBBox = primitive.calculateBoundingBox(resultBBox);
+            GaiaBoundingBox primitiveBBox = primitive.calculateBoundingBox(null);
+            if (primitiveBBox != null) {
+                resultBBox.addBoundingBox(primitiveBBox);
+            }
         }
         return resultBBox;
     }
@@ -99,7 +102,7 @@ public class HalfEdgeMesh implements Serializable {
                 primitive.writeFile(outputStream);
             }
         } catch (Exception e) {
-            log.error("Error Log : ", e);
+            log.error("[ERROR] Error Log : ", e);
         }
     }
 
@@ -112,7 +115,7 @@ public class HalfEdgeMesh implements Serializable {
                 primitives.add(primitive);
             }
         } catch (Exception e) {
-            log.error("Error Log : ", e);
+            log.error("[ERROR] Error Log : ", e);
         }
     }
 
@@ -139,7 +142,7 @@ public class HalfEdgeMesh implements Serializable {
         for (HalfEdgePrimitive primitive : primitives) {
             HalfEdgePrimitive clonedPrimitive = primitive.cloneByClassifyId(classifyId);
             if (clonedPrimitive != null) {
-                if(clonedMesh == null) {
+                if (clonedMesh == null) {
                     clonedMesh = new HalfEdgeMesh();
                 }
                 clonedMesh.primitives.add(clonedPrimitive);
@@ -159,6 +162,12 @@ public class HalfEdgeMesh implements Serializable {
     public void scissorTextures(List<GaiaMaterial> materials) {
         for (HalfEdgePrimitive primitive : primitives) {
             primitive.scissorTextures(materials);
+        }
+    }
+
+    public void scissorTexturesByMotherScene(List<GaiaMaterial> thisMaterials, List<GaiaMaterial> motherMaterials) {
+        for (HalfEdgePrimitive primitive : primitives) {
+            primitive.scissorTexturesByMotherScene(thisMaterials, motherMaterials);
         }
     }
 
@@ -212,12 +221,6 @@ public class HalfEdgeMesh implements Serializable {
         }
     }
 
-    public void splitFacesByBestPlanesToProject() {
-        for (HalfEdgePrimitive primitive : primitives) {
-            primitive.splitFacesByBestPlanesToProject();
-        }
-    }
-
     public void extractPrimitives(List<HalfEdgePrimitive> resultPrimitives) {
         resultPrimitives.addAll(primitives);
     }
@@ -229,4 +232,52 @@ public class HalfEdgeMesh implements Serializable {
     }
 
 
+    public double calculateArea() {
+        double area = 0;
+        for (HalfEdgePrimitive primitive : primitives) {
+            area += primitive.calculateArea();
+        }
+        return area;
+    }
+
+
+    public int deleteDegeneratedFaces() {
+        int deletedFacesCount = 0;
+        for (HalfEdgePrimitive primitive : primitives) {
+            deletedFacesCount += primitive.deleteDegeneratedFaces();
+        }
+        return deletedFacesCount;
+    }
+
+    public void translateTexCoordsToPositiveQuadrant() {
+        for (HalfEdgePrimitive primitive : primitives) {
+            primitive.translateTexCoordsToPositiveQuadrant();
+        }
+    }
+
+    public void updateVerticesList() {
+        for (HalfEdgePrimitive primitive : primitives) {
+            primitive.updateVerticesList();
+        }
+    }
+
+    public void updateFacesList() {
+        for (HalfEdgePrimitive primitive : primitives) {
+            primitive.updateFacesList();
+        }
+    }
+
+    public int getFacesCount() {
+        int facesCount = 0;
+        for (HalfEdgePrimitive primitive : primitives) {
+            facesCount += primitive.getFacesCount();
+        }
+        return facesCount;
+    }
+
+    public void getIntersectedFacesByPlane(PlaneType planeType, Vector3d planePosition, List<HalfEdgeFace> resultFaces, double error) {
+        for (HalfEdgePrimitive primitive : primitives) {
+            primitive.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
+        }
+    }
 }

@@ -292,9 +292,7 @@ public class GaiaMesh extends MeshStructure implements Serializable {
         if (resultPrimitives == null) {
             resultPrimitives = new ArrayList<>();
         }
-        for (GaiaPrimitive primitive : primitives) {
-            resultPrimitives.add(primitive);
-        }
+        resultPrimitives.addAll(primitives);
     }
 
     public void makeTriangleFaces() {
@@ -313,5 +311,13 @@ public class GaiaMesh extends MeshStructure implements Serializable {
         for (GaiaPrimitive primitive : primitives) {
             primitive.makeTriangularFaces();
         }
+    }
+
+    public int getFacesCount() {
+        int facesCount = 0;
+        for (GaiaPrimitive primitive : primitives) {
+            facesCount += primitive.getFacesCount();
+        }
+        return facesCount;
     }
 }

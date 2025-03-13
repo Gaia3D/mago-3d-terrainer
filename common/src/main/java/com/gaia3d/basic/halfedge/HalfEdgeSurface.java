@@ -6,8 +6,7 @@ import com.gaia3d.basic.geometry.octree.HalfEdgeOctree;
 import com.gaia3d.basic.model.*;
 import com.gaia3d.basic.types.AttributeType;
 import com.gaia3d.basic.types.TextureType;
-import com.gaia3d.util.FileUtils;
-import com.gaia3d.util.ImageUtils;
+import com.gaia3d.util.GaiaTextureUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -18,18 +17,19 @@ import org.joml.Vector3d;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.Double.isNaN;
 
+@SuppressWarnings("ALL")
 @Slf4j
 @Setter
 @Getter
 public class HalfEdgeSurface implements Serializable {
-    // auxiliary variables.***
-    Map<AttributeType, HalfEdgeRenderableBuffer> mapAttribTypeRenderableBuffer; // GL attributes.***
+    // auxiliary variables
+    Map<AttributeType, HalfEdgeRenderableBuffer> mapAttribTypeRenderableBuffer; // GL attributes
     private List<HalfEdge> halfEdges = new ArrayList<>();
     private List<HalfEdgeVertex> vertices = new ArrayList<>();
     private List<HalfEdgeFace> faces = new ArrayList<>();
@@ -55,7 +55,7 @@ public class HalfEdgeSurface implements Serializable {
             }
         }
 
-        // make twinables lists.***
+        // make twinables lists
         Map<HalfEdge, List<HalfEdge>> mapHalfEdgeTwinables = new HashMap<>();
         Map<HalfEdge, HalfEdge> mapRemovedHalfEdges = new HashMap<>();
         int vertexCount = vertices.size();
@@ -83,7 +83,7 @@ public class HalfEdgeSurface implements Serializable {
                     }
                     if (incomingEdge.isTwineableByPointers(outingEdge)) {
                         List<HalfEdge> twinables = mapHalfEdgeTwinables.computeIfAbsent(outingEdge, k2 -> new ArrayList<>());
-//                        if(!twinables.isEmpty())
+//                        if (!twinables.isEmpty())
 //                        {
 //                            mapRemovedHalfEdges.put(incomingEdge, incomingEdge);
 //                        }
@@ -97,7 +97,7 @@ public class HalfEdgeSurface implements Serializable {
             }
         }
 
-        // now set twins.***
+        // now set twins
         Set<HalfEdge> halfEdgesSet2 = mapHalfEdgeTwinables.keySet();
         for (HalfEdge halfEdge : halfEdgesSet2) {
             if (halfEdge.hasTwin()) {
@@ -115,7 +115,7 @@ public class HalfEdgeSurface implements Serializable {
             }
         }
 
-        // now collect hedges that has not twin.***
+        // now collect hedges that has not twin
         List<HalfEdge> singleHalfEdges = new ArrayList<>();
         int hedgesCount = halfEdges.size();
         for (int i = 0; i < hedgesCount; i++) {
@@ -176,24 +176,6 @@ public class HalfEdgeSurface implements Serializable {
         }
     }
 
-    public boolean TEST_addRandomPositionToVertices() {
-        int vertexCount = vertices.size();
-        double offset = 2.0;
-        for (int i = 0; i < vertexCount; i++) {
-            HalfEdgeVertex vertex = vertices.get(i);
-            PositionType positionType = vertex.getPositionType();
-            if (positionType != PositionType.INTERIOR) {
-                if (vertex.getPosition() != null) {
-                    //Vector3d randomOffset = new Vector3d(Math.random() * offset, Math.random() * offset, Math.random() * offset);
-                    Vector3d randomOffset = new Vector3d(0.0, 0.0, 40.0);
-                    vertex.getPosition().add(randomOffset);
-                }
-            }
-
-        }
-
-        return true;
-    }
 
     public void calculatePlaneNormals() {
         int facesCount = faces.size();
@@ -232,26 +214,20 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void deleteObjects() {
-        // delete halfEdges.***
-        int halfEdgesCount = halfEdges.size();
-        for (int i = 0; i < halfEdgesCount; i++) {
-            HalfEdge halfEdge = halfEdges.get(i);
+        // delete halfEdges
+        for (HalfEdge halfEdge : halfEdges) {
             halfEdge.breakRelations();
         }
         halfEdges.clear();
 
-        // delete faces.***
-        int facesCount = faces.size();
-        for (int i = 0; i < facesCount; i++) {
-            HalfEdgeFace face = faces.get(i);
+        // delete faces
+        for (HalfEdgeFace face : faces) {
             face.breakRelations();
         }
         faces.clear();
 
-        // delete vertices.***
-        int verticesCount = vertices.size();
-        for (int i = 0; i < verticesCount; i++) {
-            HalfEdgeVertex vertex = vertices.get(i);
+        // delete vertices
+        for (HalfEdgeVertex vertex : vertices) {
             vertex.deleteObjects();
         }
         vertices.clear();
@@ -318,8 +294,8 @@ public class HalfEdgeSurface implements Serializable {
             for (int j = 0; j < verticesCount; j++) {
                 HalfEdgeVertex vertex = vertices.get(j);
 
-                // find the samePosVertices of the vertex in the map.***
-                // loop the keys of the map.***
+                // find the samePosVertices of the vertex in the map
+                // loop the keys of the map
                 for (HalfEdgeVertex vertex2 : vertices) {
                     if (vertex == vertex2) {
                         continue;
@@ -356,156 +332,8 @@ public class HalfEdgeSurface implements Serializable {
         return resultMapFaceToHalfEdges;
     }
 
-    public void doTrianglesReduction_new(double maxDiffAngDeg, double frontierMaxDiffAngDeg, double hedgeMinLength, double maxAspectRatio) {
-        // 1rst, find possible halfEdges to remove.***
-        // Reasons to remove a halfEdge:
-        // 1. The halfEdge is very short. (small length).
-        // 2. All triangles around the startVertex has a similar normal.
-        //----------------------------------------------------------------
-        int originalFacesCount = faces.size();
-        int originalHalfEdgesCount = halfEdges.size();
-        int originalVerticesCount = vertices.size();
-
-        log.info("halfEdgesCount = " + originalHalfEdgesCount);
-        int counterAux = 0;
-        int hedgesCollapsedCount = 0;
-
-        Map<HalfEdge, Vector3d> mapHalfEdgeToInitialDirection = this.getMapHalfEdgeToDirection(null);
-        Map<HalfEdgeVertex, List<HalfEdge>> vertexAllOutingEdgesMap = this.getMapVertexAllOutingEdges(null);
-        Map<HalfEdgeFace, List<HalfEdge>> mapFaceToHalfEdges = this.getMapFaceToHalfEdges(null);
-        Map<HalfEdgeVertex, List<HalfEdgeVertex>> mapVertexToSamePosVertices = this.getMapVertexToSamePosVertices(null);
-
-        // classify vertices.***
-        List<List<HalfEdgeFace>> weldedFacesGroups = getWeldedFacesGroups(null);
-        int weldedFacesGroupsCount = weldedFacesGroups.size();
-        for (int i = 0; i < weldedFacesGroupsCount; i++) {
-            List<HalfEdgeFace> weldedFacesGroup = weldedFacesGroups.get(i);
-            for (HalfEdgeFace face : weldedFacesGroup) {
-                List<HalfEdgeVertex> vertices = face.getVertices(null);
-                for (HalfEdgeVertex vertex : vertices) {
-                    vertex.setClassifyId(i);
-                }
-            }
-        }
-        // end classify vertices.---
-
-//        // set classifying ids for all HEdges.***
-//        int hedgesCount = halfEdges.size();
-//        for (int i = 0; i < hedgesCount; i++) {
-//            HalfEdge halfEdge = halfEdges.get(i);
-//            halfEdge.setClassifyId(0);
-//        }
-
-        calculatePlaneNormals();
-
-
-        Collections.shuffle(halfEdges);
-
-        double smallHedgeSize = 1.8;
-
-        boolean finished = false;
-        int maxIterations = 50;
-        int iteration = 0;
-        while (!finished && iteration < maxIterations) {
-            boolean collapsed = false;
-            int facesCount = faces.size();
-            for (int i = 0; i < facesCount; i++) {
-                HalfEdgeFace face = faces.get(i);
-                if (face.getStatus() == ObjectStatus.DELETED) {
-                    continue;
-                }
-
-//                if (face.isDegenerated()) {
-//                    continue;
-//                }
-
-                List<HalfEdge> halfEdges = face.getHalfEdgesLoop(null);
-                int halfEdgesCount = halfEdges.size();
-                for (int j = 0; j < halfEdgesCount; j++) {
-                    HalfEdge halfEdge = halfEdges.get(j);
-                    if (halfEdge.getStatus() == ObjectStatus.DELETED) {
-                        continue;
-                    }
-                    if (halfEdge.isDegeneratedByPointers()) {
-                        continue;
-                    }
-//                    if (halfEdge.isApplauseEdge()) {
-//                        //continue;
-//                    }
-
-                    HalfEdgeVertex startVertex = halfEdge.getStartVertex();
-
-                    PositionType positionType = PositionType.INTERIOR;
-                    List<HalfEdge> outingEdges = vertexAllOutingEdgesMap.get(startVertex);
-                    int outingEdgesCount = outingEdges.size();
-                    for (int k = 0; k < outingEdgesCount; k++) {
-                        HalfEdge outingEdge = outingEdges.get(k);
-                        if (!outingEdge.hasTwin()) {
-                            positionType = PositionType.BOUNDARY_EDGE;
-                            break;
-                        }
-                    }
-
-                    if (halfEdge.hasTwin() && positionType == PositionType.BOUNDARY_EDGE) {
-                        continue;
-                    }
-
-                    boolean testDebug = false;
-//                    if (halfEdge.isApplauseEdge()) {
-//                        //continue;
-//                    }
-
-                    if (halfEdge.hasTwin() && positionType == PositionType.INTERIOR) {
-                        if (collapseHalfEdge(halfEdge, i, vertexAllOutingEdgesMap, mapVertexToSamePosVertices, maxDiffAngDeg, frontierMaxDiffAngDeg, hedgeMinLength, maxAspectRatio, smallHedgeSize, testDebug)) {
-                            hedgesCollapsedCount += 6;
-                            counterAux++;
-                            collapsed = true;
-                        }
-                    } else if (!halfEdge.hasTwin() && positionType == PositionType.BOUNDARY_EDGE) {
-                        if (collapseFrontierHalfEdge(halfEdge, i, vertexAllOutingEdgesMap, mapHalfEdgeToInitialDirection, mapVertexToSamePosVertices, maxDiffAngDeg, frontierMaxDiffAngDeg, hedgeMinLength, maxAspectRatio, smallHedgeSize, testDebug)) {
-                            hedgesCollapsedCount += 3;
-                            counterAux++;
-                            collapsed = true;
-                        }
-                    }
-                    if (counterAux >= 2000) {
-                        counterAux = 0;
-                        log.info("halfEdges deleted = " + hedgesCollapsedCount);
-                    }
-                }
-
-            }
-
-            iteration++;
-
-            if (!collapsed) {
-                finished = true;
-            }
-        }
-
-        log.info("*** TOTAL HALFEDGES DELETED = " + hedgesCollapsedCount);
-        log.info("total iteration = " + iteration);
-
-        // delete objects that status is DELETED.***
-        deleteDegeneratedFaces(mapFaceToHalfEdges);
-        deleteNoUsedVertices();
-        this.removeDeletedObjects();
-
-        int finalFacesCount = faces.size();
-        int finalHalfEdgesCount = halfEdges.size();
-        int finalVerticesCount = vertices.size();
-
-        int facesCountDiff = originalFacesCount - finalFacesCount;
-        int halfEdgesCountDiff = originalHalfEdgesCount - finalHalfEdgesCount;
-        int verticesCountDiff = originalVerticesCount - finalVerticesCount;
-
-        log.info("faces % deleted = " + (facesCountDiff * 100.0) / originalFacesCount);
-        log.info("halfEdges % deleted = " + (halfEdgesCountDiff * 100.0) / originalHalfEdgesCount);
-        log.info("vertices % deleted = " + (verticesCountDiff * 100.0) / originalVerticesCount);
-    }
-
     public void doTrianglesReduction(DecimateParameters decimateParameters) {
-        // 1rst, find possible halfEdges to remove.***
+        // 1rst, find possible halfEdges to remove
         // Reasons to remove a halfEdge:
         // 1. The halfEdge is very short. (small length).
         // 2. All triangles around the startVertex has a similar normal.
@@ -544,7 +372,7 @@ public class HalfEdgeSurface implements Serializable {
 
         mapHalfEdgeToInitialDirection = this.getMapHalfEdgeToDirection(mapHalfEdgeToInitialDirection);
 
-        // classify vertices.***
+        // classify vertices
         weldedFacesGroups = getWeldedFacesGroups(weldedFacesGroups);
         int weldedFacesGroupsCount = weldedFacesGroups.size();
         for (int i = 0; i < weldedFacesGroupsCount; i++) {
@@ -561,7 +389,7 @@ public class HalfEdgeSurface implements Serializable {
 
         while (!finished && iteration < maxIterations) {
 
-            // clear maps.***
+            // clear maps
             vertexAllOutingEdgesMap.clear();
             mapFaceToHalfEdges.clear();
             mapVertexToSamePosVertices.clear();
@@ -642,7 +470,7 @@ public class HalfEdgeSurface implements Serializable {
 
             iteration++;
 
-            // delete objects that status is DELETED.***
+            // delete objects that status is DELETED
             deleteDegeneratedFaces(mapFaceToHalfEdges);
             deleteNoUsedVertices();
             this.removeDeletedObjects();
@@ -693,7 +521,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void doTrianglesReductionOneIteration(DecimateParameters decimateParameters) {
-        // 1rst, find possible halfEdges to remove.***
+        // 1rst, find possible halfEdges to remove
         // Reasons to remove a halfEdge:
         // 1. The halfEdge is very short. (small length).
         // 2. All triangles around the startVertex has a similar normal.
@@ -731,7 +559,7 @@ public class HalfEdgeSurface implements Serializable {
 
         mapHalfEdgeToInitialDirection = this.getMapHalfEdgeToDirection(mapHalfEdgeToInitialDirection);
 
-        // classify vertices.***
+        // classify vertices
         weldedFacesGroups = getWeldedFacesGroups(weldedFacesGroups);
         int weldedFacesGroupsCount = weldedFacesGroups.size();
         for (int i = 0; i < weldedFacesGroupsCount; i++) {
@@ -760,14 +588,14 @@ public class HalfEdgeSurface implements Serializable {
 //            double maxLength = resultHalfEdgesSortedByLength.get(halfEdgesCount - 1).getLength();
 //            hedgeMinLengthCurrent = (maxLength - minLength) * 0.1;
 
-            // classify halfEdges.***
+            // classify halfEdges
             int hedgesCount = resultHalfEdgesSortedByLength.size();
             for (int i = 0; i < hedgesCount; i++) {
                 HalfEdge halfEdge = resultHalfEdgesSortedByLength.get(i);
                 halfEdge.setClassifyId(0);
             }
 
-            // clear maps.***
+            // clear maps
             vertexAllOutingEdgesMap.clear();
             mapFaceToHalfEdges.clear();
             mapVertexToSamePosVertices.clear();
@@ -838,7 +666,7 @@ public class HalfEdgeSurface implements Serializable {
 //                    log.info("iteration = " + iteration + " frontierHedges deleted = " + frontierHedgesCollapsedCount);
 //                }
 
-//                if(hedgesCollapsedCount + frontierHedgesCollapsedCount >= maxCollapseCount)
+//                if (hedgesCollapsedCount + frontierHedgesCollapsedCount >= maxCollapseCount)
 //                {
 //                    finished = true;
 //                    break;
@@ -859,12 +687,11 @@ public class HalfEdgeSurface implements Serializable {
 
             iteration++;
 
-            // delete objects that status is DELETED.***
+            // delete objects that status is DELETED
             deleteDegeneratedFaces(mapFaceToHalfEdges);
             deleteNoUsedVertices();
             this.removeDeletedObjects();
             this.weldVertices(1e-4, false, false, false, false);
-
         }
 
 
@@ -913,11 +740,23 @@ public class HalfEdgeSurface implements Serializable {
         return deletedCount;
     }
 
+    public int deleteDegeneratedFaces() {
+        int facesCount = faces.size();
+        int deletedCount = 0;
+        for (int i = 0; i < facesCount; i++) {
+            HalfEdgeFace face = faces.get(i);
+            if (face.isDegenerated()) {
+                face.setStatus(ObjectStatus.DELETED);
+                deletedCount++;
+            }
+        }
+
+        return deletedCount;
+    }
+
     private int deleteNoUsedVertices() {
-        //*****************************************************************************************
-        // Sometimes, there are no used vertices.***
-        // The no used vertices must be deleted (vertex indices of the faces will be modified!).***
-        //*****************************************************************************************
+        // Sometimes, there are no used vertices
+        // The no used vertices must be deleted (vertex indices of the faces will be modified!)
         Map<HalfEdgeVertex, HalfEdgeVertex> mapUsedVertices = new HashMap<>();
         int halfEdgesCount = halfEdges.size();
         for (int i = 0; i < halfEdgesCount; i++) {
@@ -946,8 +785,8 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void removeDeletedObjects() {
-        // delete objects that status is DELETED.***
-        // delete halfEdges that status is DELETED.***
+        // delete objects that status is DELETED
+        // delete halfEdges that status is DELETED
         int halfEdgesCount = this.halfEdges.size();
         List<HalfEdge> copyHalfEdges = new ArrayList<>(this.halfEdges);
         this.halfEdges.clear();
@@ -961,7 +800,7 @@ public class HalfEdgeSurface implements Serializable {
         }
         copyHalfEdges.clear();
 
-        // delete vertices that status is DELETED.***
+        // delete vertices that status is DELETED
         int verticesCount = this.vertices.size();
         List<HalfEdgeVertex> copyVertices = new ArrayList<>(this.vertices);
         this.vertices.clear();
@@ -975,7 +814,7 @@ public class HalfEdgeSurface implements Serializable {
         }
         copyVertices.clear();
 
-        // delete faces that status is DELETED.***
+        // delete faces that status is DELETED
         int facesCount = this.faces.size();
         List<HalfEdgeFace> copyFaces = new ArrayList<>(this.faces);
         this.faces.clear();
@@ -1029,7 +868,6 @@ public class HalfEdgeSurface implements Serializable {
         for (HalfEdgeVertex vertex : vertexSet) {
             List<HalfEdge> outingEdgesByMap = vertexAllOutingEdgesMap.get(vertex);
             if (outingEdgesByMap == null || outingEdgesByMap.isEmpty()) {
-                //log.error("HalfEdgeSurface.makeVertexAllOutingEdgesMap() : outingEdges == null.");
                 continue;
             }
             int outingEdgesByMapCount = outingEdgesByMap.size();
@@ -1038,7 +876,7 @@ public class HalfEdgeSurface implements Serializable {
             int outingEdgesByVertexCount = outingHEdgesByVertex.size();
 
             if (outingEdgesByMapCount != outingEdgesByVertexCount) {
-                // make a map of outingEdgesByVertex.***
+                // make a map of outingEdgesByVertex
                 Map<HalfEdge, HalfEdge> outingEdgesByVertexMap = new HashMap<>();
                 for (int i = 0; i < outingEdgesByVertexCount; i++) {
                     HalfEdge hedge = outingHEdgesByVertex.get(i);
@@ -1051,12 +889,12 @@ public class HalfEdgeSurface implements Serializable {
                     outingEdgesByVertexMap.put(hedge, hedge);
                 }
 
-                // separate in 2 hedgesList.***
+                // separate in 2 hedgesList
                 List<HalfEdge> outingEdgesByMap2 = new ArrayList<>();
                 List<HalfEdge> outingEdgesByVertex2 = new ArrayList<>();
                 for (int i = 0; i < outingEdgesByMapCount; i++) {
                     HalfEdge hedge = outingEdgesByMap.get(i);
-                    // check if the hedge is in the outingEdgesByVertexMap.***
+                    // check if the hedge is in the outingEdgesByVertexMap
                     if (outingEdgesByVertexMap.get(hedge) == null) {
                         outingEdgesByMap2.add(hedge);
                     } else {
@@ -1064,7 +902,7 @@ public class HalfEdgeSurface implements Serializable {
                     }
                 }
 
-                // now, for outingEdgesByMap2, change the vertex for a new vertex.***
+                // now, for outingEdgesByMap2, change the vertex for a new vertex
                 HalfEdgeVertex newVertex = new HalfEdgeVertex();
                 this.getVertices().add(newVertex);
                 newVertex.copyFrom(vertex);
@@ -1127,10 +965,10 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void checkSandClockFaces() {
-        // This function returns a map of all halfEdges that startVertex is the key.***
+        // This function returns a map of all halfEdges that startVertex is the key
         Map<HalfEdgeVertex, List<HalfEdge>> vertexAllOutingEdgesMap = this.getMapVertexAllOutingEdges(null);
 
-        // Now, for each outingHEdgesList, check if they are connected.***
+        // Now, for each outingHEdgesList, check if they are connected
         int maxIterations = vertexAllOutingEdgesMap.size() * 10;
         int iteration = 0;
         boolean finished = false;
@@ -1144,144 +982,6 @@ public class HalfEdgeSurface implements Serializable {
             }
             iteration++;
         }
-    }
-
-    public boolean checkVertices() {
-        int vertexCount = vertices.size();
-        for (int i = 0; i < vertexCount; i++) {
-            HalfEdgeVertex vertex = vertices.get(i);
-            if (vertex.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-            if (vertex.getOutingHalfEdge() == null) {
-                log.error("HalfEdgeSurface.checkVertices() : vertex.getOutingHalfEdge() == null.");
-                return false;
-            }
-            if (vertex.getOutingHalfEdge().getStatus() == ObjectStatus.DELETED) {
-                log.error("HalfEdgeSurface.checkVertices() : vertex.getOutingHalfEdge() is deleted!.");
-                return false;
-            }
-
-//            PositionType positionType = vertex.getPositionType();
-//            if(positionType == PositionType.INTERIOR)
-//            {
-//                List<HalfEdge> outingEdges = vertex.getOutingHalfEdges(null);
-//                if(outingEdges == null)
-//                {
-//                    log.error("HalfEdgeSurface.checkVertices() : outingEdges == null.");
-//                    return false;
-//                }
-//
-//                int outingEdgesCount = outingEdges.size();
-//                if(outingEdgesCount < 3)
-//                {
-//                    HalfEdge hedge = outingEdges.get(0);
-//                    HalfEdge twin = hedge.getTwin();
-//                    HalfEdgeFace face = hedge.getFace();
-//                    HalfEdgeFace twinFace = twin.getFace();
-//                }
-//            }
-        }
-        return true;
-    }
-
-    public boolean TEST_checkEqualHEdges() {
-        Map<HalfEdgeVertex, Map<HalfEdgeVertex, List<HalfEdge>>> mapStartVertexToEndVertexToHedgesList = new HashMap<>();
-        int hedgesCount = halfEdges.size();
-        for (int i = 0; i < hedgesCount; i++) {
-            HalfEdge hedge = halfEdges.get(i);
-            if (hedge.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-
-            HalfEdgeVertex startVertex = hedge.getStartVertex();
-            HalfEdgeVertex endVertex = hedge.getEndVertex();
-            Map<HalfEdgeVertex, List<HalfEdge>> mapEndVertexToHedgesList = mapStartVertexToEndVertexToHedgesList.computeIfAbsent(startVertex, k -> new HashMap<>());
-            List<HalfEdge> hedgesList = mapEndVertexToHedgesList.computeIfAbsent(endVertex, k -> new ArrayList<>());
-            hedgesList.add(hedge);
-        }
-
-        Map<HalfEdgeVertex, List<HalfEdgeFace>> mapVertexAllFaces = this.getMapVertexAllFaces(null);
-
-        // now, check if exist some list that has more than one halfEdge.***
-        Set<HalfEdgeVertex> startVertexSet = mapStartVertexToEndVertexToHedgesList.keySet();
-        for (HalfEdgeVertex startVertex : startVertexSet) {
-            Map<HalfEdgeVertex, List<HalfEdge>> mapEndVertexToHedgesList = mapStartVertexToEndVertexToHedgesList.get(startVertex);
-            Set<HalfEdgeVertex> endVertexSet = mapEndVertexToHedgesList.keySet();
-            for (HalfEdgeVertex endVertex : endVertexSet) {
-                List<HalfEdge> hedgesList = mapEndVertexToHedgesList.get(endVertex);
-                if (hedgesList.size() > 1) {
-                    log.error("HalfEdgeSurface.checkEqualHEdges() : hedgesList.size() == " + hedgesList.size());
-                    int equalHEdgesCount = hedgesList.size();
-                    List<HalfEdge> startVertexOutingHEdges = startVertex.getOutingHalfEdges(null);
-                    int startVertexOutingHEdgesCount = startVertexOutingHEdges.size();
-                    List<HalfEdge> endVertexOutingHEdges = endVertex.getOutingHalfEdges(null);
-                    int endVertexOutingHEdgesCount = endVertexOutingHEdges.size();
-                    List<HalfEdge> startVertexIncomingHEdges = startVertex.getIncomingHalfEdges(null);
-                    int startVertexIncomingHEdgesCount = startVertexIncomingHEdges.size();
-                    List<HalfEdge> endVertexIncomingHEdges = endVertex.getIncomingHalfEdges(null);
-                    int endVertexIncomingHEdgesCount = endVertexIncomingHEdges.size();
-
-                    List<HalfEdgeFace> startVertexFaces = startVertex.getFaces(null);
-                    List<HalfEdgeFace> endVertexFaces = endVertex.getFaces(null);
-
-                    List<HalfEdgeFace> startVertexFaces2 = mapVertexAllFaces.get(startVertex);
-                    List<HalfEdgeFace> endVertexFaces2 = mapVertexAllFaces.get(endVertex);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public boolean checkFaces() {
-        int facesCount = faces.size();
-        for (int i = 0; i < facesCount; i++) {
-            HalfEdgeFace face = faces.get(i);
-            if (face.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-            if (face.getHalfEdge() == null) {
-                log.error("HalfEdgeSurface.checkFaces() : face.getHalfEdge() == null.");
-                return false;
-            }
-            if (face.getHalfEdge().getStatus() == ObjectStatus.DELETED) {
-                log.error("HalfEdgeSurface.checkFaces() : face.getHalfEdge() is deleted!.");
-                return false;
-            }
-
-            List<HalfEdge> halfEdgesLoop = new ArrayList<>();
-            halfEdgesLoop = face.getHalfEdgesLoop(halfEdgesLoop);
-            int halfEdgesLoopCount = halfEdgesLoop.size();
-            for (int j = 0; j < halfEdgesLoopCount; j++) {
-                HalfEdge halfEdge = halfEdgesLoop.get(j);
-                if (halfEdge.getStatus() == ObjectStatus.DELETED) {
-                    log.error("HalfEdgeSurface.checkFaces() : halfEdge is deleted!.");
-                    return false;
-                }
-                HalfEdgeVertex startVertex = halfEdge.getStartVertex();
-                if (startVertex == null) {
-                    log.error("HalfEdgeSurface.checkFaces() : startVertex == null.");
-                    return false;
-                }
-                if (startVertex.getStatus() == ObjectStatus.DELETED) {
-                    log.error("HalfEdgeSurface.checkFaces() : startVertex is deleted!.");
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    private boolean TEST_check() {
-        int hedgesCount = halfEdges.size();
-        for (int i = 0; i < hedgesCount; i++) {
-            HalfEdge hedge = halfEdges.get(i);
-            if (hedge.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-        }
-        return true;
     }
 
     public boolean collapseFrontierHalfEdge(HalfEdge halfEdge, int iteration, Map<HalfEdgeVertex, List<HalfEdge>> vertexAllOutingEdgesMap, Map<HalfEdge, Vector3d> mapHalfEdgeToInitialDirection, Map<HalfEdgeVertex, List<HalfEdgeVertex>> mapVertexToSamePosVertices, double maxDiffAngDeg, double frontierMaxDiffAngDeg, double hedgeMinLength, double maxAspectRatio, double smallHedgeSize, boolean testDebug) {
@@ -1304,12 +1004,10 @@ public class HalfEdgeSurface implements Serializable {
             outingEdgesOfSamePosVertices.addAll(outingEdges);
         }
 
-        //*****************************************************************************************
-        // Note : if a hedge length < hedgeMinLength, then sure collapse because is very short.***
-        //*****************************************************************************************
+        // Note : if a hedge length < hedgeMinLength, then sure collapse because is very short
 
-        // check if collapse.**************************************************************************************************
-        // In frontier halfEdges, must check the another frontier halfEdges that uses the startVertex.***
+        // check if collapse
+        // In frontier halfEdges, must check the another frontier halfEdges that uses the startVertex
         int outingEdgesOfStartVertexCount = outingEdgesOfSamePosVertices.size();
         if (outingEdgesOfStartVertexCount < 2) {
             return false;
@@ -1338,11 +1036,11 @@ public class HalfEdgeSurface implements Serializable {
                 }
 
                 if (!outingEdge2.hasTwin()) {
-                    // this is a frontier halfEdge.***
+                    // this is a frontier halfEdge
                     HalfEdgeVertex startVertex2 = outingEdge2.getStartVertex();
                     Vector3d startPosition2 = startVertex2.getPosition();
 
-                    // check the angle before and after collapse.***
+                    // check the angle before and after collapse
                     Vector3d v1 = mapHalfEdgeToInitialDirection.get(outingEdge2);
                     v1 = outingEdge2.getVector(v1);
                     v1.normalize();
@@ -1395,7 +1093,7 @@ public class HalfEdgeSurface implements Serializable {
                     outingEdgesOfEndVertex.add(outingEdge);
                     isCollapsed = true;
                 } else {
-                    // must find another endVertex that has the same classifyId.***
+                    // must find another endVertex that has the same classifyId
                     List<HalfEdgeVertex> listVertexEndPos = mapVertexToSamePosVertices.get(endVertex);
                     boolean isFound = false;
                     int listVertexEndPosCount = listVertexEndPos.size();
@@ -1413,13 +1111,13 @@ public class HalfEdgeSurface implements Serializable {
                         }
                     }
 
-//                    if(!isFound)
+//                    if (!isFound)
 //                    {
-//                        for(int k = 0; k < listVertexEndPosCount; k++)
+//                        for (int k = 0; k < listVertexEndPosCount; k++)
 //                        {
 //                            HalfEdgeVertex endVertex2 = listVertexEndPos.get(k);
 //                            //int endVertex2ClassifyId = endVertex2.getClassifyId();
-//                            //if(endVertex2ClassifyId == startVertex2ClassifyId)
+//                            //if (endVertex2ClassifyId == startVertex2ClassifyId)
 //                            {
 //                                outingEdge.setStartVertex(endVertex2);
 //                                List<HalfEdge> outingEdgesOfEndVertex2 = vertexAllOutingEdgesMap.get(endVertex2);
@@ -1440,10 +1138,6 @@ public class HalfEdgeSurface implements Serializable {
         return isCollapsed;
     }
 
-    private void setStartVertexToHalfEdge(HalfEdge hedge, HalfEdgeVertex startVertex, Map<HalfEdgeVertex, List<HalfEdgeVertex>> mapVertexToSamePosVertices) {
-
-    }
-
     private HalfEdgeVertex getVertexWithClassifyId(List<HalfEdgeVertex> listVertices, int classifyId) {
         int listVerticesCount = listVertices.size();
         for (int i = 0; i < listVerticesCount; i++) {
@@ -1457,21 +1151,19 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public boolean collapseHalfEdge(HalfEdge halfEdge, int iteration, Map<HalfEdgeVertex, List<HalfEdge>> vertexAllOutingEdgesMap, Map<HalfEdgeVertex, List<HalfEdgeVertex>> mapVertexToSamePosVertices, double maxDiffAngDeg, double frontierMaxDiffAngDeg, double hedgeMinLength, double maxAspectRatio, double smallHedgeSize, boolean testDebug) {
-        // When collapse a halfEdge, we delete the face, the twin's face, the twin & the startVertex.***
-        // When deleting a face, must delete all halfEdges of the face.***
-        // must find all halfEdges that startVertex is the deletingVertex, and set as startVertex the endVertex of the deletingHalfEdge.***
+        // When collapse a halfEdge, we delete the face, the twin's face, the twin & the startVertex
+        // When deleting a face, must delete all halfEdges of the face
+        // must find all halfEdges that startVertex is the deletingVertex, and set as startVertex the endVertex of the deletingHalfEdge
 
         HalfEdgeVertex startVertex = halfEdge.getStartVertex();
         HalfEdgeVertex endVertex = halfEdge.getEndVertex();
 
-
-        // check if collapse.**************************************************************************************************
         if (halfEdge.getLength() > hedgeMinLength) {
             if (!decideIfCollapseCheckingFaces(halfEdge, vertexAllOutingEdgesMap, mapVertexToSamePosVertices, maxDiffAngDeg, maxAspectRatio, smallHedgeSize)) {
                 return false;
             }
         }
-        // end check if collapse.------------------------------------------------------------------------------------------
+        // end check if collapse
 
         int endVertexClassifyId = endVertex.getClassifyId();
 
@@ -1481,7 +1173,7 @@ public class HalfEdgeSurface implements Serializable {
         List<HalfEdgeVertex> listVertexSamePosition = mapVertexToSamePosVertices.get(startVertex);
 
         if (listVertexSamePosition == null) {
-            log.error("HalfEdgeSurface.collapseHalfEdge() : listVertexSamePosition == null.");
+            log.error("[ERROR] HalfEdgeSurface.collapseHalfEdge() : listVertexSamePosition == null.");
             return false;
         }
 
@@ -1492,7 +1184,7 @@ public class HalfEdgeSurface implements Serializable {
             HalfEdgeVertex vertex = listVertexSamePosition.get(i);
             outingEdgesOfVertex = vertexAllOutingEdgesMap.get(vertex);
             if (outingEdgesOfVertex == null) {
-                log.error("HalfEdgeSurface.collapseHalfEdge() : outingEdgesOfVertex == null.");
+                log.error("[ERROR] HalfEdgeSurface.collapseHalfEdge() : outingEdgesOfVertex == null.");
                 continue;
             }
 
@@ -1504,7 +1196,7 @@ public class HalfEdgeSurface implements Serializable {
                 //log.info("HalfEdgeSurface.collapseHalfEdge() : outingEdge = " + count++);
 
                 if (outingEdge == null) {
-                    log.error("HalfEdgeSurface.collapseHalfEdge() : outingEdge == null.");
+                    log.error("[ERROR] HalfEdgeSurface.collapseHalfEdge() : outingEdge == null.");
                     continue;
                 }
                 HalfEdgeVertex startVertex2 = outingEdge.getStartVertex();
@@ -1515,7 +1207,7 @@ public class HalfEdgeSurface implements Serializable {
                     outingEdgesOfEndVertex.add(outingEdge);
                     isCollapsed = true;
                 } else {
-                    // must find another endVertex that has the same classifyId.***
+                    // must find another endVertex that has the same classifyId
                     List<HalfEdgeVertex> listVertexEndPos = mapVertexToSamePosVertices.get(endVertex);
                     int listVertexEndPosCount = listVertexEndPos.size();
                     for (int k = 0; k < listVertexEndPosCount; k++) {
@@ -1599,7 +1291,7 @@ public class HalfEdgeSurface implements Serializable {
             }
 
             HalfEdgeFace faceA = outingEdge.getFace();
-//            if(faceA.isDegenerated())
+//            if (faceA.isDegenerated())
 //            {
 //                continue;
 //            }
@@ -1609,7 +1301,7 @@ public class HalfEdgeSurface implements Serializable {
             // TODO
             double areaA = HalfEdgeUtils.calculateArea(verticesA.get(0), verticesA.get(1), verticesA.get(2));
             if (areaA < 0.01) {
-                // is a small triangle, so continue.***
+                // is a small triangle, so continue
                 continue;
             }
 
@@ -1632,7 +1324,7 @@ public class HalfEdgeSurface implements Serializable {
 
             double areaB = HalfEdgeUtils.calculateArea(verticesB.get(0), verticesB.get(1), verticesB.get(2));
             if (areaB < 0.01) {
-                // is a small triangle, so continue.***
+                // is a small triangle, so continue
                 continue;
             }
 
@@ -1648,7 +1340,7 @@ public class HalfEdgeSurface implements Serializable {
                 return false;
             }
 
-            // for hedges with length less than 1.5m, apply a factor to the angle.***
+            // for hedges with length less than 1.5m, apply a factor to the angle
             double hedgeLength = halfEdge.getLength();
             double angFactor = 1.0;
             if (hedgeLength < smallHedgeSize) {
@@ -1659,7 +1351,7 @@ public class HalfEdgeSurface implements Serializable {
 
             double angDeg = Math.toDegrees(HalfEdgeUtils.calculateAngleBetweenNormals(normalA, normalB));
             if (angDeg * angFactor > maxDiffAngDeg) {
-                // if hedgeLength is small, then collapse.***
+                // if hedgeLength is small, then collapse
                 return false;
             }
         }
@@ -1747,8 +1439,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     private void cutByPlaneXY(Vector3d planePosition, double error) {
-        // find halfEdges that are cut by the plane.***
-
+        // find halfEdges that are cut by the plane
         int hedgesCutCount = 0;
         int hedgesCount = halfEdges.size();
         for (int i = 0; i < hedgesCount; i++) {
@@ -1761,18 +1452,15 @@ public class HalfEdgeSurface implements Serializable {
             if (hedge.getIntersectionByPlane(PlaneType.XY, planePosition, intersectionVertex, error)) {
                 splitHalfEdge(hedge, intersectionVertex);
                 hedgesCount = halfEdges.size();
-
                 hedgesCutCount++;
-                if (hedgesCutCount % 500 == 0) {
-                    log.info("[Tile][PhotoRealistic][cut][cutByPlaneXY] hedgesCount = " + hedgesCount + " , hedgesCutCount = " + hedgesCutCount + " , currIdx = " + i);
-                }
             }
+
         }
+        log.info("[Tile][PhotoRealistic][cut][cutByPlaneXY] hedgesCount = " + hedgesCount + " , hedgesCutCount = " + hedgesCutCount);
     }
 
     private void cutByPlaneXZ(Vector3d planePosition, double error) {
-        // find halfEdges that are cut by the plane.***
-
+        // find halfEdges that are cut by the plane
         int hedgesCount = halfEdges.size();
         int hedgesCutCount = 0;
         for (int i = 0; i < hedgesCount; i++) {
@@ -1785,22 +1473,16 @@ public class HalfEdgeSurface implements Serializable {
             if (hedge.getIntersectionByPlane(PlaneType.XZ, planePosition, intersectionVertex, error)) {
                 splitHalfEdge(hedge, intersectionVertex);
                 hedgesCount = halfEdges.size();
-
                 hedgesCutCount++;
-                if (hedgesCutCount % 500 == 0) {
-                    log.info("[Tile][PhotoRealistic][cut][cutByPlaneXZ] hedgesCount = " + hedgesCount + " , hedgesCutCount = " + hedgesCutCount + " , currIdx = " + i);
-                }
             }
         }
-
+        log.info("[Tile][PhotoRealistic][cut][cutByPlaneXZ] hedgesCount = " + hedgesCount + " , hedgesCutCount = " + hedgesCutCount);
     }
 
     private void cutByPlaneYZ(Vector3d planePosition, double error) {
-        // find halfEdges that are cut by the plane.***
-
+        // find halfEdges that are cut by the plane
         int hedgesCount = halfEdges.size();
         int hedgesCutCount = 0;
-        int cutCount = 0;
         for (int i = 0; i < hedgesCount; i++) {
             HalfEdge hedge = halfEdges.get(i);
             if (hedge.getStatus() == ObjectStatus.DELETED) {
@@ -1812,11 +1494,9 @@ public class HalfEdgeSurface implements Serializable {
                 splitHalfEdge(hedge, intersectionVertex);
                 hedgesCount = halfEdges.size();
                 hedgesCutCount++;
-                if (hedgesCutCount % 500 == 0) {
-                    log.info("[Tile][PhotoRealistic][cut][cutByPlaneYZ] hedgesCount = " + hedgesCount + " , hedgesCutCount = " + hedgesCutCount + " , currIdx = " + i);
-                }
             }
         }
+        log.info("[Tile][PhotoRealistic][cut][cutByPlaneYZ] hedgesCount = " + hedgesCount + " , hedgesCutCount = " + hedgesCutCount);
     }
 
     public boolean checkHalfEdgesFaces() {
@@ -1827,7 +1507,7 @@ public class HalfEdgeSurface implements Serializable {
                 continue;
             }
             if (hedge.getFace() == null) {
-                log.error("HalfEdgeSurface.checkHalfEdgesFaces() : hedge.getFace() == null.");
+                log.error("[ERROR] HalfEdgeSurface.checkHalfEdgesFaces() : hedge.getFace() == null.");
                 return false;
             }
         }
@@ -1843,79 +1523,19 @@ public class HalfEdgeSurface implements Serializable {
                 continue;
             }
             HalfEdge twin = hedge.getTwin();
-//            if(twin != null && twin.getStatus() != ObjectStatus.DELETED)
-//            {
-//                HalfEdgeVertex startVertex = hedge.getStartVertex();
-//                HalfEdgeVertex endVertex = hedge.getEndVertex();
-//
-//                HalfEdgeVertex twinStartVertex = twin.getStartVertex();
-//                HalfEdgeVertex twinEndVertex = twin.getEndVertex();
-//
-//                if(startVertex != twinEndVertex || endVertex != twinStartVertex) {
-            // log.error("HalfEdgeSurface.checkTwins() : startVertex != twinEndVertex || endVertex != twinStartVertex.");
-//                    return false;
-//                }
-//            }
 
             if (twin != null && twin.getStatus() != ObjectStatus.DELETED && twin.getTwin() != hedge) {
-                log.error("HalfEdgeSurface.checkTwins() : twin.getTwin() != hedge.");
+                log.error("[ERROR] HalfEdgeSurface.checkTwins() : twin.getTwin() != hedge.");
                 return false;
             }
         }
 
-        return true;
-    }
-
-    public boolean TEST_checkHalfEdgeLength() {
-        int hedgesCount = halfEdges.size();
-        for (int i = 0; i < hedgesCount; i++) {
-            HalfEdge hedge = halfEdges.get(i);
-            if (hedge.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-            double length = hedge.getLength();
-            if (length > 10.0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean TEST_checkIntersectionVertex() {
-        int vertexCount = vertices.size();
-        for (int i = 0; i < vertexCount; i++) {
-            HalfEdgeVertex vertex = vertices.get(i);
-            if (vertex.getNote() != null && vertex.getNote().equals("intersectionVertex")) {
-                double z = vertex.getPosition().z;
-                if (z > 1000.0) {
-
-                } else {
-
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public boolean TEST_checkStartVertexPosition() {
-        int hedgesCount = halfEdges.size();
-        for (int i = 0; i < hedgesCount; i++) {
-            HalfEdge hedge = halfEdges.get(i);
-            if (hedge.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-            HalfEdgeVertex startVertex = hedge.getStartVertex();
-            if (startVertex.getPosition() == null) {
-                return false;
-            }
-        }
         return true;
     }
 
     private void splitHalfEdge(HalfEdge halfEdge, HalfEdgeVertex intersectionVertex) {
-        // When split a halfEdge, must split the face too.***
-        // If exist twin, must split the twin and twin's face too.***
+        // When split a halfEdge, must split the face too
+        // If exist twin, must split the twin and twin's face too
         //TEST_checkHalfEdgeLength();
         HalfEdge twin = halfEdge.getTwin();
 
@@ -1927,23 +1547,23 @@ public class HalfEdgeSurface implements Serializable {
 
             intersectionVertex.setNote("intersectionVertex");
 
-            //intersectionVertex.getPosition().add(0.0, 0.0, 10.0); // test.***
+            //intersectionVertex.getPosition().add(0.0, 0.0, 10.0); // test
             this.getVertices().add(intersectionVertex);
 
             if (twin != null && twin.getStatus() != ObjectStatus.DELETED) {
                 HalfEdgeFace twinsFace = twin.getFace();
                 if (twinsFace == null) {
-                    int hola = 0;
+
                 }
-                int hola = 0;
+
             }
 
-            // must split the twin too.***
+            // must split the twin too
             HalfEdgeFace faceA = halfEdge.getFace();
             HalfEdgeFace faceB = twin.getFace();
 
             if (faceA.getStatus() == ObjectStatus.DELETED || faceB.getStatus() == ObjectStatus.DELETED) {
-                int hola = 0;
+
             }
 
             faceA.setStatus(ObjectStatus.DELETED);
@@ -1960,8 +1580,6 @@ public class HalfEdgeSurface implements Serializable {
             int hedgesACount = halfEdgesLoopA.size();
             int hedgesBCount = halfEdgesLoopB.size();
 
-
-            // Initial situation.***************************************************************************************
             //                                               oppositeVertexA
             //                                                    / \
             //                                                 /       \
@@ -1987,7 +1605,7 @@ public class HalfEdgeSurface implements Serializable {
             //                                               oppositeVertexB
 
 
-            // Final situation.*****************************************************************************************
+            // Final situation
             //                                               oppositeVertexA
             //                                                    /|\
             //                                                 /   |   \
@@ -2012,26 +1630,26 @@ public class HalfEdgeSurface implements Serializable {
             //                                                    \|/
             //                                               oppositeVertexB
 
-            // Find oppositeVertexA and oppositeVertexB.***
+            // Find oppositeVertexA and oppositeVertexB
             HalfEdgeVertex oppositeVertexA = halfEdge.getPrev().getStartVertex();
             HalfEdgeVertex oppositeVertexB = twin.getPrev().getStartVertex();
 
             HalfEdge exteriorHEdgeA1 = halfEdge.getNext().getTwin();
             HalfEdge exteriorHEdgeA2 = halfEdge.getPrev().getTwin();
             HalfEdge exteriorHEdgeB1 = twin.getNext().getTwin();
-            // test.***
+            // test
             if (exteriorHEdgeB1 != null) {
                 HalfEdgeVertex extB1StartVertex = exteriorHEdgeB1.getStartVertex();
                 HalfEdgeVertex extB1EndVertex = exteriorHEdgeB1.getEndVertex();
                 if (extB1StartVertex != oppositeVertexB || extB1EndVertex != startVertex) {
-                    int hola = 0;
+
                 }
                 // end test.---
             }
             HalfEdge exteriorHEdgeB2 = twin.getPrev().getTwin();
 
-            // Face A.********************************
-            // In this face use the halfEdge.***
+            // Face A*****************************
+            // In this face use the halfEdge
             HalfEdgeFace newFaceA = new HalfEdgeFace();
             newFaceA.setNote("newFaceA");
             HalfEdge newHalfEdgeA1 = new HalfEdge();
@@ -2059,8 +1677,8 @@ public class HalfEdgeSurface implements Serializable {
             oppositeVertexA.setOutingHalfEdge(newHalfEdgeA3);
 
 
-            // Face B.********************************
-            // In this face use the twin.***
+            // Face B*****************************
+            // In this face use the twin
             HalfEdgeFace newFaceB = new HalfEdgeFace();
             newFaceB.setNote("newFaceB");
             HalfEdge newHalfEdgeB1 = new HalfEdge();
@@ -2088,8 +1706,8 @@ public class HalfEdgeSurface implements Serializable {
             oppositeVertexB.setOutingHalfEdge(newHalfEdgeB3);
 
 
-            // Face C.********************************
-            // In this face use the newHalfEdgeC.***
+            // Face C*****************************
+            // In this face use the newHalfEdgeC
             HalfEdgeFace newFaceC = new HalfEdgeFace();
             newFaceC.setNote("newFaceC");
             HalfEdge newHalfEdgeC1 = new HalfEdge();
@@ -2117,8 +1735,8 @@ public class HalfEdgeSurface implements Serializable {
             oppositeVertexA.setOutingHalfEdge(newHalfEdgeC3);
 
 
-            // Face D.********************************
-            // In this face use the newHalfEdgeD.***
+            // Face D*****************************
+            // In this face use the newHalfEdgeD
             HalfEdgeFace newFaceD = new HalfEdgeFace();
             newFaceD.setNote("newFaceD");
             HalfEdge newHalfEdgeD1 = new HalfEdge();
@@ -2145,20 +1763,20 @@ public class HalfEdgeSurface implements Serializable {
             intersectionVertex.setOutingHalfEdge(newHalfEdgeD2);
             oppositeVertexB.setOutingHalfEdge(newHalfEdgeD3);
 
-            // Now set twins.***
+            // Now set twins
             if (!newHalfEdgeA1.setTwin(newHalfEdgeB1)) {
-                int hola = 0;
+
             }
 
             if (!newHalfEdgeA2.setTwin(newHalfEdgeC3)) {
-                int hola = 0;
+
             }
 
 
             if (exteriorHEdgeA2 != null) {
                 HalfEdge currTwinOfExteriorA2 = exteriorHEdgeA2.getTwin();
                 if (!newHalfEdgeA3.setTwin(exteriorHEdgeA2)) {
-                    int hola = 0;
+
                 }
 
                 if (currTwinOfExteriorA2 != null) {
@@ -2170,7 +1788,7 @@ public class HalfEdgeSurface implements Serializable {
             if (exteriorHEdgeB1 != null) {
                 HalfEdge currTwinOfExteriorB1 = exteriorHEdgeB1.getTwin();
                 if (!newHalfEdgeB2.setTwin(exteriorHEdgeB1)) {
-                    int hola = 0;
+
                 }
 
                 if (currTwinOfExteriorB1 != null) {
@@ -2180,17 +1798,17 @@ public class HalfEdgeSurface implements Serializable {
 
 
             if (!newHalfEdgeB3.setTwin(newHalfEdgeD2)) {
-                int hola = 0;
+
             }
 
             if (!newHalfEdgeC1.setTwin(newHalfEdgeD1)) {
-                int hola = 0;
+
             }
 
             if (exteriorHEdgeA1 != null) {
                 HalfEdge currTwinOfExteriorA1 = exteriorHEdgeA1.getTwin();
                 if (!newHalfEdgeC2.setTwin(exteriorHEdgeA1)) {
-                    int hola = 0;
+
                 }
 
                 if (currTwinOfExteriorA1 != null) {
@@ -2201,7 +1819,7 @@ public class HalfEdgeSurface implements Serializable {
             if (exteriorHEdgeB2 != null) {
                 HalfEdge currTwinOfExteriorB2 = exteriorHEdgeB2.getTwin();
                 if (!newHalfEdgeD3.setTwin(exteriorHEdgeB2)) {
-                    int hola = 0;
+
                 }
 
                 if (currTwinOfExteriorB2 != null) {
@@ -2210,7 +1828,7 @@ public class HalfEdgeSurface implements Serializable {
             }
 
 
-            // finally break the relations of the halfEdgesLoopA.***
+            // finally break the relations of the halfEdgesLoopA
             for (int i = 0; i < hedgesACount; i++) {
                 HalfEdge hedgeA = halfEdgesLoopA.get(i);
                 //if (hedgeA != halfEdge)
@@ -2222,7 +1840,7 @@ public class HalfEdgeSurface implements Serializable {
             }
 
 
-            // finally break the relations of the halfEdgesLoopB.***
+            // finally break the relations of the halfEdgesLoopB
             for (int i = 0; i < hedgesBCount; i++) {
                 HalfEdge hedgeB = halfEdgesLoopB.get(i);
                 //if (hedgeB != twin)
@@ -2234,7 +1852,7 @@ public class HalfEdgeSurface implements Serializable {
 
         } else {
             intersectionVertex.setNote("intersectionVertex");
-            //intersectionVertex.getPosition().add(0.0, 0.0, 10.0); // test.***
+            //intersectionVertex.getPosition().add(0.0, 0.0, 10.0); // test
             this.getVertices().add(intersectionVertex);
 
             HalfEdgeFace faceA = halfEdge.getFace();
@@ -2247,7 +1865,7 @@ public class HalfEdgeSurface implements Serializable {
             int hedgesACount = halfEdgesLoopA.size();
 
 
-            // Initial situation.***************************************************************************************
+            // Initial situation
             //                                               oppositeVertexA
             //                                                    / \
             //                                                 /       \
@@ -2262,7 +1880,7 @@ public class HalfEdgeSurface implements Serializable {
             //             startV   *-------------------------------------------------------------*  endV
 
 
-            // Final situation.*****************************************************************************************
+            // Final situation
             //                                               oppositeVertexA
             //                                                    /|\
             //                                                 /   |   \
@@ -2277,14 +1895,14 @@ public class HalfEdgeSurface implements Serializable {
             //             startV   *------------------------------*------------------------------*  endV  (in the center there are intersectionVertex)
 
 
-            // Find oppositeVertexA and oppositeVertexB.***
+            // Find oppositeVertexA and oppositeVertexB
             HalfEdgeVertex oppositeVertexA = halfEdge.getPrev().getStartVertex();
 
             HalfEdge exteriorHEdgeA1 = halfEdge.getNext().getTwin();
             HalfEdge exteriorHEdgeA2 = halfEdge.getPrev().getTwin();
 
-            // Face A.********************************
-            // In this face use the halfEdge.***
+            // Face A*****************************
+            // In this face use the halfEdge
             HalfEdgeFace newFaceA = new HalfEdgeFace();
             HalfEdge newHalfEdgeA1 = new HalfEdge();
             HalfEdge newHalfEdgeA2 = new HalfEdge();
@@ -2302,7 +1920,7 @@ public class HalfEdgeSurface implements Serializable {
             newHalfEdgeA2.setFace(newFaceA);
             newHalfEdgeA3.setFace(newFaceA);
 
-            newHalfEdgeA1.setStartVertex(startVertex); // is redundant.***
+            newHalfEdgeA1.setStartVertex(startVertex); // is redundant
             newHalfEdgeA2.setStartVertex(intersectionVertex);
             newHalfEdgeA3.setStartVertex(oppositeVertexA);
 
@@ -2311,8 +1929,8 @@ public class HalfEdgeSurface implements Serializable {
             oppositeVertexA.setOutingHalfEdge(newHalfEdgeA3);
 
 
-            // Face C.********************************
-            // In this face use the newHalfEdgeC.***
+            // Face C*****************************
+            // In this face use the newHalfEdgeC
             HalfEdgeFace newFaceC = new HalfEdgeFace();
             HalfEdge newHalfEdgeC1 = new HalfEdge();
             HalfEdge newHalfEdgeC2 = new HalfEdge();
@@ -2339,14 +1957,14 @@ public class HalfEdgeSurface implements Serializable {
             oppositeVertexA.setOutingHalfEdge(newHalfEdgeC3);
 
 
-            // Now set twins.***
+            // Now set twins
             if (!newHalfEdgeA2.setTwin(newHalfEdgeC3)) {
-                int hola = 0;
+
             }
             if (exteriorHEdgeA2 != null) {
                 HalfEdge currTwinOfExteriorA2 = exteriorHEdgeA2.getTwin();
                 if (!newHalfEdgeA3.setTwin(exteriorHEdgeA2)) {
-                    int hola = 0;
+
                 }
 
                 if (currTwinOfExteriorA2 != null) {
@@ -2357,7 +1975,7 @@ public class HalfEdgeSurface implements Serializable {
             if (exteriorHEdgeA1 != null) {
                 HalfEdge currTwinOfExteriorA1 = exteriorHEdgeA1.getTwin();
                 if (!newHalfEdgeC2.setTwin(exteriorHEdgeA1)) {
-                    int hola = 0;
+
                 }
 
                 if (currTwinOfExteriorA1 != null) {
@@ -2365,7 +1983,7 @@ public class HalfEdgeSurface implements Serializable {
                 }
             }
 
-            // finally break the relations of the halfEdgesLoopA.***
+            // finally break the relations of the halfEdgesLoopA
             for (int i = 0; i < hedgesACount; i++) {
                 HalfEdge hedgeA = halfEdgesLoopA.get(i);
                 //if (hedgeA != halfEdge) {
@@ -2373,12 +1991,6 @@ public class HalfEdgeSurface implements Serializable {
                 hedgeA.breakRelations();
             }
         }
-
-        // int hola = 0;
-
-        //TEST_checkHalfEdgeLength();
-
-
     }
 
 
@@ -2440,12 +2052,12 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void deleteFacesWithClassifyId(int classifyId) {
-        // must delete the faces, halfEdges, vertices.***
+        // must delete the faces, halfEdges, vertices
         int facesCount = faces.size();
         for (int i = 0; i < facesCount; i++) {
             HalfEdgeFace face = faces.get(i);
             if (face == null) {
-                log.error("HalfEdgeSurface.deleteFacesWithClassifyId() : face == null.");
+                log.error("[ERROR] HalfEdgeSurface.deleteFacesWithClassifyId() : face == null.");
                 continue;
             }
             if (face.getStatus() == ObjectStatus.DELETED) {
@@ -2467,7 +2079,7 @@ public class HalfEdgeSurface implements Serializable {
 
         removeDeletedObjects();
 
-        // check no used vertices.***
+        // check no used vertices
         List<HalfEdgeVertex> noUsedVertices = new ArrayList<>();
         if (existNoUsedVertices(noUsedVertices)) {
             int noUsedVerticesCount = noUsedVertices.size();
@@ -2483,12 +2095,12 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void deleteFacesWithNoClassifyId(int classifyId) {
-        // must delete the faces, halfEdges, vertices.***
+        // must delete the faces, halfEdges, vertices
         int facesCount = faces.size();
         for (int i = 0; i < facesCount; i++) {
             HalfEdgeFace face = faces.get(i);
             if (face == null) {
-                log.error("HalfEdgeSurface.deleteFacesWithClassifyId() : face == null.");
+                log.error("[ERROR] HalfEdgeSurface.deleteFacesWithClassifyId() : face == null.");
                 continue;
             }
             if (face.getStatus() == ObjectStatus.DELETED) {
@@ -2510,7 +2122,7 @@ public class HalfEdgeSurface implements Serializable {
 
         removeDeletedObjects();
 
-        // check no used vertices.***
+        // check no used vertices
         List<HalfEdgeVertex> noUsedVertices = new ArrayList<>();
         if (existNoUsedVertices(noUsedVertices)) {
             int noUsedVerticesCount = noUsedVertices.size();
@@ -2526,7 +2138,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void deleteFacesWithClassifyId_old(int classifyId) {
-        // must delete the faces, halfEdges, vertices.***
+        // must delete the faces, halfEdges, vertices
         int halfEdgesCount = halfEdges.size();
         for (int i = 0; i < halfEdgesCount; i++) {
             HalfEdge halfEdge = halfEdges.get(i);
@@ -2543,7 +2155,7 @@ public class HalfEdgeSurface implements Serializable {
 
         removeDeletedObjects();
 
-        // check no used vertices.***
+        // check no used vertices
         List<HalfEdgeVertex> noUsedVertices = new ArrayList<>();
         if (existNoUsedVertices(noUsedVertices)) {
             int noUsedVerticesCount = noUsedVertices.size();
@@ -2560,7 +2172,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     private void postReadFile() {
-        // set the twins & others.***
+        // set the twins & others
         int hedgesCount = halfEdges.size();
         for (int i = 0; i < hedgesCount; i++) {
             HalfEdge hedge = halfEdges.get(i);
@@ -2568,28 +2180,28 @@ public class HalfEdgeSurface implements Serializable {
                 continue;
             }
 
-            // set the twin.***
+            // set the twin
             int twinIndex = hedge.getTwinId();
             if (twinIndex >= 0) {
                 HalfEdge twin = halfEdges.get(twinIndex);
                 hedge.setTwin(twin);
             }
 
-            // set the next.***
+            // set the next
             int nextIndex = hedge.getNextId();
             if (nextIndex >= 0) {
                 HalfEdge next = halfEdges.get(nextIndex);
                 hedge.setNext(next);
             }
 
-            // set the startVertex.***
+            // set the startVertex
             int startVertexIndex = hedge.getStartVertexId();
             if (startVertexIndex >= 0) {
                 HalfEdgeVertex startVertex = vertices.get(startVertexIndex);
                 hedge.setStartVertex(startVertex);
             }
 
-            // set the face.***
+            // set the face
             int faceIndex = hedge.getFaceId();
             if (faceIndex >= 0) {
                 HalfEdgeFace face = faces.get(faceIndex);
@@ -2597,7 +2209,7 @@ public class HalfEdgeSurface implements Serializable {
             }
         }
 
-        // set the faces.***
+        // set the faces
         int facesCount = faces.size();
         for (int i = 0; i < facesCount; i++) {
             HalfEdgeFace face = faces.get(i);
@@ -2612,7 +2224,7 @@ public class HalfEdgeSurface implements Serializable {
             }
         }
 
-        // set the startVertex.***
+        // set the startVertex
         int verticesCount = vertices.size();
         for (int i = 0; i < verticesCount; i++) {
             HalfEdgeVertex vertex = vertices.get(i);
@@ -2697,7 +2309,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public boolean existNoUsedVertices(List<HalfEdgeVertex> noUsedVertices) {
-        // check if there are no used vertices.***
+        // check if there are no used vertices
         Map<HalfEdgeVertex, HalfEdgeVertex> vertexMap = new HashMap<>();
         int hedgesCount = halfEdges.size();
         for (int i = 0; i < hedgesCount; i++) {
@@ -2732,12 +2344,15 @@ public class HalfEdgeSurface implements Serializable {
         int facesCount = this.faces.size();
         for (int i = 0; i < facesCount; i++) {
             HalfEdgeFace face = this.faces.get(i);
+            if (face.getStatus() == ObjectStatus.DELETED) {
+                continue;
+            }
             if (face.getClassifyId() == classifyId) {
                 faces.add(face);
             }
         }
 
-        if(faces.isEmpty()) {
+        if (faces.isEmpty()) {
             return null;
         }
 
@@ -2745,7 +2360,7 @@ public class HalfEdgeSurface implements Serializable {
 
         this.setObjectIdsInList();
 
-        // 1rst, copy vertices.***
+        // 1rst, copy vertices
         Map<HalfEdgeVertex, HalfEdgeVertex> mapOriginalToCloneVertex = new HashMap<>();
         List<HalfEdgeVertex> faceVertexList = new ArrayList<>();
         HalfEdgeUtils.getVerticesOfFaces(faces, faceVertexList);
@@ -2759,7 +2374,7 @@ public class HalfEdgeSurface implements Serializable {
             mapOriginalToCloneVertex.put(vertex, cloneVertex);
         }
 
-        // copy faces.***
+        // copy faces
         Map<HalfEdgeFace, HalfEdgeFace> mapOriginalToCloneFace = new HashMap<>();
         facesCount = faces.size();
         for (int i = 0; i < facesCount; i++) {
@@ -2771,16 +2386,24 @@ public class HalfEdgeSurface implements Serializable {
             mapOriginalToCloneFace.put(face, cloneFace);
         }
 
-        // copy halfEdges.***
+        // copy halfEdges
         Map<HalfEdge, HalfEdge> mapOriginalToCloneHalfEdge = new HashMap<>();
         List<HalfEdge> halfEdgesOfFaces = HalfEdgeUtils.getHalfEdgesOfFaces(faces, null);
         int halfEdgesCount = halfEdgesOfFaces.size();
         for (int i = 0; i < halfEdgesCount; i++) {
             HalfEdge halfEdge = halfEdgesOfFaces.get(i);
+
+            // startVertex
+            HalfEdgeVertex startVertex = halfEdge.getStartVertex();
+            HalfEdgeVertex cloneStartVertex = mapOriginalToCloneVertex.get(startVertex);
             HalfEdge cloneHalfEdge = new HalfEdge();
+            cloneHalfEdge.setStartVertex(cloneStartVertex);
+            cloneStartVertex.setOutingHalfEdge(cloneHalfEdge);
+
             mapOriginalToCloneHalfEdge.put(halfEdge, cloneHalfEdge);
         }
-        if(mapOriginalToCloneHalfEdge.isEmpty()) {
+
+        if (mapOriginalToCloneHalfEdge.isEmpty()) {
             return null;
         }
 
@@ -2789,21 +2412,10 @@ public class HalfEdgeSurface implements Serializable {
             HalfEdge halfEdge = halfEdgesOfFaces.get(i);
             HalfEdge cloneHalfEdge = mapOriginalToCloneHalfEdge.get(halfEdge);
 
-            // startVertex
-            HalfEdgeVertex startVertex = halfEdge.getStartVertex();
-            HalfEdgeVertex cloneStartVertex = mapOriginalToCloneVertex.get(startVertex);
-            cloneHalfEdge.setStartVertex(cloneStartVertex);
-            cloneStartVertex.setOutingHalfEdge(cloneHalfEdge);
-
             // next
             HalfEdge next = halfEdge.getNext();
             HalfEdge cloneNext = mapOriginalToCloneHalfEdge.get(next);
             cloneHalfEdge.setNext(cloneNext);
-
-            // twin
-            HalfEdge twin = halfEdge.getTwin();
-            HalfEdge cloneTwin = mapOriginalToCloneHalfEdge.get(twin);
-            cloneHalfEdge.setTwin(cloneTwin);
 
             // face
             HalfEdgeFace face = halfEdge.getFace();
@@ -2812,6 +2424,17 @@ public class HalfEdgeSurface implements Serializable {
             cloneFace.setHalfEdge(cloneHalfEdge);
 
             cloneSurface.halfEdges.add(cloneHalfEdge);
+        }
+
+        halfEdgesCount = halfEdgesOfFaces.size();
+        for (int i = 0; i < halfEdgesCount; i++) {
+            HalfEdge halfEdge = halfEdgesOfFaces.get(i);
+            HalfEdge cloneHalfEdge = mapOriginalToCloneHalfEdge.get(halfEdge);
+
+            // twin
+            HalfEdge twin = halfEdge.getTwin();
+            HalfEdge cloneTwin = mapOriginalToCloneHalfEdge.get(twin);
+            cloneHalfEdge.setTwin(cloneTwin);
         }
 
         cloneSurface.setTwins();
@@ -2824,7 +2447,7 @@ public class HalfEdgeSurface implements Serializable {
 
         this.setObjectIdsInList();
 
-        // 1rst, copy vertices.***
+        // 1rst, copy vertices
         Map<HalfEdgeVertex, HalfEdgeVertex> mapOriginalToCloneVertex = new HashMap<>();
         int verticesCount = vertices.size();
         for (int i = 0; i < verticesCount; i++) {
@@ -2836,7 +2459,7 @@ public class HalfEdgeSurface implements Serializable {
             mapOriginalToCloneVertex.put(vertex, cloneVertex);
         }
 
-        // copy faces.***
+        // copy faces
         Map<HalfEdgeFace, HalfEdgeFace> mapOriginalToCloneFace = new HashMap<>();
         int facesCount = faces.size();
         for (int i = 0; i < facesCount; i++) {
@@ -2848,7 +2471,7 @@ public class HalfEdgeSurface implements Serializable {
             mapOriginalToCloneFace.put(face, cloneFace);
         }
 
-        // copy halfEdges.***
+        // copy halfEdges
         Map<HalfEdge, HalfEdge> mapOriginalToCloneHalfEdge = new HashMap<>();
         int halfEdgesCount = halfEdges.size();
         for (int i = 0; i < halfEdgesCount; i++) {
@@ -2892,7 +2515,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void scissorTextures(GaiaMaterial material) {
-        // Provisionally scissor only the "DiffuseTexture".***
+        // Provisionally scissor only the "DiffuseTexture"
         if (material == null) {
             return;
         }
@@ -2903,7 +2526,7 @@ public class HalfEdgeSurface implements Serializable {
             return;
         }
 
-        // load the image.***
+        // load the image
         boolean existPngTextures = false;
         GaiaTexture texture = diffuseTextures.get(0);
         if (texture.getPath().endsWith(".png") || texture.getPath().endsWith(".PNG")) {
@@ -2911,27 +2534,24 @@ public class HalfEdgeSurface implements Serializable {
         }
 
         if (texture.getBufferedImage() == null) {
-            // here loads the image.***
+            // here loads the image
             return;
         }
         int texWidth = texture.getWidth();
         int texHeight = texture.getHeight();
 
-        // must find welded face-groups (faces group that are not connected with other faces).***
+        // must find welded face-groups (faces group that are not connected with other faces)
         List<List<HalfEdgeFace>> resultWeldedFacesGroups = new ArrayList<>();
         getWeldedFacesGroups(resultWeldedFacesGroups);
 
-        // now, for each faceGroup, create a scissorData.***
+        // now, for each faceGroup, create a scissorData
         // there are 2 types of scissorData :
         // 1- more width than height.
         // 2- more height than width.
-        Map<GaiaTextureScissorData, List<HalfEdgeFace>> scissorDataToFaceGroupMap = new HashMap<>();
         List<GaiaTextureScissorData> textureScissorDatasWidth = new ArrayList<>();
         List<GaiaTextureScissorData> textureScissorDatasHeight = new ArrayList<>();
         int weldedFacesGroupsCount = resultWeldedFacesGroups.size();
 
-        GaiaRectangle texCoordBRect = new GaiaRectangle();
-        GaiaRectangle groupTexCoordBRect = new GaiaRectangle();
         List<HalfEdgeVertex> faceVertices = new ArrayList<>();
         Map<HalfEdgeVertex, HalfEdgeVertex> groupVertexMap = new HashMap<>();
         Map<HalfEdgeVertex, HalfEdgeVertex> visitedVertexMap = new HashMap<>();
@@ -2939,8 +2559,10 @@ public class HalfEdgeSurface implements Serializable {
         boolean invertTexCoordY = false;
         for (int i = 0; i < weldedFacesGroupsCount; i++) {
             List<HalfEdgeFace> weldedFacesGroup = resultWeldedFacesGroups.get(i);
+            GaiaRectangle groupTexCoordBRect = new GaiaRectangle();
             int weldedFacesCount = weldedFacesGroup.size();
             for (int j = 0; j < weldedFacesCount; j++) {
+                GaiaRectangle texCoordBRect = new GaiaRectangle();
                 HalfEdgeFace face = weldedFacesGroup.get(j);
                 texCoordBRect = face.getTexCoordBoundingRectangle(texCoordBRect, invertTexCoordY);
 
@@ -2951,8 +2573,15 @@ public class HalfEdgeSurface implements Serializable {
                 }
             }
 
-            // check if must translate to positive quadrant.***
-            if (groupTexCoordBRect.getMinX() < 0.0 || groupTexCoordBRect.getMinX() > 0.0 || groupTexCoordBRect.getMinY() < 0.0 || groupTexCoordBRect.getMinY() > 0.0) {
+//            double texCoordBboxWidth = groupTexCoordBRect.getWidth();
+//            double texCoordBboxHeight = groupTexCoordBRect.getHeight();
+//
+//            if (texCoordBboxWidth < 0.0001 || texCoordBboxHeight < 0.0001) {
+//
+//            }
+
+            // check if must translate to positive quadrant
+            if (groupTexCoordBRect.getMinX() < 0.0 || groupTexCoordBRect.getMinX() > 1.0 || groupTexCoordBRect.getMinY() < 0.0 || groupTexCoordBRect.getMinY() > 1.0) {
                 double texCoordOriginX = groupTexCoordBRect.getMinX();
                 double texCoordOriginY = groupTexCoordBRect.getMinY();
                 double offsetX = 0.0;
@@ -2965,8 +2594,8 @@ public class HalfEdgeSurface implements Serializable {
                     offsetY = Math.floor(texCoordOriginY);
                 }
 
-                if(offsetX != 0.0 || offsetY != 0.0) {
-                    // must translate to positive quadrant.***
+                if (offsetX != 0.0 || offsetY != 0.0) {
+                    // must translate to positive quadrant
                     int facesCount = weldedFacesGroup.size();
                     for (int j = 0; j < facesCount; j++) {
                         HalfEdgeFace face = weldedFacesGroup.get(j);
@@ -2987,14 +2616,16 @@ public class HalfEdgeSurface implements Serializable {
                 }
             }
 
-            // create a new GaiaTextureScissorData.***
+            // create a new GaiaTextureScissorData
             GaiaTextureScissorData textureScissorData = new GaiaTextureScissorData();
+            textureScissorData.setTexCoordBoundary(groupTexCoordBRect);
             double minPixelPosX = groupTexCoordBRect.getMinX() * texWidth;
             double minPixelPosY = groupTexCoordBRect.getMinY() * texHeight;
             double maxPixelPosX = groupTexCoordBRect.getMaxX() * texWidth;
             double maxPixelPosY = groupTexCoordBRect.getMaxY() * texHeight;
             GaiaRectangle pixelRect = new GaiaRectangle(minPixelPosX, minPixelPosY, maxPixelPosX, maxPixelPosY);
             textureScissorData.setCurrentBoundary(pixelRect);
+            textureScissorData.setFaces(weldedFacesGroup); // set the faces
             double width = groupTexCoordBRect.getWidthInt();
             double height = groupTexCoordBRect.getHeightInt();
 
@@ -3007,17 +2638,15 @@ public class HalfEdgeSurface implements Serializable {
             } else {
                 textureScissorDatasHeight.add(textureScissorData);
             }
-
-            scissorDataToFaceGroupMap.put(textureScissorData, weldedFacesGroup);
         }
 
-        // Now, sort the textureScissorDatas by xLength & yLength (big to small).***
+        // Now, sort the textureScissorDatas by xLength & yLength (big to small)
         textureScissorDatasWidth = textureScissorDatasWidth.stream().sorted(Comparator.comparing(textureScissorData -> textureScissorData.getCurrentBoundary().getWidthInt())).collect(Collectors.toList());
         Collections.reverse(textureScissorDatasWidth);
         textureScissorDatasHeight = textureScissorDatasHeight.stream().sorted(Comparator.comparing(textureScissorData -> textureScissorData.getCurrentBoundary().getHeightInt())).collect(Collectors.toList());
         Collections.reverse(textureScissorDatasHeight);
 
-        // make a unique textureScissorData, alternating width & height.***
+        // make a unique textureScissorData, alternating width & height
         int textureScissorDatasWidthCount = textureScissorDatasWidth.size();
         int textureScissorDatasHeightCount = textureScissorDatasHeight.size();
 
@@ -3033,39 +2662,60 @@ public class HalfEdgeSurface implements Serializable {
             }
         }
 
-        // do texture atlas process.***
+        // do texture atlas process
+        int scissorDatesCountPre = textureScissorDatas.size();
+        int mergedCount = mergeScissorDates(textureScissorDatas);
+        log.info("scissorProcess : scissorDates mergedCount = " + mergedCount);
         doTextureAtlasProcess(textureScissorDatas);
 
-        // recalculate texCoords for each faceGroup.***************************************************************************************************
-        // TODO : must recalculate the texCoords for each faceGroup. is not necessary to recalculate all texCoords.***
+        // TODO : must recalculate the texCoords for each faceGroup. is not necessary to recalculate all texCoords
         int maxWidth = getMaxWidth(textureScissorDatas);
         int maxHeight = getMaxHeight(textureScissorDatas);
         if (maxWidth == 0 || maxHeight == 0) {
-            log.warn("HalfEdgeSurface.scissorTextures() : maxWidth == 0 || maxHeight == 0.");
+            log.warn("[WARN] HalfEdgeSurface.scissorTextures() : maxWidth == 0 || maxHeight == 0.");
             return;
+        }
+
+        double originalArea = texWidth * texHeight;
+        double atlasArea = maxWidth * maxHeight;
+        double diffPercent = (atlasArea - originalArea) / originalArea * 100.0;
+        log.info("scissorProcess : diffPercent ( % ) = " + (int) diffPercent + " %");
+        if (atlasArea > originalArea) {
+
         }
 
 //        if (maxWidth > 8192 || maxHeight > 8192) {
 //            log.warn("HalfEdgeSurface.scissorTextures() : maxWidth > 8192 || maxHeight > 8192.");
-//            // use the original images.***
+//            // use the original images
 //            return;
 //        }
 
         visitedVertexMap.clear();
 
-
         int textureScissorDatasCount = textureScissorDatas.size();
         for (int i = 0; i < textureScissorDatasCount; i++) {
             GaiaTextureScissorData textureScissorData = textureScissorDatas.get(i);
-            List<HalfEdgeFace> faceGroup = scissorDataToFaceGroupMap.get(textureScissorData);
+            List<HalfEdgeFace> faceGroup = textureScissorData.getFaces();
             GaiaRectangle currentBoundary = textureScissorData.getCurrentBoundary();
             GaiaRectangle batchedBoundary = textureScissorData.getBatchedBoundary();
+            GaiaRectangle texCoordBoundary = textureScissorData.getTexCoordBoundary();
 
-            // obtain all vertex of the faceGroup.***
+            //int badFacesCount0 = TestUtils.checkTexCoordsOfHalfEdgeFaces(faceGroup);
+
+            if (texCoordBoundary == null) {
+                log.error("[ERROR] HalfEdgeSurface.scissorTextures() : texCoordBoundary == null.");
+            }
+
+            // obtain all vertex of the faceGroup
             groupVertexMap.clear();
             int facesCount = faceGroup.size();
+            //GaiaRectangle groupTexCoordBRect = new GaiaRectangle();
             for (int j = 0; j < facesCount; j++) {
                 HalfEdgeFace face = faceGroup.get(j);
+                if (face.getStatus() == ObjectStatus.DELETED) {
+
+                }
+                //groupTexCoordBRect = face.getTexCoordBoundingRectangle(groupTexCoordBRect, invertTexCoordY);
                 faceVertices.clear();
                 faceVertices = face.getVertices(faceVertices);
                 int verticesCount = faceVertices.size();
@@ -3075,57 +2725,90 @@ public class HalfEdgeSurface implements Serializable {
                 }
             }
 
-            // now, calculate the vertex list from the map.***
+//            // now, calculate the vertex list from the map
             List<HalfEdgeVertex> vertexList = new ArrayList<>(groupVertexMap.values());
+//            Map<HalfEdgeVertex, HalfEdgeVertex> vertextoVertexCopyMap = new HashMap<>();
+//            for (int k = 0; k < vertexList.size(); k++) {
+//                HalfEdgeVertex vertex = vertexList.get(k);
+//                HalfEdgeVertex vertexCopy = new HalfEdgeVertex();
+//                vertexCopy.copyFrom(vertex);
+//                vertextoVertexCopyMap.put(vertex, vertexCopy);
+//            }
+
+//            Map<HalfEdgeVertex, HalfEdgeVertex> visitedVertices = new HashMap<>();
+//
+//            List<HalfEdgeVertex> resultEqualVertices = new ArrayList<>();
+//            if (TestUtils.checkIfExistCoincidentTexCoords(vertexList, resultEqualVertices, visitedVertices)) { // test*************************
+//
+//            }
 
             int verticesCount = vertexList.size();
+
+            int currBoundaryWidth = currentBoundary.getWidthInt();
+            int currBoundaryHeight = currentBoundary.getHeightInt();
+            double texCoordClampError = 0.0025;
+
             for (int k = 0; k < verticesCount; k++) {
                 HalfEdgeVertex vertex = vertexList.get(k);
-
                 if (visitedVertexMap.containsKey(vertex)) {
-                    int hola = 0;
+                    continue;
                 }
                 visitedVertexMap.put(vertex, vertex);
-
                 Vector2d texCoord = vertex.getTexcoords();
-                double x = texCoord.x;
-                double y = texCoord.y;
 
-                double pixelX = x * texWidth;
-                double pixelY = y * texHeight;
+                // transform the texCoords to texCoordRelToCurrentBoundary
+                if (currBoundaryWidth != 0 || currBoundaryHeight != 0) {
+                    double x = texCoord.x;
+                    double y = texCoord.y;
 
-                // transform the texCoords to texCoordRelToCurrentBoundary.***
-                double xRel = (pixelX - currentBoundary.getMinX()) / currentBoundary.getWidthInt();
-                double yRel = (pixelY - currentBoundary.getMinY()) / currentBoundary.getHeightInt();
+//                    double pixelX = x * texWidth;
+//                    double pixelY = y * texHeight;
+//                    double xRelOld = (pixelX - currentBoundary.getMinX()) / currentBoundary.getWidthInt();
+//                    double yRelOld = (pixelY - currentBoundary.getMinY()) / currentBoundary.getHeightInt(); // original
 
-                // transform the texCoordRelToCurrentBoundary to atlasBoundary using batchedBoundary.***
-                double xAtlas = (batchedBoundary.getMinX() + xRel * batchedBoundary.getWidthInt()) / maxWidth;
-                double yAtlas = (batchedBoundary.getMinY() + yRel * batchedBoundary.getHeightInt()) / maxHeight;
+                    double xRel = (x - texCoordBoundary.getMinX()) / texCoordBoundary.getWidth();
+                    double yRel = (y - texCoordBoundary.getMinY()) / texCoordBoundary.getHeight(); // original
 
-                texCoord.set(xAtlas, yAtlas);
-                vertex.setTexcoords(texCoord);
+                    Vector2d texCoordRel = new Vector2d(xRel, yRel);
+                    //texCoordClampError = 0.0025;
+                    GaiaTextureUtils.clampTextureCoordinate(texCoordRel, 0.01);
+
+                    xRel = texCoordRel.x;
+                    yRel = texCoordRel.y;
+
+                    // transform the texCoordRelToCurrentBoundary to atlasBoundary using batchedBoundary
+                    double xAtlas = (batchedBoundary.getMinX() + xRel * batchedBoundary.getWidthInt()) / maxWidth;
+                    double yAtlas = (batchedBoundary.getMinY() + yRel * batchedBoundary.getHeightInt()) / maxHeight;
+
+                    Vector2d texCoordFinal = new Vector2d(xAtlas, yAtlas);
+                    GaiaTextureUtils.clampTextureCoordinate(texCoordFinal, texCoordClampError);
+                    texCoord.set(texCoordFinal.x, texCoordFinal.y);
+                    vertex.setTexcoords(texCoord);
+                } else {
+                    texCoord.set(0.0, 0.0);
+                    vertex.setTexcoords(texCoord);
+                }
             }
 
         }
-
 
         int imageType = existPngTextures ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
 
         GaiaTexture textureAtlas = new GaiaTexture();
         log.info("[Tile][PhotoRealistic][Atlas] Atlas maxWidth : " + maxWidth + " , maxHeight : " + maxHeight);
         textureAtlas.createImage(maxWidth, maxHeight, imageType);
-        // fill the textureAtlas with fuchia color.***
-        //Color fuchiaColor = new Color(255, 255, 0);
+        // fill the textureAtlas with fuchia color
+//        Color fuchiaColor = new Color(255, 255, 0);
+//        Graphics2D g2d = textureAtlas.getBufferedImage().createGraphics();
+//        g2d.setColor(fuchiaColor);
+//        g2d.fillRect(0, 0, maxWidth, maxHeight);
+//        g2d.dispose();
+//
+//        BufferedImage clampedBufferedImage = ImageUtils.clampBackGroundColor(textureAtlas.getBufferedImage(), fuchiaColor, 1, 7);
+//        textureAtlas.setBufferedImage(clampedBufferedImage);
+
+        // draw the images into textureAtlas
         Graphics2D g2d = textureAtlas.getBufferedImage().createGraphics();
-        //g2d.setColor(fuchiaColor);
-        //g2d.fillRect(0, 0, maxWidth, maxHeight);
-        g2d.dispose();
-
-        //BufferedImage clampedBufferedImage = ImageUtils.clampBackGroundColor(textureAtlas.getBufferedImage(), fuchiaColor, 1, 20);
-        //textureAtlas.setBufferedImage(clampedBufferedImage);
-
-        // draw the images into textureAtlas.***
-        g2d = textureAtlas.getBufferedImage().createGraphics();
         textureScissorDatasCount = textureScissorDatas.size();
         for (int i = 0; i < textureScissorDatasCount; i++) {
             GaiaTextureScissorData textureScissorData = textureScissorDatas.get(i);
@@ -3133,8 +2816,8 @@ public class HalfEdgeSurface implements Serializable {
             GaiaRectangle batchedBoundary = textureScissorData.getBatchedBoundary();
             GaiaRectangle originBoundary = textureScissorData.getOriginBoundary();
 
-            // 1 - read from "texture" the currentBoundary.***
-            // 2 - write into "textureAtlas" the batchedBoundary.***
+            // 1 - read from "texture" the currentBoundary
+            // 2 - write into "textureAtlas" the batchedBoundary
             BufferedImage image = texture.getBufferedImage();
             int subImageMinX = (int) currentBoundary.getMinX();
             int subImageMinY = (int) currentBoundary.getMinY();
@@ -3157,24 +2840,13 @@ public class HalfEdgeSurface implements Serializable {
             }
 
             BufferedImage subImage = image.getSubimage(subImageMinX, subImageMinY, subImageW, subImageH);
-
-            // test random color for each splitImage.***************************************************************************************************
-//            Color randomColor = new Color((float) Math.random(), (float) Math.random(), (float) Math.random(), 0.8f);
-//            BufferedImage randomColoredImage = new BufferedImage(subImage.getWidth(), subImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-//            Graphics2D randomGraphics = randomColoredImage.createGraphics();
-//            randomGraphics.setColor(randomColor);
-//            randomGraphics.fillRect(0, 0, subImage.getWidth(), subImage.getHeight());
-//            randomGraphics.dispose();
-//            g2d.drawImage(randomColoredImage, (int) batchedBoundary.getMinX(), (int) batchedBoundary.getMinY(), null); // test code.***
-
-            g2d.drawImage(subImage, (int) batchedBoundary.getMinX(), (int) batchedBoundary.getMinY(), null); // original code.***
-
+            g2d.drawImage(subImage, (int) batchedBoundary.getMinX(), (int) batchedBoundary.getMinY(), null); // original code
         }
         g2d.dispose();
 
-        // check if textureAtlas width > 8192 and or height > 8192.***
+        // check if textureAtlas width > 8192 and or height > 8192
         if (maxWidth > 8192 || maxHeight > 8192) {
-            // resize the textureAtlas.***
+            // resize the textureAtlas
             int newWidth = Math.min(maxWidth, 8192);
             int newHeight = Math.min(maxHeight, 8192);
             BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, imageType);
@@ -3186,7 +2858,7 @@ public class HalfEdgeSurface implements Serializable {
             textureAtlas.setHeight(newHeight);
         }
 
-        // write the textureAtlas into a file.***
+        // write the textureAtlas into a file
         String imageParentPath = texture.getParentPath();
         String texturePath = texture.getPath();
         File textureFile = new File(texturePath);
@@ -3204,81 +2876,86 @@ public class HalfEdgeSurface implements Serializable {
         //textureAtlas.setBufferedImage(ImageUtils.clampBackGroundColor(textureAtlas.getBufferedImage(), new Color(255, 0, 255), 1, 200));
         //textureAtlas.saveImage(textureAtlasPath);
 
-        // change the diffuseTexture path.***
-        //diffuseTextures.get(0).setPath(textureAtlasName); // original.***
+        // change the diffuseTexture path
+        texture.clear(); // free memory the original texture
         textureAtlas.setPath(textureAtlasName);
-        diffuseTextures.set(0, textureAtlas); // set the textureAtlas.***
-
-//        // delete the original texture.***
-//        String textureToDeletePath = imageParentPath + File.separator + texturePath;
-//        File textureToDelete = new File(textureToDeletePath);
-//        if (textureToDelete.exists()) {
-//            textureToDelete.delete();
-//        }
+        diffuseTextures.set(0, textureAtlas); // set the textureAtlas
     }
 
-    public void scissorTextures_original(GaiaMaterial material) {
-        // Provisionally scissor only the "DiffuseTexture".***
+    public void scissorTexturesByMotherScene(GaiaMaterial material, GaiaMaterial motherMaterial) {
+        // Provisionally scissor only the "DiffuseTexture"
         if (material == null) {
             return;
         }
 
-        Map<TextureType, List<GaiaTexture>> textures = material.getTextures();
-        List<GaiaTexture> diffuseTextures = textures.get(TextureType.DIFFUSE);
-        if (diffuseTextures == null || diffuseTextures.isEmpty()) {
+        Map<TextureType, List<GaiaTexture>> texturesMother = motherMaterial.getTextures();
+        List<GaiaTexture> diffuseTexturesMother = texturesMother.get(TextureType.DIFFUSE);
+        if (diffuseTexturesMother == null || diffuseTexturesMother.isEmpty()) {
             return;
         }
 
-        // load the image.***
+        // load the image
         boolean existPngTextures = false;
-        GaiaTexture texture = diffuseTextures.get(0);
-        if (texture.getPath().endsWith(".png") || texture.getPath().endsWith(".PNG")) {
+        GaiaTexture textureMother = diffuseTexturesMother.get(0);
+        if (textureMother.getPath().endsWith(".png") || textureMother.getPath().endsWith(".PNG")) {
             existPngTextures = true;
         }
 
-        if (texture.getBufferedImage() == null) {
-            // here loads the image.***
+        if (textureMother.getBufferedImage() == null) {
+            // here loads the image
             return;
         }
-        int texWidth = texture.getWidth();
-        int texHeight = texture.getHeight();
+        int texWidth = textureMother.getWidth();
+        int texHeight = textureMother.getHeight();
 
-        // must find welded face-groups (faces group that are not connected with other faces).***
+        // must find welded face-groups (faces group that are not connected with other faces)
         List<List<HalfEdgeFace>> resultWeldedFacesGroups = new ArrayList<>();
         getWeldedFacesGroups(resultWeldedFacesGroups);
 
-        // now, for each faceGroup, create a scissorData.***
+        // now, for each faceGroup, create a scissorData
         // there are 2 types of scissorData :
         // 1- more width than height.
         // 2- more height than width.
-        Map<GaiaTextureScissorData, List<HalfEdgeFace>> scissorDataToFaceGroupMap = new HashMap<>();
         List<GaiaTextureScissorData> textureScissorDatasWidth = new ArrayList<>();
         List<GaiaTextureScissorData> textureScissorDatasHeight = new ArrayList<>();
         int weldedFacesGroupsCount = resultWeldedFacesGroups.size();
 
-        GaiaRectangle texCoordBRect = new GaiaRectangle();
-        GaiaRectangle groupTexCoordBRect = new GaiaRectangle();
         List<HalfEdgeVertex> faceVertices = new ArrayList<>();
         Map<HalfEdgeVertex, HalfEdgeVertex> groupVertexMap = new HashMap<>();
         Map<HalfEdgeVertex, HalfEdgeVertex> visitedVertexMap = new HashMap<>();
 
-        boolean invertTexCoordY = false;
+        boolean invertTexCoordY = false;// original
         for (int i = 0; i < weldedFacesGroupsCount; i++) {
+            GaiaRectangle groupTexCoordBRect = new GaiaRectangle();
             List<HalfEdgeFace> weldedFacesGroup = resultWeldedFacesGroups.get(i);
             int weldedFacesCount = weldedFacesGroup.size();
+            if (weldedFacesCount == 0) {
+
+            }
+            boolean texCoordBBoxStarted = false;
             for (int j = 0; j < weldedFacesCount; j++) {
+                GaiaRectangle texCoordBRect = new GaiaRectangle();
                 HalfEdgeFace face = weldedFacesGroup.get(j);
+                if (face.getStatus() == ObjectStatus.DELETED) {
+                    continue;
+                }
                 texCoordBRect = face.getTexCoordBoundingRectangle(texCoordBRect, invertTexCoordY);
 
-                if (j == 0) {
+                if (texCoordBRect.getMinY() == texCoordBRect.getMaxY()) {
+
+                }
+
+                if (!texCoordBBoxStarted) {
                     groupTexCoordBRect.copyFrom(texCoordBRect);
+                    texCoordBBoxStarted = true;
                 } else {
                     groupTexCoordBRect.addBoundingRectangle(texCoordBRect);
                 }
             }
 
-            // check if must translate to positive quadrant.***
-            if (groupTexCoordBRect.getMinX() < 0.0 || groupTexCoordBRect.getMinX() > 0.0 || groupTexCoordBRect.getMinY() < 0.0 || groupTexCoordBRect.getMinY() > 0.0) {
+
+            // check if must translate to positive quadrant
+            if (groupTexCoordBRect.getMinX() < 0.0 || groupTexCoordBRect.getMinX() > 1.0 || groupTexCoordBRect.getMinY() < 0.0 || groupTexCoordBRect.getMinY() > 1.0) {
                 double texCoordOriginX = groupTexCoordBRect.getMinX();
                 double texCoordOriginY = groupTexCoordBRect.getMinY();
                 double offsetX = 0.0;
@@ -3291,28 +2968,31 @@ public class HalfEdgeSurface implements Serializable {
                     offsetY = Math.floor(texCoordOriginY);
                 }
 
-                // must translate to positive quadrant.***
-                int facesCount = weldedFacesGroup.size();
-                for (int j = 0; j < facesCount; j++) {
-                    HalfEdgeFace face = weldedFacesGroup.get(j);
-                    faceVertices.clear();
-                    faceVertices = face.getVertices(faceVertices);
-                    int verticesCount = faceVertices.size();
-                    for (int k = 0; k < verticesCount; k++) {
-                        HalfEdgeVertex vertex = faceVertices.get(k);
-                        if (visitedVertexMap.containsKey(vertex)) {
-                            continue;
+                if (offsetX != 0.0 || offsetY != 0.0) {
+                    // must translate to positive quadrant
+                    int facesCount = weldedFacesGroup.size();
+                    for (int j = 0; j < facesCount; j++) {
+                        HalfEdgeFace face = weldedFacesGroup.get(j);
+                        faceVertices.clear();
+                        faceVertices = face.getVertices(faceVertices);
+                        int verticesCount = faceVertices.size();
+                        for (int k = 0; k < verticesCount; k++) {
+                            HalfEdgeVertex vertex = faceVertices.get(k);
+                            if (visitedVertexMap.containsKey(vertex)) {
+                                continue;
+                            }
+                            Vector2d texCoord = vertex.getTexcoords();
+                            texCoord.x -= offsetX;
+                            texCoord.y -= offsetY;
+                            visitedVertexMap.put(vertex, vertex);
                         }
-                        Vector2d texCoord = vertex.getTexcoords();
-                        texCoord.x -= offsetX;
-                        texCoord.y -= offsetY;
-                        visitedVertexMap.put(vertex, vertex);
                     }
                 }
             }
 
-            // create a new GaiaTextureScissorData.***
+            // create a new GaiaTextureScissorData
             GaiaTextureScissorData textureScissorData = new GaiaTextureScissorData();
+            textureScissorData.setTexCoordBoundary(groupTexCoordBRect);
             double minPixelPosX = groupTexCoordBRect.getMinX() * texWidth;
             double minPixelPosY = groupTexCoordBRect.getMinY() * texHeight;
             double maxPixelPosX = groupTexCoordBRect.getMaxX() * texWidth;
@@ -3323,7 +3003,7 @@ public class HalfEdgeSurface implements Serializable {
             double height = groupTexCoordBRect.getHeightInt();
 
             if (width == 0 || height == 0) {
-                continue;
+                //continue;
             }
 
             if (width > height) {
@@ -3332,16 +3012,16 @@ public class HalfEdgeSurface implements Serializable {
                 textureScissorDatasHeight.add(textureScissorData);
             }
 
-            scissorDataToFaceGroupMap.put(textureScissorData, weldedFacesGroup);
+            textureScissorData.setFaces(weldedFacesGroup);
         }
 
-        // Now, sort the textureScissorDatas by xLength & yLength (big to small).***
+        // Now, sort the textureScissorDatas by xLength & yLength (big to small)
         textureScissorDatasWidth = textureScissorDatasWidth.stream().sorted(Comparator.comparing(textureScissorData -> textureScissorData.getCurrentBoundary().getWidthInt())).collect(Collectors.toList());
         Collections.reverse(textureScissorDatasWidth);
         textureScissorDatasHeight = textureScissorDatasHeight.stream().sorted(Comparator.comparing(textureScissorData -> textureScissorData.getCurrentBoundary().getHeightInt())).collect(Collectors.toList());
         Collections.reverse(textureScissorDatasHeight);
 
-        // make a unique textureScissorData, alternating width & height.***
+        // make a unique textureScissorData, alternating width & height
         int textureScissorDatasWidthCount = textureScissorDatasWidth.size();
         int textureScissorDatasHeightCount = textureScissorDatasHeight.size();
 
@@ -3357,15 +3037,15 @@ public class HalfEdgeSurface implements Serializable {
             }
         }
 
-        // do texture atlas process.***
+        // do texture atlas process
+        int mergedCount = mergeScissorDates(textureScissorDatas);
+        log.info("scissorProcess : scissorDates mergedCount = " + mergedCount);
         doTextureAtlasProcess(textureScissorDatas);
 
-        // recalculate texCoords for each faceGroup.***************************************************************************************************
-        // TODO : must recalculate the texCoords for each faceGroup. is not necessary to recalculate all texCoords.***
         int maxWidth = getMaxWidth(textureScissorDatas);
         int maxHeight = getMaxHeight(textureScissorDatas);
         if (maxWidth == 0 || maxHeight == 0) {
-            log.warn("HalfEdgeSurface.scissorTextures() : maxWidth == 0 || maxHeight == 0.");
+            log.warn("[WARN] HalfEdgeSurface.scissorTextures() : maxWidth == 0 || maxHeight == 0.");
             return;
         }
 
@@ -3375,17 +3055,23 @@ public class HalfEdgeSurface implements Serializable {
         int textureScissorDatasCount = textureScissorDatas.size();
         for (int i = 0; i < textureScissorDatasCount; i++) {
             GaiaTextureScissorData textureScissorData = textureScissorDatas.get(i);
-            List<HalfEdgeFace> faceGroup = scissorDataToFaceGroupMap.get(textureScissorData);
+            List<HalfEdgeFace> faceGroup = textureScissorData.getFaces();
             GaiaRectangle currentBoundary = textureScissorData.getCurrentBoundary();
             GaiaRectangle batchedBoundary = textureScissorData.getBatchedBoundary();
+            GaiaRectangle texCoordBoundary = textureScissorData.getTexCoordBoundary();
 
-            // obtain all vertex of the faceGroup.***
+            //GaiaRectangle texCoordRect_TEST = faceGroupToTexCoordBRectMap_TEST.get(faceGroup);
 
-
+            // obtain all vertex of the faceGroup
             groupVertexMap.clear();
             int facesCount = faceGroup.size();
+            GaiaRectangle groupTexCoordBRect = new GaiaRectangle();
             for (int j = 0; j < facesCount; j++) {
                 HalfEdgeFace face = faceGroup.get(j);
+                if (face.getStatus() == ObjectStatus.DELETED) {
+
+                }
+                //groupTexCoordBRect = face.getTexCoordBoundingRectangle(groupTexCoordBRect, invertTexCoordY);
                 faceVertices.clear();
                 faceVertices = face.getVertices(faceVertices);
                 int verticesCount = faceVertices.size();
@@ -3395,35 +3081,55 @@ public class HalfEdgeSurface implements Serializable {
                 }
             }
 
-            // now, calculate the vertex list from the map.***
+            // now, calculate the vertex list from the map
             List<HalfEdgeVertex> vertexList = new ArrayList<>(groupVertexMap.values());
 
             int verticesCount = vertexList.size();
+
+            int currBoundaryWidth = currentBoundary.getWidthInt();
+            int currBoundaryHeight = currentBoundary.getHeightInt();
+            double texCoordClampError = 0.0025;
+
             for (int k = 0; k < verticesCount; k++) {
                 HalfEdgeVertex vertex = vertexList.get(k);
-
                 if (visitedVertexMap.containsKey(vertex)) {
-                    int hola = 0;
+                    continue;
                 }
                 visitedVertexMap.put(vertex, vertex);
-
                 Vector2d texCoord = vertex.getTexcoords();
-                double x = texCoord.x;
-                double y = texCoord.y;
 
-                double pixelX = x * texWidth;
-                double pixelY = y * texHeight;
+                // transform the texCoords to texCoordRelToCurrentBoundary
+                if (currBoundaryWidth != 0 || currBoundaryHeight != 0) {
+                    double x = texCoord.x;
+                    double y = texCoord.y;
 
-                // transform the texCoords to texCoordRelToCurrentBoundary.***
-                double xRel = (pixelX - currentBoundary.getMinX()) / currentBoundary.getWidthInt();
-                double yRel = (pixelY - currentBoundary.getMinY()) / currentBoundary.getHeightInt();
+//                    double pixelX = x * texWidth;
+//                    double pixelY = y * texHeight;
+//                    double xRelOld = (pixelX - currentBoundary.getMinX()) / currentBoundary.getWidthInt();
+//                    double yRelOld = (pixelY - currentBoundary.getMinY()) / currentBoundary.getHeightInt(); // original
 
-                // transform the texCoordRelToCurrentBoundary to atlasBoundary using batchedBoundary.***
-                double xAtlas = (batchedBoundary.getMinX() + xRel * batchedBoundary.getWidthInt()) / maxWidth;
-                double yAtlas = (batchedBoundary.getMinY() + yRel * batchedBoundary.getHeightInt()) / maxHeight;
+                    double xRel = (x - texCoordBoundary.getMinX()) / texCoordBoundary.getWidth();
+                    double yRel = (y - texCoordBoundary.getMinY()) / texCoordBoundary.getHeight(); // original
 
-                texCoord.set(xAtlas, yAtlas);
-                vertex.setTexcoords(texCoord);
+                    Vector2d texCoordRel = new Vector2d(xRel, yRel);
+                    GaiaTextureUtils.clampTextureCoordinate(texCoordRel, texCoordClampError);
+
+                    xRel = texCoordRel.x;
+                    yRel = texCoordRel.y;
+
+                    // transform the texCoordRelToCurrentBoundary to atlasBoundary using batchedBoundary
+                    double xAtlas = (batchedBoundary.getMinX() + xRel * batchedBoundary.getWidthInt()) / maxWidth;
+                    double yAtlas = (batchedBoundary.getMinY() + yRel * batchedBoundary.getHeightInt()) / maxHeight;
+
+                    Vector2d texCoordFinal = new Vector2d(xAtlas, yAtlas);
+                    GaiaTextureUtils.clampTextureCoordinate(texCoordFinal, texCoordClampError);
+                    texCoord.set(texCoordFinal.x, texCoordFinal.y);
+                    vertex.setTexcoords(texCoord);
+                } else {
+
+                    texCoord.set(0.0, 0.0);
+                    vertex.setTexcoords(texCoord);
+                }
             }
 
         }
@@ -3434,7 +3140,7 @@ public class HalfEdgeSurface implements Serializable {
         GaiaTexture textureAtlas = new GaiaTexture();
         log.info("[Tile][PhotoRealistic][Atlas] Atlas maxWidth : " + maxWidth + " , maxHeight : " + maxHeight);
         textureAtlas.createImage(maxWidth, maxHeight, imageType);
-        // fill the textureAtlas with fuchia color.***
+        // fill the textureAtlas with fuchia color
         //Color fuchiaColor = new Color(255, 255, 0);
         Graphics2D g2d = textureAtlas.getBufferedImage().createGraphics();
         //g2d.setColor(fuchiaColor);
@@ -3444,7 +3150,7 @@ public class HalfEdgeSurface implements Serializable {
         //BufferedImage clampedBufferedImage = ImageUtils.clampBackGroundColor(textureAtlas.getBufferedImage(), fuchiaColor, 1, 20);
         //textureAtlas.setBufferedImage(clampedBufferedImage);
 
-        // draw the images into textureAtlas.***
+        // draw the images into textureAtlas
         g2d = textureAtlas.getBufferedImage().createGraphics();
         textureScissorDatasCount = textureScissorDatas.size();
         for (int i = 0; i < textureScissorDatasCount; i++) {
@@ -3453,9 +3159,9 @@ public class HalfEdgeSurface implements Serializable {
             GaiaRectangle batchedBoundary = textureScissorData.getBatchedBoundary();
             GaiaRectangle originBoundary = textureScissorData.getOriginBoundary();
 
-            // 1 - read from "texture" the currentBoundary.***
-            // 2 - write into "textureAtlas" the batchedBoundary.***
-            BufferedImage image = texture.getBufferedImage();
+            // 1 - read from "texture" the currentBoundary
+            // 2 - write into "textureAtlas" the batchedBoundary
+            BufferedImage image = textureMother.getBufferedImage();
             int subImageMinX = (int) currentBoundary.getMinX();
             int subImageMinY = (int) currentBoundary.getMinY();
 
@@ -3477,27 +3183,28 @@ public class HalfEdgeSurface implements Serializable {
             }
 
             BufferedImage subImage = image.getSubimage(subImageMinX, subImageMinY, subImageW, subImageH);
-
-            // test random color for each splitImage.***************************************************************************************************
-//            Color randomColor = new Color((float) Math.random(), (float) Math.random(), (float) Math.random(), 0.8f);
-//            BufferedImage randomColoredImage = new BufferedImage(subImage.getWidth(), subImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-//            Graphics2D randomGraphics = randomColoredImage.createGraphics();
-//            randomGraphics.setColor(randomColor);
-//            randomGraphics.fillRect(0, 0, subImage.getWidth(), subImage.getHeight());
-//            randomGraphics.dispose();
-//            g2d.drawImage(randomColoredImage, (int) batchedBoundary.getMinX(), (int) batchedBoundary.getMinY(), null); // test code.***
-
-            g2d.drawImage(subImage, (int) batchedBoundary.getMinX(), (int) batchedBoundary.getMinY(), null); // original code.***
-
+            g2d.drawImage(subImage, (int) batchedBoundary.getMinX(), (int) batchedBoundary.getMinY(), null); // original code
         }
         g2d.dispose();
 
-        // write the textureAtlas into a file.***
-        String imageParentPath = texture.getParentPath();
-        String texturePath = texture.getPath();
+        // check if textureAtlas width > 8192 and or height > 8192
+        if (maxWidth > 8192 || maxHeight > 8192) {
+            // resize the textureAtlas
+            int newWidth = Math.min(maxWidth, 8192);
+            int newHeight = Math.min(maxHeight, 8192);
+            BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, imageType);
+            Graphics2D g2dResized = resizedImage.createGraphics();
+            g2dResized.drawImage(textureAtlas.getBufferedImage(), 0, 0, newWidth, newHeight, null);
+            g2dResized.dispose();
+            textureAtlas.setBufferedImage(resizedImage);
+            textureAtlas.setWidth(newWidth);
+            textureAtlas.setHeight(newHeight);
+        }
+
+        // write the textureAtlas into a file
+        String texturePath = textureMother.getPath();
         File textureFile = new File(texturePath);
         String textureRawName = textureFile.getName();
-        int lastDotIndex = textureRawName.lastIndexOf(".");
         String[] textureRawNameParts = textureRawName.split("\\.");
         String textureImageExtension = textureRawNameParts[textureRawNameParts.length - 1];
 
@@ -3506,260 +3213,89 @@ public class HalfEdgeSurface implements Serializable {
 
         String textureAtlasName = textureRawNameParts[0] + "_atlas_image" + "." + textureImageExtension;
 
-        //String textureRawName = texturePath.substring(texturePath.lastIndexOf(File.separator) + 1);
-        //String textureImageExtension = textureRawName.substring(textureRawName.lastIndexOf("."));
-        //String textureAtlasName = textureRawName.substring(0, textureRawName.lastIndexOf(".")) + "_atlas" + textureImageExtension;
+        // change the diffuseTexture path
+        textureAtlas.setPath(textureAtlasName);
 
-        String textureAtlasPath = imageParentPath + File.separator + textureAtlasName;
-        //textureAtlas.setBufferedImage(ImageUtils.clampBackGroundColor(textureAtlas.getBufferedImage(), new Color(255, 0, 255), 1, 200));
-        textureAtlas.saveImage(textureAtlasPath);
+        Map<TextureType, List<GaiaTexture>> textures = material.getTextures();
+        List<GaiaTexture> diffuseTextures = textures.get(TextureType.DIFFUSE);
+        diffuseTextures.set(0, textureAtlas); // set the textureAtlas
 
-        // change the diffuseTexture path.***
-        diffuseTextures.get(0).setPath(textureAtlasName);
-
-        // delete the original texture.***
-        String textureToDeletePath = imageParentPath + File.separator + texturePath;
-        File textureToDelete = new File(textureToDeletePath);
-        if (textureToDelete.exists()) {
-            textureToDelete.delete();
-        }
     }
 
+    private int mergeScissorDates(List<GaiaTextureScissorData> scissorDataList) {
+        boolean finished = false;
+        int iterations = 0;
+        while (!finished && iterations < 20) {
+            int scissorDatesCount = scissorDataList.size();
+            boolean merged = false;
+            for (int i = 0; i < scissorDatesCount; i++) {
+                GaiaTextureScissorData textureScissorData = scissorDataList.get(i);
+                if (textureScissorData.getFaces().isEmpty()) {
+                    continue;
+                }
 
+                for (int j = i; j < scissorDatesCount; j++) {
+                    if (i == j) {
+                        continue;
+                    }
+                    GaiaTextureScissorData textureScissorData2 = scissorDataList.get(j);
+                    if (textureScissorData2.getFaces().isEmpty()) {
+                        continue;
+                    }
+                    if (textureScissorData.mergeIfMergeable(textureScissorData2)) {
+                        merged = true;
+                    }
+                }
+            }
+
+            if (!merged) {
+                finished = true;
+            }
+
+            iterations++;
+        }
+
+        // now, delete the scissorData that are merged
+        int mergedCount = 0;
+        List<GaiaTextureScissorData> newScissorDataList = new ArrayList<>();
+        for (int i = 0; i < scissorDataList.size(); i++) {
+            GaiaTextureScissorData textureScissorData = scissorDataList.get(i);
+            if (textureScissorData.getFaces().isEmpty()) {
+                //scissorDataList.remove(i);
+                //i--;
+                mergedCount++;
+            } else {
+                newScissorDataList.add(textureScissorData);
+            }
+        }
+
+        scissorDataList.clear();
+        scissorDataList.addAll(newScissorDataList);
+
+        return mergedCount;
+    }
 
     private void doTextureAtlasProcess(List<GaiaTextureScissorData> textureScissorDates) {
-        //*********************************************************************
-        // here calculates the batchedBoundaries of each textureScissorData.***
-        //*********************************************************************
+        // here calculates the batchedBoundaries of each textureScissorData
         int textureScissorDatasCount = textureScissorDates.size();
         log.info("[Tile][PhotoRealistic][Atlas] doTextureAtlasProcess() : textureScissorDatasCount = " + textureScissorDatasCount);
 
-        // calculate the estimated size of the textureAtlas.***
-        double areaSum = 0.0;
-        for (int i = 0; i < textureScissorDatasCount; i++) {
-            GaiaTextureScissorData textureScissorData = textureScissorDates.get(i);
-            GaiaRectangle originBoundary = textureScissorData.getOriginBoundary();
-            areaSum += originBoundary.getArea();
-        }
-
-        double estimatedSize = Math.sqrt(areaSum);
-        int estimatedSizeInt = (int) estimatedSize * 2;
-
-        GillotinePacker gillotinePacker = new GillotinePacker(estimatedSizeInt, estimatedSizeInt);
+        GillotinePacker gillotinePacker = new GillotinePacker();
 
         for (int i = 0; i < textureScissorDatasCount; i++) {
             GaiaTextureScissorData textureScissorData = textureScissorDates.get(i);
-            if(!gillotinePacker.insert(textureScissorData))
-            {
-                int hola = 0;
+            if (!gillotinePacker.insert(textureScissorData)) {
+                log.info("[Tile][PhotoRealistic][Atlas] doTextureAtlasProcess() : gillotinePacker.insert() failed.");
             }
-        }
-
-        int hola = 0;
-    }
-
-    private void doTextureAtlasProcess_original(List<GaiaTextureScissorData> textureScissorDates) {
-        //*********************************************************************
-        // here calculates the batchedBoundaries of each textureScissorData.***
-        //*********************************************************************
-
-//        GaiaRectangle beforeMosaicRectangle = new GaiaRectangle(0.0, 0.0, 0.0, 0.0);
-//        int existentSplitDatasCount = currProcessScissorDates.size();
-//        for (int i = 0; i < existentSplitDatasCount; i++) {
-//            GaiaTextureScissorData existentSplitData = currProcessScissorDates.get(i);
-//            GaiaRectangle batchedBoundary = existentSplitData.getBatchedBoundary();
-//            if (i == 0) {
-//                beforeMosaicRectangle.copyFrom(batchedBoundary);
-//            } else {
-//                beforeMosaicRectangle.addBoundingRectangle(batchedBoundary);
-//            }
-//            listRectangles.add(batchedBoundary);
-//        }
-
-        GaiaRectangle beforeMosaicRectangle = new GaiaRectangle(0.0, 0.0, 0.0, 0.0);
-        List<GaiaRectangle> listRectangles = new ArrayList<>();
-
-        TreeMap<Double, List<GaiaRectangle>> mapMaxXrectangles = new TreeMap<>();
-
-        Vector2d bestPosition = new Vector2d();
-        List<GaiaTextureScissorData> currProcessScissorDates = new ArrayList<>();
-        int textureScissorDatasCount = textureScissorDates.size();
-        log.info("[Tile][PhotoRealistic][Atlas] doTextureAtlasProcess() : textureScissorDatasCount = " + textureScissorDatasCount);
-
-        for (int i = 0; i < textureScissorDatasCount; i++) {
-            GaiaTextureScissorData textureScissorData = textureScissorDates.get(i);
-            GaiaRectangle originBoundary = textureScissorData.getOriginBoundary();
-
-            GaiaRectangle batchedBoundary = null;
-            if (i == 0) {
-                // the 1rst textureScissorData.***
-                batchedBoundary = new GaiaRectangle(0.0, 0.0, originBoundary.getWidthInt(), originBoundary.getHeightInt());
-                textureScissorData.setBatchedBoundary(batchedBoundary);
-                beforeMosaicRectangle.copyFrom(batchedBoundary);
-            } else {
-                // 1rst, find the best position for image into atlas.***
-                bestPosition = this.getBestPositionMosaicInAtlas(currProcessScissorDates, textureScissorData, bestPosition, beforeMosaicRectangle, listRectangles, mapMaxXrectangles);
-                batchedBoundary = new GaiaRectangle(bestPosition.x, bestPosition.y, bestPosition.x + originBoundary.getWidthInt(), bestPosition.y + originBoundary.getHeightInt());
-                textureScissorData.setBatchedBoundary(batchedBoundary);
-                beforeMosaicRectangle.addBoundingRectangle(batchedBoundary);
-            }
-            listRectangles.add(batchedBoundary);
-            currProcessScissorDates.add(textureScissorData);
-
-            // map.************************************************************************************************************************
-            double maxX = batchedBoundary.getMaxX();
-
-            List<GaiaRectangle> listRectanglesMaxX = mapMaxXrectangles.computeIfAbsent(maxX, k -> new ArrayList<>());
-            listRectanglesMaxX.add(batchedBoundary);
         }
     }
 
     private int getMaxWidth(List<GaiaTextureScissorData> compareImages) {
-        int result = compareImages.stream().mapToInt(textureScissorData -> (int) textureScissorData.getBatchedBoundary().getMaxX()).max().orElse(0);
-        return result;
+        return compareImages.stream().mapToInt(textureScissorData -> (int) textureScissorData.getBatchedBoundary().getMaxX()).max().orElse(0);
     }
 
     private int getMaxHeight(List<GaiaTextureScissorData> compareImages) {
-        int result = compareImages.stream().mapToInt(textureScissorData -> (int) textureScissorData.getBatchedBoundary().getMaxY()).max().orElse(0);
-        return result;
-    }
-
-    private Vector2d getBestPositionMosaicInAtlas(List<GaiaTextureScissorData> currProcessScissorDates, GaiaTextureScissorData scissorDataToPutInMosaic,
-                                                  Vector2d resultVec, GaiaRectangle beforeMosaicRectangle, List<GaiaRectangle> listRectangles, TreeMap<Double, List<GaiaRectangle>> map_maxXrectangles) {
-        if (resultVec == null) {
-            resultVec = new Vector2d();
-        }
-
-        double currPosX, currPosY;
-        double candidatePosX = 0.0, candidatePosY = 0.0;
-        double currMosaicPerimeter, candidateMosaicPerimeter;
-        candidateMosaicPerimeter = -1.0;
-        double error = 1.0 - 1e-6;
-
-        // Now, try to find the best positions to put our rectangle.***
-        int existentSplitDatasCount = currProcessScissorDates.size();
-        for (int i = 0; i < existentSplitDatasCount; i++) {
-            GaiaTextureScissorData existentSplitData = currProcessScissorDates.get(i);
-            GaiaRectangle currRect = existentSplitData.getBatchedBoundary();
-
-            // for each existent rectangles, there are 2 possibles positions: leftUp & rightDown.***
-            // in this 2 possibles positions we put our leftDownCorner of rectangle of "splitData_toPutInMosaic".***
-
-            // If in some of two positions our rectangle intersects with any other rectangle, then discard.***
-            // If no intersects with others rectangles, then calculate the mosaic-perimeter.
-            // We choose the minor perimeter of the mosaic.***
-
-            double width = scissorDataToPutInMosaic.getOriginBoundary().getWidthInt();
-            double height = scissorDataToPutInMosaic.getOriginBoundary().getHeightInt();
-
-            // 1- leftUp corner.***
-            currPosX = currRect.getMinX();
-            currPosY = currRect.getMaxY();
-
-            // setup our rectangle.***
-            if (scissorDataToPutInMosaic.getBatchedBoundary() == null) {
-                scissorDataToPutInMosaic.setBatchedBoundary(new GaiaRectangle(0.0, 0.0, 0.0, 0.0));
-            }
-            scissorDataToPutInMosaic.getBatchedBoundary().setMinX(currPosX);
-            scissorDataToPutInMosaic.getBatchedBoundary().setMinY(currPosY);
-            scissorDataToPutInMosaic.getBatchedBoundary().setMaxX(currPosX + width);
-            scissorDataToPutInMosaic.getBatchedBoundary().setMaxY(currPosY + height);
-
-            // put our rectangle into mosaic & check that no intersects with another rectangles.***
-            if (!this.intersectsRectangleAtlasingProcess(listRectangles, scissorDataToPutInMosaic.getBatchedBoundary(), map_maxXrectangles)) {
-                GaiaRectangle afterMosaicRectangle = new GaiaRectangle(0.0, 0.0, 0.0, 0.0);
-                afterMosaicRectangle.copyFrom(beforeMosaicRectangle);
-                afterMosaicRectangle.addBoundingRectangle(scissorDataToPutInMosaic.getBatchedBoundary());
-
-                // calculate the perimeter of the mosaic.***
-                if (candidateMosaicPerimeter < 0.0) {
-                    candidateMosaicPerimeter = afterMosaicRectangle.getPerimeter();
-                    candidatePosX = currPosX;
-                    candidatePosY = currPosY;
-                } else {
-                    currMosaicPerimeter = afterMosaicRectangle.getPerimeter();
-                    if (candidateMosaicPerimeter >= currMosaicPerimeter * error) {
-                        candidateMosaicPerimeter = currMosaicPerimeter;
-                        candidatePosX = currPosX;
-                        candidatePosY = currPosY;
-                        break; // test delete.*****************************
-                    }
-                }
-            }
-
-            // 2- rightDown corner.***
-            currPosX = currRect.getMaxX();
-            currPosY = currRect.getMinY();
-
-            // setup our rectangle.***
-            scissorDataToPutInMosaic.getBatchedBoundary().setMinX(currPosX);
-            scissorDataToPutInMosaic.getBatchedBoundary().setMinY(currPosY);
-            scissorDataToPutInMosaic.getBatchedBoundary().setMaxX(currPosX + width);
-            scissorDataToPutInMosaic.getBatchedBoundary().setMaxY(currPosY + height);
-
-            // put our rectangle into mosaic & check that no intersects with another rectangles.***
-            if (!this.intersectsRectangleAtlasingProcess(listRectangles, scissorDataToPutInMosaic.getBatchedBoundary(), map_maxXrectangles)) {
-                GaiaRectangle afterMosaicRectangle = new GaiaRectangle(0.0, 0.0, 0.0, 0.0);
-                afterMosaicRectangle.copyFrom(beforeMosaicRectangle);
-                afterMosaicRectangle.addBoundingRectangle(scissorDataToPutInMosaic.getBatchedBoundary());
-
-                // calculate the perimeter of the mosaic.***
-                if (candidateMosaicPerimeter < 0.0) {
-                    candidateMosaicPerimeter = afterMosaicRectangle.getPerimeter();
-                    candidatePosX = currPosX;
-                    candidatePosY = currPosY;
-                } else {
-                    currMosaicPerimeter = afterMosaicRectangle.getPerimeter();
-                    if (candidateMosaicPerimeter >= currMosaicPerimeter * error) {
-                        candidateMosaicPerimeter = currMosaicPerimeter;
-                        candidatePosX = currPosX;
-                        candidatePosY = currPosY;
-                        break; // test delete.*****************************
-                    }
-                }
-            }
-        }
-
-        resultVec.set(candidatePosX, candidatePosY);
-
-        return resultVec;
-    }
-
-
-    private boolean intersectsRectangleAtlasingProcess(List<GaiaRectangle> listRectangles, GaiaRectangle rectangle, TreeMap<Double, List<GaiaRectangle>> map_maxXrectangles) {
-        // this function returns true if the rectangle intersects with any existent rectangle of the listRectangles.***
-        boolean intersects = false;
-        double error = 10E-5;
-
-        double currRectMinX = rectangle.getMinX();
-
-        // check with map_maxXrectangles all rectangles that have maxX > currRectMinX.***
-        for (Map.Entry<Double, List<GaiaRectangle>> entry : map_maxXrectangles.tailMap(currRectMinX).entrySet()) {
-            List<GaiaRectangle> existentRectangles = entry.getValue();
-
-            int existentRectanglesCount = existentRectangles.size();
-            for (int i = 0; i < existentRectanglesCount; i++) {
-                GaiaRectangle existentRectangle = existentRectangles.get(i);
-                if (existentRectangle == rectangle) {
-                    continue;
-                }
-                if (existentRectangle.intersects(rectangle, error)) {
-                    return true;
-                }
-            }
-        }
-
-
-//        for (GaiaRectangle existentRectangle : listRectangles) {
-//            if (existentRectangle == rectangle) {
-//                continue;
-//            }
-//            if (existentRectangle.intersects(rectangle, error)) {
-//                intersects = true;
-//                break;
-//            }
-//        }
-        return intersects;
+        return compareImages.stream().mapToInt(textureScissorData -> (int) textureScissorData.getBatchedBoundary().getMaxY()).max().orElse(0);
     }
 
     public boolean getWeldedFacesWithFace(HalfEdgeFace face, List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces) {
@@ -3858,7 +3394,7 @@ public class HalfEdgeSurface implements Serializable {
 
     public int getTrianglesCount() {
         int hedgesCount = halfEdges.size();
-        int trianglesCount = hedgesCount / 3; // provisionally.***
+        int trianglesCount = hedgesCount / 3; // provisionally
         return trianglesCount;
     }
 
@@ -3918,9 +3454,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     private List<HalfEdge> getTwinablesByPosition(double error, HalfEdge halfEdge, Map<HalfEdgeVertex, HalfEdgeVertex> mapVertexToVertexMaster, Map<HalfEdgeVertex, List<HalfEdgeVertex>> mapVertexMasterToVertices, List<HalfEdge> resultTwinables) {
-        //*******************************************************************
-        // There are 2 ways to get twinables : by pointers or by position.***
-        //*******************************************************************
+        // There are 2 ways to get twinables : by pointers or by position
         if (resultTwinables == null) {
             resultTwinables = new ArrayList<>();
         }
@@ -3934,14 +3468,14 @@ public class HalfEdgeSurface implements Serializable {
         //List<HalfEdgeVertex> startVertices = mapVertexMasterToVertices.get(startVertexMaster);
         List<HalfEdgeVertex> endVertices = mapVertexMasterToVertices.get(endVertexMaster);
 
-        // now, find halfEdges that has startVertex in endVertex list. and endVertex in startVertex list.***
+        // now, find halfEdges that has startVertex in endVertex list. and endVertex in startVertex list
         int endVertexCount = endVertices.size();
         for (int i = 0; i < endVertexCount; i++) {
             HalfEdgeVertex vertex = endVertices.get(i);
             HalfEdge outingHalfEdge = vertex.getOutingHalfEdge();
 
             if (outingHalfEdge == halfEdge) {
-                // impossible.***
+                // impossible
                 continue;
             }
 
@@ -3950,7 +3484,7 @@ public class HalfEdgeSurface implements Serializable {
             }
 
             if (outingHalfEdge == null) {
-                log.error("error : HalfEdgeSurface.getTwinablesByPosition() : outingHalfEdge is null.");
+                log.error("[ERROR] HalfEdgeSurface.getTwinablesByPosition() : outingHalfEdge is null.");
             }
 
             HalfEdgeVertex endVertex2 = outingHalfEdge.getEndVertex();
@@ -3965,7 +3499,7 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     private GaiaSurface getGaiaSurface(List<GaiaVertex> resultGaiaVertices) {
-        // 1rst, make maps.***
+        // 1rst, make maps
         GaiaSurface provisionalSurface = new GaiaSurface();
         Map<HalfEdgeVertex, GaiaVertex> mapHalfEdgeVertexToGaiaVertex = new HashMap<>();
         Map<GaiaVertex, Integer> mapGaiaVertexToIndex = new HashMap<>();
@@ -3983,7 +3517,7 @@ public class HalfEdgeSurface implements Serializable {
             mapGaiaVertexToIndex.put(provisionalVertex, i);
         }
 
-        // now, make the provisional faces.***
+        // now, make the provisional faces
         int facesCount = faces.size();
         for (int i = 0; i < facesCount; i++) {
             HalfEdgeFace halfEdgeFace = faces.get(i);
@@ -4027,25 +3561,25 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void weldVertices(double error, boolean checkTexCoord, boolean checkNormal, boolean checkColor, boolean checkBatchId) {
-        // make a provisional GaiaSurface.***
+        // make a provisional GaiaSurface
         List<GaiaVertex> gaiaVertices = new ArrayList<>();
         GaiaSurface gaiaSurface = this.getGaiaSurface(gaiaVertices);
 
         HalfEdgeUtils.weldVerticesGaiaSurface(gaiaSurface, gaiaVertices, error, checkTexCoord, checkNormal, checkColor, checkBatchId);
 
-        // Now, delete the halfEdge objects.***
+        // Now, delete the halfEdge objects
         this.deleteObjects();
 
-        // now, make halfEdgeSurface from the provisionalSurface.***
+        // now, make halfEdgeSurface from the provisionalSurface
         Map<GaiaVertex, HalfEdgeVertex> mapGaiaVertexToHalfEdgeVertex = new HashMap<>();
 
-        // faces.***
+        // faces
         List<GaiaFace> gaiaFaces = gaiaSurface.getFaces();
         int facesCount = gaiaFaces.size();
         for (int i = 0; i < facesCount; i++) {
             GaiaFace gaiaFace = gaiaFaces.get(i);
             if (gaiaFace == null) {
-                log.error("gaiaFace == null.***");
+                log.error("[ERROR] gaiaFace == null");
                 continue;
             }
             List<GaiaFace> gaiaTriangleFaces = new HalfEdgeUtils().getGaiaTriangleFacesFromGaiaFace(gaiaFace);
@@ -4063,11 +3597,11 @@ public class HalfEdgeSurface implements Serializable {
         List<HalfEdgeVertex> halfEdgeVertices = new ArrayList<>(mapGaiaVertexToHalfEdgeVertex.values());
         this.getVertices().addAll(halfEdgeVertices);
 
-        // set twins.***
+        // set twins
         this.setTwins();
         this.checkSandClockFaces();
 
-        // finally delete gaiaSurface.***
+        // finally delete gaiaSurface
         gaiaSurface.clear();
     }
 
@@ -4117,39 +3651,6 @@ public class HalfEdgeSurface implements Serializable {
         this.dirty = true;
     }
 
-    public void splitFacesByBestPlanesToProject() {
-        // make faceGroups by classifyId & bestPlaneType.***
-        Map<Integer, Map<PlaneType, List<HalfEdgeFace>>> mapFaceGroupByClassifyIdAndPlaneType = new HashMap<>();
-        int facesCount = faces.size();
-        for (int i = 0; i < facesCount; i++) {
-            HalfEdgeFace face = faces.get(i);
-            PlaneType bestPlaneType = face.calculateBestPlaneToProject();
-            if (bestPlaneType == PlaneType.XYNEG) {
-                bestPlaneType = PlaneType.XY;
-                face.setBestPlaneToProject(bestPlaneType);
-            }
-            int ClassifyId = face.getClassifyId();
-
-            Map<PlaneType, List<HalfEdgeFace>> mapFaceGroupByPlaneType = mapFaceGroupByClassifyIdAndPlaneType.computeIfAbsent(ClassifyId, k -> new HashMap<>());
-            List<HalfEdgeFace> faceGroup = mapFaceGroupByPlaneType.computeIfAbsent(bestPlaneType, k -> new ArrayList<>());
-            faceGroup.add(face);
-        }
-
-        // for each faceGroups make a surface.***
-        HalfEdgeSurface newSurfaceMaster = new HalfEdgeSurface();
-        boolean checkClassifyId = true;
-        boolean checkBestPlaneToProject = true;
-        for (Map<PlaneType, List<HalfEdgeFace>> mapFaceGroupByPlaneType : mapFaceGroupByClassifyIdAndPlaneType.values()) {
-            for (List<HalfEdgeFace> faceGroup : mapFaceGroupByPlaneType.values()) {
-                HalfEdgeSurface newSurface = HalfEdgeCutter.createHalfEdgeSurfaceByFacesCopy(faceGroup, checkClassifyId, checkBestPlaneToProject);
-                newSurfaceMaster.joinSurface(newSurface);
-            }
-        }
-
-        this.deleteObjects();
-        this.joinSurface(newSurfaceMaster);
-    }
-
     public Map<Integer, Map<CameraDirectionType, List<HalfEdgeFace>>> getMapClassifyIdToCameraDirectionTypeToFaces(Map<Integer, Map<CameraDirectionType, List<HalfEdgeFace>>> mapFaceGroupByClassifyIdAndObliqueCamDirType) {
         if (mapFaceGroupByClassifyIdAndObliqueCamDirType == null) {
             mapFaceGroupByClassifyIdAndObliqueCamDirType = new HashMap<>();
@@ -4170,22 +3671,122 @@ public class HalfEdgeSurface implements Serializable {
     }
 
     public void splitFacesByBestObliqueCameraDirectionToProject() {
-        // make faceGroups by classifyId & bestObliqueCameraDirectionType.***
+//        // test
+//        for (HalfEdgeFace face : faces) {
+//            int classifyId = face.getClassifyId();
+//            CameraDirectionType bestObliqueCameraDirectionType = face.getCameraDirectionType();
+//            Map<CameraDirectionType, Integer> mapCamDirToCount = new HashMap<>();
+//            List<HalfEdgeFace> adjacentFaces = face.getAdjacentFaces(null);
+//            for (HalfEdgeFace adjacentFace : adjacentFaces) {
+//                if (adjacentFace == null) {
+//                    continue;
+//                }
+//                int adjacentClassifyId = adjacentFace.getClassifyId();
+//                CameraDirectionType adjacentBestObliqueCameraDirectionType = adjacentFace.getCameraDirectionType();
+//                if (classifyId != adjacentClassifyId) {
+//                    continue;
+//                }
+////                if (bestObliqueCameraDirectionType == adjacentBestObliqueCameraDirectionType) {
+////                    continue;
+////                }
+//
+//                if (adjacentBestObliqueCameraDirectionType == CameraDirectionType.CAMERA_DIRECTION_ZNEG) {
+//                    int camDir_ZNEG_count = mapCamDirToCount.computeIfAbsent(CameraDirectionType.CAMERA_DIRECTION_ZNEG, k -> 0);
+//                    mapCamDirToCount.put(CameraDirectionType.CAMERA_DIRECTION_ZNEG, camDir_ZNEG_count + 1);
+//                }
+//                else if (adjacentBestObliqueCameraDirectionType == CameraDirectionType.CAMERA_DIRECTION_XPOS_ZNEG) {
+//                    int camDir_XPOS_ZNEG_count = mapCamDirToCount.computeIfAbsent(CameraDirectionType.CAMERA_DIRECTION_XPOS_ZNEG, k -> 0);
+//                    mapCamDirToCount.put(CameraDirectionType.CAMERA_DIRECTION_XPOS_ZNEG, camDir_XPOS_ZNEG_count + 1);
+//                }
+//                else if (adjacentBestObliqueCameraDirectionType == CameraDirectionType.CAMERA_DIRECTION_XNEG_ZNEG) {
+//                    int camDir_XNEG_ZNEG_count = mapCamDirToCount.computeIfAbsent(CameraDirectionType.CAMERA_DIRECTION_XNEG_ZNEG, k -> 0);
+//                    mapCamDirToCount.put(CameraDirectionType.CAMERA_DIRECTION_XNEG_ZNEG, camDir_XNEG_ZNEG_count + 1);
+//                }
+//                else if (adjacentBestObliqueCameraDirectionType == CameraDirectionType.CAMERA_DIRECTION_YPOS_ZNEG) {
+//                    int camDir_YPOS_ZNEG_count = mapCamDirToCount.computeIfAbsent(CameraDirectionType.CAMERA_DIRECTION_YPOS_ZNEG, k -> 0);
+//                    mapCamDirToCount.put(CameraDirectionType.CAMERA_DIRECTION_YPOS_ZNEG, camDir_YPOS_ZNEG_count + 1);
+//                }
+//                else if (adjacentBestObliqueCameraDirectionType == CameraDirectionType.CAMERA_DIRECTION_YNEG_ZNEG) {
+//                    int camDir_YNEG_ZNEG_count = mapCamDirToCount.computeIfAbsent(CameraDirectionType.CAMERA_DIRECTION_YNEG_ZNEG, k -> 0);
+//                    mapCamDirToCount.put(CameraDirectionType.CAMERA_DIRECTION_YNEG_ZNEG, camDir_YNEG_ZNEG_count + 1);
+//                }
+//            }
+//
+//            // find the best cameraDirectionType in the map
+//            CameraDirectionType bestCamDirType = CameraDirectionType.CAMERA_DIRECTION_ZNEG;
+//            int bestCount = 0;
+//            for (Map.Entry<CameraDirectionType, Integer> entry : mapCamDirToCount.entrySet()) {
+//                if (entry.getValue() > bestCount) {
+//                    bestCount = entry.getValue();
+//                    bestCamDirType = entry.getKey();
+//                }
+//            }
+//
+//            if (bestCount > 1 && bestCount == adjacentFaces.size()) {
+//                face.setCameraDirectionType(bestCamDirType);
+//            }
+//        }
+        // make faceGroups by classifyId & bestObliqueCameraDirectionType
         Map<Integer, Map<CameraDirectionType, List<HalfEdgeFace>>> mapFaceGroupByClassifyIdAndObliqueCamDirType = this.getMapClassifyIdToCameraDirectionTypeToFaces(null);
 
-        // for each faceGroups make a surface.***
+        // for each faceGroups make a surface
         HalfEdgeSurface newSurfaceMaster = new HalfEdgeSurface();
         boolean checkClassifyId = true;
         boolean checkBestPlaneToProject = true;
         for (Map<CameraDirectionType, List<HalfEdgeFace>> mapFaceGroupByPlaneType : mapFaceGroupByClassifyIdAndObliqueCamDirType.values()) {
             for (List<HalfEdgeFace> faceGroup : mapFaceGroupByPlaneType.values()) {
                 HalfEdgeSurface newSurface = HalfEdgeCutter.createHalfEdgeSurfaceByFacesCopy(faceGroup, checkClassifyId, checkBestPlaneToProject);
-                newSurfaceMaster.joinSurface(newSurface);
+                // for each faceGroup, find welded faceGroups
+                List<List<HalfEdgeFace>> resultWeldedFacesGroups = HalfEdgeUtils.getWeldedFacesGroups(newSurface.getFaces(), null);
+                for (List<HalfEdgeFace> weldedFaceGroup : resultWeldedFacesGroups) {
+                    HalfEdgeSurface newSurface2 = HalfEdgeCutter.createHalfEdgeSurfaceByFacesCopy(weldedFaceGroup, checkClassifyId, checkBestPlaneToProject);
+                    newSurfaceMaster.joinSurface(newSurface2);
+                }
+
+                newSurface.getFaces().clear();
             }
         }
 
         this.deleteObjects();
         this.joinSurface(newSurfaceMaster);
+        this.setObjectIdsInList();
+    }
+
+    public void updateFacesList() {
+        // remake faces list by halfEdges
+        Map<HalfEdgeFace, HalfEdgeFace> mapFace = new HashMap<>();
+        int hedgesCount = halfEdges.size();
+        for (int i = 0; i < hedgesCount; i++) {
+            HalfEdge halfEdge = halfEdges.get(i);
+            if (halfEdge.getStatus() == ObjectStatus.DELETED) {
+                continue;
+            }
+            HalfEdgeFace face = halfEdge.getFace();
+            if (face == null || face.getStatus() == ObjectStatus.DELETED) {
+                continue;
+            }
+            mapFace.put(face, face);
+        }
+
+        this.faces.clear();
+        this.faces.addAll(mapFace.values());
+    }
+
+    public void updateVerticesList() {
+        // remake vertices list by faces
+        Map<HalfEdgeVertex, HalfEdgeVertex> mapVertex = new HashMap<>();
+        int hedgesCount = halfEdges.size();
+        for (int i = 0; i < hedgesCount; i++) {
+            HalfEdge halfEdge = halfEdges.get(i);
+            if (halfEdge.getStatus() == ObjectStatus.DELETED) {
+                continue;
+            }
+            HalfEdgeVertex vertex = halfEdge.getStartVertex();
+            mapVertex.put(vertex, vertex);
+        }
+
+        this.vertices.clear();
+        this.vertices.addAll(mapVertex.values());
     }
 
     public void getWestEastSouthNorthVertices(GaiaBoundingBox bbox, List<HalfEdgeVertex> westVertices, List<HalfEdgeVertex> eastVertices, List<HalfEdgeVertex> southVertices, List<HalfEdgeVertex> northVertices, double error) {
@@ -4194,20 +3795,88 @@ public class HalfEdgeSurface implements Serializable {
         double east = bbox.getMaxX();
         double south = bbox.getMinY();
         double north = bbox.getMaxY();
+
+        //this.updateVerticesList();
+//        TreeMap<Double, Double> northMap = new TreeMap<>();
+//        TreeMap<Double, Double> southMap = new TreeMap<>();
+//        TreeMap<Double, Double> eastMap = new TreeMap<>();
+//        TreeMap<Double, Double> westMap = new TreeMap<>();
+
         for (int i = 0; i < verticesCount; i++) {
             HalfEdgeVertex vertex = vertices.get(i);
             Vector3d position = vertex.getPosition();
+
+//            double minXDiff = Math.abs(position.x - west);
+//            double maxXDiff = Math.abs(position.x - east);
+//            double minYDiff = Math.abs(position.y - south);
+//            double maxYDiff = Math.abs(position.y - north);
+//
+//            northMap.put(maxYDiff, maxYDiff);
+//            southMap.put(minYDiff, minYDiff);
+//            eastMap.put(maxXDiff, maxXDiff);
+//            westMap.put(minXDiff, minXDiff);
+
             if (Math.abs(position.x - west) < error) {
                 westVertices.add(vertex);
             } else if (Math.abs(position.x - east) < error) {
                 eastVertices.add(vertex);
-            } else if (Math.abs(position.y - south) < error) {
+            }
+            if (Math.abs(position.y - south) < error) {
                 southVertices.add(vertex);
             } else if (Math.abs(position.y - north) < error) {
                 northVertices.add(vertex);
             }
         }
+
+
     }
 
 
+    public double calculateArea() {
+        double area = 0.0;
+        int facesCount = faces.size();
+        for (int i = 0; i < facesCount; i++) {
+            HalfEdgeFace face = faces.get(i);
+            area += face.calculateArea();
+        }
+        return area;
+    }
+
+    public GaiaRectangle getTexCoordinateBoundingRectangle(GaiaRectangle resultRectangle) {
+        if (resultRectangle == null) {
+            resultRectangle = new GaiaRectangle(0.0, 0.0, 0.0, 0.0);
+        }
+        int verticesCount = vertices.size();
+        for (int i = 0; i < verticesCount; i++) {
+            HalfEdgeVertex vertex = vertices.get(i);
+            Vector2d texCoord = vertex.getTexcoords();
+            if (i == 0) {
+                resultRectangle.setMinX(texCoord.x);
+                resultRectangle.setMinY(texCoord.y);
+                resultRectangle.setMaxX(texCoord.x);
+                resultRectangle.setMaxY(texCoord.y);
+            } else {
+                resultRectangle.addPoint(texCoord);
+            }
+        }
+        return resultRectangle;
+    }
+
+
+    public int getFacesCount() {
+        return faces.size();
+    }
+
+    public void getIntersectedFacesByPlane(PlaneType planeType, Vector3d planePosition, List<HalfEdgeFace> resultFaces, double error) {
+        int facesCount = faces.size();
+        for (int i = 0; i < facesCount; i++) {
+            HalfEdgeFace face = faces.get(i);
+            if (face.getStatus() == ObjectStatus.DELETED) {
+                continue;
+            }
+            if (face.intersectsPlane(planeType, planePosition, error)) {
+                resultFaces.add(face);
+            }
+        }
+    }
 }

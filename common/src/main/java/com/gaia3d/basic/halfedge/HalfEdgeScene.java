@@ -68,7 +68,7 @@ public class HalfEdgeScene implements Serializable {
 
             return halfEdgeScene;
         } catch (Exception e) {
-            log.error("GaiaSet Read Error : ", e);
+            log.error("[ERROR] GaiaSet Read Error : ", e);
         }
 
         return null;
@@ -107,6 +107,28 @@ public class HalfEdgeScene implements Serializable {
         materials.clear();
     }
 
+    public void deleteNoUsedMaterials() {
+        List<Integer> usedMaterialsIds = getUsedMaterialsIds(null);
+        List<GaiaMaterial> noUsedMaterials = new ArrayList<>();
+        for (int i = 0; i < materials.size(); i++) {
+            if (!usedMaterialsIds.contains(i)) {
+                noUsedMaterials.add(materials.get(i));
+            }
+        }
+        for (GaiaMaterial material : noUsedMaterials) {
+            material.deleteTextures();
+            List<GaiaTexture> textures = material.getTextures().get(TextureType.DIFFUSE);
+            if (textures != null) {
+                for (GaiaTexture texture : textures) {
+                    texture.deleteObjects();
+                    texture.setParentPath("");
+                    texture.setName("");
+                    texture.setPath("");
+                }
+            }
+        }
+    }
+
     public void checkSandClockFaces() {
         for (HalfEdgeNode node : nodes) {
             node.checkSandClockFaces();
@@ -126,11 +148,11 @@ public class HalfEdgeScene implements Serializable {
     }
 
     public void TEST_cutScene() {
-        // Test.***
+        // Test
         GaiaBoundingBox bbox = getBoundingBox();
         Vector3d center = bbox.getCenter();
         double error = 1e-8;
-//        if(error < 1)
+//        if (error < 1)
 //        {
 //            return;
 //        }
@@ -138,22 +160,16 @@ public class HalfEdgeScene implements Serializable {
         cutByPlane(planeType, center, error);
         classifyFacesIdByPlane(planeType, center);
 
-        // check if there are no used vertices.***
+        // check if there are no used vertices
         List<HalfEdgeSurface> resultHalfEdgeSurfaces = new ArrayList<>();
         extractSurfaces(resultHalfEdgeSurfaces);
         List<HalfEdgeVertex> noUsedVertices = new ArrayList<>();
         for (HalfEdgeSurface surface : resultHalfEdgeSurfaces) {
             noUsedVertices.clear();
             if (surface.existNoUsedVertices(noUsedVertices)) {
-                log.error("Error: existNoUsedVertices.***");
+                log.error("[ERROR] existNoUsedVertices.");
             }
         }
-
-        // now, remove faces with classifyId = 1.***
-//        for (HalfEdgeNode node : nodes) {
-//            node.TEST_removeFacesWithClassifyId(1);
-//        }
-
     }
 
     public List<HalfEdgeSurface> extractSurfaces(List<HalfEdgeSurface> resultHalfEdgeSurfaces) {
@@ -184,7 +200,7 @@ public class HalfEdgeScene implements Serializable {
     }
 
     public boolean cutByPlane(PlaneType planeType, Vector3d planePosition, double error) {
-        // 1rst check if the plane intersects the bbox.***
+        // 1rst check if the plane intersects the bbox
         GaiaBoundingBox bbox = getBoundingBox();
 
         if (bbox == null) {
@@ -214,6 +230,20 @@ public class HalfEdgeScene implements Serializable {
         return true;
     }
 
+    public void getIntersectedFacesByPlane(PlaneType planeType, Vector3d planePosition, List<HalfEdgeFace> resultFaces, double error) {
+        for (HalfEdgeNode node : nodes) {
+            node.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
+        }
+    }
+
+    public double calculateArea() {
+        double area = 0;
+        for (HalfEdgeNode node : nodes) {
+            area += node.calculateArea();
+        }
+        return area;
+    }
+
     public GaiaBoundingBox calculateBoundingBox(GaiaBoundingBox resultBBox) {
         if (resultBBox == null) {
             resultBBox = new GaiaBoundingBox();
@@ -233,12 +263,6 @@ public class HalfEdgeScene implements Serializable {
     public void splitFacesByBestObliqueCameraDirectionToProject() {
         for (HalfEdgeNode node : nodes) {
             node.splitFacesByBestObliqueCameraDirectionToProject();
-        }
-    }
-
-    public void splitFacesByBestPlanesToProject() {
-        for (HalfEdgeNode node : nodes) {
-            node.splitFacesByBestPlanesToProject();
         }
     }
 
@@ -285,7 +309,7 @@ public class HalfEdgeScene implements Serializable {
             texture.setPath(imageFile.getName());
 
             if (!imageFile.exists()) {
-                log.error("Texture Input Image Path is not exists. {}", diffusePath);
+                log.error("[ERROR] Texture Input Image Path is not exists. {}", diffusePath);
             } else {
                 FileUtils.copyFile(imageFile, outputImageFile);
             }
@@ -338,7 +362,7 @@ public class HalfEdgeScene implements Serializable {
             fileOutputStream.close();
 
         } catch (Exception e) {
-            log.error("GaiaSet Write Error : ", e);
+            log.error("[ERROR] GaiaSet Write Error : ", e);
             file.delete();
         }
     }
@@ -381,6 +405,15 @@ public class HalfEdgeScene implements Serializable {
         return clonedScene;
     }
 
+    public int deleteDegeneratedFaces() {
+        int deletedFacesCount = 0;
+        for (HalfEdgeNode node : nodes) {
+            deletedFacesCount += node.deleteDegeneratedFaces();
+        }
+        removeDeletedObjects();
+        return deletedFacesCount;
+    }
+
 
     public void scissorTextures() {
         boolean hasTextures = false;
@@ -397,6 +430,24 @@ public class HalfEdgeScene implements Serializable {
 
         for (HalfEdgeNode node : nodes) {
             node.scissorTextures(materials);
+        }
+    }
+
+    public void scissorTexturesByMotherScene(List<GaiaMaterial> motherMaterials) {
+        boolean hasTextures = false;
+        for (GaiaMaterial material : materials) {
+            if (material.hasTextures()) {
+                hasTextures = true;
+                break;
+            }
+        }
+
+        if (!hasTextures) {
+            return;
+        }
+
+        for (HalfEdgeNode node : nodes) {
+            node.scissorTexturesByMotherScene(materials, motherMaterials);
         }
     }
 
@@ -431,10 +482,8 @@ public class HalfEdgeScene implements Serializable {
     }
 
     public List<GaiaMaterial> getUsingMaterialsWithTextures(List<GaiaMaterial> resultMaterials) {
-        //********************************************************************************
-        // Usually, there are materials that are not using.***
-        // This function returns the materials that are using and has textures.***
-        //********************************************************************************
+        // Usually, there are materials that are not using
+        // This function returns the materials that are using and has textures
         if (resultMaterials == null) {
             resultMaterials = new ArrayList<>();
         }
@@ -468,9 +517,26 @@ public class HalfEdgeScene implements Serializable {
         }
     }
 
+    public void updateVerticesList() {
+        for (HalfEdgeNode node : nodes) {
+            node.updateVerticesList();
+        }
+    }
+
+    public void updateFacesList() {
+        for (HalfEdgeNode node : nodes) {
+            node.updateFacesList();
+        }
+    }
+
     public void makeSkirt() {
         GaiaBoundingBox bbox = getBoundingBox();
-        double error = 1e-5;
+        if (bbox == null) {
+            log.info("Making skirt : Error: bbox is null");
+            return;
+        }
+
+        double error = 1e-3; // 0.001
         List<HalfEdgeVertex> westVertices = new ArrayList<>();
         List<HalfEdgeVertex> eastVertices = new ArrayList<>();
         List<HalfEdgeVertex> southVertices = new ArrayList<>();
@@ -483,33 +549,60 @@ public class HalfEdgeScene implements Serializable {
         double bboxLengthY = bbox.getLengthY();
         double bboxMaxSize = Math.max(bboxLengthX, bboxLengthY);
         double expandDistance = bboxMaxSize * 0.005;
-        // provisionally, only expand the perimeter vertices.***
+        // provisionally, only expand the perimeter vertices
+        double dotLimit = 0.35;
         if (westVertices.size() > 1) {
             for (HalfEdgeVertex vertex : westVertices) {
-                Vector3d position = vertex.getPosition();
-                position.x -= expandDistance;
+                Vector3d normal = vertex.calculateNormal();
+                if (Math.abs(normal.dot(-1, 0, 0)) < dotLimit) {
+                    Vector3d position = vertex.getPosition();
+                    position.x -= expandDistance;
+                }
             }
         }
 
         if (eastVertices.size() > 1) {
             for (HalfEdgeVertex vertex : eastVertices) {
-                Vector3d position = vertex.getPosition();
-                position.x += expandDistance;
+                Vector3d normal = vertex.calculateNormal();
+                if (Math.abs(normal.dot(1, 0, 0)) < dotLimit) {
+                    Vector3d position = vertex.getPosition();
+                    position.x += expandDistance;
+                }
             }
         }
 
         if (southVertices.size() > 1) {
             for (HalfEdgeVertex vertex : southVertices) {
-                Vector3d position = vertex.getPosition();
-                position.y -= expandDistance;
+                Vector3d normal = vertex.calculateNormal();
+                if (Math.abs(normal.dot(0, -1, 0)) < dotLimit) {
+                    Vector3d position = vertex.getPosition();
+                    position.y -= expandDistance;
+                }
             }
         }
 
         if (northVertices.size() > 1) {
             for (HalfEdgeVertex vertex : northVertices) {
-                Vector3d position = vertex.getPosition();
-                position.y += expandDistance;
+                Vector3d normal = vertex.calculateNormal();
+                if (Math.abs(normal.dot(0, 1, 0)) < dotLimit) {
+                    Vector3d position = vertex.getPosition();
+                    position.y += expandDistance;
+                }
             }
         }
+    }
+
+    public void translateTexCoordsToPositiveQuadrant() {
+        for (HalfEdgeNode node : nodes) {
+            node.translateTexCoordsToPositiveQuadrant();
+        }
+    }
+
+    public int getFacesCount() {
+        int facesCount = 0;
+        for (HalfEdgeNode node : nodes) {
+            facesCount += node.getFacesCount();
+        }
+        return facesCount;
     }
 }

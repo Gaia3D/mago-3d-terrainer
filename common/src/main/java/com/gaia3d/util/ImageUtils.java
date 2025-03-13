@@ -20,6 +20,7 @@ import java.util.Iterator;
 /**
  * Utility class for image operations.
  */
+@SuppressWarnings("ALL")
 @Slf4j
 public class ImageUtils {
 
@@ -112,7 +113,7 @@ public class ImageUtils {
             if (flip) byteBuffer.flip();
             return byteBuffer;
         } catch (IOException e) {
-            log.error("Error:", e);
+            log.error("[ERROR] :", e);
         }
         return null;
     }
@@ -248,7 +249,7 @@ public class ImageUtils {
                 System.err.println("No ImageReader found for the given format.");
             }
         } catch (IOException e) {
-            log.error("Error:", e);
+            log.error("[ERROR] :", e);
         }
 
         return result;
@@ -288,6 +289,18 @@ public class ImageUtils {
         return floatMatrix;
     }
 
+    public static BufferedImage invertImageY(BufferedImage image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        BufferedImage newImage = new BufferedImage(width, height, image.getType());
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                newImage.setRGB(i, height - j - 1, image.getRGB(i, j));
+            }
+        }
+        return newImage;
+    }
+
     public static BufferedImage clampBackGroundColor(BufferedImage image, Color backGroundColor, int borderSize, int iterations) {
         //log.debug("Clamp Background Color");
         int width = image.getWidth();
@@ -316,7 +329,7 @@ public class ImageUtils {
             changed = false;
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
-                    Color pixel = new Color(oldImage.getRGB(i, j), true);
+                    Color pixel = new Color(oldImage.getRGB(i, j), false);
                     // now check if pixel is background color
                     if (pixel.equals(backGroundColor)) {
                         // take a pixelMatrix of 5x5 around the pixel
@@ -324,7 +337,7 @@ public class ImageUtils {
                             for (int y = j - borderSize; y <= j + borderSize; y++) {
                                 if (x >= 0 && x < width && y >= 0 && y < height) {
                                     noBackGroundColor = oldImage.getRGB(x, y);
-                                    if (!new Color(noBackGroundColor, true).equals(backGroundColor)) {
+                                    if (!new Color(noBackGroundColor, false).equals(backGroundColor)) {
                                         newImage.setRGB(i, j, noBackGroundColor);
                                         changed = true;
                                         break;
@@ -377,7 +390,7 @@ public class ImageUtils {
             File file = new File(path);
             ImageIO.write(image, format, new File(path));
         } catch (IOException e) {
-            log.error("Error:", e);
+            log.error("[ERROR] :", e);
         }
     }
 }

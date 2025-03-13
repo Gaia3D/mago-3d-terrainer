@@ -40,15 +40,25 @@ public class GaiaPointCloud implements Serializable {
 
     public void minimize(File minimizedFile) {
         if (this.isMinimized) {
-            log.warn("The point cloud is already minimized.");
+            log.warn("[WARN] The point cloud is already minimized.");
             return;
         }
 
         Vector3d quantizationOffset = gaiaBoundingBox.getMinPosition();
         Vector3d quantizationScale = gaiaBoundingBox.getVolume();
+        // correct the scale if it is zero
+        if (quantizationScale.x == 0) {
+            quantizationScale.x = 1;
+        }
+        if (quantizationScale.y == 0) {
+            quantizationScale.y = 1;
+        }
+        if (quantizationScale.z == 0) {
+            quantizationScale.z = 1;
+        }
+
         this.quantizedVolumeScale = quantizationScale;
         this.quantizedVolumeOffset = quantizationOffset;
-
         this.pointCloudTemp = new GaiaPointCloudTemp(minimizedFile);
         double[] volumeOffset = pointCloudTemp.getQuantizedVolumeOffset();
         volumeOffset[0] = quantizationOffset.x;
@@ -60,14 +70,13 @@ public class GaiaPointCloud implements Serializable {
         volumeScale[2] = quantizationScale.z;
         pointCloudTemp.writeHeader();
         this.vertexCount = vertices.size();
-
         pointCloudTemp.writePositionsFast(vertices);
         this.vertices.clear();
         try {
             pointCloudTemp.getOutputStream().flush();
             pointCloudTemp.getOutputStream().close();
         } catch (IOException e) {
-            log.error("[Error][minimize] : Failed to minimize the point cloud.", e);
+            log.error("[ERROR][minimize] : Failed to minimize the point cloud.", e);
             throw new RuntimeException(e);
         }
 
@@ -79,7 +88,7 @@ public class GaiaPointCloud implements Serializable {
 
     public void maximizeTemp() {
         if (!isMinimized) {
-            log.warn("The point cloud is already maximized.");
+            log.warn("[WARN] The point cloud is already maximized.");
             return;
         }
 
@@ -90,14 +99,14 @@ public class GaiaPointCloud implements Serializable {
         try {
             pointCloudTemp.getInputStream().close();
         } catch (IOException e) {
-            log.error("[Error][maximize] : Failed to maximize the point cloud.", e);
+            log.error("[ERROR][maximize] : Failed to maximize the point cloud.", e);
         }
         this.vertices = vertices;
     }
 
     public void maximizeTempOld() {
         if (!isMinimized) {
-            log.warn("The point cloud is already maximized.");
+            log.warn("[WARN] The point cloud is already maximized.");
             return;
         }
         try (ObjectInputStream objectInputStream = new ObjectInputStream(new BufferedInputStream(new FileInputStream(minimizedFile)))) {
@@ -119,7 +128,7 @@ public class GaiaPointCloud implements Serializable {
                 vertex.setQuantizedPosition(null);
             });
         } catch (Exception e) {
-            log.error("[Error][maximize] : Failed to maximize the point cloud.", e);
+            log.error("[ERROR][maximize] : Failed to maximize the point cloud.", e);
         }
     }
 

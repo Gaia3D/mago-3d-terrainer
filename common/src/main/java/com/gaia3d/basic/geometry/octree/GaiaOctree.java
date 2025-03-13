@@ -81,7 +81,7 @@ public class GaiaOctree {
             children[i].idx = i;
         }
 
-        // now set children sizes.***
+        // now set children sizes
         double midX = (minX + maxX) / 2.0;
         double midY = (minY + maxY) / 2.0;
         double midZ = (minZ + maxZ) / 2.0;
@@ -96,7 +96,7 @@ public class GaiaOctree {
         children[6].setSize(midX, midY, midZ, maxX, maxY, maxZ);
         children[7].setSize(minX, midY, midZ, midX, maxY, maxZ);
 
-        // now set children coords.***
+        // now set children coords
         int L = this.coordinate.getDepth();
         int X = this.coordinate.getX();
         int Y = this.coordinate.getY();
@@ -113,7 +113,7 @@ public class GaiaOctree {
     }
 
     public void distributeContentsByCenterPoint() {
-        if (faceDataList.size() == 0) {
+        if (faceDataList.isEmpty()) {
             return;
         }
 
@@ -179,7 +179,7 @@ public class GaiaOctree {
     }
 
     public void distributeContentsByBoundingBox(boolean distributionUnique) {
-        if (faceDataList.size() == 0) {
+        if (faceDataList.isEmpty()) {
             return;
         }
 
@@ -310,7 +310,7 @@ public class GaiaOctree {
     }
 
     public boolean hasContents(boolean includeChildren) {
-        if (faceDataList.size() > 0) {
+        if (!faceDataList.isEmpty()) {
             return true;
         }
 
@@ -338,7 +338,7 @@ public class GaiaOctree {
     }
 
     public GaiaOctree getOctreeByFullPath(List<GaiaOctreeCoordinate> fullPath) {
-        if (fullPath == null || fullPath.size() == 0) {
+        if (fullPath == null || fullPath.isEmpty()) {
             return null;
         }
 
@@ -398,7 +398,7 @@ public class GaiaOctree {
 
         boolean includeChildren = false;
 
-        //Left octree.***
+        //Left octree
         GaiaOctreeCoordinate leftCoord = this.coordinate.getLeft();
         GaiaOctree leftOctree = getOctreeByCoordinate(leftCoord);
         if (leftOctree == null) {
@@ -407,7 +407,7 @@ public class GaiaOctree {
             result[0] = true;
         }
 
-        //Right octree.***
+        //Right octree
         GaiaOctreeCoordinate rightCoord = this.coordinate.getRight();
         GaiaOctree rightOctree = getOctreeByCoordinate(rightCoord);
         if (rightOctree == null) {
@@ -416,7 +416,7 @@ public class GaiaOctree {
             result[1] = true;
         }
 
-        //Front octree.***
+        //Front octree
         GaiaOctreeCoordinate frontCoord = this.coordinate.getFront();
         GaiaOctree frontOctree = getOctreeByCoordinate(frontCoord);
         if (frontOctree == null) {
@@ -425,7 +425,7 @@ public class GaiaOctree {
             result[2] = true;
         }
 
-        //Rear octree.***
+        //Rear octree
         GaiaOctreeCoordinate rearCoord = this.coordinate.getRear();
         GaiaOctree rearOctree = getOctreeByCoordinate(rearCoord);
         if (rearOctree == null) {
@@ -434,7 +434,7 @@ public class GaiaOctree {
             result[3] = true;
         }
 
-        //Top octree.***
+        //Top octree
         GaiaOctreeCoordinate topCoord = this.coordinate.getTop();
         GaiaOctree topOctree = getOctreeByCoordinate(topCoord);
         if (topOctree == null) {
@@ -443,7 +443,7 @@ public class GaiaOctree {
             result[5] = true;
         }
 
-        //Bottom octree.***
+        //Bottom octree
         GaiaOctreeCoordinate bottomCoord = this.coordinate.getBottom();
         GaiaOctree bottomOctree = getOctreeByCoordinate(bottomCoord);
         if (bottomOctree == null) {

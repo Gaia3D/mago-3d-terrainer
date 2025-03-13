@@ -1,5 +1,6 @@
 package com.gaia3d.basic.geometry.octree;
 
+import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.halfedge.HalfEdgeFace;
 import com.gaia3d.basic.halfedge.HalfEdgeSurface;
 import com.gaia3d.basic.halfedge.HalfEdgeVertex;
@@ -55,7 +56,7 @@ public class HalfEdgeOctree {
             children[i].idx = i;
         }
 
-        // now set children sizes.***
+        // now set children sizes
         double midX = (minX + maxX) / 2.0;
         double midY = (minY + maxY) / 2.0;
         double midZ = (minZ + maxZ) / 2.0;
@@ -70,7 +71,7 @@ public class HalfEdgeOctree {
         children[6].setSize(midX, midY, midZ, maxX, maxY, maxZ);
         children[7].setSize(minX, midY, midZ, midX, maxY, maxZ);
 
-        // now set children coords.***
+        // now set children coords
         int L = this.coordinate.getDepth();
         int X = this.coordinate.getX();
         int Y = this.coordinate.getY();
@@ -197,10 +198,63 @@ public class HalfEdgeOctree {
         this.maxZ = maxZ;
     }
 
-    public void distributeFacesToLeaf() {
+//    public void distributeFacesToLeaf() {
+//        if (this.faces.isEmpty()) return;
+//
+//        if (this.children == null) return;
+//
+//        double midX = (minX + maxX) / 2.0;
+//        double midY = (minY + maxY) / 2.0;
+//        double midZ = (minZ + maxZ) / 2.0;
+//
+//        for (HalfEdgeFace face : this.faces) {
+//            Vector3d center = face.getBarycenter(null);
+//            if (center.x < midX) {
+//                if (center.y < midY) {
+//                    if (center.z < midZ) {
+//                        children[0].faces.add(face);
+//                    } else {
+//                        children[4].faces.add(face);
+//                    }
+//                } else {
+//                    if (center.z < midZ) {
+//                        children[3].faces.add(face);
+//                    } else {
+//                        children[7].faces.add(face);
+//                    }
+//                }
+//            } else {
+//                if (center.y < midY) {
+//                    if (center.z < midZ) {
+//                        children[1].faces.add(face);
+//                    } else {
+//                        children[5].faces.add(face);
+//                    }
+//                } else {
+//                    if (center.z < midZ) {
+//                        children[2].faces.add(face);
+//                    } else {
+//                        children[6].faces.add(face);
+//                    }
+//                }
+//            }
+//        }
+//
+//        this.faces.clear();
+//
+//        for (HalfEdgeOctree child : children) {
+//            child.distributeFacesToLeaf();
+//        }
+//    }
+
+    public void distributeFacesToTargetDepth(int targetDepth) {
         if (this.faces.isEmpty()) return;
 
-        if (this.children == null) return;
+        if (this.getCoordinate().getDepth() >= targetDepth) return;
+
+        if (this.children == null) {
+            this.createChildren();
+        }
 
         double midX = (minX + maxX) / 2.0;
         double midY = (minY + maxY) / 2.0;
@@ -239,12 +293,143 @@ public class HalfEdgeOctree {
             }
         }
 
+        // clear the faces list
         this.faces.clear();
 
-        for (HalfEdgeOctree child : children) {
-            child.distributeFacesToLeaf();
+        if (this.getCoordinate().getDepth() < targetDepth) {
+            for (HalfEdgeOctree child : children) {
+                child.distributeFacesToTargetDepth(targetDepth);
+            }
         }
     }
+
+    public boolean intersectsPoint(Vector3d point) {
+        if (point.x < minX || point.x > maxX) {
+            return false;
+        }
+        if (point.y < minY || point.y > maxY) {
+            return false;
+        }
+        if (point.z < minZ || point.z > maxZ) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean intersectsBoundingBox(GaiaBoundingBox box) {
+        if (box.getMaxX() < minX || box.getMinX() > maxX) {
+            return false;
+        }
+        else if (box.getMaxY() < minY || box.getMinY() > maxY) {
+            return false;
+        }
+        else if (box.getMaxZ() < minZ || box.getMinZ() > maxZ) {
+            return false;
+        }
+        return true;
+    }
+
+//    public void distributeFacesToTargetDepth(int targetDepth, boolean canBeRepeated) {
+//        if (this.faces.isEmpty()) return;
+//
+//        if (this.getCoordinate().getDepth() >= targetDepth) return;
+//
+//        if (this.children == null) {
+//            this.createChildren();
+//        }
+//
+//        double midX = (minX + maxX) / 2.0;
+//        double midY = (minY + maxY) / 2.0;
+//        double midZ = (minZ + maxZ) / 2.0;
+//
+//        for (HalfEdgeFace face : this.faces) {
+//            Vector3d center = face.getBarycenter(null);
+//            int index = 0;
+//            if (center.x < midX) {
+//                if (center.y < midY) {
+//                    if (center.z < midZ) {
+//                        children[0].faces.add(face);
+//                        index = 0;
+//                    } else {
+//                        children[4].faces.add(face);
+//                        index = 4;
+//                    }
+//                } else {
+//                    if (center.z < midZ) {
+//                        children[3].faces.add(face);
+//                        index = 3;
+//                    } else {
+//                        children[7].faces.add(face);
+//                        index = 7;
+//                    }
+//                }
+//            } else {
+//                if (center.y < midY) {
+//                    if (center.z < midZ) {
+//                        children[1].faces.add(face);
+//                        index = 1;
+//                    } else {
+//                        children[5].faces.add(face);
+//                        index = 5;
+//                    }
+//                } else {
+//                    if (center.z < midZ) {
+//                        children[2].faces.add(face);
+//                        index = 2;
+//                    } else {
+//                        children[6].faces.add(face);
+//                        index = 6;
+//                    }
+//                }
+//            }
+//
+//            if (canBeRepeated) {
+//                double octreeSize = this.getMaxSize();
+//                double error = octreeSize * 0.005;
+//
+//                boolean isAlmostAxisAlignedFace = false;
+//                GaiaBoundingBox faceBBox = face.getBoundingBox();
+//                Vector3d normal = face.getPlaneNormal();
+//                double normalX = Math.abs(normal.x);
+//                double normalY = Math.abs(normal.y);
+//                double normalZ = Math.abs(normal.z);
+//
+//                if (normalX > normalY && normalX > normalZ && normalX > 0.85) {
+//                    double lengthY = faceBBox.getLengthY();
+//                    double lengthZ = faceBBox.getLengthZ();
+//                    faceBBox.expandXYZ(error, -lengthY * 0.1, -lengthZ * 0.1);
+//                    isAlmostAxisAlignedFace = true;
+//                }
+//                else if (normalY > normalX && normalY > normalZ && normalY > 0.85) {
+//                    double lengthX = faceBBox.getLengthX();
+//                    double lengthZ = faceBBox.getLengthZ();
+//                    faceBBox.expandXYZ(-lengthX * 0.1, error, -lengthZ * 0.1);
+//                    isAlmostAxisAlignedFace = true;
+//                }
+//
+//                if (isAlmostAxisAlignedFace) {
+//                    for (int idx = 0; idx < 8; idx++) {
+//                        if (idx == index) {
+//                            continue;
+//                        }
+//                        HalfEdgeOctree child = children[idx];
+//                        if (child.intersectsBoundingBox(faceBBox)) {
+//                            child.faces.add(face);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        // clear the faces list
+//        this.faces.clear();
+//
+//        if (this.getCoordinate().getDepth() < targetDepth) {
+//            for (HalfEdgeOctree child : children) {
+//                child.distributeFacesToTargetDepth(targetDepth, canBeRepeated);
+//            }
+//        }
+//    }
 
     public void distributeContents() {
         if (vertices.isEmpty()) {
@@ -288,7 +473,7 @@ public class HalfEdgeOctree {
             }
         }
 
-        // clear the vertices list.***
+        // clear the vertices list
         vertices.clear();
     }
 
@@ -318,5 +503,25 @@ public class HalfEdgeOctree {
                 child.extractOctreesWithContents(octrees);
             }
         }
+    }
+
+    public double getSizeX() {
+        return maxX - minX;
+    }
+
+    public double getSizeY() {
+        return maxY - minY;
+    }
+
+    public double getSizeZ() {
+        return maxZ - minZ;
+    }
+
+    public double getMaxSize()
+    {
+        double x = maxX - minX;
+        double y = maxY - minY;
+        double z = maxZ - minZ;
+        return Math.max(x, Math.max(y, z));
     }
 }

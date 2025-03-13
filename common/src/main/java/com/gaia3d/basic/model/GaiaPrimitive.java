@@ -8,7 +8,6 @@ import com.gaia3d.basic.geometry.octree.GaiaOctreeVertices;
 import com.gaia3d.basic.model.structure.PrimitiveStructure;
 import com.gaia3d.basic.types.AttributeType;
 import com.gaia3d.basic.types.GLConstants;
-import com.gaia3d.util.GaiaColorUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +17,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.joml.*;
 
 import java.io.Serializable;
-import java.lang.Math;
 import java.util.*;
 import java.util.Random;
 
@@ -38,7 +36,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
     private Integer materialIndex = -1;
 
     public GaiaBoundingBox getBoundingBox(Matrix4d transform) {
-        if(this.vertices == null || this.vertices.isEmpty()) {
+        if (this.vertices == null || this.vertices.isEmpty()) {
             return null;
         }
         GaiaBoundingBox boundingBox = new GaiaBoundingBox();
@@ -258,7 +256,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
 
         GaiaBuffer buffer = gaiaBufferDataSet.getBuffers().get(AttributeType.POSITION);
         if (buffer == null) {
-            log.error("No position buffer");
+            log.error("[ERROR] No position buffer");
         }
 
         return gaiaBufferDataSet;
@@ -311,7 +309,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
             int[] indices = surface.getIndices();
             for (int index : indices) {
                 if (index >= verticesCount) {
-                    log.error("Invalid index : {}", index);
+                    log.error("[ERROR] Invalid index : {}", index);
                     result = false;
                 }
             }
@@ -355,11 +353,11 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
     }
 
     public List<GaiaFace> extractGaiaFaces(List<GaiaFace> resultFaces) {
-        if(resultFaces == null) {
+        if (resultFaces == null) {
             resultFaces = new ArrayList<>();
         }
 
-        for(GaiaSurface surface : this.surfaces) {
+        for (GaiaSurface surface : this.surfaces) {
             resultFaces.addAll(surface.getFaces());
         }
         return resultFaces;
@@ -395,7 +393,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
         octreeVertices.calculateSize();
         octreeVertices.setAsCube();
         octreeVertices.setMaxDepth(10);
-        octreeVertices.setMinBoxSize(1.0); // 1m.***
+        octreeVertices.setMinBoxSize(1.0); // 1m
 
         octreeVertices.makeTreeByMinVertexCount(50);
 
@@ -422,7 +420,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
             vertexIdxMap.put(newVerticesArray.get(i), i);
         }
 
-        // Now, update the indices of the faces.***
+        // Now, update the indices of the faces
         Map<GaiaFace, GaiaFace> mapDeleteFaces = new HashMap<>();
         for (GaiaSurface surface : this.surfaces) {
             int facesCount = surface.getFaces().size();
@@ -436,12 +434,12 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
                     indices[k] = index;
                 }
 
-                // check indices.***
+                // check indices
                 for (int k = 0; k < indices.length; k++) {
                     int index = indices[k];
                     for (int m = k + 1; m < indices.length; m++) {
                         if (index == indices[m]) {
-                            // must remove the face.***
+                            // must remove the face
                             mapDeleteFaces.put(face, face);
                         }
                     }
@@ -498,10 +496,8 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
     }
 
     public boolean deleteNoUsedVertices() {
-        //*****************************************************************************************
-        // Sometimes, there are no used vertices.***
-        // The no used vertices must be deleted (vertex indices of the faces will be modified!).***
-        //*****************************************************************************************
+        // Sometimes, there are no used vertices
+        // The no used vertices must be deleted (vertex indices of the faces will be modified!)
         Map<GaiaVertex, Integer> vertexIdxMap = new HashMap<>();
         int surfacesCount = this.getSurfaces().size();
         for (int i = 0; i < surfacesCount; i++) {
@@ -527,7 +523,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
         vertexCount = this.getVertices().size();
         int usedVertexCount = vertexIdxMap.size();
         if (vertexCount != usedVertexCount) {
-            // Exists no used vertices.***
+            // Exists no used vertices
             List<GaiaVertex> usedVertices = new ArrayList<>();
             int idx = 0;
             Map<GaiaVertex, Integer> vertexIdxMap2 = new HashMap<>();
@@ -537,7 +533,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
                 idx++;
             }
 
-            // now, update the indices of the faces.***
+            // now, update the indices of the faces
             for (int i = 0; i < surfacesCount; i++) {
                 GaiaSurface surface = this.getSurfaces().get(i);
                 List<GaiaFace> faces = surface.getFaces();
@@ -551,7 +547,7 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
                 }
             }
 
-            // Finally, update the vertices.***
+            // Finally, update the vertices
             this.getVertices().clear();
             this.setVertices(usedVertices);
         }
@@ -574,11 +570,14 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
     }
 
     public void deleteDegeneratedFaces() {
+        int facesDeletedCount = 0;
         for (GaiaSurface surface : this.surfaces) {
-            surface.deleteDegeneratedFaces(this.vertices);
+            facesDeletedCount = surface.deleteDegeneratedFaces(this.vertices);
         }
 
-        this.deleteNoUsedVertices();
+        if (facesDeletedCount > 0) {
+            this.deleteNoUsedVertices();
+        }
     }
 
     public void makeTriangleFaces() {
@@ -600,5 +599,13 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
         for (GaiaSurface surface : surfaces) {
             surface.makeTriangularFaces(vertices);
         }
+    }
+
+    public int getFacesCount() {
+        int facesCount = 0;
+        for (GaiaSurface surface : surfaces) {
+            facesCount += surface.getFaces().size();
+        }
+        return facesCount;
     }
 }

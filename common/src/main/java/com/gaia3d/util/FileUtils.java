@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("ALL")
 @Slf4j
 public class FileUtils {
 
@@ -35,7 +36,7 @@ public class FileUtils {
         File[] listOfFiles = folder.listFiles();
 
         if (listOfFiles == null) {
-            log.warn("No files in the folder: " + folderPath);
+            log.warn("[WARN] No files in the folder: " + folderPath);
             return;
         }
         for (File file : listOfFiles) {
@@ -53,7 +54,7 @@ public class FileUtils {
         File[] listOfFiles = folder.listFiles();
 
         if (listOfFiles == null) {
-            log.warn("No files in the folder: " + folderPath);
+            log.warn("[WARN] No files in the folder: " + folderPath);
             return;
         }
         for (File file : listOfFiles) {
