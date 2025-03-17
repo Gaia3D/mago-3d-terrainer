@@ -1,12 +1,18 @@
 package com.gaia3d.terrain.tile;
 
-import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import lombok.Getter;
 import lombok.Setter;
+import org.joml.Vector2i;
+import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -125,14 +131,51 @@ public class TileWgs84Raster {
         double semiDeltaLonDeg = deltaLonDeg * 0.5;
         double semiDeltaLatDeg = deltaLatDeg * 0.5;
 
+        // make intersected terrainElevationDataList.***
+        GeographicExtension geoExtension = this.getGeographicExtension();
+        List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
+        resultTerrainElevDataArray.clear();
+        // Debug : check if the terrainElevationDataList is intersected with the geoExtension.***
+        Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap = new HashMap<>();
+        terrainElevationDataManager.getTerrainElevationDataArray(geoExtension, terrainElevDataMap);
+        resultTerrainElevDataArray = new ArrayList<>(terrainElevDataMap.keySet());
+
         for (int col = 0; col < rasterWidth; col++) {
             double lonDeg = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;
             for (int row = 0; row < rasterHeight; row++) {
                 double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
                 int idx = row * rasterWidth + col;
-                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, this.manager.getTerrainElevationDataList());
+                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, resultTerrainElevDataArray);
             }
         }
+    }
+
+    public RasterTriangle getRasterTriangle(TerrainTriangle triangle) {
+        RasterTriangle rasterTriangle = new RasterTriangle();
+
+        List<TerrainHalfEdge> listHalfEdges = new ArrayList<>(); // no used in this function, but needed to call the getVertices function.
+        List<TerrainVertex> vertices = triangle.getVertices(null, listHalfEdges);
+        Vector3d pos0 = vertices.get(0).getPosition();
+        Vector3d pos1 = vertices.get(1).getPosition();
+        Vector3d pos2 = vertices.get(2).getPosition();
+
+        // the pos0, pos1 and pos2 are in geographic coordinates.
+        int col0 = getColumn(pos0.x);
+        int row0 = getRow(pos0.y);
+
+        int col1 = getColumn(pos1.x);
+        int row1 = getRow(pos1.y);
+
+        int col2 = getColumn(pos2.x);
+        int row2 = getRow(pos2.y);
+
+        Vector2i v0 = new Vector2i(col0, row0);
+        Vector2i v1 = new Vector2i(col1, row1);
+        Vector2i v2 = new Vector2i(col2, row2);
+
+        rasterTriangle.setVertices(v0, v1, v2);
+
+        return rasterTriangle;
     }
 
 }

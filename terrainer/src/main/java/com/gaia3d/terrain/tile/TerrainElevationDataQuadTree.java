@@ -1,11 +1,13 @@
 package com.gaia3d.terrain.tile;
 
+import com.gaia3d.basic.geometry.GaiaRectangle;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -144,6 +146,22 @@ public class TerrainElevationDataQuadTree {
         }
     }
 
+    public void deleteCoverageIfNoIntersectsGeoExtension(GeographicExtension geographicExtension) {
+        if (terrainElevationDataList != null) {
+            for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
+                if (!geographicExtension.intersects(terrainElevationData.getGeographicExtension())) {
+                    terrainElevationData.deleteCoverage();
+                }
+            }
+        }
+
+        if (children != null) {
+            for (int i = 0; i < CHILDREN_COUNT; i++) {
+                children[i].deleteCoverageIfNoIntersectsGeoExtension(geographicExtension);
+            }
+        }
+    }
+
     public void deleteCoverageIfNotIntersects(GeographicExtension geographicExtension) {
         if (terrainElevationDataList != null) {
             for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
@@ -182,6 +200,23 @@ public class TerrainElevationDataQuadTree {
                 if (children[j].geographicExtension.intersects(lonDeg, latDeg)) {
                     children[j].getTerrainElevationDataArray(lonDeg, latDeg, resultTerrainElevDataArray);
                     break;
+                }
+            }
+        }
+    }
+
+    public void getTerrainElevationDataArray(GeographicExtension geoExtension, Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap) {
+        for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
+            GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
+            if (geographicExtension.intersects(geoExtension)) {
+                terrainElevDataMap.put(terrainElevationData, terrainElevationData);
+            }
+        }
+
+        if (children != null) {
+            for (int j = 0; j < CHILDREN_COUNT; j++) {
+                if (children[j].geographicExtension.intersects(geoExtension)) {
+                    children[j].getTerrainElevationDataArray(geoExtension, terrainElevDataMap);
                 }
             }
         }

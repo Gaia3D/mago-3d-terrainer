@@ -6,6 +6,7 @@ import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
+import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -133,6 +134,24 @@ public class TerrainElevationDataManager {
 
         log.info("ReusedRasterTilesCount = {}", reusedRasterTilesCount + " / " + initialSize);
 
+        // now, delete TerrainElevationData's coverage that are not intersecting with the tileRange.***
+        GeographicExtension geoExtensionTotal = null;
+        for (TileIndices tileIndices : tileIndicesList) {
+            String imageryType = tileWgs84Manager.getImaginaryType();
+            boolean originIsLeftUp = tileWgs84Manager.isOriginIsLeftUp();
+            GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
+            if(geoExtensionTotal == null) {
+                geoExtensionTotal = new GeographicExtension();
+                geoExtensionTotal.copyFrom(geoExtension);
+            } else {
+                geoExtensionTotal.union(geoExtension);
+            }
+        }
+        if(geoExtensionTotal != null) {
+            this.rootTerrainElevationDataQuadTree.deleteCoverageIfNoIntersectsGeoExtension(geoExtensionTotal);
+        }
+
+
         for (TileIndices tileIndices : tileIndicesList) {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
             if (tileWgs84Raster == null) {
@@ -210,6 +229,31 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
+    public Map<TerrainElevationData, TerrainElevationData> getTerrainElevationDataArray(GeographicExtension geoExtension,
+                                                                                        Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap) {
+        if (this.geoTiffFilesCount == 1) {
+            if (uniqueTerrainElevationData == null) {
+                return null;
+            }
+            if(terrainElevDataMap == null) {
+                terrainElevDataMap = new HashMap<>();
+            }
+            terrainElevDataMap.put(uniqueTerrainElevationData, uniqueTerrainElevationData);
+            return terrainElevDataMap;
+        }
+
+        if (rootTerrainElevationDataQuadTree == null) {
+            return terrainElevDataMap;
+        }
+
+        if(terrainElevDataMap == null) {
+            terrainElevDataMap = new HashMap<>();
+        }
+
+        rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(geoExtension, terrainElevDataMap);
+        return terrainElevDataMap;
+    }
+
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         double resultElevation = 0.0;
 
@@ -225,8 +269,10 @@ public class TerrainElevationDataManager {
             return resultElevation;
         }
 
-        terrainElevDataArray.clear();
-        rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDataArray);
+        // old.***
+//        terrainElevDataArray.clear();
+//        rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDataArray);
+        // End old.***
 
         double noDataValue = globalOptions.getNoDataValue();
         PriorityType priorityType = globalOptions.getPriorityType();
@@ -242,8 +288,9 @@ public class TerrainElevationDataManager {
 
             /* check if the priority is resolution */
             if (priorityType.equals(PriorityType.RESOLUTION)) {
-                double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFilePath());
-                //double pixelArea = terrainElevationData.getPixelArea();
+
+                double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFileName(), terrainElevationData.getGeotiffFilePath());
+                //double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFilePath());
                 boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is higher resolution
                 if (isHigherResolution) {
                     if (noDataValue != 0.0) {
@@ -306,6 +353,7 @@ public class TerrainElevationDataManager {
 
             gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
             terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
+            terrainElevationData.setGeotiffFileName(geoTiffFileName);
 
             crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
             crsWgs84 = CRS.decode("EPSG:4326", true);
@@ -328,7 +376,34 @@ public class TerrainElevationDataManager {
         }
     }
 
-    public Double putAndGetGridAreaMap(String path) {
+    public Double putAndGetGridAreaMap(String fileName, String path) {
+        if (gridAreaMap.containsKey(fileName)) {
+            return gridAreaMap.get(fileName);
+        }
+
+        Double pixelArea = 0.0d;
+        File file = new File(path);
+        //String fileName = file.getName();
+
+
+        File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
+        File tempFile = new File(standardizationTempPath, fileName);
+
+        if (tempFile.exists() && !file.equals(tempFile)) {
+            try {
+                GaiaGeoTiffManager gaiaGeoTiffManager = this.getGaiaGeoTiffManager();
+                GridCoverage2D coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
+                Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
+                pixelArea = originalArea.x * originalArea.y;
+            } catch (FactoryException e) {
+                log.error("[getPixelArea : FactoryException] Error in getPixelArea", e);
+            }
+        }
+        gridAreaMap.put(fileName, pixelArea);
+        return gridAreaMap.get(fileName);
+    }
+
+    public Double putAndGetGridAreaMap_original(String path) {
         Double pixelArea = 0.0d;
         File file = new File(path);
         String fileName = file.getName();

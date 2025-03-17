@@ -39,6 +39,10 @@ public class GeometryUtils {
         return boundingRectangle;
     }
 
+    public static double cosineBetweenUnitaryVectors(double ax, double ay, double az, double bx, double by, double bz) {
+        return ax * bx + ay * by + az * bz;
+    }
+
     public static GaiaRectangle getTexCoordsBoundingRectangleOfFaces(List<GaiaFace> faces, List<GaiaVertex> vertices, GaiaRectangle boundingRectangle) {
         if (boundingRectangle == null) {
             boundingRectangle = new GaiaRectangle();

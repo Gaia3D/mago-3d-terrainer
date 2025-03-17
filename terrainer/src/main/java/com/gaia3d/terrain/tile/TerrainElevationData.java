@@ -19,6 +19,8 @@ import org.opengis.referencing.FactoryException;
 
 import java.awt.image.Raster;
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Getter
@@ -30,6 +32,7 @@ public class TerrainElevationData {
     // the terrain elevation data is stored in a geotiff file
     private TerrainElevationDataManager terrainElevDataManager = null;
     private String geotiffFilePath = "";
+    private String geotiffFileName = "";
     private GeographicExtension geographicExtension = new GeographicExtension();
     private GridCoverage2D coverage = null;
     private Raster raster = null;
@@ -40,6 +43,7 @@ public class TerrainElevationData {
     private DirectPosition2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
     private int geoTiffHeight = -1;
+    private Vector2i gridCoverage2DSize = null;
 
     public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
         this.terrainElevDataManager = terrainElevationDataManager;
@@ -100,7 +104,7 @@ public class TerrainElevationData {
 
             // determine the grid coordinates of the point
             if (this.raster == null) {
-                this.raster = this.coverage.getRenderedImage().getData();
+                this.raster = this.coverage.getRenderedImage().getData(); // original.***
                 this.coverage.dispose(true);
                 this.coverage = null;
             }
@@ -143,7 +147,10 @@ public class TerrainElevationData {
             return resultAltitude;
         }
 
-        Vector2i size = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
+        if(gridCoverage2DSize == null) {
+            gridCoverage2DSize = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
+        }
+        Vector2i size = gridCoverage2DSize;
 
         double unitaryX = (lonDeg - this.geographicExtension.getMinLongitudeDeg()) / this.geographicExtension.getLongitudeRangeDegree();
         double unitaryY = 1.0 - (latDeg - this.geographicExtension.getMinLatitudeDeg()) / this.geographicExtension.getLatitudeRangeDegree();

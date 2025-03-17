@@ -14,6 +14,7 @@ import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
 
+import java.awt.image.Raster;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -55,11 +56,6 @@ public class GaiaGeoTiffManager {
             mapPathGridCoverage2d.remove(oldestPath);
             mapPathGridCoverage2dSize.remove(oldestPath);
             pathList.remove(0);
-
-//            String firstKey = mapPathGridCoverage2d.keySet().iterator().next();
-//            GridCoverage2D firstCoverage = mapPathGridCoverage2d.get(firstKey);
-//            firstCoverage.dispose(true);
-//            mapPathGridCoverage2d.remove(firstKey);
         }
 
         log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);

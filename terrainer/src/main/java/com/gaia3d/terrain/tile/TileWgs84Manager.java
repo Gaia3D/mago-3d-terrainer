@@ -204,9 +204,6 @@ public class TileWgs84Manager {
                 log.info("[Tile][{}/{}][{}/{}] generate wgs84 raster all tiles...", depth, maxTileDepth, progress, total);
                 TileRange expandedTilesRange = subDividedTilesRange.expand1();
                 this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
-                if (this.geoTiffFilesCount > 1) {
-                    this.terrainElevationDataManager.deleteCoverage();
-                }
 
                 log.info("[Tile][{}/{}][{}/{}] process tiling...", depth, maxTileDepth, progress, total);
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
@@ -214,14 +211,13 @@ public class TileWgs84Manager {
                 boolean isFirstGeneration = (depth == minTileDepth);
                 tileMatrix.makeMatrixMesh(isFirstGeneration);
                 tileMatrix.deleteObjects();
-
-                if (this.geoTiffFilesCount > 1) {
-                    this.terrainElevationDataManager.deleteCoverage();
-                }
             }
 
             this.terrainElevationDataManager.deleteGeoTiffManager();
             this.terrainElevationDataManager.deleteTileRaster();
+            if (this.geoTiffFilesCount > 1) {
+                this.terrainElevationDataManager.deleteCoverage();
+            }
 
             long endTime = System.currentTimeMillis();
             log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));

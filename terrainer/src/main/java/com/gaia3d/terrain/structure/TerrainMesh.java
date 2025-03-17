@@ -85,40 +85,6 @@ public class TerrainMesh {
         halfEdges.removeIf(halfEdge -> halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED);
     }
 
-    public void removeDeletedObjectsOriginal() {
-        // First, check vertices
-        int verticesCount = vertices.size();
-        for (int i = 0; i < verticesCount; i++) {
-            TerrainVertex vertex = vertices.get(i);
-            if (vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
-                TerrainVertex removedVertex = vertices.remove(i);
-                i--;
-                verticesCount--;
-            }
-        }
-
-        // 2nd, check triangles
-        int trianglesCount = triangles.size();
-        for (int i = 0; i < trianglesCount; i++) {
-            TerrainTriangle triangle = triangles.get(i);
-            if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
-                i--;
-                trianglesCount--;
-            }
-        }
-
-        // 3rd, check halfEdges
-        int halfEdgesCount = halfEdges.size();
-        for (int i = 0; i < halfEdgesCount; i++) {
-            TerrainHalfEdge halfEdge = halfEdges.get(i);
-            if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
-                TerrainHalfEdge removedHEdge = halfEdges.remove(i);
-                i--;
-                halfEdgesCount--;
-            }
-        }
-    }
-
     public void mergeMesh(TerrainMesh mesh) {
         // First, add vertices
         int verticesCount = mesh.vertices.size();

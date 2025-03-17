@@ -12,8 +12,10 @@ import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
+import com.gaia3d.util.GeometryUtils;
 import com.gaia3d.util.GlobeUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.opengis.referencing.operation.TransformException;
@@ -682,16 +684,13 @@ public class TileMatrix {
         // calculate the angle between triangleNormalWC with the normal at cartesian of the center of the tile
         float cosAng = 1.0f;
         if (tileIndices.getL() > 10) {
-
             Vector3f triangleNormalWC = triangle.getNormal(); // this is normalWC
             Vector3d triangleNormalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
             GeographicExtension geographicExtension = tileRaster.getGeographicExtension();
             Vector3d centerGeoCoord = geographicExtension.getMidPoint();
             double[] centerCartesian = GlobeUtils.geographicToCartesianWgs84(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z);
             Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPointWgs84(centerCartesian[0], centerCartesian[1], centerCartesian[2]);
-
-            double angRad = triangleNormalDouble.angle(normalAtCartesian);
-            cosAng = (float) Math.cos(angRad);
+            cosAng = (float) GeometryUtils.cosineBetweenUnitaryVectors(triangleNormalDouble.x, triangleNormalDouble.y, triangleNormalDouble.z, normalAtCartesian.x, normalAtCartesian.y, normalAtCartesian.z);
         }
 
         // check the barycenter of the triangle
@@ -713,10 +712,11 @@ public class TileMatrix {
 
         if (distToPlane > maxDiff) {
             // is it Barycenter?
-            log.debug("Filtered by Baricenter : L : " + tileIndices.getL() + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+            log.debug("Filtered by Barycenter : L : " + tileIndices.getL() + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
             return true;
         }
 
+        // bbox of the triangle in the raster.***
         int startCol = tileRaster.getColumn(bboxTriangle.getMinX());
         int startRow = tileRaster.getRow(bboxTriangle.getMinY());
         int endCol = tileRaster.getColumn(bboxTriangle.getMaxX());
@@ -729,6 +729,20 @@ public class TileMatrix {
             triangle.setRefineChecked(true);
             return false;
         }
+
+        RasterTriangle rasterTriangle = tileRaster.getRasterTriangle(triangle);
+        Vector2i rasterTriangleP1 = rasterTriangle.getP1();
+        Vector2i rasterTriangleP2 = rasterTriangle.getP2();
+        Vector2i rasterTriangleP3 = rasterTriangle.getP3();
+
+        // parameters used for the barycentric coordinates.***
+        int deltaYBC = rasterTriangleP2.y - rasterTriangleP3.y;
+        int deltaYCA = rasterTriangleP3.y - rasterTriangleP1.y;
+        int deltaYAC = rasterTriangleP1.y - rasterTriangleP2.y;
+        int deltaXCB = rasterTriangleP3.x - rasterTriangleP2.x;
+        int deltaXAC = rasterTriangleP1.x - rasterTriangleP3.x;
+
+        double denominator = deltaYBC * deltaXAC + deltaXCB * deltaYAC;
 
         double startLonDeg = tileRaster.getLonDeg(startCol); // here contains the semiDeltaLonDeg, for the pixel center
         double startLatDeg = tileRaster.getLatDeg(startRow); // here contains the semiDeltaLatDeg, for the pixel center
@@ -743,8 +757,10 @@ public class TileMatrix {
         int rowAux = 0;
 
         boolean intersects = false;
-        List<TerrainHalfEdge> halfEdges = new ArrayList<>();
-        TerrainLine2D line2d = new TerrainLine2D();
+        //List<TerrainHalfEdge> halfEdges = new ArrayList<>();
+        //TerrainLine2D line2d = new TerrainLine2D();
+
+
 
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
@@ -765,6 +781,34 @@ public class TileMatrix {
                     rowAux++;
                     continue;
                 }
+
+                // check if the pixel (col, row) intersects the rasterTriangle.***
+                intersects = false;
+                double alpha = (deltaYBC * (col - rasterTriangleP3.x) + deltaXCB * (row - rasterTriangleP3.y)) / denominator;
+                if(alpha < 0 || alpha > 1) {
+                    rowAux++;
+                    continue;
+                }
+                double beta = (deltaYCA * (col - rasterTriangleP3.x) + deltaXAC * (row - rasterTriangleP3.y)) / denominator;
+                if(beta < 0 || beta > 1) {
+                    rowAux++;
+                    continue;
+                }
+                double gamma = 1.0 - alpha - beta;
+                if (gamma < 0 || gamma > 1) {
+                    rowAux++;
+                    continue;
+                }
+
+                if (alpha >= 0 && beta >= 0 && gamma >= 0) {
+                    intersects = true;
+                }
+
+                if (!intersects) {
+                    rowAux++;
+                    continue;
+                }
+
                 posY = startLatDeg + rowAux * deltaLatDeg;
 
                 float elevationFloat = tileRaster.getElevation(col, row);
@@ -773,21 +817,21 @@ public class TileMatrix {
 
                 distToPlane = abs(elevationFloat - planeElevation) * cosAng;
                 if (distToPlane > maxDiff) {
-                    this.listVertices.clear();
-                    intersects = triangle.intersectsPointXY(posX, posY, halfEdges, this.listVertices, line2d);
 
-                    if (!intersects) {
-                        continue;
-                    }
+
+//                    this.listVertices.clear();
+//                    intersects = triangle.intersectsPointXY(posX, posY, halfEdges, this.listVertices, line2d);
+
+
                     log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
-                    halfEdges.clear();
+                    //halfEdges.clear();
                     return true;
                 }
                 rowAux++;
             }
             colAux++;
         }
-        halfEdges.clear();
+        //halfEdges.clear();
 
         triangle.setRefineChecked(true);
 
