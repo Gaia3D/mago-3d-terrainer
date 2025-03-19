@@ -13,6 +13,22 @@ public class TerrainerReleaseTest {
     private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
+    void dalli() {
+        File inputPath = new File(INPUT_PATH, "dalli");
+        File outputPath = new File(OUTPUT_PATH, "dalli-test");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "19",
+                "-leaveTemp",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void testChangwon() {
         String name = "changwon_4326_0501_nodata";
         File inputPath = new File(INPUT_PATH, name);
