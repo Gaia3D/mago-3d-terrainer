@@ -666,7 +666,6 @@ public class TileMatrix {
             this.listVertices.clear();
             this.listHalfEdges.clear();
             this.listVertices = triangle.getVertices(this.listVertices, this.listHalfEdges);
-            int verticesCount = this.listVertices.size();
             for (TerrainVertex vertex : this.listVertices) {
                 if (vertex.getPosition().z > maxDiff) {
                     return true;
@@ -757,11 +756,6 @@ public class TileMatrix {
         int rowAux = 0;
 
         boolean intersects = false;
-        //List<TerrainHalfEdge> halfEdges = new ArrayList<>();
-        //TerrainLine2D line2d = new TerrainLine2D();
-
-
-
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
             posX = startLonDeg + colAux * deltaLonDeg;
@@ -818,21 +812,17 @@ public class TileMatrix {
                 distToPlane = abs(elevationFloat - planeElevation) * cosAng;
                 if (distToPlane > maxDiff) {
 
-
 //                    this.listVertices.clear();
+                    //halfEdges.clear();
 //                    intersects = triangle.intersectsPointXY(posX, posY, halfEdges, this.listVertices, line2d);
 
-
                     log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
-                    //halfEdges.clear();
                     return true;
                 }
                 rowAux++;
             }
             colAux++;
         }
-        //halfEdges.clear();
-
         triangle.setRefineChecked(true);
 
         log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + colAux + " / " + colsCount + " # row : " + rowAux + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);

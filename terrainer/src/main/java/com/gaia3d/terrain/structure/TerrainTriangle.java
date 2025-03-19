@@ -266,17 +266,11 @@ public class TerrainTriangle {
             Vector3d p1WC = GlobeUtils.geographicToCartesianWgs84(p1);
             Vector3d p2WC = GlobeUtils.geographicToCartesianWgs84(p2);
 
-            //Matrix3d rotationMatrix = new Matrix3d();
-            //rotationMatrix.rotateX(Math.toRadians(-90.0));
-
             Vector3d v1 = new Vector3d(p1WC).sub(p0WC);
             Vector3d v2 = new Vector3d(p2WC).sub(p0WC);
             Vector3d normalized = new Vector3d(v1).cross(v2).normalize();
-            //rotationMatrix.transform(normalized);
 
             this.normal = new Vector3f((float) normalized.x, (float) normalized.y, (float) normalized.z);
-
-            //this.normal = new Vector3f(0, 0, -1);
         }
     }
 }
