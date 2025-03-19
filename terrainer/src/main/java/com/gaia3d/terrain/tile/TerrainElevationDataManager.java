@@ -389,7 +389,7 @@ public class TerrainElevationDataManager {
         File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
         File tempFile = new File(standardizationTempPath, fileName);
 
-        if (tempFile.exists() && !file.equals(tempFile)) {
+        if (tempFile.exists()) {
             try {
                 GaiaGeoTiffManager gaiaGeoTiffManager = this.getGaiaGeoTiffManager();
                 GridCoverage2D coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
