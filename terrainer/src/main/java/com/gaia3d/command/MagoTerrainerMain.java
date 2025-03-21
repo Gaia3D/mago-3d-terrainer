@@ -109,14 +109,10 @@ public class MagoTerrainerMain {
         tileWgs84Manager.setTerrainElevationDataManager(new TerrainElevationDataManager());
         tileWgs84Manager.getTerrainElevationDataManager().setTileWgs84Manager(tileWgs84Manager);
         tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
-        if (tileWgs84Manager.getGeoTiffFilesCount() == 1) {
-            tileWgs84Manager.getTerrainElevationDataManager().setGeoTiffFilesCount(1);
-            tileWgs84Manager.getTerrainElevationDataManager().setUniqueGeoTiffFilePath(tileWgs84Manager.getUniqueGeoTiffFilePath());
-            tileWgs84Manager.getTerrainElevationDataManager().MakeUniqueTerrainElevationData();
-        } else {
-            int depth = 0;
-            tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree(depth);
-        }
+
+        int depth = 0;
+        tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree(depth);
+
         log.info("[Tile] Finished generate terrain elevation data.");
 
         log.info("[Tile] Start making tile meshes.");

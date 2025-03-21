@@ -350,12 +350,27 @@ class MesherMainTest {
         //*******************************************************************
 
         // 2 levels of geoTiff files. The 1rst is 1m of definition and the 2nd is 5m of definition.
-
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(15);
+        String maxTileDepth = String.valueOf(17);
         String refinementStrength = String.valueOf(4);
         String originalGeoTiffFolderPath = "D:/data/DEM/busan_20250310";
-        String outputDirectory = "D:/data/mago-server/output/result_busan_20250319_L15";
+        String outputDirectory = "D:/data/mago-server/output/result_busan_20250319_L17";
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void smallBusan_oneTiffTest() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        // 2 levels of geoTiff files. The 1rst is 1m of definition and the 2nd is 5m of definition.
+
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(16);
+        String refinementStrength = String.valueOf(4);
+        String originalGeoTiffFolderPath = "D:/data/DEM/smallBusanTestOneTiff";
+        String outputDirectory = "D:/data/mago-server/output/terrain_smallBusanTestOneTiff_L16";
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
     

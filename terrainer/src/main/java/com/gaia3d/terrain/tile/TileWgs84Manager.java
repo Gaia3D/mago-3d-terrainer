@@ -43,7 +43,6 @@ public class TileWgs84Manager {
     private TerrainElevationDataManager terrainElevationDataManager = null;
     private int geoTiffFilesCount = 0;
 
-    private String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file
     private double vertexCoincidentError = 1e-11; // 1e-12 is good
     private int triangleRefinementMaxIterations = 5;
     private TerrainLayer terrainLayer = null;
@@ -113,7 +112,6 @@ public class TileWgs84Manager {
         }
 
         if (this.terrainLayer != null) {
-            //this.terrainLayer.deleteObjects();
             this.terrainLayer = null;
         }
 
@@ -176,21 +174,11 @@ public class TileWgs84Manager {
             // Set terrainLayer.available of tileSet json
             terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
-            if (this.geoTiffFilesCount == 1) {
-                if (this.terrainElevationDataManager == null) {
-                    this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
-                    this.terrainElevationDataManager.setTileWgs84Manager(this);
-                    this.terrainElevationDataManager.setUniqueGeoTiffFilePath(this.uniqueGeoTiffFilePath);
-                    this.terrainElevationDataManager.MakeUniqueTerrainElevationData();
-                }
-                this.terrainElevationDataManager.deleteObjects(); // here deletes tileRasters
-            } else {
-                this.terrainElevationDataManager.deleteObjects();
-                this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
-                this.terrainElevationDataManager.setTileWgs84Manager(this);
-                this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
-                this.terrainElevationDataManager.makeTerrainQuadTree(depth);
-            }
+            this.terrainElevationDataManager.deleteObjects();
+            this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
+            this.terrainElevationDataManager.setTileWgs84Manager(this);
+            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+            this.terrainElevationDataManager.makeTerrainQuadTree(depth);
 
             int mosaicSize = globalOptions.getMosaicSize();
             List<TileRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, mosaicSize, mosaicSize, null);
@@ -215,9 +203,8 @@ public class TileWgs84Manager {
 
             this.terrainElevationDataManager.deleteGeoTiffManager();
             this.terrainElevationDataManager.deleteTileRaster();
-            if (this.geoTiffFilesCount > 1) {
-                this.terrainElevationDataManager.deleteCoverage();
-            }
+            this.terrainElevationDataManager.deleteCoverage();
+
 
             long endTime = System.currentTimeMillis();
             log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));
@@ -411,12 +398,7 @@ public class TileWgs84Manager {
         this.setGeoTiffFilesCount(geotiffCount);
 
         log.info("[Pre][Resize GeoTiff] resizing geoTiffs Count : {} ", geotiffCount);
-        if (geotiffCount == 1) {
-            this.uniqueGeoTiffFilePath = geoTiffFilePaths.get(0);
-        } else {
-            // 2nd resize the geotiffs
-            resizeRasters(terrainElevationDataFolderPath, currentFolderPath);
-        }
+        resizeRasters(terrainElevationDataFolderPath, currentFolderPath);
     }
 
     public void resizeRasters(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {

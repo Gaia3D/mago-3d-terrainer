@@ -44,8 +44,6 @@ public class TerrainElevationDataManager {
     // Inside the folder, there are multiple geoTiff files
     private String terrainElevationDataFolderPath;
     private int geoTiffFilesCount = 0;
-    private String uniqueGeoTiffFilePath = null; // use this if there is only one geoTiff file
-    private TerrainElevationData uniqueTerrainElevationData = null; // use this if there is only one geoTiff file
 
     // if there are multiple geoTiff files, use this
     private int quadtreeMaxDepth = 10;
@@ -67,33 +65,6 @@ public class TerrainElevationDataManager {
             myGaiaGeoTiffManager = new GaiaGeoTiffManager();
         }
         return myGaiaGeoTiffManager;
-    }
-
-    public void MakeUniqueTerrainElevationData() throws IOException, FactoryException, TransformException {
-        log.debug("MakeUniqueTerrainElevationData() started");
-
-        if (uniqueGeoTiffFilePath == null) {
-            return;
-        }
-
-        if (myGaiaGeoTiffManager == null) {
-            myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
-        }
-
-        uniqueTerrainElevationData = new TerrainElevationData(this);
-        GridCoverage2D gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(uniqueGeoTiffFilePath);
-        uniqueTerrainElevationData.setGeotiffFilePath(uniqueGeoTiffFilePath);
-
-        CoordinateReferenceSystem crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
-        CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
-        MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
-
-        GeometryFactory gf = new GeometryFactory();
-        GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, uniqueTerrainElevationData.getGeographicExtension());
-        uniqueTerrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
-
-        gridCoverage2D.dispose(true);
-        log.debug("MakeUniqueTerrainElevationData() ended");
     }
 
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) {
@@ -174,14 +145,6 @@ public class TerrainElevationDataManager {
     }
 
     public GeographicExtension getRootGeographicExtension() {
-        if (this.geoTiffFilesCount == 1) {
-            if (uniqueTerrainElevationData == null) {
-                return null;
-            }
-
-            return uniqueTerrainElevationData.getGeographicExtension();
-        }
-
         if (rootTerrainElevationDataQuadTree == null) {
             return null;
         }
@@ -231,17 +194,6 @@ public class TerrainElevationDataManager {
 
     public Map<TerrainElevationData, TerrainElevationData> getTerrainElevationDataArray(GeographicExtension geoExtension,
                                                                                         Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap) {
-        if (this.geoTiffFilesCount == 1) {
-            if (uniqueTerrainElevationData == null) {
-                return null;
-            }
-            if(terrainElevDataMap == null) {
-                terrainElevDataMap = new HashMap<>();
-            }
-            terrainElevDataMap.put(uniqueTerrainElevationData, uniqueTerrainElevationData);
-            return terrainElevDataMap;
-        }
-
         if (rootTerrainElevationDataQuadTree == null) {
             return terrainElevDataMap;
         }
@@ -257,22 +209,9 @@ public class TerrainElevationDataManager {
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         double resultElevation = 0.0;
 
-        if (this.geoTiffFilesCount == 1) {
-            if (uniqueTerrainElevationData == null) {
-                return resultElevation;
-            }
-            resultElevation = uniqueTerrainElevationData.getElevation(lonDeg, latDeg, intersects);
-            return resultElevation;
-        }
-
         if (rootTerrainElevationDataQuadTree == null) {
             return resultElevation;
         }
-
-        // old.***
-//        terrainElevDataArray.clear();
-//        rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(lonDeg, latDeg, terrainElevDataArray);
-        // End old.***
 
         double noDataValue = globalOptions.getNoDataValue();
         PriorityType priorityType = globalOptions.getPriorityType();
