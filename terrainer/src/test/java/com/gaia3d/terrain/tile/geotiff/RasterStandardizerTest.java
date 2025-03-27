@@ -1,9 +1,14 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridEnvelope2D;
+import org.geotools.coverage.grid.GridGeometry2D;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.junit.jupiter.api.Test;
+import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.TransformException;
 
 import java.io.File;
 
@@ -12,14 +17,29 @@ import static org.junit.jupiter.api.Assertions.*;
 class RasterStandardizerTest {
 
     @Test
-    void resample() {
-        File inputFile = new File("E:\\resample\\input\\dem05-parts-5186-crop.tif"); // 5186
-        File outputFile = new File("E:\\resample\\output", inputFile.getName());
+    void resample() throws TransformException {
+        File inputFile = new File("G:\\workspace\\dem05-all-5186.tif"); // 5186
+        //File inputFile = new File("G:\\workspace\\lccdem.tif"); // lccdem.tif
+        //File croppedFile = new File("G:\\workspace\\dem05-all-5186-cropped.tif");
+        File outputFile = new File("E:\\", inputFile.getName().replace(".tif", "-resampled.tif"));
         CoordinateReferenceSystem targetCRS = DefaultGeographicCRS.WGS84;
 
         RasterStandardizer rasterStandardizer = new RasterStandardizer();
-        RasterStandardizer reprojector = new RasterStandardizer();
-        GridCoverage2D source = reprojector.readGeoTiff(inputFile);
+
+        GridCoverage2D source = rasterStandardizer.readGeoTiff(inputFile);
+
+
+
+
+        /*GridGeometry2D gridGeometry = source.getGridGeometry();
+        int width = 8192;
+        int height = 8192;
+        ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(gridGeometry.gridToWorld(new GridEnvelope2D(0, 0, width, height)), source.getCoordinateReferenceSystem());
+        GridCoverage2D crop = rasterStandardizer.crop(source, tileEnvelope);*/
+
+        //rasterStandardizer.writeGeotiff(crop, croppedFile);
+        //crop = null;
+        //crop = rasterStandardizer.readGeoTiff(croppedFile);
 
         GridCoverage2D coverage2D = rasterStandardizer.resample(source, targetCRS);
         rasterStandardizer.writeGeotiff(coverage2D, outputFile);

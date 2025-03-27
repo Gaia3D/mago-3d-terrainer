@@ -13,6 +13,22 @@ public class TerrainerReleaseTest {
     private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
+    void resampleBigMoreFast() {
+        File inputPath = new File("G:\\workspace\\dem05-all-5186.tif");
+        File outputPath = new File(OUTPUT_PATH, "more-fast");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "12",
+                "-leaveTemp",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void dalli() {
         File inputPath = new File(INPUT_PATH, "dalli");
         File outputPath = new File(OUTPUT_PATH, "dalli-test");
@@ -21,7 +37,8 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "19",
+                "-max", "17",
+                //"-interpolation", "nearest",
                 "-leaveTemp",
                 "-calculateNormals",
         };

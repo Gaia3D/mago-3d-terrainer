@@ -2,6 +2,7 @@ package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.tile.GaiaThreadPool;
+import it.geosolutions.jaiext.JAIExt;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -20,20 +21,21 @@ import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
+import javax.imageio.spi.IIORegistry;
 import javax.media.jai.Interpolation;
 import javax.media.jai.JAI;
 import javax.media.jai.TileCache;
+import javax.media.jai.TileScheduler;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -47,10 +49,22 @@ import java.util.stream.Collectors;
 public class RasterStandardizer {
 
     static {
-        System.setProperty("com.sun.media.jai.disableMediaLib", "false");
-        TileCache tileCache = JAI.getDefaultInstance().getTileCache();
-        tileCache.setMemoryCapacity(1024 * 1024 * 512); // 512MB
+        JAIExt.registerJAIDescriptor("Warp");
+        JAIExt.registerJAIDescriptor("Affine");
+        JAIExt.registerJAIDescriptor("Rescale");
+        JAIExt.registerJAIDescriptor("Warp/Affine");
+
+        JAIExt.initJAIEXT();
+
+        JAI jaiInstance = JAI.getDefaultInstance();
+        TileCache tileCache = jaiInstance.getTileCache();
+        tileCache.setMemoryCapacity(1024 * 1024 * 1024); // 512MB
         tileCache.setMemoryThreshold(0.75f);
+
+        TileScheduler tileScheduler = jaiInstance.getTileScheduler();
+        // availableProcessors = Runtime.getRuntime().availableProcessors();
+        tileScheduler.setParallelism(Runtime.getRuntime().availableProcessors());
+        tileScheduler.setPriority(Thread.NORM_PRIORITY);
     }
 
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
@@ -76,7 +90,7 @@ public class RasterStandardizer {
             ).collect(Collectors.toList())).get();
 
             /* save */
-            int total = resampledTiles.size();
+            /*int total = resampledTiles.size();
             AtomicInteger count = new AtomicInteger(0);
             GaiaThreadPool gaiaThreadPool = new GaiaThreadPool();
             List<Runnable> tasks = resampledTiles.stream().map(tile -> (Runnable) () -> {
@@ -87,7 +101,19 @@ public class RasterStandardizer {
                 log.info("[Pre][Standardization][{}/{}] : {}", index, total, tileFile.getAbsolutePath());
                 writeGeotiff(reprojectedTile, tileFile);
             }).collect(Collectors.toList());
-            gaiaThreadPool.execute(tasks);
+            gaiaThreadPool.execute(tasks);*/
+
+            int total = resampledTiles.size();
+            AtomicInteger count = new AtomicInteger(0);
+            resampledTiles.stream().forEach((tile) -> {
+                int index = count.incrementAndGet();
+                GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
+                File tileFile = new File(outputPath, tile.getName() + ".tif");
+
+                log.info("[Pre][Standardization][{}/{}] : {}", index, total, tileFile.getAbsolutePath());
+                writeGeotiff(reprojectedTile, tileFile);
+            });
+
         } catch (TransformException | IOException | InterruptedException | ExecutionException e) {
             log.error("Failed to standardization.", e);
             throw new RuntimeException(e);
@@ -181,7 +207,9 @@ public class RasterStandardizer {
 
     public GridCoverage2D resample(GridCoverage2D sourceCoverage, CoordinateReferenceSystem targetCRS) {
         try {
+            CoverageProcessor.updateProcessors();
             CoverageProcessor processor = CoverageProcessor.getInstance();
+
             Operation operation = processor.getOperation("Resample");
             ParameterValueGroup params = operation.getParameters();
             params.parameter("Source").setValue(sourceCoverage);
