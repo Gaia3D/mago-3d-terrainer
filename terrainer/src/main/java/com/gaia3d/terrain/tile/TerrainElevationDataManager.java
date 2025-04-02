@@ -233,7 +233,8 @@ public class TerrainElevationDataManager {
                 boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is higher resolution
                 if (isHigherResolution) {
                     if (noDataValue != 0.0) {
-                        candidateElevation = elevation;
+                        //candidateElevation = elevation; // original.***
+                        candidateElevation = Math.max(candidateElevation, elevation); // new.***
                         pixelAreaAux = pixelArea;
                     }
                 }

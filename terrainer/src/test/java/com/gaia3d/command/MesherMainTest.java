@@ -292,22 +292,10 @@ class MesherMainTest {
         //*******************************************************************
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(13);
+        String maxTileDepth = String.valueOf(14);
         String refinementStrength = String.valueOf(4);
         String originalGeoTiffFolderPath = "D:/data/DEM/allKoreaSouthJinHun_20250115";
-        String outputDirectory = "D:/data/mago-server/output/result_allKoreaSouthJinHun_20250115";
-
-//        String originalGeoTiffFolderPath = "D:/data/DEM/busanLittle05_5186";
-//        String outputDirectory = "D:/data/mago-server/output/result_busanLittle05_5186";
-
-//        String originalGeoTiffFolderPath = "D:/data/DEM/yeosu-4326";
-//        String outputDirectory = "D:/data/mago-server/output/result_yeosu-4326";
-
-//        String originalGeoTiffFolderPath = "D:/data/DEM/20250116-dem05-4326/dem05-wgs84";
-//        String outputDirectory = "D:\\data\\DEM\\20250116-dem05-4326\\dem05-wgs84-crop";
-
-//        String originalGeoTiffFolderPath = "D:/data/DEM/seoul2geoTiffs";
-//        String outputDirectory = "D:/data/mago-server/output/result_seoul2geoTiffs";
+        String outputDirectory = "D:/data/mago-server/output/result_allKoreaSouthJinHun_20250402";
 
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
@@ -359,6 +347,21 @@ class MesherMainTest {
     }
 
     @Test
+    void smallKyongSangDo_20250331() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note : the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        // 2 levels of geoTiff files. The 1rst is 1m of definition and the 2nd is 5m of definition.
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(15);
+        String refinementStrength = String.valueOf(4);
+        String originalGeoTiffFolderPath = "D:/data/DEM/kyongSando_small_5186";
+        String outputDirectory = "D:/data/mago-server/output/result_kyongSando_small_5186";
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
     void smallBusan_oneTiffTest() throws FactoryException, TransformException, IOException {
         //*******************************************************************
         // Note : the outputFolder must be different from the inputFolder
@@ -377,8 +380,8 @@ class MesherMainTest {
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
         String logPath = outputPath + "/log.txt";
 
-        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-leaveTemp"};
-        //String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn"};
+        //String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-leaveTemp"};
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn"};
         MagoTerrainerMain.main(args);
     }
 }

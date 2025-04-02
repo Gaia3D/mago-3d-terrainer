@@ -171,6 +171,8 @@ public class RasterStandardizer {
         int height = gridRange.getSpan(1);
 
         int margin = 4; // 4 pixel margin
+        int marginX = Math.max((int)(tileSize * 0.01), margin);
+        int marginY = Math.max((int)(tileSize * 0.01), margin);
         for (int x = 0; x < width; x += tileSize) {
             for (int y = 0; y < height; y += tileSize) {
                 int xMax = Math.min(x + tileSize, width);
@@ -178,13 +180,23 @@ public class RasterStandardizer {
 
                 // when the tile is not at the edge, add margin
                 if ((x + tileSize) < width) {
-                    xMax += margin;
+                    xMax += marginX;
                 }
                 if ((y + tileSize) < height) {
-                    yMax += margin;
+                    yMax += marginY;
                 }
 
-                ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(gridGeometry.gridToWorld(new GridEnvelope2D(x, y, xMax - x, yMax - y)), coverage.getCoordinateReferenceSystem());
+                int xAux = x;
+                if(xAux > marginX) {
+                    xAux -= marginX;
+                }
+
+                int yAux = y;
+                if(yAux > marginY) {
+                    yAux -= marginY;
+                }
+
+                ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(gridGeometry.gridToWorld(new GridEnvelope2D(xAux, yAux, xMax - x, yMax - y)), coverage.getCoordinateReferenceSystem());
                 GridCoverage2D gridCoverage2D = crop(coverage, tileEnvelope);
                 String tileName = gridCoverage2D.getName() + "-" + x / tileSize + "-" + y / tileSize;
                 RasterInfo tile = new RasterInfo(tileName, gridCoverage2D);
