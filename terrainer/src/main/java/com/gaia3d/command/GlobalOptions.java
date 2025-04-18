@@ -33,6 +33,7 @@ public class GlobalOptions {
     private static final int DEFAULT_MOSAIC_SIZE = 16;
     private static final int DEFAULT_MAX_RASTER_SIZE = 16384;
     private static final double DEFAULT_INTENSITY = 4.0;
+    private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
 
     private Reporter reporter;
     private double noDataValue = -8612;
@@ -201,6 +202,13 @@ public class GlobalOptions {
             instance.setIntensity(intensity);
         } else {
             instance.setIntensity(DEFAULT_INTENSITY);
+        }
+
+        if (command.hasOption(CommandOptions.NODATA_VALUE.getArgName())) {
+            double noDataValue = Double.parseDouble(command.getOptionValue(CommandOptions.NODATA_VALUE.getArgName()));
+            instance.setNoDataValue(noDataValue);
+        } else {
+            instance.setNoDataValue(DEFAULT_NO_DATA_VALUE);
         }
 
         instance.setCalculateNormals(command.hasOption(CommandOptions.CALCULATE_NORMALS.getArgName()));
