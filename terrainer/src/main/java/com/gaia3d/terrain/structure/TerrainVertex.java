@@ -33,7 +33,16 @@ public class TerrainVertex {
         if (vertex == null) {
             return false;
         }
+
         return Math.abs(this.getPosition().x - vertex.getPosition().x) < error && Math.abs(this.getPosition().y - vertex.getPosition().y) < error && Math.abs(this.getPosition().z - vertex.getPosition().z) < error;
+    }
+
+    public boolean isCoincidentVertexXY(TerrainVertex vertex, double error) {
+        if (vertex == null) {
+            return false;
+        }
+
+        return Math.abs(this.getPosition().x - vertex.getPosition().x) < error && Math.abs(this.getPosition().y - vertex.getPosition().y) < error;
     }
 
     public void avoidOutingHalfEdge(TerrainHalfEdge avoidOutingHalfEdge) {
@@ -92,11 +101,17 @@ public class TerrainVertex {
             log.warn("This vertex has no outingHEdge. id : {}", this.id);
         }
 
+        if(this.outingHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+            log.warn("This outingHEdge is DELETED. id : {}", this.id);
+            return outingHalfEdges;
+        }
+
         TerrainHalfEdge firstHalfEdge = this.outingHEdge;
         TerrainHalfEdge currHalfEdge = this.outingHEdge;
         outingHalfEdges.add(this.outingHEdge); // put the first halfEdge
         boolean finished = false;
         boolean isInteriorVertex = true;
+        int counter = 0;
         while (!finished) {
             TerrainHalfEdge twinHalfEdge = currHalfEdge.getTwin();
             if (twinHalfEdge == null) {
@@ -116,6 +131,12 @@ public class TerrainVertex {
 
             outingHalfEdges.add(nextHalfEdge);
             currHalfEdge = nextHalfEdge;
+
+            counter++;
+            if(counter > 10)
+            {
+                log.info("Info : This vertex has more than 10 outing halfEdges. id : {}", this.id);
+            }
         }
 
         // if this vertex is NO interior vertex, then must check if there are more outing halfEdges

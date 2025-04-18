@@ -4,16 +4,15 @@ import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
-import org.opengis.referencing.operation.TransformException;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Getter
 @Setter
 public class TileWgs84Raster {
@@ -81,6 +80,7 @@ public class TileWgs84Raster {
         int row = getRow(latDeg);
 
         if (col < 0 || col >= rasterWidth || row < 0 || row >= rasterHeight) {
+            log.info("getElevationBilinear: col or row is out of range. col = {}, row = {}", col, row);
             return Float.NaN;
         }
 

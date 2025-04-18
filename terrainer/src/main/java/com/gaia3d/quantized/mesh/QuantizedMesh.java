@@ -1,5 +1,6 @@
 package com.gaia3d.quantized.mesh;
 
+import com.gaia3d.io.LittleEndianDataInputStream;
 import com.gaia3d.io.LittleEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,6 +41,11 @@ public class QuantizedMesh {
         return (short) ((n << 1) ^ (n >> 31));
     }
 
+    public int zigZagDecode(short n) {
+        int unsigned = n & 0xFFFF;
+        return (unsigned >> 1) ^ -(unsigned & 1);
+    }
+
     public void getDecodedIndices32(int[] indices, int count, int[] decodedIndices) {
         int highest = 0;
         int code;
@@ -61,7 +67,7 @@ public class QuantizedMesh {
         }
     }
 
-    public void getDecodedIndices16(int[] indices, int count, short[] decodedIndices) {
+    public void getDecodedIndices16(int[] indices, int count, int[] decodedIndices) {
         int highest = 0;
         for (int i = 0; i < count; i++) {
             int code = indices[i];
@@ -70,11 +76,14 @@ public class QuantizedMesh {
         }
     }
 
-    public void getDecodedIndices16fromShort(short[] indices, int count, short[] decodedIndices) {
+    public void getDecodedIndices16fromShort(short[] indices, int count, int[] decodedIndices) {
         int highest = 0;
         for (int i = 0; i < count; i++) {
-            short code = indices[i];
-            decodedIndices[i] = (short) (highest - code);
+            int code = indices[i];
+            if (code < 0) code += 65536;
+            int idx = highest - code;
+            decodedIndices[i] = idx;
+
             if (code == 0) highest += 1;
         }
     }
@@ -90,25 +99,125 @@ public class QuantizedMesh {
         }
     }
 
-    private void saveIndices32(LittleEndianDataOutputStream dataOutputStream, int[] indices, int count) throws IOException {
-        int highest = 0;
-        int code;
-        for (int i = 0; i < count; i++) {
-            int idx = indices[i];
-            code = highest - idx;
-            dataOutputStream.writeInt(code);
-            if (code == 0) highest += 1;
-        }
-    }
+    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException {
+        // First load the header
+        header.loadDataInputStream(dataInputStream);
 
-    private void saveIndices16(LittleEndianDataOutputStream dataOutputStream, int[] indices, int count) throws IOException {
-        int highest = 0;
-        int code;
-        for (int i = 0; i < count; i++) {
-            int idx = indices[i];
-            code = highest - idx;
-            dataOutputStream.writeShort((short) code);
-            if (code == 0) highest += 1;
+        // 2nd load the vertexCount
+        vertexCount = dataInputStream.readInt();
+
+        // load uBuffer
+        short uPrev = 0;
+        uBuffer = new short[vertexCount];
+        for (int i = 0; i < vertexCount; i++) {
+            short uDiff = dataInputStream.readShort();
+            short uCurr = (short) (uPrev + zigZagDecode(uDiff));
+            uBuffer[i] = uCurr;
+            uPrev = uCurr;
+        }
+
+        // load vBuffer
+        short vPrev = 0;
+        vBuffer = new short[vertexCount];
+        for (int i = 0; i < vertexCount; i++) {
+            short vDiff = dataInputStream.readShort();
+            short vCurr = (short) (vPrev + zigZagDecode(vDiff));
+            vBuffer[i] = vCurr;
+            vPrev = vCurr;
+        }
+
+        // load heightBuffer
+        short heightPrev = 0;
+        heightBuffer = new short[vertexCount];
+        for (int i = 0; i < vertexCount; i++) {
+            short heightDiff = dataInputStream.readShort();
+            short heightCurr = (short) (heightPrev + zigZagDecode(heightDiff));
+            heightBuffer[i] = heightCurr;
+            heightPrev = heightCurr;
+        }
+
+        // load triangleCount
+        triangleCount = dataInputStream.readInt();
+
+        int indicesCount = triangleCount * 3;
+        // if vertexCount > 65536, then load the triangleIndices as int
+        if (vertexCount > 65536) {
+            // load IndexData32
+            triangleIndices = new int[indicesCount];
+            int[] encodedIndices = new int[indicesCount];
+            for (int i = 0; i < indicesCount; i++) {
+                encodedIndices[i] = dataInputStream.readInt();
+                getDecodedIndices32(encodedIndices, indicesCount, triangleIndices);
+            }
+        } else {
+            // load IndexData16
+            triangleIndices = new int[indicesCount];
+            short[] encodedIndices = new short[indicesCount];
+            for (int i = 0; i < indicesCount; i++) {
+                encodedIndices[i] = dataInputStream.readShort();
+                getDecodedIndices16fromShort(encodedIndices, indicesCount, triangleIndices);
+            }
+        }
+
+        // now load EdgeIndices
+        if (vertexCount > 65536) {
+            // load EdgeIndices32
+            // westIndices
+            westVertexCount = dataInputStream.readInt();
+            westIndices = new int[westVertexCount];
+            for (int i = 0; i < westVertexCount; i++) {
+                westIndices[i] = dataInputStream.readInt();
+            }
+
+            // southIndices
+            southVertexCount = dataInputStream.readInt();
+            southIndices = new int[southVertexCount];
+            for (int i = 0; i < southVertexCount; i++) {
+                southIndices[i] = dataInputStream.readInt();
+            }
+
+            // eastIndices
+            eastVertexCount = dataInputStream.readInt();
+            eastIndices = new int[eastVertexCount];
+            for (int i = 0; i < eastVertexCount; i++) {
+                eastIndices[i] = dataInputStream.readInt();
+            }
+
+            // northIndices
+            northVertexCount = dataInputStream.readInt();
+            northIndices = new int[northVertexCount];
+            for (int i = 0; i < northVertexCount; i++) {
+                northIndices[i] = dataInputStream.readInt();
+            }
+        } else {
+            // load EdgeIndices16
+            // westIndices
+            westVertexCount = dataInputStream.readInt();
+            westIndices = new int[westVertexCount];
+            for (int i = 0; i < westVertexCount; i++) {
+                westIndices[i] = dataInputStream.readShort();
+            }
+
+            // southIndices
+            southVertexCount = dataInputStream.readInt();
+            southIndices = new int[southVertexCount];
+            for (int i = 0; i < southVertexCount; i++) {
+                southIndices[i] = dataInputStream.readShort();
+            }
+
+            // eastIndices
+            eastVertexCount = dataInputStream.readInt();
+            eastIndices = new int[eastVertexCount];
+            for (int i = 0; i < eastVertexCount; i++) {
+                eastIndices[i] = dataInputStream.readShort();
+            }
+
+            // northIndices
+            northVertexCount = dataInputStream.readInt();
+            northIndices = new int[northVertexCount];
+            for (int i = 0; i < northVertexCount; i++) {
+                northIndices[i] = dataInputStream.readShort();
+            }
         }
     }
 

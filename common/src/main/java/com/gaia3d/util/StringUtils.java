@@ -29,6 +29,15 @@ public class StringUtils {
         return featureTableText.toString();
     }
 
+    public static boolean isConvertibleToInt(String word) {
+        try {
+            Integer.parseInt(word);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     public static void splitString(String wordToSplit, String delimiter, Vector<String> resultSplittedStrings, boolean skipEmptyStrings) {
         String[] splitStrings = wordToSplit.split(delimiter);
         for (String word : splitStrings) {

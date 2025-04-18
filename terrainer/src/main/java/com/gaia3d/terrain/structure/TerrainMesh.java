@@ -1,6 +1,7 @@
 package com.gaia3d.terrain.structure;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.basic.geometry.GaiaRectangle;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
@@ -8,17 +9,23 @@ import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.tile.TileRange;
+import com.gaia3d.util.FileUtils;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 import org.opengis.referencing.operation.TransformException;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.util.*;
 
+@Getter
+@Setter
 @Slf4j
 @NoArgsConstructor
 public class TerrainMesh {
@@ -117,6 +124,80 @@ public class TerrainMesh {
         }
     }
 
+    public GaiaRectangle getBoundingRectangle() {
+        GaiaBoundingBox boundingBox = getBoundingBox();
+        GaiaRectangle boundingRectangle = new GaiaRectangle();
+        boundingRectangle.setMinX(boundingBox.getMinX());
+        boundingRectangle.setMinY(boundingBox.getMinY());
+        boundingRectangle.setMaxX(boundingBox.getMaxX());
+        boundingRectangle.setMaxY(boundingBox.getMaxY());
+        return boundingRectangle;
+    }
+
+    public void determineHalfEdgesType() {
+        //***********************************************************************************
+        // Note : function used after loading quantized mesh & convert it to terrain mesh.***
+        //***********************************************************************************
+        GaiaRectangle boundingRectangle = getBoundingRectangle();
+        double minX = boundingRectangle.getMinX();
+        double minY = boundingRectangle.getMinY();
+        double maxX = boundingRectangle.getMaxX();
+        double maxY = boundingRectangle.getMaxY();
+        double error = 1e-13; // vertex_coincident_error defined in TileMatrix.***
+        for (TerrainHalfEdge halfEdge : this.halfEdges) {
+            if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                continue;
+            }
+
+            if(halfEdge.hasTwin()){
+                // halfEdge is interior.***
+                halfEdge.setType(TerrainHalfEdgeType.INTERIOR);
+                continue;
+            }
+
+            TerrainVertex v1 = halfEdge.getStartVertex();
+            Vector3d pos1 = v1.getPosition();
+
+            TerrainVertex v2 = halfEdge.getEndVertex();
+            Vector3d pos2 = v2.getPosition();
+
+            // check left
+            if(Math.abs(pos1.x - minX) < error){
+                if(Math.abs(pos2.x - minX) < error){
+                    halfEdge.setType(TerrainHalfEdgeType.LEFT);
+                    continue;
+                }
+            }
+
+            // check right
+            if(Math.abs(pos1.x - maxX) < error){
+                if(Math.abs(pos2.x - maxX) < error){
+                    halfEdge.setType(TerrainHalfEdgeType.RIGHT);
+                    continue;
+                }
+            }
+
+            // check down
+            if(Math.abs(pos1.y - minY) < error){
+                if(Math.abs(pos2.y - minY) < error){
+                    halfEdge.setType(TerrainHalfEdgeType.DOWN);
+                    continue;
+                }
+            }
+
+            // check up
+            if(Math.abs(pos1.y - maxY) < error){
+                if(Math.abs(pos2.y - maxY) < error){
+                    halfEdge.setType(TerrainHalfEdgeType.UP);
+                    continue;
+                }
+            }
+
+            // halfEdge is interior.***
+            halfEdge.setType(TerrainHalfEdgeType.INTERIOR);
+        }
+    }
+
     public List<TerrainHalfEdge> getHalfEdgesByType(TerrainHalfEdgeType type) {
         // This function returns the halfEdges that have the type and the twin is null
         List<TerrainHalfEdge> halfEdges = new ArrayList<>();
@@ -208,6 +289,38 @@ public class TerrainMesh {
         });
 
         return vertices;
+    }
+
+    public List<TerrainHalfEdge> getLeftHalfEdgesSortedUpToDown() {
+        List<TerrainHalfEdge> leftHedges = getHalfEdgesByType(TerrainHalfEdgeType.LEFT);
+        leftHedges.sort((TerrainHalfEdge he1, TerrainHalfEdge he2) -> {
+            return Double.compare(he2.getStartVertex().getPosition().y, he1.getStartVertex().getPosition().y);
+        });
+        return leftHedges;
+    }
+
+    public List<TerrainHalfEdge> getDownHalfEdgesSortedLeftToRight() {
+        List<TerrainHalfEdge> downHedges = getHalfEdgesByType(TerrainHalfEdgeType.DOWN);
+        downHedges.sort((TerrainHalfEdge he1, TerrainHalfEdge he2) -> {
+            return Double.compare(he1.getStartVertex().getPosition().x, he2.getStartVertex().getPosition().x);
+        });
+        return downHedges;
+    }
+
+    public List<TerrainHalfEdge> getRightHalfEdgesSortedDownToUp() {
+        List<TerrainHalfEdge> rightHedges = getHalfEdgesByType(TerrainHalfEdgeType.RIGHT);
+        rightHedges.sort((TerrainHalfEdge he1, TerrainHalfEdge he2) -> {
+            return Double.compare(he1.getStartVertex().getPosition().y, he2.getStartVertex().getPosition().y);
+        });
+        return rightHedges;
+    }
+
+    public List<TerrainHalfEdge> getUpHalfEdgesSortedRightToLeft() {
+        List<TerrainHalfEdge> upHedges = getHalfEdgesByType(TerrainHalfEdgeType.UP);
+        upHedges.sort((TerrainHalfEdge he1, TerrainHalfEdge he2) -> {
+            return Double.compare(he2.getStartVertex().getPosition().x, he1.getStartVertex().getPosition().x);
+        });
+        return upHedges;
     }
 
 
@@ -378,7 +491,8 @@ public class TerrainMesh {
     }
 
 
-    public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles, List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
+    public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
+                              List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
@@ -400,11 +514,15 @@ public class TerrainMesh {
 
             // in this case the twin is null
             Vector3d midPosition = longestHEdge.getMidPosition();
+            double beforeZ = midPosition.z;
 
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
             midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+            if(Double.isNaN(midPosition.z)) {
+                log.info("getElevationBilinear: resultElevation is NaN");
+            }
             TerrainVertex midVertex = newVertex();
             midVertex.setPosition(midPosition);
 
@@ -560,13 +678,14 @@ public class TerrainMesh {
 
             // need know the midVertex
             Vector3d midPosition = longestHEdge.getMidPosition();
-
             TerrainVertex midVertex = newVertex();
 
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
-
+            if(Double.isNaN(midPosition.z)) {
+                log.info("getElevationBilinear: resultElevation is NaN");
+            }
             midVertex.setPosition(midPosition);
 
             // need longEdge_startVertex and longEdge_endVertex
@@ -843,6 +962,20 @@ public class TerrainMesh {
         }
     }
 
+    public void saveFile(String filePath) throws IOException {
+        String foldersPath = FileUtils.removeFileNameFromPath(filePath);
+        FileUtils.createAllFoldersIfNoExist(foldersPath);
+
+        File file = new File(filePath);
+        Files.deleteIfExists(file.toPath());
+
+        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+        // save the tile
+        this.saveDataOutputStream(dataOutputStream);
+
+        dataOutputStream.close();
+    }
+
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) throws IOException {
         this.setObjectsIdInList();
         this.setHalfEdgesStartVertexAsOutingHEdges();// this function is used when the vertices belong to different tiles
@@ -973,6 +1106,107 @@ public class TerrainMesh {
             }
         }
 
+    }
+
+    public void setStartVertexAllHEdges(){
+        for (TerrainHalfEdge halfEdge : halfEdges) {
+            if(halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED){
+                continue;
+            }
+            TerrainVertex startVertex = halfEdge.getStartVertex();
+            if (startVertex != null) {
+                startVertex.setOutingHEdge(halfEdge);
+            }
+        }
+    }
+
+    public void setTwins() {
+        Map<TerrainVertex, List<TerrainHalfEdge>> mapVertexOutingHEdges = new HashMap<>();
+        Map<TerrainVertex, List<TerrainHalfEdge>> mapVertexIncomingHEdges = new HashMap<>();
+
+        for (TerrainHalfEdge halfEdge : halfEdges) {
+            TerrainVertex startVertex = halfEdge.getStartVertex();
+            TerrainVertex endVertex = halfEdge.getEndVertex();
+
+            if (startVertex != null) {
+                List<TerrainHalfEdge> outingEdges = mapVertexOutingHEdges.computeIfAbsent(startVertex, k -> new ArrayList<>());
+                outingEdges.add(halfEdge);
+            }
+
+            if (endVertex != null) {
+                List<TerrainHalfEdge> incomingEdges = mapVertexIncomingHEdges.computeIfAbsent(endVertex, k -> new ArrayList<>());
+                incomingEdges.add(halfEdge);
+            }
+        }
+
+        // make twinables lists
+        Map<TerrainHalfEdge, List<TerrainHalfEdge>> mapHalfEdgeTwinables = new HashMap<>();
+        //Map<TerrainHalfEdge, TerrainHalfEdge> mapRemovedHalfEdges = new HashMap<>();
+        int vertexCount = vertices.size();
+        for (int i = 0; i < vertexCount; i++) {
+            TerrainVertex vertex = vertices.get(i);
+            List<TerrainHalfEdge> outingEdges = mapVertexOutingHEdges.get(vertex);
+            List<TerrainHalfEdge> incomingEdges = mapVertexIncomingHEdges.get(vertex);
+
+            if (outingEdges == null || incomingEdges == null) {
+                continue;
+            }
+
+            int outingEdgesCount = outingEdges.size();
+            int incomingEdgesCount = incomingEdges.size();
+            for (int j = 0; j < outingEdgesCount; j++) {
+                TerrainHalfEdge outingEdge = outingEdges.get(j);
+
+                if (outingEdge == null) {
+                    continue;
+                }
+                for (int k = 0; k < incomingEdgesCount; k++) {
+                    TerrainHalfEdge incomingEdge = incomingEdges.get(k);
+                    if (incomingEdge == null) {
+                        continue;
+                    }
+                    if (incomingEdge.isTwineableByPointers(outingEdge)) {
+                        List<TerrainHalfEdge> twinables = mapHalfEdgeTwinables.computeIfAbsent(outingEdge, k2 -> new ArrayList<>());
+                        {
+                            twinables.add(incomingEdge);
+                        }
+
+                    }
+                }
+            }
+        }
+
+        // now set twins
+        Set<TerrainHalfEdge> halfEdgesSet2 = mapHalfEdgeTwinables.keySet();
+        for (TerrainHalfEdge halfEdge : halfEdgesSet2) {
+            if (halfEdge.hasTwin()) {
+                continue;
+            }
+            List<TerrainHalfEdge> twinables = mapHalfEdgeTwinables.get(halfEdge);
+            for (int i = 0; i < twinables.size(); i++) {
+                TerrainHalfEdge twinable = twinables.get(i);
+                if (twinable.hasTwin()) {
+                    continue;
+                }
+                if (halfEdge.isTwineableByPointers(twinable)) {
+                    halfEdge.setTwin(twinable);
+                    break;
+                }
+            }
+        }
+
+//        // now collect hedges that has not twin
+//        List<TerrainHalfEdge> singleHalfEdges = new ArrayList<>();
+//        int hedgesCount = halfEdges.size();
+//        for (int i = 0; i < hedgesCount; i++) {
+//            TerrainHalfEdge hedge = halfEdges.get(i);
+//            if (!hedge.hasTwin()) {
+//                singleHalfEdges.add(hedge);
+//                singleHalfEdges.add(hedge.getNext());
+//            } else {
+//                hedge.setItselfAsOutingHalfEdgeToTheStartVertex();
+//            }
+//        }
     }
 
 }

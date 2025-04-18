@@ -1,5 +1,6 @@
 package com.gaia3d.quantized.mesh;
 
+import com.gaia3d.io.LittleEndianDataInputStream;
 import com.gaia3d.io.LittleEndianDataOutputStream;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,6 +37,24 @@ public class QuantizedMeshHeader {
     private double HorizonOcclusionPointX = 0.0;
     private double HorizonOcclusionPointY = 0.0;
     private double HorizonOcclusionPointZ = 0.0;
+
+    public void loadDataInputStream(LittleEndianDataInputStream dataInputStream) throws IOException {
+        CenterX = dataInputStream.readDouble();
+        CenterY = dataInputStream.readDouble();
+        CenterZ = dataInputStream.readDouble();
+
+        MinimumHeight = dataInputStream.readFloat();
+        MaximumHeight = dataInputStream.readFloat();
+
+        BoundingSphereCenterX = dataInputStream.readDouble();
+        BoundingSphereCenterY = dataInputStream.readDouble();
+        BoundingSphereCenterZ = dataInputStream.readDouble();
+        BoundingSphereRadius = dataInputStream.readDouble();
+
+        HorizonOcclusionPointX = dataInputStream.readDouble();
+        HorizonOcclusionPointY = dataInputStream.readDouble();
+        HorizonOcclusionPointZ = dataInputStream.readDouble();
+    }
 
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream) throws IOException {
         dataOutputStream.writeDouble(CenterX);

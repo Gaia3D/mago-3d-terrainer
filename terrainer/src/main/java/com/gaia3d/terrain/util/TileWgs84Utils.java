@@ -25,6 +25,55 @@ public class TileWgs84Utils {
         return angRad * GlobeUtils.EQUATORIAL_RADIUS;
     }
 
+    public static void clampVerticesInToTile(TerrainMesh mesh, TileIndices tileIndices, String imaginaryType, boolean originIsLeftUp) {
+        // clamp the vertices in to the tile
+        // Obtain the geographicExtension by tileIndices
+        GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, originIsLeftUp);
+        if(geographicExtension == null) {
+            return;
+        }
+        double minLonDeg = geographicExtension.getMinLongitudeDeg();
+        double maxLonDeg = geographicExtension.getMaxLongitudeDeg();
+        double minLatDeg = geographicExtension.getMinLatitudeDeg();
+        double maxLatDeg = geographicExtension.getMaxLatitudeDeg();
+
+        // south vertices.***
+        List<TerrainVertex> downVertices = mesh.getDownVerticesSortedLeftToRight();
+        for(TerrainVertex vertex : downVertices) {
+            double latDeg = vertex.getPosition().y;
+            if (latDeg !=  minLatDeg) {
+                vertex.getPosition().y = minLatDeg;
+            }
+        }
+
+        // north vertices.***
+        List<TerrainVertex> upVertices = mesh.getUpVerticesSortedRightToLeft();
+        for(TerrainVertex vertex : upVertices) {
+            double latDeg = vertex.getPosition().y;
+            if (latDeg !=  maxLatDeg) {
+                vertex.getPosition().y = maxLatDeg;
+            }
+        }
+
+        // west vertices.***
+        List<TerrainVertex> leftVertices = mesh.getLeftVerticesSortedUpToDown();
+        for(TerrainVertex vertex : leftVertices) {
+            double lonDeg = vertex.getPosition().x;
+            if (lonDeg !=  minLonDeg) {
+                vertex.getPosition().x = minLonDeg;
+            }
+        }
+
+        // east vertices.***
+        List<TerrainVertex> rightVertices = mesh.getRightVerticesSortedDownToUp();
+        for(TerrainVertex vertex : rightVertices) {
+            double lonDeg = vertex.getPosition().x;
+            if (lonDeg !=  maxLonDeg) {
+                vertex.getPosition().x = maxLonDeg;
+            }
+        }
+    }
+
     public static double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
         double result;
@@ -66,7 +115,6 @@ public class TileWgs84Utils {
 
         return 180.0 / Math.pow(2, depth);
     }
-
 
     public static int getRefinementIterations(int depth) {
         if (depth < 0 || depth > 28) {
@@ -136,7 +184,6 @@ public class TileWgs84Utils {
         int xIndexMin = (int) Math.round((minLon - xMin) / angRange);
         int yIndexMin = (int) Math.round((minLat - yMin) / angRange);
 
-
         if (!originIsLeftUp) {
             maxY = rightUpTileName.getY();
             minY = leftDownTileName.getY();
@@ -182,16 +229,6 @@ public class TileWgs84Utils {
 
     public static String getTileFilePath(int X, int Y, int L) {
         return getTileFolderNameL(L) + File.separator + getTileFolderNameX(X) + File.separator + getTileFileName(X, Y, L);
-    }
-
-    public static int getTileIndicesMaxX(int depth) {
-        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
-        return (int) (360.0 / angDeg);
-    }
-
-    public static int getTileIndicesMaxY(int depth) {
-        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
-        return (int) (180.0 / angDeg);
     }
 
     public static List<TileRange> subDivideTileRange(TileRange tilesRange, int maxCol, int maxRow, List<TileRange> resultSubDividedTilesRanges) {
@@ -250,40 +287,6 @@ public class TileWgs84Utils {
         }
 
         return Y >= 0 && Y < numTilesY;
-    }
-
-    public static boolean checkTileTest(TerrainMesh mesh, double error, boolean originIsLeftUp, List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
-        List<TerrainVertex> resultVertices = new ArrayList<>();
-        listVertices.clear();
-        listHalfEdges.clear();
-        mesh.getVerticesByTriangles(resultVertices, listVertices, listHalfEdges);
-
-        if (resultVertices.size() != mesh.vertices.size()) {
-            return false;
-        }
-
-        // check the boundingBox of the tile
-        GaiaBoundingBox bbox = mesh.getBoundingBox();
-        TileIndices tileIndices = mesh.triangles.get(0).getOwnerTileIndices();
-        GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, "CRS84", originIsLeftUp);
-        double minX = bbox.getMinX();
-        double minY = bbox.getMinY();
-        double maxX = bbox.getMaxX();
-        double maxY = bbox.getMaxY();
-
-        if (abs(minX - geographicExtension.getMinLongitudeDeg()) > error) {
-            return false;
-        }
-
-        if (abs(minY - geographicExtension.getMinLatitudeDeg()) > error) {
-            return false;
-        }
-
-        if (abs(maxX - geographicExtension.getMaxLongitudeDeg()) > error) {
-            return false;
-        }
-
-        return !(abs(maxY - geographicExtension.getMaxLatitudeDeg()) > error);
     }
 
     public static GeographicExtension getGeographicExtentOfTileLXY(int L, int X, int Y, GeographicExtension resultGeoExtend, String imageryType, boolean originIsLeftUp) {
@@ -354,14 +357,6 @@ public class TileWgs84Utils {
                         // minLadRad no changes
                     }
                 }
-
-                // Code to debug*********************************
-                //double min_longitude = lonAngDegRange * X - 180.0;
-                //double max_longitude = min_longitude + lonAngDegRange;
-
-                //double min_latitude = minLadRad * 180.0 / M_PI;
-                //double max_latitude = maxLadRad * 180.0 / M_PI;
-                //---------------------------------------------------
 
                 currL++;
             }

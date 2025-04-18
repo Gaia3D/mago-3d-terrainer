@@ -1,6 +1,9 @@
 package com.gaia3d.terrain.structure;
 
 import com.gaia3d.basic.geometry.GaiaRectangle;
+import com.gaia3d.basic.halfedge.HalfEdge;
+import com.gaia3d.basic.halfedge.HalfEdgeVertex;
+import com.gaia3d.basic.halfedge.ObjectStatus;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
@@ -198,34 +201,6 @@ public class TerrainHalfEdge {
         return this.boundingRect;
     }
 
-    public boolean isHalfEdgePossibleTwin(TerrainHalfEdge halfEdge, double error, int axisToCheck) {
-        // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
-        TerrainVertex startPoint_A = this.getStartVertex();
-        TerrainVertex endPoint_A = this.getEndVertex();
-
-        TerrainVertex startPoint_B = halfEdge.getStartVertex();
-        TerrainVertex endPoint_B = halfEdge.getEndVertex();
-
-//        // First do a bounding box check.***
-        GaiaRectangle boundingRect_A = this.getBoundingRectangle();
-        GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
-
-        if (axisToCheck == 0) {
-            if (!boundingRect_A.intersectsInXAxis(boundingRect_B)) {
-                return false;
-            }
-        } else if (axisToCheck == 1)
-            // First do a bounding box check.
-        {
-            if (!boundingRect_A.intersectsInYAxis(boundingRect_B)) {
-                return false;
-            }
-        }
-
-        // 2nd compare objects as values.***
-        return startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error);
-    }
-
     public boolean isHalfEdgePossibleTwin(TerrainHalfEdge halfEdge, double error) {
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
         TerrainVertex startPoint_A = this.getStartVertex();
@@ -234,7 +209,7 @@ public class TerrainHalfEdge {
         TerrainVertex startPoint_B = halfEdge.getStartVertex();
         TerrainVertex endPoint_B = halfEdge.getEndVertex();
 
-//        // First do a bounding box check.***
+        // First do a bounding box check.***
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
         GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
 
@@ -243,7 +218,29 @@ public class TerrainHalfEdge {
         }
 
         // 2nd compare objects as values.***
-        return startPoint_A.isCoincidentVertex(endPoint_B, error) && startPoint_B.isCoincidentVertex(endPoint_A, error);
+        return startPoint_A.isCoincidentVertexXY(endPoint_B, error) && startPoint_B.isCoincidentVertexXY(endPoint_A, error);
+    }
+
+    public boolean isTwineableByPointers(TerrainHalfEdge twin) {
+        TerrainVertex thisStartVertex = this.getStartVertex();
+        TerrainVertex thisEndVertex = this.getEndVertex();
+        TerrainVertex twinStartVertex = twin.getStartVertex();
+        TerrainVertex twinEndVertex = twin.getEndVertex();
+
+        return thisStartVertex == twinEndVertex && thisEndVertex == twinStartVertex;
+    }
+
+    public boolean hasTwin() {
+        if (this.twin == null) {
+            return false;
+        } else {
+            if (this.twin.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                this.twin.setTwin(null);
+                this.twin = null;
+                return false;
+            }
+        }
+        return true;
     }
 
     public void loadDataInputStream(BigEndianDataInputStream dataInputStream) throws IOException {

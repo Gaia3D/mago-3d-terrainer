@@ -2,7 +2,10 @@ package com.gaia3d.quantized.mesh;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.tile.TileIndices;
+import com.gaia3d.terrain.tile.TileWgs84Manager;
 import com.gaia3d.terrain.util.OctNormalFactory;
+import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.terrain.tile.TileWgs84;
 import org.joml.Vector3d;
@@ -19,6 +22,166 @@ public class QuantizedMeshManager {
 
     private final List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
     private List<TerrainVertex> listVertices = new ArrayList<>();
+
+    public TileWgs84 getTileWgs84FromQuantizedMesh(QuantizedMesh quantizedMesh, TileIndices tileIndices, TileWgs84Manager tileManager) {
+        // First get the quantized mesh header
+        QuantizedMeshHeader header = quantizedMesh.getHeader();
+        if (header == null) return null;
+
+        // calculate the geographic extension by tileIndices
+        String imaginaryType = tileManager.getImaginaryType();
+        GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, tileManager.originIsLeftUp());
+        if(geoExtension == null) {
+            return null;
+        }
+
+        TileWgs84 resultTile = new TileWgs84(null, tileManager);
+        TerrainMesh mesh = new TerrainMesh();
+        resultTile.setMesh(mesh);
+        List<TerrainVertex> vertices = mesh.getVertices();
+        List<TerrainHalfEdge> halfEdges = mesh.getHalfEdges();
+        List<TerrainTriangle> triangles = mesh.getTriangles();
+
+        // 1rst, make the TerrainVertices.***
+        // TerrainVertex has the lonDeg, latDeg, height.***
+        short[] uBuffer = quantizedMesh.getUBuffer();
+        short[] vBuffer = quantizedMesh.getVBuffer();
+        short[] heightBuffer = quantizedMesh.getHeightBuffer();
+        double minHeight = header.getMinimumHeight();
+        double maxHeight = header.getMaximumHeight();
+        double heightRange = maxHeight - minHeight;
+        if (heightRange == 0.0) heightRange = 1.0;
+        double minLonDeg = geoExtension.getMinLongitudeDeg();
+        double maxLonDeg = geoExtension.getMaxLongitudeDeg();
+        double minLatDeg = geoExtension.getMinLatitudeDeg();
+        double maxLatDeg = geoExtension.getMaxLatitudeDeg();
+        double lonDegRange = geoExtension.getLongitudeRangeDegree();
+        double latDegRange = geoExtension.getLatitudeRangeDegree();
+        double lonScale = lonDegRange / 32767.0;
+        double latScale = latDegRange / 32767.0;
+        double heightScale = heightRange / 32767.0;
+
+        int vertexCount = quantizedMesh.getVertexCount();
+        for (int i = 0; i < vertexCount; i++) {
+            int u = uBuffer[i] & 0xFFFF;
+            int v = vBuffer[i] & 0xFFFF;
+            int h = heightBuffer[i] & 0xFFFF;
+
+            double lonDeg = u * lonScale + minLonDeg;
+            double latDeg = v * latScale + minLatDeg;
+            double height = h * heightScale + minHeight;
+
+            // clamp vertices in to the tile's geographic extent
+            if(lonDeg < minLonDeg){
+                lonDeg = minLonDeg;
+            } else if(lonDeg > maxLonDeg){
+                lonDeg = maxLonDeg;
+            }
+
+            if(latDeg < minLatDeg){
+                latDeg = minLatDeg;
+            } else if(latDeg > maxLatDeg){
+                latDeg = maxLatDeg;
+            }
+
+            TerrainVertex vertex = new TerrainVertex();
+            vertex.setPosition(new Vector3d(lonDeg, latDeg, height));
+            vertex.setId(i);
+            vertices.add(vertex);
+        }
+
+        // for edge vertices, clamp to the tile's geographic extent
+        int downVerticesCount = quantizedMesh.getSouthVertexCount();
+        for(int i = 0; i < downVerticesCount; i++) {
+            int index = quantizedMesh.getSouthIndices()[i];
+            TerrainVertex vertex = vertices.get(index);
+            double latDeg = vertex.getPosition().y;
+            if(latDeg != minLatDeg){
+                latDeg = minLatDeg;
+                vertex.getPosition().y = latDeg;
+            }
+        }
+
+        int upVerticesCount = quantizedMesh.getNorthVertexCount();
+        for(int i = 0; i < upVerticesCount; i++) {
+            int index = quantizedMesh.getNorthIndices()[i];
+            TerrainVertex vertex = vertices.get(index);
+            double latDeg = vertex.getPosition().y;
+            if(latDeg != maxLatDeg){
+                latDeg = maxLatDeg;
+                vertex.getPosition().y = latDeg;
+            }
+        }
+
+        int leftVerticesCount = quantizedMesh.getWestVertexCount();
+        for(int i = 0; i < leftVerticesCount; i++) {
+            int index = quantizedMesh.getWestIndices()[i];
+            TerrainVertex vertex = vertices.get(index);
+            double lonDeg = vertex.getPosition().x;
+            if(lonDeg != minLonDeg){
+                lonDeg = minLonDeg;
+                vertex.getPosition().x = lonDeg;
+            }
+        }
+
+        int rightVerticesCount = quantizedMesh.getEastVertexCount();
+        for(int i = 0; i < rightVerticesCount; i++) {
+            int index = quantizedMesh.getEastIndices()[i];
+            TerrainVertex vertex = vertices.get(index);
+            double lonDeg = vertex.getPosition().x;
+            if(lonDeg != maxLonDeg){
+                lonDeg = maxLonDeg;
+                vertex.getPosition().x = lonDeg;
+            }
+        }
+
+        int[] triangleIndices = quantizedMesh.getTriangleIndices();
+        int triangleCount = quantizedMesh.getTriangleCount();
+        for (int i = 0; i < triangleCount; i++) {
+            int index1 = triangleIndices[i * 3];
+            int index2 = triangleIndices[i * 3 + 1];
+            int index3 = triangleIndices[i * 3 + 2];
+
+            TerrainVertex vertex1 = vertices.get(index1);
+            TerrainVertex vertex2 = vertices.get(index2);
+            TerrainVertex vertex3 = vertices.get(index3);
+
+            // for each triangle, create 3 half edges
+            TerrainHalfEdge halfEdge1 = new TerrainHalfEdge();
+            TerrainHalfEdge halfEdge2 = new TerrainHalfEdge();
+            TerrainHalfEdge halfEdge3 = new TerrainHalfEdge();
+
+            halfEdges.add(halfEdge1);
+            halfEdges.add(halfEdge2);
+            halfEdges.add(halfEdge3);
+
+            halfEdge1.setStartVertex(vertex1);
+            halfEdge2.setStartVertex(vertex2);
+            halfEdge3.setStartVertex(vertex3);
+
+            vertex1.setOutingHEdge(halfEdge1);
+            vertex2.setOutingHEdge(halfEdge2);
+            vertex3.setOutingHEdge(halfEdge3);
+
+            TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge1, halfEdge2, halfEdge3);
+
+            TerrainTriangle triangle = new TerrainTriangle();
+            triangle.setHalfEdge(halfEdge1);
+            triangle.setOwnerTileIndices(tileIndices);
+
+            halfEdge1.setTriangle(triangle);
+            halfEdge2.setTriangle(triangle);
+            halfEdge3.setTriangle(triangle);
+
+            triangles.add(triangle);
+        }
+
+        mesh.setTwins();
+        mesh.setStartVertexAllHEdges();
+        mesh.determineHalfEdgesType();
+
+        return resultTile;
+    }
 
     public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile, boolean calculateNormals) {
         // First get the quantized mesh header

@@ -19,6 +19,14 @@ public class TileRange {
     private int minTileY;
     private int maxTileY;
 
+    public void set(int tileDepth, int minTileX, int maxTileX, int minTileY, int maxTileY) {
+        this.tileDepth = tileDepth;
+        this.minTileX = minTileX;
+        this.maxTileX = maxTileX;
+        this.minTileY = minTileY;
+        this.maxTileY = maxTileY;
+    }
+
     public List<TileIndices> getTileIndices(List<TileIndices> resultTileIndices) {
         if (resultTileIndices == null) {
             resultTileIndices = new ArrayList<>();

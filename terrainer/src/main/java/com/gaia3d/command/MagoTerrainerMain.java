@@ -112,12 +112,20 @@ public class MagoTerrainerMain {
 
         int depth = 0;
         tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree(depth);
-
         log.info("[Tile] Finished generate terrain elevation data.");
 
-        log.info("[Tile] Start making tile meshes.");
-        tileWgs84Manager.makeTileMeshes();
-        log.info("[Tile] Finished making tile meshes.");
+        // Check if the tile mesh generation is a continuation from an existing tileSet.***
+        boolean isContinue = globalOptions.isContinue();
+        //isContinue = true; // test
+        if (isContinue) {
+            log.info("[Tile] Continuing making tile meshes.");
+            tileWgs84Manager.makeTileMeshesContinue();
+            log.info("[Tile] Finished making tile meshes.");
+        } else {
+            log.info("[Tile] Start making tile meshes.");
+            tileWgs84Manager.makeTileMeshes();
+            log.info("[Tile] Finished making tile meshes.");
+        }
 
         log.info("[Post][Clear] Start deleting memory objects.");
         tileWgs84Manager.deleteObjects();

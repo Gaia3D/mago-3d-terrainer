@@ -22,8 +22,8 @@ import java.util.List;
 @Slf4j
 public class TileWgs84 {
     private TileWgs84Manager manager;
-    private TileWgs84 parentTile;
-    private TileIndices tileIndices = null; // if parentTile == null, then this is the root tile.
+    private TileWgs84 parentTile; // if parentTile == null, then this is the root tile.
+    private TileIndices tileIndices = null;
     private GeographicExtension geographicExtension = null;
     private TerrainMesh mesh = null;
 

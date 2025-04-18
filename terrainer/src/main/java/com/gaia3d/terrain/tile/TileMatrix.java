@@ -2,14 +2,13 @@ package com.gaia3d.terrain.tile;
 
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
-import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.io.LittleEndianDataOutputStream;
 import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.util.TerrainMeshUtils;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.GeometryUtils;
@@ -24,7 +23,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +33,7 @@ import static java.lang.Math.abs;
 
 @Slf4j
 public class TileMatrix {
-    private static final double VERTEX_COINCIDENT_ERROR = 0.0000000000001;
+    private static final double VERTEX_COINCIDENT_ERROR = 0.0000000000001; // 1e-13
 
     private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TileRange tilesRange;
@@ -62,62 +60,60 @@ public class TileMatrix {
         listHalfEdges.clear();
     }
 
-    private boolean setTwinHalfEdgeWithHalfEdgesList(TerrainHalfEdge halfEdge, List<TerrainHalfEdge> halfEdgesList, int axisToCheck) {
-        // axisToCheck 0 = x axis, 1 = y axis, 2 = both axis
-        for (TerrainHalfEdge halfEdge2 : halfEdgesList) {
+    private boolean setTwinsBetweenHalfEdgesInverseOrder(List<TerrainHalfEdge> listHEdges_A, List<TerrainHalfEdge> listHEdges_B) {
+        if(listHEdges_A.size() != listHEdges_B.size()) {
+            log.error("The size of the halfEdges lists are different.");
+            return false;
+        }
+
+        int countA = listHEdges_A.size();
+        for(int i=0; i<countA; i++) {
+            TerrainHalfEdge halfEdge = listHEdges_A.get(i);
+            if (halfEdge.getTwin() != null) {
+                continue;
+            }
+
+            int idxInverse = countA - i - 1;
+            TerrainHalfEdge halfEdge2 = listHEdges_B.get(idxInverse);
             if (halfEdge2.getTwin() != null) {
                 continue;
             }
 
-            if (halfEdge.isHalfEdgePossibleTwin(halfEdge2, VERTEX_COINCIDENT_ERROR, axisToCheck)) {
-                // First, must change the startVertex & endVertex of the halfEdge2
-                TerrainVertex startVertex = halfEdge.getStartVertex();
-                TerrainVertex endVertex = halfEdge.getEndVertex();
+            // set twin.***
+            // First, must change the startVertex & endVertex of the halfEdge2
+            TerrainVertex startVertex = halfEdge.getStartVertex();
+            TerrainVertex endVertex = halfEdge.getEndVertex();
 
-                TerrainVertex startVertex2 = halfEdge2.getStartVertex();
-                TerrainVertex endVertex2 = halfEdge2.getEndVertex();
+            TerrainVertex startVertex2 = halfEdge2.getStartVertex();
+            TerrainVertex endVertex2 = halfEdge2.getEndVertex();
 
-                List<TerrainHalfEdge> outingHalfEdges_strVertex2 = startVertex2.getAllOutingHalfEdges();
-                List<TerrainHalfEdge> outingHalfEdges_endVertex2 = endVertex2.getAllOutingHalfEdges();
+            List<TerrainHalfEdge> outingHalfEdges_strVertex2 = startVertex2.getAllOutingHalfEdges();
+            List<TerrainHalfEdge> outingHalfEdges_endVertex2 = endVertex2.getAllOutingHalfEdges();
 
-                for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_strVertex2) {
-                    // NOTE : for outingHEdges of startVertex2, must set "startVertex" the endVertex of halfEdge
-                    outingHalfEdge.setStartVertex(endVertex);
-                }
+            for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_strVertex2) {
+                // NOTE : for outingHEdges of startVertex2, must set "startVertex" the endVertex of halfEdge
+                outingHalfEdge.setStartVertex(endVertex);
+            }
 
-                for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_endVertex2) {
-                    // NOTE : for outingHEdges of endVertex2, must set "startVertex" the startVertex of halfEdge
-                    outingHalfEdge.setStartVertex(startVertex);
-                }
+            for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_endVertex2) {
+                // NOTE : for outingHEdges of endVertex2, must set "startVertex" the startVertex of halfEdge
+                outingHalfEdge.setStartVertex(startVertex);
+            }
 
-                // finally set twins
-                halfEdge.setTwin(halfEdge2);
+            // finally set twins
+            halfEdge.setTwin(halfEdge2);
 
-                // now, set as deleted the startVertex2 & endVertex2
-                if (!startVertex2.equals(endVertex)) {
-                    startVertex2.setObjectStatus(TerrainObjectStatus.DELETED);
-                }
+            // now, set as deleted the startVertex2 & endVertex2
+            if (!startVertex2.equals(endVertex)) {
+                startVertex2.setObjectStatus(TerrainObjectStatus.DELETED);
+            }
 
-                if (!endVertex2.equals(startVertex)) {
-                    endVertex2.setObjectStatus(TerrainObjectStatus.DELETED);
-                }
-
-                return true;
+            if (!endVertex2.equals(startVertex)) {
+                endVertex2.setObjectStatus(TerrainObjectStatus.DELETED);
             }
         }
-        return false;
-    }
 
-    private void setTwinsBetweenHalfEdges(List<TerrainHalfEdge> listHEdges_A, List<TerrainHalfEdge> listHEdges_B, int axisToCheck) {
-        for (TerrainHalfEdge halfEdge : listHEdges_A) {
-            if (halfEdge.getTwin() != null) {
-                //log.info("HalfEdge has a twin.");
-                continue;
-            }
-            if (!this.setTwinHalfEdgeWithHalfEdgesList(halfEdge, listHEdges_B, axisToCheck)) {
-                log.error("No twin halfEdge found.");
-            }
-        }
+        return true;
     }
 
     public void makeMatrixMesh(boolean isFirstGeneration) throws TransformException, IOException {
@@ -168,7 +164,6 @@ public class TileMatrix {
         log.debug("Making TileMatrix columns : {}, rows : {} ", colsCount, rowsCount);
 
         List<TerrainMesh> rowMeshesList = new ArrayList<>();
-        int axisToCheck = 1;
         for (int i = 0; i < rowsCount; i++) {
             List<TileWgs84> rowTilesArray = tilesMatrixRowCol.get(i);
             TerrainMesh rowMesh = null;
@@ -187,13 +182,12 @@ public class TileMatrix {
                         //  +----------+----------+
                         // merge the tileMesh with the rowMesh
                         // set twins between the right HEdges of the rowMesh and the left HEdges of the tileMesh
-                        List<TerrainHalfEdge> rowMeshRightHalfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.RIGHT);
-                        List<TerrainHalfEdge> tileMeshLeftHalfEdges = tileMesh.getHalfEdgesByType(TerrainHalfEdgeType.LEFT);
+                        List<TerrainHalfEdge> rowMeshRightHalfEdges = rowMesh.getRightHalfEdgesSortedDownToUp();
+                        List<TerrainHalfEdge> tileMeshLeftHalfEdges = tileMesh.getLeftHalfEdgesSortedUpToDown();
 
                         // the c_tile can be null
                         if (!rowMeshRightHalfEdges.isEmpty()) {
-                            // now, set twins of halfEdges
-                            this.setTwinsBetweenHalfEdges(rowMeshRightHalfEdges, tileMeshLeftHalfEdges, axisToCheck);
+                            this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
 
                             // now, merge the left tile mesh to the result mesh.
                             rowMesh.removeDeletedObjects();
@@ -207,7 +201,6 @@ public class TileMatrix {
 
         // now, join all the rowMeshes
         TerrainMesh resultMesh = null;
-        axisToCheck = 0;
         for (TerrainMesh rowMesh : rowMeshesList) {
             if (rowMesh == null) {
                 continue;
@@ -228,13 +221,13 @@ public class TileMatrix {
                     //  +------------+
                     // merge the rowMesh with the resultMesh
                     // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
-                    List<TerrainHalfEdge> resultMeshDownHalfEdges = resultMesh.getHalfEdgesByType(TerrainHalfEdgeType.DOWN);
-                    List<TerrainHalfEdge> rowMeshUpHalfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.UP);
+                    List<TerrainHalfEdge> resultMeshDownHalfEdges = resultMesh.getDownHalfEdgesSortedLeftToRight();
+                    List<TerrainHalfEdge> rowMeshUpHalfEdges = rowMesh.getUpHalfEdgesSortedRightToLeft();
+
                     // the c_tile can be null
                     if (!resultMeshDownHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
-                        this.setTwinsBetweenHalfEdges(resultMeshDownHalfEdges, rowMeshUpHalfEdges, axisToCheck);
-
+                        this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
                         // now, merge the row mesh to the result mesh.
                         resultMesh.removeDeletedObjects();
                         resultMesh.mergeMesh(rowMesh);
@@ -251,13 +244,13 @@ public class TileMatrix {
                     //  +------------+
                     // merge the rowMesh with the resultMesh
                     // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
-                    List<TerrainHalfEdge> resultMeshUpHalfEdges = resultMesh.getHalfEdgesByType(TerrainHalfEdgeType.UP);
-                    List<TerrainHalfEdge> rowMeshDownHalfEdges = rowMesh.getHalfEdgesByType(TerrainHalfEdgeType.DOWN);
+                    List<TerrainHalfEdge> resultMeshUpHalfEdges = resultMesh.getUpHalfEdgesSortedRightToLeft();
+                    List<TerrainHalfEdge> rowMeshDownHalfEdges = rowMesh.getDownHalfEdgesSortedLeftToRight();
+
                     // the c_tile can be null
                     if (!resultMeshUpHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
-                        this.setTwinsBetweenHalfEdges(resultMeshUpHalfEdges, rowMeshDownHalfEdges, axisToCheck);
-
+                        this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshUpHalfEdges, rowMeshDownHalfEdges);
                         // now, merge the row mesh to the result mesh.
                         resultMesh.removeDeletedObjects();
                         resultMesh.mergeMesh(rowMesh);
@@ -283,7 +276,7 @@ public class TileMatrix {
 
             // now save the 9 tiles
             List<TerrainMesh> separatedMeshes = new ArrayList<>();
-            this.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
+            TerrainMeshUtils.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
 
             // save order :
             // 1- saveSeparatedTiles()
@@ -299,8 +292,10 @@ public class TileMatrix {
 
             // finally save the children tiles
             // note : the children tiles must be the last saved
-            log.debug("Saving Separated children Tiles...");
-            saveSeparatedChildrenTiles(separatedMeshes);
+            if(tilesRange.getTileDepth() < globalOptions.getMaximumTileDepth()) {
+                log.debug("Saving Separated children Tiles...");
+                saveSeparatedChildrenTiles(separatedMeshes);
+            }
         } else {
             log.error("ResultMesh is null.");
         }
@@ -334,20 +329,6 @@ public class TileMatrix {
         }
     }
 
-    public void saveFile(TerrainMesh mesh, String filePath) throws IOException {
-        String foldersPath = FileUtils.removeFileNameFromPath(filePath);
-        FileUtils.createAllFoldersIfNoExist(foldersPath);
-
-        File file = new File(filePath);
-        Files.deleteIfExists(file.toPath());
-
-        BigEndianDataOutputStream dataOutputStream = new BigEndianDataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-        // save the tile
-        mesh.saveDataOutputStream(dataOutputStream);
-
-        dataOutputStream.close();
-    }
-
     public boolean saveSeparatedTiles(List<TerrainMesh> separatedMeshes) {
         int meshesCount = separatedMeshes.size();
         int counter = 0;
@@ -366,7 +347,7 @@ public class TileMatrix {
             }
 
             try {
-                saveFile(mesh, tileFullPath);
+                mesh.saveFile(tileFullPath);
             } catch (IOException e) {
                 log.error("Error:", e);
                 return false;
@@ -377,204 +358,10 @@ public class TileMatrix {
         return true;
     }
 
-    private boolean saveSeparatedChildrenTiles(List<TerrainMesh> separatedMeshes) {
-        int meshesCount = separatedMeshes.size();
-        int counter = 0;
-        for (int i = 0; i < meshesCount; i++) {
-            TerrainMesh mesh = separatedMeshes.get(i);
-
-            TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle
-            TileIndices tileIndices = triangle.getOwnerTileIndices();
-
-            if (counter >= 100) {
-                counter = 0;
-                log.debug("Saving children tiles... L : " + tileIndices.getL() + " i : " + i + " / " + meshesCount);
-            }
-
-            // Save children if necessary************************************************************************
-            int minTileDepth = globalOptions.getMinimumTileDepth();
-            int maxTileDepth = globalOptions.getMaximumTileDepth();
-            if (tileIndices.getL() < maxTileDepth) {
-                // First, mark triangles with the children tile indices
-                boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
-                String imageryType = this.manager.getImaginaryType();
-
-                // 2- make the 4 children
-                TileIndices childLightUpTileIndices = tileIndices.getChildLeftUpTileIndices(originIsLeftUp);
-                TileIndices childRightUpTileIndices = tileIndices.getChildRightUpTileIndices(originIsLeftUp);
-                TileIndices childLeftDownTileIndices = tileIndices.getChildLeftDownTileIndices(originIsLeftUp);
-                TileIndices childRightDownTileIndices = tileIndices.getChildRightDownTileIndices(originIsLeftUp);
-
-                // First, classify the triangles of the tile
-                GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
-                double midLonDeg = geoExtension.getMidLongitudeDeg();
-                double midLatDeg = geoExtension.getMidLatitudeDeg();
-                List<TerrainTriangle> triangles = mesh.triangles;
-                for (TerrainTriangle gaiaTriangle : triangles) {
-                    triangle = gaiaTriangle;
-
-                    if (triangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
-                        continue;
-                    }
-
-                    this.listVertices.clear();
-                    this.listHalfEdges.clear();
-                    Vector3d barycenter = triangle.getBarycenter(this.listVertices, this.listHalfEdges);
-                    if (barycenter.x < midLonDeg) {
-                        if (barycenter.y < midLatDeg) {
-                            // LD_Tile
-                            triangle.setOwnerTileIndices(childLeftDownTileIndices);
-                        } else {
-                            // LU_Tile
-                            triangle.setOwnerTileIndices(childLightUpTileIndices);
-                        }
-                    } else {
-                        if (barycenter.y < midLatDeg) {
-                            // RD_Tile
-                            triangle.setOwnerTileIndices(childRightDownTileIndices);
-                        } else {
-                            // RU_Tile
-                            triangle.setOwnerTileIndices(childRightUpTileIndices);
-                        }
-                    }
-                }
-
-                List<TerrainMesh> childMeshes = new ArrayList<>();
-                this.getSeparatedMeshes(mesh, childMeshes, this.manager.isOriginIsLeftUp());
-
-                // 3- save the 4 children
-                int childMeshesCount = childMeshes.size();
-                for (TerrainMesh childMesh : childMeshes) {
-                    triangle = childMesh.triangles.get(0); // take the first triangle
-                    TileIndices childTileIndices = triangle.getOwnerTileIndices();
-                    String tileTempDirectory = globalOptions.getTileTempPath();
-                    String outputDirectory = globalOptions.getOutputPath();
-                    String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
-                    String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
-
-                    try {
-                        //log.debug("Saving children tiles... L : " + childTileIndices.getL() + " i : " + j + " / " + childMeshesCount);
-                        saveFile(childMesh, childTileFullPath); // original
-                    } catch (IOException e) {
-                        log.error("Error:", e);
-                        return false;
-                    }
-                }
-            }
-            counter++;
+    private void saveSeparatedChildrenTiles(List<TerrainMesh> separatedMeshes) {
+        for (TerrainMesh mesh : separatedMeshes) {
+            TerrainMeshUtils.save4ChildrenMeshes(mesh, this.manager, globalOptions);
         }
-
-        return true;
-    }
-
-    private List<TerrainHalfEdge> getHalfEdgesOfTriangles(List<TerrainTriangle> triangles, List<TerrainHalfEdge> resultHalfEdges, List<TerrainHalfEdge> listHalfEdges) {
-        if (resultHalfEdges == null) {
-            resultHalfEdges = new ArrayList<>();
-        }
-        //List<GaiaHalfEdge> halfEdgesLoop = new ArrayList<>();
-        listHalfEdges.clear();
-        for (TerrainTriangle triangle : triangles) {
-            triangle.getHalfEdge().getHalfEdgesLoop(listHalfEdges);
-            resultHalfEdges.addAll(listHalfEdges);
-            listHalfEdges.clear();
-        }
-        return resultHalfEdges;
-    }
-
-    private List<TerrainVertex> getVerticesOfTriangles(List<TerrainTriangle> triangles) {
-        List<TerrainVertex> resultVertices = new ArrayList<>();
-        HashMap<TerrainVertex, Integer> map_vertices = new HashMap<>();
-        for (TerrainTriangle triangle : triangles) {
-            this.listVertices.clear();
-            this.listHalfEdges.clear();
-            this.listVertices = triangle.getVertices(this.listVertices, this.listHalfEdges);
-            for (TerrainVertex vertex : this.listVertices) {
-                if (!map_vertices.containsKey(vertex)) {
-                    map_vertices.put(vertex, 1);
-                    resultVertices.add(vertex);
-                }
-            }
-        }
-        return resultVertices;
-    }
-
-    public void getSeparatedMeshes(TerrainMesh bigMesh, List<TerrainMesh> resultSeparatedMeshes, boolean originIsLeftUp) {
-        // separate by ownerTile_tileIndices
-        List<TerrainTriangle> triangles = bigMesh.triangles;
-        HashMap<String, List<TerrainTriangle>> map_triangles = new HashMap<>();
-        for (TerrainTriangle triangle : triangles) {
-            if (triangle.getOwnerTileIndices() != null) {
-                TileIndices tileIndices = triangle.getOwnerTileIndices();
-                String tileIndicesString = tileIndices.getString();
-                List<TerrainTriangle> trianglesList = map_triangles.get(tileIndicesString);
-                if (trianglesList == null) {
-                    trianglesList = new ArrayList<>();
-                    map_triangles.put(tileIndicesString, trianglesList);
-                }
-                trianglesList.add(triangle);
-            } else {
-                // error
-                log.info("Error: triangle has not ownerTile_tileIndices.");
-            }
-        }
-
-        // now, create separated meshes
-        for (String tileIndicesString : map_triangles.keySet()) {
-            List<TerrainTriangle> trianglesList = map_triangles.get(tileIndicesString);
-
-            TerrainMesh separatedMesh = new TerrainMesh();
-            separatedMesh.triangles = trianglesList;
-            TileIndices tileIndices = trianglesList.get(0).getOwnerTileIndices();
-            TileIndices L_tileIndices = tileIndices.getLeftTileIndices(originIsLeftUp);
-            TileIndices R_tileIndices = tileIndices.getRightTileIndices(originIsLeftUp);
-            TileIndices U_tileIndices = tileIndices.getUpTileIndices(originIsLeftUp);
-            TileIndices D_tileIndices = tileIndices.getDownTileIndices(originIsLeftUp);
-
-            //GaiaBoundingBox bbox = this.getBBoxOfTriangles(trianglesList);
-            this.listHalfEdges.clear();
-            List<TerrainHalfEdge> halfEdges = new ArrayList<>();
-            halfEdges = this.getHalfEdgesOfTriangles(trianglesList, halfEdges, this.listHalfEdges); // note : "halfEdges" if different to "this.listHalfEdges"
-            // for all HEdges, check the triangle of the twin
-            // if the triangle of the twin has different ownerTile_tileIndices, then set the twin as null
-            int halfEdges_count = halfEdges.size();
-            for (int i = 0; i < halfEdges_count; i++) {
-                TerrainHalfEdge halfEdge = halfEdges.get(i);
-                TerrainHalfEdge twin = halfEdge.getTwin();
-                if (twin != null) {
-                    TerrainTriangle twins_triangle = twin.getTriangle();
-                    if (twins_triangle != null) {
-                        String twins_triangle_tileIndicesString = twins_triangle.getOwnerTileIndices().getString();
-                        if (!twins_triangle_tileIndicesString.equals(tileIndicesString)) {
-                            // the twin triangle has different ownerTile_tileIndices
-                            halfEdge.setTwin(null);
-                            twin.setTwin(null);
-
-                            // now, for the hedges, must calculate the hedgeType
-                            // must know the relative position of the twin triangle's tile
-                            if (twins_triangle_tileIndicesString.equals(L_tileIndices.getString())) {
-                                halfEdge.setType(TerrainHalfEdgeType.LEFT);
-                                twin.setType(TerrainHalfEdgeType.RIGHT);
-                            } else if (twins_triangle_tileIndicesString.equals(R_tileIndices.getString())) {
-                                halfEdge.setType(TerrainHalfEdgeType.RIGHT);
-                                twin.setType(TerrainHalfEdgeType.LEFT);
-                            } else if (twins_triangle_tileIndicesString.equals(U_tileIndices.getString())) {
-                                halfEdge.setType(TerrainHalfEdgeType.UP);
-                                twin.setType(TerrainHalfEdgeType.DOWN);
-                            } else if (twins_triangle_tileIndicesString.equals(D_tileIndices.getString())) {
-                                halfEdge.setType(TerrainHalfEdgeType.DOWN);
-                                twin.setType(TerrainHalfEdgeType.UP);
-                            }
-                        }
-                    }
-                }
-            }
-
-            separatedMesh.halfEdges = halfEdges;
-            separatedMesh.vertices = this.getVerticesOfTriangles(trianglesList);
-
-            resultSeparatedMeshes.add(separatedMesh);
-        }
-
     }
 
     public void recalculateElevation(TerrainMesh terrainMesh, TileRange tilesRange) throws TransformException, IOException {
@@ -604,7 +391,6 @@ public class TileMatrix {
             TerrainVertex vertex = verticesOfCurrentTile.get(i);
             TileWgs84Utils.selectTileIndices(currDepth, vertex.getPosition().x, vertex.getPosition().y, tileIndicesAux, originIsLeftUp);
             vertex.getPosition().z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, vertex.getPosition().x, vertex.getPosition().y);
-            //vertex.getPosition().z = terrainElevationDataManager.getElevation(vertex.getPosition().x, vertex.getPosition().y, this.manager.getTerrainElevDataList());
         }
     }
 

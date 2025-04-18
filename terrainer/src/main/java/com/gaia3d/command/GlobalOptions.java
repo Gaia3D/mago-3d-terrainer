@@ -36,6 +36,7 @@ public class GlobalOptions {
 
     private Reporter reporter;
     private double noDataValue = -8612;
+    private boolean isContinue = false; // continue from an existent tileSet.***
 
     private String version;
     private String javaVersionInfo;
