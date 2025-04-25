@@ -14,6 +14,7 @@ public enum CommandOptions {
     DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
     LEAVE_TEMP("leaveTemp", "lt", "leaveTemp", false, "Leave temporary files for debugging"),
     JSON("json", "j", "json", false, "Generate only layer.json from terrain data"),
+    CONTINUOUS("continue", "c", "continue", false, "Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails."),
 
     // for terrain generation
     MINIMUM_TILE_DEPTH("minDepth", "min", "minDepth", true, "Minimum tile depth (range : 0 ~ 22) (default : 0)"),

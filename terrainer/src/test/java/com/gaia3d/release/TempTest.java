@@ -9,7 +9,7 @@ import java.io.File;
 @Slf4j
 public class TempTest {
 
-    private final File INPUT_PATH = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF");
+    private final File INPUT_PATH = new File("G:\\(archive)\\(archive) 3차원 데이터 모음\\GeoTIFF");
     private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
@@ -29,17 +29,35 @@ public class TempTest {
     }
 
     @Test
-    void sample13Intensity1() {
+    void sejong14IntensityContinue() {
         File inputPath = new File(INPUT_PATH, "seoul");
-        File outputPath = new File(OUTPUT_PATH, "seoul-13-intensity-1");
+        File outputPath = new File(OUTPUT_PATH, "seoul-12-intensity-1");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "13",
+                "-max", "14",
+                "-intensity", "4",
+                "-calculateNormals",
+                "-continue",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sample12Intensity1() {
+        File inputPath = new File(INPUT_PATH, "seoul");
+        File outputPath = new File(OUTPUT_PATH, "seoul-12-intensity-1");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "12",
                 "-intensity", "1.0",
                 "-calculateNormals",
+                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
     }
@@ -359,7 +377,7 @@ public class TempTest {
 
     @Test
     void ws2dem1m() {
-        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\wangsuk2_1m");
+        File inputPath = new File("G:\\(archive)\\(archive) 3차원 데이터 모음\\GeoTIFF\\wangsuk2_1m");
         File outputPath = new File(OUTPUT_PATH, "ws2-dem-1m");
 
         String[] args = new String[]{
@@ -374,7 +392,7 @@ public class TempTest {
 
     @Test
     void sangjiUniversity() {
-        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\sangji-university");
+        File inputPath = new File("G:\\(archive)\\(archive) 3차원 데이터 모음\\GeoTIFF\\sangji-university");
         File outputPath = new File(OUTPUT_PATH, "sangji-university");
 
         String[] args = new String[]{
@@ -389,7 +407,7 @@ public class TempTest {
 
     @Test
     void sangjiUniversity5186() {
-        File inputPath = new File("G:\\(2024)\\(2024) 3차원 데이터 모음\\GeoTIFF\\sangji-university-5186");
+        File inputPath = new File("G:\\(archive)\\(archive) 3차원 데이터 모음\\GeoTIFF\\sangji-university-5186");
         File outputPath = new File(OUTPUT_PATH, "sangji-university-5186");
 
         String[] args = new String[]{

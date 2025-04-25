@@ -37,7 +37,7 @@ public class GlobalOptions {
 
     private Reporter reporter;
     private double noDataValue = -8612;
-    private boolean isContinue = false; // continue from an existent tileSet.***
+    private boolean isContinue = false;
 
     private String version;
     private String javaVersionInfo;
@@ -109,6 +109,10 @@ public class GlobalOptions {
 
         if (command.hasOption(CommandOptions.LEAVE_TEMP.getArgName())) {
             instance.setLeaveTemp(true);
+        }
+
+        if (command.hasOption(CommandOptions.CONTINUOUS.getArgName())) {
+            instance.setContinue(true);
         }
 
         if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getArgName())) {
