@@ -410,7 +410,6 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteTileRaster();
             this.terrainElevationDataManager.deleteCoverage();
 
-
             long endTime = System.currentTimeMillis();
             log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));
 
@@ -532,7 +531,6 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteGeoTiffManager();
             this.terrainElevationDataManager.deleteTileRaster();
             this.terrainElevationDataManager.deleteCoverage();
-
 
             long endTime = System.currentTimeMillis();
             log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));

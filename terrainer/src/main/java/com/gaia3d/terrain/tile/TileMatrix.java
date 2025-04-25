@@ -158,7 +158,6 @@ public class TileMatrix {
             tilesMatrixRowCol.add(tilesListRow);
         }
 
-
         int rowsCount = tilesMatrixRowCol.size();
         int colsCount = tilesMatrixRowCol.get(0).size();
         log.debug("Making TileMatrix columns : {}, rows : {} ", colsCount, rowsCount);
@@ -423,7 +422,6 @@ public class TileMatrix {
 
         TileWgs84Raster tileRaster = terrainElevationDataManager.getTileWgs84Raster(tileIndices, this.manager);
 
-
         // if the triangle size is very small, then do not refine**********************
         // Calculate the maxLength of the triangle in meters
         this.listVertices.clear();
@@ -431,13 +429,11 @@ public class TileMatrix {
         double triangleMaxLengthMeters = triangle.getTriangleMaxSizeInMeters(this.listVertices, this.listHalfEdges);
         double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
 
-
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.setRefineChecked(true);
             log.debug("Filtered by Min Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # minTriangleSizeForDepth : " + minTriangleSizeForDepth);
             return false;
         }
-
 
         double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {

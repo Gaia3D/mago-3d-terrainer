@@ -122,7 +122,6 @@ public class GaiaGeoTiffManager {
         int desiredImageWidth = Math.max((int) desiredPixelsCountX, minXSize);
         int desiredImageHeight = Math.max((int) desiredPixelsCountY, minYSize);
 
-
         double scaleX = (double) desiredImageWidth / (double) gridSpanX;
         double scaleY = (double) desiredImageHeight / (double) gridSpanY;
 

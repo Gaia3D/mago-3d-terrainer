@@ -261,7 +261,6 @@ public class QuantizedMesh {
         // save triangleCount
         dataOutputStream.writeInt(triangleCount);
 
-
         int indicesCount = triangleCount * 3;
         // if vertexCount > 65536, then save the triangleIndices as int
         if (vertexCount > 65536) {

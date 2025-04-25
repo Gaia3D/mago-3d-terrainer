@@ -269,7 +269,6 @@ public class QuantizedMeshManager {
         double latScale = latRange / 32767.0;
         double heightScale = 32767.0 / heightRange;
 
-
         for (int i = 0; i < vertexCount; i++) {
             TerrainVertex vertex = vertices.get(i);
             double lonDeg = vertex.getPosition().x;

@@ -94,7 +94,6 @@ public class TileIndices {
             tileIndices.set(X, Y - 1, L);
         }
 
-
         return tileIndices;
     }
 
@@ -116,7 +115,6 @@ public class TileIndices {
         } else {
             tileIndices.set(X + 1, Y, L);
         }
-
 
         return tileIndices;
     }

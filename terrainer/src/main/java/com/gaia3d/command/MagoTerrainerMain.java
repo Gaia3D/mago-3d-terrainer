@@ -87,9 +87,8 @@ public class MagoTerrainerMain {
 
     /**
      * Executes the terrainer process.
-     *
-     * @throws IOException        if an I/O error occurs.
-     * @throws FactoryException   if a factory error occurs.
+     * @throws IOException if an I/O error occurs.
+     * @throws FactoryException if a factory error occurs.
      * @throws TransformException if a transform error occurs.
      */
     private static void execute() throws Exception {

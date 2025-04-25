@@ -624,7 +624,6 @@ public class TerrainMesh {
             halfEdgeB2.setTriangle(triangleB);
             halfEdgeB3.setTriangle(triangleB);
 
-
             // now delete the triangle
             disableTriangle(triangle);
 
@@ -691,7 +690,6 @@ public class TerrainMesh {
             // need longEdge_startVertex and longEdge_endVertex
             TerrainVertex longEdge_startVertex = longestHEdge.getStartVertex();
             TerrainVertex longEdge_endVertex = longestHEdge.getEndVertex();
-
 
             // A triangle is split by the longest edge
             //                                        oppVtx_T

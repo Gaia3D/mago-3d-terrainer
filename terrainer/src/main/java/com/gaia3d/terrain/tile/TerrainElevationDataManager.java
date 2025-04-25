@@ -122,7 +122,6 @@ public class TerrainElevationDataManager {
             this.rootTerrainElevationDataQuadTree.deleteCoverageIfNoIntersectsGeoExtension(geoExtensionTotal);
         }
 
-
         for (TileIndices tileIndices : tileIndicesList) {
             TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
             if (tileWgs84Raster == null) {
@@ -323,7 +322,6 @@ public class TerrainElevationDataManager {
         Double pixelArea = 0.0d;
         File file = new File(path);
         //String fileName = file.getName();
-
 
         File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
         File tempFile = new File(standardizationTempPath, fileName);
