@@ -43,6 +43,7 @@ java -jar mago-3d-terrainer-x.x.x.jar -help
 3d-terrainer(dev-version) by Gaia3D, Inc.
 ----------------------------------------
 usage: mago 3DTerrainer help
+ -c,--continue                   Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails.
  -cn,--calculateNormals          Add terrain octVertexNormals for lighting effect
  -d,--debug                      Debug Mode, print more detail log
  -h,--help                       Print this message
@@ -56,10 +57,10 @@ usage: mago 3DTerrainer help
  -min,--minDepth <arg>           Minimum tile depth (range : 0 ~ 22) (default : 0)
  -mr,--rasterMaxSize <arg>       Maximum raster size for split function. (default : 8192)
  -ms,--mosaicSize <arg>          Tiling mosaic buffer size per tile. (default : 16)
+ -nv,--nodataValue <arg>         No data value for terrain data (default : -9999)
  -o,--output <arg>               Output folder path
  -pt,--priorityType <arg>        Priority type () (default : distance)
 ```
-
 필수 인자 값으로 작성한 간단한 GeoTIFF 변환코드 입니다.
 ```
 java -jar mago-3d-terrainer-x.x.x.jar -input C:\data\geotiff-sample -output C:\data\geotiff-terrain-output -maxDepth 14
