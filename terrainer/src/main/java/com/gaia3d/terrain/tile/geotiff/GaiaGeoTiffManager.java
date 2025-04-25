@@ -14,12 +14,14 @@ import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.FactoryException;
 
-import java.awt.image.Raster;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter

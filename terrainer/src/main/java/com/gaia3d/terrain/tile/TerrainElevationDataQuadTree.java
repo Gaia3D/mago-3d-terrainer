@@ -1,6 +1,5 @@
 package com.gaia3d.terrain.tile;
 
-import com.gaia3d.basic.geometry.GaiaRectangle;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import lombok.Getter;
 import lombok.Setter;

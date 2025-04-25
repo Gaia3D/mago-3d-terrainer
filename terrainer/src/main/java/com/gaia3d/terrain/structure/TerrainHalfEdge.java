@@ -1,13 +1,10 @@
 package com.gaia3d.terrain.structure;
 
 import com.gaia3d.basic.geometry.GaiaRectangle;
-import com.gaia3d.basic.halfedge.HalfEdge;
-import com.gaia3d.basic.halfedge.HalfEdgeVertex;
-import com.gaia3d.basic.halfedge.ObjectStatus;
-import com.gaia3d.terrain.types.TerrainHalfEdgeType;
-import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
+import com.gaia3d.terrain.types.TerrainHalfEdgeType;
+import com.gaia3d.terrain.types.TerrainObjectStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

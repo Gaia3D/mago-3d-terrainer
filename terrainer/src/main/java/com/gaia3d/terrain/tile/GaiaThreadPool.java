@@ -19,6 +19,7 @@ public class GaiaThreadPool {
 
     private final ExecutorService executorService;
     private final byte multiThreadCount;
+
     public GaiaThreadPool() {
         this.multiThreadCount = setDefaultThreadCount();
         this.executorService = Executors.newFixedThreadPool(multiThreadCount);

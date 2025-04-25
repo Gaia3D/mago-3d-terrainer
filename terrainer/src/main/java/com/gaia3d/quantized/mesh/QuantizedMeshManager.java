@@ -3,11 +3,11 @@ package com.gaia3d.quantized.mesh;
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.tile.TileIndices;
+import com.gaia3d.terrain.tile.TileWgs84;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
 import com.gaia3d.terrain.util.OctNormalFactory;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.terrain.tile.TileWgs84;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
@@ -31,7 +31,7 @@ public class QuantizedMeshManager {
         // calculate the geographic extension by tileIndices
         String imaginaryType = tileManager.getImaginaryType();
         GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, tileManager.originIsLeftUp());
-        if(geoExtension == null) {
+        if (geoExtension == null) {
             return null;
         }
 
@@ -72,15 +72,15 @@ public class QuantizedMeshManager {
             double height = h * heightScale + minHeight;
 
             // clamp vertices in to the tile's geographic extent
-            if(lonDeg < minLonDeg){
+            if (lonDeg < minLonDeg) {
                 lonDeg = minLonDeg;
-            } else if(lonDeg > maxLonDeg){
+            } else if (lonDeg > maxLonDeg) {
                 lonDeg = maxLonDeg;
             }
 
-            if(latDeg < minLatDeg){
+            if (latDeg < minLatDeg) {
                 latDeg = minLatDeg;
-            } else if(latDeg > maxLatDeg){
+            } else if (latDeg > maxLatDeg) {
                 latDeg = maxLatDeg;
             }
 
@@ -92,44 +92,44 @@ public class QuantizedMeshManager {
 
         // for edge vertices, clamp to the tile's geographic extent
         int downVerticesCount = quantizedMesh.getSouthVertexCount();
-        for(int i = 0; i < downVerticesCount; i++) {
+        for (int i = 0; i < downVerticesCount; i++) {
             int index = quantizedMesh.getSouthIndices()[i];
             TerrainVertex vertex = vertices.get(index);
             double latDeg = vertex.getPosition().y;
-            if(latDeg != minLatDeg){
+            if (latDeg != minLatDeg) {
                 latDeg = minLatDeg;
                 vertex.getPosition().y = latDeg;
             }
         }
 
         int upVerticesCount = quantizedMesh.getNorthVertexCount();
-        for(int i = 0; i < upVerticesCount; i++) {
+        for (int i = 0; i < upVerticesCount; i++) {
             int index = quantizedMesh.getNorthIndices()[i];
             TerrainVertex vertex = vertices.get(index);
             double latDeg = vertex.getPosition().y;
-            if(latDeg != maxLatDeg){
+            if (latDeg != maxLatDeg) {
                 latDeg = maxLatDeg;
                 vertex.getPosition().y = latDeg;
             }
         }
 
         int leftVerticesCount = quantizedMesh.getWestVertexCount();
-        for(int i = 0; i < leftVerticesCount; i++) {
+        for (int i = 0; i < leftVerticesCount; i++) {
             int index = quantizedMesh.getWestIndices()[i];
             TerrainVertex vertex = vertices.get(index);
             double lonDeg = vertex.getPosition().x;
-            if(lonDeg != minLonDeg){
+            if (lonDeg != minLonDeg) {
                 lonDeg = minLonDeg;
                 vertex.getPosition().x = lonDeg;
             }
         }
 
         int rightVerticesCount = quantizedMesh.getEastVertexCount();
-        for(int i = 0; i < rightVerticesCount; i++) {
+        for (int i = 0; i < rightVerticesCount; i++) {
             int index = quantizedMesh.getEastIndices()[i];
             TerrainVertex vertex = vertices.get(index);
             double lonDeg = vertex.getPosition().x;
-            if(lonDeg != maxLonDeg){
+            if (lonDeg != maxLonDeg) {
                 lonDeg = maxLonDeg;
                 vertex.getPosition().x = lonDeg;
             }

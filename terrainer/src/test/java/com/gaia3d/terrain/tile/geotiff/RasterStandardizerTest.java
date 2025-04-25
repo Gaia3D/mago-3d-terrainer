@@ -1,18 +1,12 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.GridEnvelope2D;
-import org.geotools.coverage.grid.GridGeometry2D;
-import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.junit.jupiter.api.Test;
-import org.opengis.coverage.grid.GridEnvelope;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.File;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class RasterStandardizerTest {
 

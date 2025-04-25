@@ -2,12 +2,12 @@ package com.gaia3d.terrain.tile;
 
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
-import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.LittleEndianDataOutputStream;
 import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.terrain.util.TerrainMeshUtils;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.FileUtils;
@@ -61,13 +61,13 @@ public class TileMatrix {
     }
 
     private boolean setTwinsBetweenHalfEdgesInverseOrder(List<TerrainHalfEdge> listHEdges_A, List<TerrainHalfEdge> listHEdges_B) {
-        if(listHEdges_A.size() != listHEdges_B.size()) {
+        if (listHEdges_A.size() != listHEdges_B.size()) {
             log.error("The size of the halfEdges lists are different.");
             return false;
         }
 
         int countA = listHEdges_A.size();
-        for(int i=0; i<countA; i++) {
+        for (int i = 0; i < countA; i++) {
             TerrainHalfEdge halfEdge = listHEdges_A.get(i);
             if (halfEdge.getTwin() != null) {
                 continue;
@@ -292,7 +292,7 @@ public class TileMatrix {
 
             // finally save the children tiles
             // note : the children tiles must be the last saved
-            if(tilesRange.getTileDepth() < globalOptions.getMaximumTileDepth()) {
+            if (tilesRange.getTileDepth() < globalOptions.getMaximumTileDepth()) {
                 log.debug("Saving Separated children Tiles...");
                 saveSeparatedChildrenTiles(separatedMeshes);
             }
@@ -565,12 +565,12 @@ public class TileMatrix {
                 // check if the pixel (col, row) intersects the rasterTriangle.***
                 intersects = false;
                 double alpha = (deltaYBC * (col - rasterTriangleP3.x) + deltaXCB * (row - rasterTriangleP3.y)) / denominator;
-                if(alpha < 0 || alpha > 1) {
+                if (alpha < 0 || alpha > 1) {
                     rowAux++;
                     continue;
                 }
                 double beta = (deltaYCA * (col - rasterTriangleP3.x) + deltaXAC * (row - rasterTriangleP3.y)) / denominator;
-                if(beta < 0 || beta > 1) {
+                if (beta < 0 || beta > 1) {
                     rowAux++;
                     continue;
                 }

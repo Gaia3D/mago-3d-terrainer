@@ -2,7 +2,6 @@ package com.gaia3d.release;
 
 import com.gaia3d.command.MagoTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

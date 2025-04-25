@@ -1,4 +1,5 @@
 package com.gaia3d.command;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -15,9 +16,9 @@ public enum CommandOptions {
     JSON("json", "j", "json", false, "Generate only layer.json from terrain data"),
 
     // for terrain generation
-    MINIMUM_TILE_DEPTH("minDepth", "min", "minDepth", true,"Minimum tile depth (range : 0 ~ 22) (default : 0)"),
-    MAXIMUM_TILE_DEPTH("maxDepth", "max", "maxDepth", true,"Maximum tile depth (range : 0 ~ 22) (default : 14)"),
-    INTENSITY("intensity", "is", "intensity", true,"Mesh refinement strength. (default : 4.0)"),
+    MINIMUM_TILE_DEPTH("minDepth", "min", "minDepth", true, "Minimum tile depth (range : 0 ~ 22) (default : 0)"),
+    MAXIMUM_TILE_DEPTH("maxDepth", "max", "maxDepth", true, "Maximum tile depth (range : 0 ~ 22) (default : 14)"),
+    INTENSITY("intensity", "is", "intensity", true, "Mesh refinement strength. (default : 4.0)"),
     CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Add terrain octVertexNormals for lighting effect"),
     INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear) (default : bilinear)"),
     PRIORITY_TYPE("priorityType", "pt", "priorityType", true, "Priority type () (default : distance)"),

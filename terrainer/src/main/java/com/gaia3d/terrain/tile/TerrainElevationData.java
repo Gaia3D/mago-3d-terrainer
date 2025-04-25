@@ -1,10 +1,9 @@
 package com.gaia3d.terrain.tile;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.InterpolationType;
-import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,13 +13,8 @@ import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.geometry.DirectPosition2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
-import org.opengis.coverage.Coverage;
-import org.opengis.referencing.FactoryException;
 
 import java.awt.image.Raster;
-import java.io.File;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Getter
@@ -147,7 +141,7 @@ public class TerrainElevationData {
             return resultAltitude;
         }
 
-        if(gridCoverage2DSize == null) {
+        if (gridCoverage2DSize == null) {
             gridCoverage2DSize = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
         }
         Vector2i size = gridCoverage2DSize;

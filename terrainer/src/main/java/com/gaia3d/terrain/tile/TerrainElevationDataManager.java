@@ -1,8 +1,8 @@
 package com.gaia3d.terrain.tile;
 
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
@@ -111,14 +111,14 @@ public class TerrainElevationDataManager {
             String imageryType = tileWgs84Manager.getImaginaryType();
             boolean originIsLeftUp = tileWgs84Manager.isOriginIsLeftUp();
             GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
-            if(geoExtensionTotal == null) {
+            if (geoExtensionTotal == null) {
                 geoExtensionTotal = new GeographicExtension();
                 geoExtensionTotal.copyFrom(geoExtension);
             } else {
                 geoExtensionTotal.union(geoExtension);
             }
         }
-        if(geoExtensionTotal != null) {
+        if (geoExtensionTotal != null) {
             this.rootTerrainElevationDataQuadTree.deleteCoverageIfNoIntersectsGeoExtension(geoExtensionTotal);
         }
 
@@ -198,7 +198,7 @@ public class TerrainElevationDataManager {
             return terrainElevDataMap;
         }
 
-        if(terrainElevDataMap == null) {
+        if (terrainElevDataMap == null) {
             terrainElevDataMap = new HashMap<>();
         }
 
@@ -279,8 +279,7 @@ public class TerrainElevationDataManager {
             if (!geoTiffFileNames.contains(geoTiffFileName)) {
                 // if no exist, use the standardize file.***
                 geoTiffFilePath = geoTiffFile.getAbsolutePath();
-            }
-            else {
+            } else {
                 geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
             }
 

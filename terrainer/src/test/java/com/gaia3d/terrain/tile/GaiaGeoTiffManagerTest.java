@@ -2,20 +2,13 @@ package com.gaia3d.terrain.tile;
 
 import com.gaia3d.command.Configurator;
 import lombok.extern.slf4j.Slf4j;
-import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.DirectPosition2D;
-import org.geotools.geometry.Envelope2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 import org.opengis.geometry.DirectPosition;
-import org.opengis.geometry.Envelope;
-import org.opengis.parameter.GeneralParameterValue;
 
 import javax.media.jai.Interpolation;
 import java.io.File;

@@ -1,9 +1,7 @@
 package com.gaia3d.terrain.util;
 
-import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
-import com.gaia3d.terrain.structure.TerrainHalfEdge;
 import com.gaia3d.terrain.structure.TerrainMesh;
 import com.gaia3d.terrain.structure.TerrainVertex;
 import com.gaia3d.terrain.tile.TileIndices;
@@ -13,8 +11,6 @@ import com.gaia3d.util.GlobeUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.lang.Math.abs;
 
 public class TileWgs84Utils {
     private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
@@ -29,7 +25,7 @@ public class TileWgs84Utils {
         // clamp the vertices in to the tile
         // Obtain the geographicExtension by tileIndices
         GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, originIsLeftUp);
-        if(geographicExtension == null) {
+        if (geographicExtension == null) {
             return;
         }
         double minLonDeg = geographicExtension.getMinLongitudeDeg();
@@ -39,36 +35,36 @@ public class TileWgs84Utils {
 
         // south vertices.***
         List<TerrainVertex> downVertices = mesh.getDownVerticesSortedLeftToRight();
-        for(TerrainVertex vertex : downVertices) {
+        for (TerrainVertex vertex : downVertices) {
             double latDeg = vertex.getPosition().y;
-            if (latDeg !=  minLatDeg) {
+            if (latDeg != minLatDeg) {
                 vertex.getPosition().y = minLatDeg;
             }
         }
 
         // north vertices.***
         List<TerrainVertex> upVertices = mesh.getUpVerticesSortedRightToLeft();
-        for(TerrainVertex vertex : upVertices) {
+        for (TerrainVertex vertex : upVertices) {
             double latDeg = vertex.getPosition().y;
-            if (latDeg !=  maxLatDeg) {
+            if (latDeg != maxLatDeg) {
                 vertex.getPosition().y = maxLatDeg;
             }
         }
 
         // west vertices.***
         List<TerrainVertex> leftVertices = mesh.getLeftVerticesSortedUpToDown();
-        for(TerrainVertex vertex : leftVertices) {
+        for (TerrainVertex vertex : leftVertices) {
             double lonDeg = vertex.getPosition().x;
-            if (lonDeg !=  minLonDeg) {
+            if (lonDeg != minLonDeg) {
                 vertex.getPosition().x = minLonDeg;
             }
         }
 
         // east vertices.***
         List<TerrainVertex> rightVertices = mesh.getRightVerticesSortedDownToUp();
-        for(TerrainVertex vertex : rightVertices) {
+        for (TerrainVertex vertex : rightVertices) {
             double lonDeg = vertex.getPosition().x;
-            if (lonDeg !=  maxLonDeg) {
+            if (lonDeg != maxLonDeg) {
                 vertex.getPosition().x = maxLonDeg;
             }
         }

@@ -138,8 +138,7 @@ public class TileWgs84Manager {
         this.mapNoUsableGeotiffPaths.clear();
     }
 
-    public void makeTempFilesFromQuantizedMeshes(int depth)
-    {
+    public void makeTempFilesFromQuantizedMeshes(int depth) {
         // make temp folder.***
         String tempPath = globalOptions.getTileTempPath();
         String depthStr = "L" + depth;
@@ -170,7 +169,7 @@ public class TileWgs84Manager {
         FileUtils.getFolderNames(quantizedMeshPath, quantizedMeshFolderNames);
 
         int quantizedFoldersCount = quantizedMeshFolderNames.size();
-        for(int i = 0; i < quantizedFoldersCount; i++) {
+        for (int i = 0; i < quantizedFoldersCount; i++) {
             String quantizedMeshFolderName = quantizedMeshFolderNames.get(i);
             X = Integer.parseInt(quantizedMeshFolderName);
 
@@ -217,16 +216,14 @@ public class TileWgs84Manager {
                     tileIndices.set(X, Y, L);
                     TileWgs84 tileWgs84 = quantizedMeshManager.getTileWgs84FromQuantizedMesh(quantizedMesh, tileIndices, this);
                     tileWgs84.saveFile(tileWgs84.getMesh(), tempFilePath);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     log.error("Error loading quantized mesh file: {}", quantizedMeshFilePath, e);
                 }
             }
         }
     }
 
-    private void makeChildrenTempFiles(int depth)
-    {
+    private void makeChildrenTempFiles(int depth) {
         int childrenDepth = depth + 1;
 
         // make temp folder.***
@@ -300,8 +297,7 @@ public class TileWgs84Manager {
 
                     // save the TileWgs84 in the children temp folder.***
                     TerrainMeshUtils.save4ChildrenMeshes(tileWgs84.getMesh(), this, globalOptions);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     log.error("Error loading TileWgs84 file: {}", tileWgs84FilePath, e);
                 }
             }
@@ -314,8 +310,7 @@ public class TileWgs84Manager {
         FileUtils.getFolderNames(tileSetDirectory, folderNames);
         Map<Integer, Integer> depthFoldermap = new HashMap<>();
         for (String folderName : folderNames) {
-            if(!StringUtils.isConvertibleToInt(folderName))
-            {
+            if (!StringUtils.isConvertibleToInt(folderName)) {
                 continue;
             }
             int depth = Integer.parseInt(folderName);
@@ -338,11 +333,7 @@ public class TileWgs84Manager {
         String depthStr = "L" + depth;
         String depthTempPath = tempPath + File.separator + depthStr;
         File depthTempFolder = new File(depthTempPath);
-        if (!depthTempFolder.exists()) {
-            return false;
-        }
-
-        return true;
+        return depthTempFolder.exists();
     }
 
     public void makeTileMeshes() throws IOException, TransformException, FactoryException {
@@ -469,8 +460,7 @@ public class TileWgs84Manager {
         // if the maxTileDepth is less than the existent max depth, set the maxTileDepth to the existent max depth
         minTileDepth = Math.max(minTileDepth, existentMaxDepth + 1);
 
-        for(int depth = 0; depth < minTileDepth; depth++)
-        {
+        for (int depth = 0; depth < minTileDepth; depth++) {
             TileRange tilesRange = new TileRange();
             if (depth == 0) {
                 // in this case, the tile is the world. L0X0Y0 & L0X1Y0
@@ -503,7 +493,7 @@ public class TileWgs84Manager {
             }
 
             // check if the temp folder exists
-            if(!existTempFiles(depth)) {
+            if (!existTempFiles(depth)) {
                 log.info("making tempFiles from quantized meshes... depth: {}", depth - 1);
                 makeTempFilesFromQuantizedMeshes(depth - 1);
                 makeChildrenTempFiles(depth - 1);

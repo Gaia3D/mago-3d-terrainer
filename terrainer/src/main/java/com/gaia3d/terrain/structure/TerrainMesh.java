@@ -2,13 +2,13 @@ package com.gaia3d.terrain.structure;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.geometry.GaiaRectangle;
-import com.gaia3d.terrain.types.TerrainHalfEdgeType;
-import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.tile.TileRange;
+import com.gaia3d.terrain.types.TerrainHalfEdgeType;
+import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -149,7 +149,7 @@ public class TerrainMesh {
                 continue;
             }
 
-            if(halfEdge.hasTwin()){
+            if (halfEdge.hasTwin()) {
                 // halfEdge is interior.***
                 halfEdge.setType(TerrainHalfEdgeType.INTERIOR);
                 continue;
@@ -162,32 +162,32 @@ public class TerrainMesh {
             Vector3d pos2 = v2.getPosition();
 
             // check left
-            if(Math.abs(pos1.x - minX) < error){
-                if(Math.abs(pos2.x - minX) < error){
+            if (Math.abs(pos1.x - minX) < error) {
+                if (Math.abs(pos2.x - minX) < error) {
                     halfEdge.setType(TerrainHalfEdgeType.LEFT);
                     continue;
                 }
             }
 
             // check right
-            if(Math.abs(pos1.x - maxX) < error){
-                if(Math.abs(pos2.x - maxX) < error){
+            if (Math.abs(pos1.x - maxX) < error) {
+                if (Math.abs(pos2.x - maxX) < error) {
                     halfEdge.setType(TerrainHalfEdgeType.RIGHT);
                     continue;
                 }
             }
 
             // check down
-            if(Math.abs(pos1.y - minY) < error){
-                if(Math.abs(pos2.y - minY) < error){
+            if (Math.abs(pos1.y - minY) < error) {
+                if (Math.abs(pos2.y - minY) < error) {
                     halfEdge.setType(TerrainHalfEdgeType.DOWN);
                     continue;
                 }
             }
 
             // check up
-            if(Math.abs(pos1.y - maxY) < error){
-                if(Math.abs(pos2.y - maxY) < error){
+            if (Math.abs(pos1.y - maxY) < error) {
+                if (Math.abs(pos2.y - maxY) < error) {
                     halfEdge.setType(TerrainHalfEdgeType.UP);
                     continue;
                 }
@@ -520,7 +520,7 @@ public class TerrainMesh {
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
             midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
-            if(Double.isNaN(midPosition.z)) {
+            if (Double.isNaN(midPosition.z)) {
                 log.info("getElevationBilinear: resultElevation is NaN");
             }
             TerrainVertex midVertex = newVertex();
@@ -683,7 +683,7 @@ public class TerrainMesh {
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
-            if(Double.isNaN(midPosition.z)) {
+            if (Double.isNaN(midPosition.z)) {
                 log.info("getElevationBilinear: resultElevation is NaN");
             }
             midVertex.setPosition(midPosition);
@@ -864,7 +864,7 @@ public class TerrainMesh {
 
         listHalfEdges.clear();
         TerrainHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge(listHalfEdges);
-        if(longestHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+        if (longestHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
             return null;
         }
         TerrainHalfEdge twin = longestHEdge.getTwin();
@@ -874,7 +874,7 @@ public class TerrainMesh {
         }
 
         TerrainTriangle adjacentTriangle = twin.getTriangle();
-        if(adjacentTriangle == null) {
+        if (adjacentTriangle == null) {
             return null;
         }
 
@@ -1108,9 +1108,9 @@ public class TerrainMesh {
 
     }
 
-    public void setStartVertexAllHEdges(){
+    public void setStartVertexAllHEdges() {
         for (TerrainHalfEdge halfEdge : halfEdges) {
-            if(halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED){
+            if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
             TerrainVertex startVertex = halfEdge.getStartVertex();

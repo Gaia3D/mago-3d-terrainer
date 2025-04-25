@@ -1,13 +1,10 @@
 package com.gaia3d.command;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
-import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
 import java.io.IOException;
 
 @Deprecated
@@ -291,7 +288,7 @@ class MesherMainTest {
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
-    
+
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
         String logPath = outputPath + "/log.txt";
 

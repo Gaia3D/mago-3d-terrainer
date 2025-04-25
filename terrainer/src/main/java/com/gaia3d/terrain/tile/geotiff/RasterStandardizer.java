@@ -1,7 +1,6 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.terrain.tile.GaiaThreadPool;
 import it.geosolutions.jaiext.JAIExt;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,14 +13,12 @@ import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.coverage.grid.GridEnvelope;
-import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.coverage.processing.Operation;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
-import javax.imageio.spi.IIORegistry;
 import javax.media.jai.Interpolation;
 import javax.media.jai.JAI;
 import javax.media.jai.TileCache;
@@ -32,10 +29,10 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -78,15 +75,15 @@ public class RasterStandardizer {
             /* resampling */
             ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
             List<RasterInfo> resampledTiles = pool.submit(() -> splitTiles.parallelStream().map(tile -> {
-                GridCoverage2D gridCoverage2D = tile.getGridCoverage2D();
-                CoordinateReferenceSystem sourceCRS = gridCoverage2D.getCoordinateReferenceSystem();
-                if (isSameCRS(sourceCRS, targetCRS)) {
-                    return tile;
-                } else {
-                    tile.setGridCoverage2D(resample(gridCoverage2D, targetCRS));
-                }
-                return tile;
-            }
+                        GridCoverage2D gridCoverage2D = tile.getGridCoverage2D();
+                        CoordinateReferenceSystem sourceCRS = gridCoverage2D.getCoordinateReferenceSystem();
+                        if (isSameCRS(sourceCRS, targetCRS)) {
+                            return tile;
+                        } else {
+                            tile.setGridCoverage2D(resample(gridCoverage2D, targetCRS));
+                        }
+                        return tile;
+                    }
             ).collect(Collectors.toList())).get();
 
             /* save */
@@ -171,8 +168,8 @@ public class RasterStandardizer {
         int height = gridRange.getSpan(1);
 
         int margin = 4; // 4 pixel margin
-        int marginX = Math.max((int)(tileSize * 0.01), margin);
-        int marginY = Math.max((int)(tileSize * 0.01), margin);
+        int marginX = Math.max((int) (tileSize * 0.01), margin);
+        int marginY = Math.max((int) (tileSize * 0.01), margin);
         for (int x = 0; x < width; x += tileSize) {
             for (int y = 0; y < height; y += tileSize) {
                 int xMax = Math.min(x + tileSize, width);
@@ -187,12 +184,12 @@ public class RasterStandardizer {
                 }
 
                 int xAux = x;
-                if(xAux > marginX) {
+                if (xAux > marginX) {
                     xAux -= marginX;
                 }
 
                 int yAux = y;
-                if(yAux > marginY) {
+                if (yAux > marginY) {
                     yAux -= marginY;
                 }
 

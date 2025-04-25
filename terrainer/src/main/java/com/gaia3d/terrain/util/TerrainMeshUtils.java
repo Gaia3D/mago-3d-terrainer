@@ -183,7 +183,7 @@ public class TerrainMeshUtils {
         List<TerrainMesh> childMeshes = new ArrayList<>();
         TerrainMeshUtils.getSeparatedMeshes(mesh, childMeshes, manager.isOriginIsLeftUp());
 
-        if(childMeshes.size() != 4) {
+        if (childMeshes.size() != 4) {
             log.info("Info: childMeshes.size() != 4 : tile indices : " + tileIndices.getString());
         }
 

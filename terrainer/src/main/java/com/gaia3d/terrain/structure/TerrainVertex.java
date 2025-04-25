@@ -1,8 +1,8 @@
 package com.gaia3d.terrain.structure;
 
-import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
+import com.gaia3d.terrain.types.TerrainObjectStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -101,7 +101,7 @@ public class TerrainVertex {
             log.warn("This vertex has no outingHEdge. id : {}", this.id);
         }
 
-        if(this.outingHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+        if (this.outingHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
             log.warn("This outingHEdge is DELETED. id : {}", this.id);
             return outingHalfEdges;
         }
@@ -133,8 +133,7 @@ public class TerrainVertex {
             currHalfEdge = nextHalfEdge;
 
             counter++;
-            if(counter > 10)
-            {
+            if (counter > 10) {
                 log.info("Info : This vertex has more than 10 outing halfEdges. id : {}", this.id);
             }
         }
@@ -146,7 +145,7 @@ public class TerrainVertex {
             finished = false;
             while (!finished) {
                 TerrainHalfEdge prevHalfEdge = currHalfEdge.getPrev();
-                if(prevHalfEdge == null || prevHalfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                if (prevHalfEdge == null || prevHalfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                     finished = true;
                     break;
                 }

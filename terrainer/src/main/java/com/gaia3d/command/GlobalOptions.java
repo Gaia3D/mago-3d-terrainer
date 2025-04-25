@@ -154,7 +154,7 @@ public class GlobalOptions {
             String interpolationType = command.getOptionValue(CommandOptions.INTERPOLATION_TYPE.getArgName());
             InterpolationType type;
             try {
-                type =  InterpolationType.fromString(interpolationType);
+                type = InterpolationType.fromString(interpolationType);
             } catch (IllegalArgumentException e) {
                 log.warn("* Interpolation type is not valid. Set to bilinear.");
                 type = DEFAULT_INTERPOLATION_TYPE;
@@ -168,7 +168,7 @@ public class GlobalOptions {
             String priorityType = command.getOptionValue(CommandOptions.PRIORITY_TYPE.getArgName());
             PriorityType type;
             try {
-                type =  PriorityType.fromString(priorityType);
+                type = PriorityType.fromString(priorityType);
             } catch (IllegalArgumentException e) {
                 log.warn("* Priority type is not valid. Set to normal.");
                 type = PriorityType.RESOLUTION;
