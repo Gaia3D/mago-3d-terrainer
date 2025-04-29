@@ -1,6 +1,7 @@
 package com.gaia3d;
 
 import com.gaia3d.airPollutionDataConverter.AirPollutionDataConverter;
+import com.gaia3d.airPollutionDataConverter.AirPollutionDataConverterMC;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
 
@@ -71,15 +72,27 @@ public class Main {
             outputFolderPath += File.separator;
         }
 
+//        // Mode volumetric data.*****************************************************************************************
+//        // Convert the data.
+//        String inputDataStructurePath = inputFolderPath + dataStructureJsonFileName;
+//        AirPollutionDataConverter airPollDataConverter = new AirPollutionDataConverter();
+//
+//        if (commandLine.hasOption("scale")) {
+//            double scale = Double.parseDouble(commandLine.getOptionValue("scale"));
+//            airPollDataConverter.setScale(scale);
+//        }
+//        airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
+
+        // Mode marchingCube data.*****************************************************************************************
         // Convert the data.
         String inputDataStructurePath = inputFolderPath + dataStructureJsonFileName;
-        AirPollutionDataConverter airPollDataConverter = new AirPollutionDataConverter();
+        AirPollutionDataConverterMC airPollDataConverterMc = new AirPollutionDataConverterMC();
 
         if (commandLine.hasOption("scale")) {
             double scale = Double.parseDouble(commandLine.getOptionValue("scale"));
-            airPollDataConverter.setScale(scale);
+            airPollDataConverterMc.setScale(scale);
         }
-        airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
+        airPollDataConverterMc.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
 
         printEndMessage();
     }
