@@ -2,13 +2,16 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.26/8f8cf0372abf564913e9796623aac4c8ea44025a/lombok-1.18.26.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.30/f195ee86e6c896ea47a1d39defbe20eb59cd149d/lombok-1.18.30.jar" />
         </processorPath>
-        <module name="air-pollution.main" />
-        <module name="air-pollution.test" />
+        <module name="air-pollution-data-converter.air-pollution.main" />
+        <module name="air-pollution-data-converter.air-pollution.test" />
+        <module name="air-pollution-data-converter.mago-common.test" />
+        <module name="air-pollution-data-converter.mago-common.main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="17" />

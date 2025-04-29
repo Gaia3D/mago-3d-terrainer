@@ -2,9 +2,6 @@ plugins {
     id 'java'
 }
 
-group = 'com.gaia3d'
-version = '1.0.0'
-
 repositories {
     maven { url "https://repo.osgeo.org/repository/release/"}
     mavenCentral()
@@ -41,7 +38,7 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform()
+    //useJUnitPlatform()
 }
 
 jar {

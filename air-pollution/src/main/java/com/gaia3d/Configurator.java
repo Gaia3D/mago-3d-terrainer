@@ -23,7 +23,7 @@ public class Configurator {
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
-
+        
         removeAllAppender(loggerConfig);
         if (pattern == null) {
             pattern = DEFAULT_PATTERN;
