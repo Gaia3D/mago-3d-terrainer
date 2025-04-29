@@ -5,53 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="74d1d92f-cd37-496c-85f5-d242cb40749f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/easycode.ignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/easycode/codebase-v2.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/uiDesigner.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradlew" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradlew.bat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/Configurator.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/Main.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionDataConverter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionDataConverterMC.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionNoNetPixelData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionPixelData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionResultData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionRowData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionSliceData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionTimeSeries.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/AirPollutionVolume.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/DataContainer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/DataLayer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/airPollutionDataConverter/PngsBinaryBlockData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/coordSystem/CoordManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/geometry/BoundingBox.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/geometry/BoundingRectangle.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/geometry/Line.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/geometry/Point3D.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/geometry/Segment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/geometry/Triangle.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/geometry/Vertex.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/globe/Globe.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/image/Texture2D.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/image/TextureUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/utils/FileUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/utils/GeometryUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gaia3d/utils/StringModifier.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/MANIFEST.MF" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/MainCaseTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/MainTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/MainTest2.java" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,9 +37,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 8
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
   <component name="ProjectId" id="2wNwba8xSTDuizk2BBpl6sMzFWG" />
   <component name="ProjectViewState">
     <option name="flattenModules" value="true" />
@@ -97,7 +51,8 @@
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/Java_Projects/air-pollution-data-converter",
+    "last_opened_file_path": "C:/Workspace/git-repositories/air-pollution-data-converter",
+    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "settings.space",
     "vue.rearranger.settings.migration": "true"
@@ -105,6 +60,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Workspace\git-repositories\air-pollution-data-converter" />
       <recent name="D:\Java_Projects\air-pollution-data-converter" />
     </key>
   </component>

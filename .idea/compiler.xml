@@ -7,9 +7,10 @@
         <processorPath useClasspath="false">
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.26/8f8cf0372abf564913e9796623aac4c8ea44025a/lombok-1.18.26.jar" />
         </processorPath>
-        <module name="com.gaia3d.air-pollution-data-converter.main" />
-        <module name="com.gaia3d.air-pollution-data-converter.test" />
+        <module name="air-pollution.main" />
+        <module name="air-pollution.test" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="17" />
   </component>
 </project>
