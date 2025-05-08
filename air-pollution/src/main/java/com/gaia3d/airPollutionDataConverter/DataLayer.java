@@ -1,9 +1,16 @@
 package com.gaia3d.airPollutionDataConverter;
 
 import com.gaia3d.geometry.BoundingBox;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.TreeMap;
+
+@Slf4j
+@Getter
+@Setter
 
 public class DataLayer {
     public int layerIndex = -1;

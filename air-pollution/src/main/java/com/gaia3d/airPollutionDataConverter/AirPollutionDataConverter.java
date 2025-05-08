@@ -981,6 +981,10 @@ public class AirPollutionDataConverter {
         double[] minMaxValues = new double[2];
         airPollutionVolume.getMinMaxValues(minMaxValues);
 
+        if(minMaxValues[1] > 0.8) {
+            int hola = 0;
+        }
+
         // now, save the mosaic texture.
         String outputFileName = "airPollution_" + date + ".png";
         String outputFilePath = outputFolderPath + "/" + outputFileName;

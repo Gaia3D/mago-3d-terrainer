@@ -1,5 +1,9 @@
 package com.gaia3d.airPollutionDataConverter;
 
+import com.gaia3d.basic.geometry.voxel.VoxelCPGrid3D;
+import com.gaia3d.geometry.BoundingBox;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -7,6 +11,8 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 
 @Slf4j
+@Getter
+@Setter
 public class AirPollutionSliceData {
     public String fileName = "";
     public double minValue = 0.0;

@@ -1,11 +1,16 @@
 package com.gaia3d.airPollutionDataConverter;
 
 import com.gaia3d.geometry.BoundingBox;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
+@Getter
+@Setter
 @NoArgsConstructor
 public class DataContainer {
     public double centerGeoCoordLongitudeDegree = 0.0;
@@ -42,6 +47,7 @@ public class DataContainer {
     public double timeInterval = 0.0;
     public ArrayList<PngsBinaryBlockData> pngsBinDataArray = new ArrayList<>();
     public ArrayList<String> mosaicTexMetaDataFileNames = new ArrayList<>();
+    private List<String> glbMetaDataFileNames = new ArrayList<>();
 
     public void addDataLayer(DataLayer dataLayer) {
         dataLayers.add(dataLayer);

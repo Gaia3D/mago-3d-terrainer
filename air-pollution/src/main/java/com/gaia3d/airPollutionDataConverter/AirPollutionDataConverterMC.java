@@ -3,12 +3,23 @@ package com.gaia3d.airPollutionDataConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.gaia3d.basic.geometry.jgltf.GltfWriter;
+import com.gaia3d.basic.geometry.voxel.VoxelCP;
+import com.gaia3d.basic.geometry.voxel.VoxelCPGrid3D;
+import com.gaia3d.basic.marchingcube.MarchingCube;
+import com.gaia3d.basic.model.*;
 import com.gaia3d.coordSystem.CoordManager;
 import com.gaia3d.geometry.BoundingBox;
 import com.gaia3d.image.Texture2D;
+import com.gaia3d.util.GlobeUtils;
+import com.gaia3d.utils.GeometryUtils;
 import com.gaia3d.utils.StringModifier;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.joml.Matrix4d;
 import org.joml.Vector3d;
+import org.joml.Vector4d;
 import org.locationtech.proj4j.BasicCoordinateTransform;
 import org.locationtech.proj4j.CRSFactory;
 import org.locationtech.proj4j.CoordinateReferenceSystem;
@@ -21,6 +32,8 @@ import java.nio.file.Paths;
 import java.util.*;
 
 @Slf4j
+@Getter
+@Setter
 public class AirPollutionDataConverterMC {
 //     The input data file format is *.TXT.
 //     sample of data file (*.plt).*
@@ -88,6 +101,9 @@ public class AirPollutionDataConverterMC {
 
     public int maxDatesAllowed = -1; // if negative value, then no limit.
     public double scale = 1.0;
+    private BoundingBox geoCoordBBox = new BoundingBox(); // minLongitude, minLatitude, minAltitude, maxLongitude, maxLatitude, maxAltitude
+    private double totalMinValue = Double.MAX_VALUE;
+    private double totalMaxValue = Double.MIN_VALUE;
 
     private void getAllDatesInFile(String filePath, ArrayList<String> resultDatesArray) {
         log.info("==================Start Reading ASCII===================");
@@ -167,225 +183,7 @@ public class AirPollutionDataConverterMC {
         log.info("===================End Reading ASCII====================");
     }
 
-    private void makeTempFiles(String filePath, String outputFolderPath, DataLayer dataLayer) {
-        // make a temp folder inside of outputFolderPath.
-        String tempFolderPath = outputFolderPath + File.separator + "temp";
-        StringModifier.createFolderIfNoExists(Paths.get(tempFolderPath));
 
-        int layerNumber = dataLayer.layerIndex + 1;
-        int maxLayersCount = this.dataContainer.getDataLayersCount();
-
-        CRSFactory factory = new CRSFactory();
-        CoordinateReferenceSystem source = factory.createFromParameters("source", this.dataContainer.sourceProj);
-        CoordinateReferenceSystem target = factory.createFromParameters("target", this.dataContainer.targetProj);
-
-        double[] srcPts = new double[2];
-
-        try {
-            String inputFilePath = filePath;
-            File file = new File(inputFilePath);
-            BufferedReader br = new BufferedReader(new FileReader(file, Charset.forName("EUC-KR")));
-
-            String line;
-            boolean finished = false;
-            String delimiter = " ";
-            int rowsCount = 0;
-            int currDate = 0;
-
-            // read lines.
-            // Hard Coding : read 8 lines that is the header.
-            log.info("==================Start Reading ASCII===================");
-            log.info("--------------Reading ASCII. Header lines---------------");
-            for (int i = 0; i < 8; i++) {
-                line = br.readLine();
-                log.info(line);
-            }
-            log.info("----------------Saving Temp File lines------------------");
-
-            int lastDate = 0;
-
-            List<String> vecStrings = new ArrayList<>();
-            boolean skipEmptyStrings = true;
-            AirPollutionSliceData airPollutionSliceData = new AirPollutionSliceData();
-
-            // There are points that are not in the net (has no "NET ID").
-            List<AirPollutionNoNetPixelData> noNetPixelDataList = new ArrayList<>();
-
-            boolean is1rstPoint = true;
-
-            while (!finished) {
-                line = br.readLine();
-                if (line == null) {
-                    finished = true;
-
-                    // file finished, so save the last temp file.
-                    // here, save the temp file.
-                    double altitude = dataLayer.altitude;
-                    String altitudeString = "Alt" + String.format("%.2f", altitude);
-                    String outputFileName = "airPollution_" + altitudeString + "_" + lastDate + ".bin";
-                    String outputFilePath = tempFolderPath + File.separator + outputFileName;
-                    dataLayer.tempFilesMap.put(lastDate, outputFilePath);
-                    dataLayer.rowsCount = airPollutionSliceData.getRowsCount();
-                    dataLayer.columnsCount = airPollutionSliceData.getColumnsCount();
-                    airPollutionSliceData.saveTempFile(outputFilePath);
-
-                    break;
-                }
-
-                rowsCount += 1;
-
-                vecStrings.clear();
-                StringModifier.splitString(line, delimiter, vecStrings, skipEmptyStrings);
-                int vecStringSize = vecStrings.size();
-
-                // skip rows that vecStrings.size() < 8.
-                if (vecStringSize < 8) {
-                    continue;
-                }
-
-                // check "NET ID".
-                if (vecStringSize < 10) {
-                    // This point is not in the net.
-                    // now, transform strings to values.
-                    double px = Double.parseDouble(vecStrings.get(0));
-                    double py = Double.parseDouble(vecStrings.get(1));
-                    double pz = Double.parseDouble(vecStrings.get(3));
-
-                    ProjCoordinate coordinate = new ProjCoordinate(px, py, pz);
-                    ProjCoordinate result = CoordManager.transform(source, target, coordinate);
-
-                    double convertedX = result.x;
-                    double convertedY = result.y;
-                    double convertedZ = result.z;
-
-                    double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
-
-
-                    String key = convertedX + "," + convertedY;
-
-                    AirPollutionResultData newAirPollutionNoNetPixelData = AirPollutionResultData.builder()
-                            .xPosition(convertedX)
-                            .yPosition(convertedY)
-                            .maximumValue(pollutionValue)
-                            .date(vecStrings.get(8))
-                            .build();
-
-                    AirPollutionResultData airPollutionResultData = airPollutionResultDataMap.get(key);
-                    if (airPollutionResultData == null) {
-                        airPollutionResultDataMap.put(key, newAirPollutionNoNetPixelData);
-                    } else {
-                        if (pollutionValue > airPollutionResultData.getMaximumValue()) {
-                            airPollutionResultData.setMaximumValue(pollutionValue);
-                            airPollutionResultData.setDate(vecStrings.get(8));
-                        }
-                    }
-
-                    AirPollutionNoNetPixelData airPollutionNoNetPixelData = new AirPollutionNoNetPixelData();
-                    airPollutionNoNetPixelData.X = convertedX;
-                    airPollutionNoNetPixelData.Y = convertedY;
-                    airPollutionNoNetPixelData.Z = pz;
-                    airPollutionNoNetPixelData.averageConcentration = pollutionValue;
-                    airPollutionNoNetPixelData.ZELEV = Double.parseDouble(vecStrings.get(3));
-                    airPollutionNoNetPixelData.ZHILL = Double.parseDouble(vecStrings.get(4));
-                    airPollutionNoNetPixelData.ZFLAG = Double.parseDouble(vecStrings.get(5));
-                    airPollutionNoNetPixelData.AVE = vecStrings.get(6);
-                    airPollutionNoNetPixelData.GRP = vecStrings.get(7);
-                    airPollutionNoNetPixelData.DATE = vecStrings.get(8);
-
-                    noNetPixelDataList.add(airPollutionNoNetPixelData);
-                    continue;
-                }
-
-                String dateKey = vecStrings.get(8);
-                currDate = Integer.parseInt(dateKey);
-
-
-                if (lastDate == 0) {
-                    lastDate = currDate;
-                } else if (lastDate != currDate) {
-                    // here, save the temp file.
-                    log.info("[{}/{}] Saving temp file. Date : {}", layerNumber, maxLayersCount, lastDate);
-                    double altitude = dataLayer.altitude;
-                    String altitudeString = "Alt" + String.format("%.2f", altitude);
-                    String outputFileName = "airPollution_" + altitudeString + "_" + lastDate + ".bin";
-                    String outputFilePath = tempFolderPath + File.separator + outputFileName;
-                    dataLayer.tempFilesMap.put(lastDate, outputFilePath);
-                    dataLayer.rowsCount = airPollutionSliceData.getRowsCount();
-                    dataLayer.columnsCount = airPollutionSliceData.getColumnsCount();
-                    airPollutionSliceData.saveTempFile(outputFilePath);
-
-                    airPollutionSliceData = new AirPollutionSliceData(); // reset.
-                    lastDate = currDate;
-                }
-
-                if (this.maxDatesAllowed > 0) {
-                    // check if currDate exist into the datesArray.
-                    if (!this.dataContainer.datesArray.contains(dateKey)) {
-                        // here, discard this date.
-                        //continue;
-                        break;
-                    }
-                }
-
-                // now, transform strings to values.
-                double px = Double.parseDouble(vecStrings.get(0));
-                double py = Double.parseDouble(vecStrings.get(1));
-                double pz = Double.parseDouble(vecStrings.get(3));
-
-                double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
-
-                if (pollutionValue < dataLayer.minPollutionValue) {
-                    dataLayer.minPollutionValue = pollutionValue;
-                }
-                if (pollutionValue > dataLayer.maxPollutionValue) {
-                    dataLayer.maxPollutionValue = pollutionValue;
-                }
-
-                AirPollutionPixelData airPollutionPixelData = new AirPollutionPixelData();
-                airPollutionPixelData.X = px;
-                airPollutionPixelData.Y = py;
-                airPollutionPixelData.Z = pz;
-                airPollutionPixelData.averageConcentration = pollutionValue;
-
-                airPollutionSliceData.addPixelData(airPollutionPixelData);
-
-            } // end while.
-
-            br.close();
-
-            // check if exist noNetPixelDataList.
-            if (!noNetPixelDataList.isEmpty()) {
-                // save a json file for noNetPixelDataList.
-                String originalFileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
-                String outputNoNetJsonFolderPath = outputFolderPath + File.separator + "noNetJson";
-                StringModifier.createFolderIfNoExists(Paths.get(outputNoNetJsonFolderPath));
-
-                //String altitudeString = "Alt" + String.format("%.2f", dataLayer.altitude);
-                String outputFileName = originalFileName + "_noNet.json";
-                String outputFilePath = outputNoNetJsonFolderPath + File.separator + outputFileName;
-
-                ObjectMapper objectMapper = new ObjectMapper();
-                ArrayNode objectNodeRoot = objectMapper.createArrayNode();
-                for (AirPollutionNoNetPixelData airPollutionPixelData : noNetPixelDataList) {
-                    ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.put("X", airPollutionPixelData.X);
-                    objectNode.put("Y", airPollutionPixelData.Y);
-                    objectNode.put("AVERAGE_CONC", airPollutionPixelData.averageConcentration);
-                    objectNode.put("ZELEV", airPollutionPixelData.ZELEV);
-                    objectNode.put("ZHILL", airPollutionPixelData.ZHILL);
-                    objectNode.put("ZFLAG", airPollutionPixelData.ZFLAG);
-                    objectNode.put("AVE", airPollutionPixelData.AVE);
-                    objectNode.put("GRP", airPollutionPixelData.GRP);
-                    objectNode.put("DATE", airPollutionPixelData.DATE);
-                    objectNodeRoot.add(objectNode);
-                }
-                objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
-            }
-
-        } catch (IOException e) {
-            log.error("", e);
-        }
-    }
 
     /*private void makeNoNetPointsJsonFiles(String filePath, String outputFolderPath, DataLayer dataLayer) {
         // make a temp folder inside of outputFolderPath.
@@ -527,7 +325,236 @@ public class AirPollutionDataConverterMC {
         }
         writeResultData(outputFolderPath);
         log.info("End making temp files.");
+    }
 
+    private void makeTempFiles(String filePath, String outputFolderPath, DataLayer dataLayer) {
+        // make a temp folder inside of outputFolderPath.
+        String tempFolderPath = outputFolderPath + File.separator + "temp";
+        StringModifier.createFolderIfNoExists(Paths.get(tempFolderPath));
+
+        int layerNumber = dataLayer.layerIndex + 1;
+        int maxLayersCount = this.dataContainer.getDataLayersCount();
+
+        CRSFactory factory = new CRSFactory();
+        CoordinateReferenceSystem source = factory.createFromParameters("source", this.dataContainer.sourceProj);
+        CoordinateReferenceSystem target = factory.createFromParameters("target", this.dataContainer.targetProj);
+
+        double[] srcPts = new double[2];
+
+        try {
+            String inputFilePath = filePath;
+            File file = new File(inputFilePath);
+            BufferedReader br = new BufferedReader(new FileReader(file, Charset.forName("EUC-KR")));
+
+            String line;
+            boolean finished = false;
+            String delimiter = " ";
+            int rowsCount = 0;
+            int currDate = 0;
+
+            // read lines.
+            // Hard Coding : read 8 lines that is the header.
+            log.info("==================Start Reading ASCII===================");
+            log.info("--------------Reading ASCII. Header lines---------------");
+            for (int i = 0; i < 8; i++) {
+                line = br.readLine();
+                log.info(line);
+            }
+            log.info("----------------Saving Temp File lines------------------");
+
+            int lastDate = 0;
+
+            List<String> vecStrings = new ArrayList<>();
+            boolean skipEmptyStrings = true;
+            AirPollutionSliceData airPollutionSliceData = new AirPollutionSliceData();
+
+            // There are points that are not in the net (has no "NET ID").
+            List<AirPollutionNoNetPixelData> noNetPixelDataList = new ArrayList<>();
+
+            boolean is1rstPoint = true;
+
+            while (!finished) {
+                line = br.readLine();
+                if (line == null) {
+                    finished = true;
+
+                    // file finished, so save the last temp file.
+                    // here, save the temp file.
+                    double altitude = dataLayer.altitude;
+                    String altitudeString = "Alt" + String.format("%.2f", altitude);
+                    String outputFileName = "airPollution_" + altitudeString + "_" + lastDate + ".bin";
+                    String outputFilePath = tempFolderPath + File.separator + outputFileName;
+                    dataLayer.tempFilesMap.put(lastDate, outputFilePath);
+                    dataLayer.rowsCount = airPollutionSliceData.getRowsCount();
+                    dataLayer.columnsCount = airPollutionSliceData.getColumnsCount();
+                    airPollutionSliceData.saveTempFile(outputFilePath);
+
+                    break;
+                }
+
+                rowsCount += 1;
+
+                vecStrings.clear();
+                StringModifier.splitString(line, delimiter, vecStrings, skipEmptyStrings);
+                int vecStringSize = vecStrings.size();
+
+                // skip rows that vecStrings.size() < 8.
+                if (vecStringSize < 8) {
+                    continue;
+                }
+
+                // check "NET ID".
+                if (vecStringSize < 10) {
+                    // This point is not in the net.
+                    // now, transform strings to values.
+                    double px = Double.parseDouble(vecStrings.get(0));
+                    double py = Double.parseDouble(vecStrings.get(1));
+                    double pz = Double.parseDouble(vecStrings.get(3));
+
+                    ProjCoordinate coordinate = new ProjCoordinate(px, py, pz);
+                    ProjCoordinate result = CoordManager.transform(source, target, coordinate);
+
+                    double convertedX = result.x;
+                    double convertedY = result.y;
+                    double convertedZ = result.z;
+
+                    double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
+
+                    // calculate the total min and max values.
+                    if(pollutionValue < this.totalMinValue) {
+                        this.totalMinValue = pollutionValue;
+                    }
+                    if(pollutionValue > this.totalMaxValue) {
+                        this.totalMaxValue = pollutionValue;
+                    }
+
+
+
+                    String key = convertedX + "," + convertedY;
+
+                    AirPollutionResultData newAirPollutionNoNetPixelData = AirPollutionResultData.builder()
+                            .xPosition(convertedX)
+                            .yPosition(convertedY)
+                            .maximumValue(pollutionValue)
+                            .date(vecStrings.get(8))
+                            .build();
+
+                    AirPollutionResultData airPollutionResultData = airPollutionResultDataMap.get(key);
+                    if (airPollutionResultData == null) {
+                        airPollutionResultDataMap.put(key, newAirPollutionNoNetPixelData);
+                    } else {
+                        if (pollutionValue > airPollutionResultData.getMaximumValue()) {
+                            airPollutionResultData.setMaximumValue(pollutionValue);
+                            airPollutionResultData.setDate(vecStrings.get(8));
+                        }
+                    }
+
+                    AirPollutionNoNetPixelData airPollutionNoNetPixelData = new AirPollutionNoNetPixelData();
+                    airPollutionNoNetPixelData.X = convertedX;
+                    airPollutionNoNetPixelData.Y = convertedY;
+                    airPollutionNoNetPixelData.Z = pz;
+                    airPollutionNoNetPixelData.averageConcentration = pollutionValue;
+                    airPollutionNoNetPixelData.ZELEV = Double.parseDouble(vecStrings.get(3));
+                    airPollutionNoNetPixelData.ZHILL = Double.parseDouble(vecStrings.get(4));
+                    airPollutionNoNetPixelData.ZFLAG = Double.parseDouble(vecStrings.get(5));
+                    airPollutionNoNetPixelData.AVE = vecStrings.get(6);
+                    airPollutionNoNetPixelData.GRP = vecStrings.get(7);
+                    airPollutionNoNetPixelData.DATE = vecStrings.get(8);
+
+                    noNetPixelDataList.add(airPollutionNoNetPixelData);
+                    continue;
+                }
+
+                String dateKey = vecStrings.get(8);
+                currDate = Integer.parseInt(dateKey);
+
+
+                if (lastDate == 0) {
+                    lastDate = currDate;
+                } else if (lastDate != currDate) {
+                    // here, save the temp file.
+                    log.info("[{}/{}] Saving temp file. Date : {}", layerNumber, maxLayersCount, lastDate);
+                    double altitude = dataLayer.altitude;
+                    String altitudeString = "Alt" + String.format("%.2f", altitude);
+                    String outputFileName = "airPollution_" + altitudeString + "_" + lastDate + ".bin";
+                    String outputFilePath = tempFolderPath + File.separator + outputFileName;
+                    dataLayer.tempFilesMap.put(lastDate, outputFilePath);
+                    dataLayer.rowsCount = airPollutionSliceData.getRowsCount();
+                    dataLayer.columnsCount = airPollutionSliceData.getColumnsCount();
+                    airPollutionSliceData.saveTempFile(outputFilePath);
+
+                    airPollutionSliceData = new AirPollutionSliceData(); // reset.
+                    lastDate = currDate;
+                }
+
+                if (this.maxDatesAllowed > 0) {
+                    // check if currDate exist into the datesArray.
+                    if (!this.dataContainer.datesArray.contains(dateKey)) {
+                        // here, discard this date.
+                        //continue;
+                        break;
+                    }
+                }
+
+                // now, transform strings to values.
+                double px = Double.parseDouble(vecStrings.get(0));
+                double py = Double.parseDouble(vecStrings.get(1));
+                double pz = Double.parseDouble(vecStrings.get(3));
+
+                double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
+
+                // calculate the total min and max values.
+                if(pollutionValue < this.totalMinValue) {
+                    this.totalMinValue = pollutionValue;
+                }
+                if(pollutionValue > this.totalMaxValue) {
+                    this.totalMaxValue = pollutionValue;
+                }
+
+                AirPollutionPixelData airPollutionPixelData = new AirPollutionPixelData();
+                airPollutionPixelData.X = px;
+                airPollutionPixelData.Y = py;
+                airPollutionPixelData.Z = pz;
+                airPollutionPixelData.averageConcentration = pollutionValue;
+
+                airPollutionSliceData.addPixelData(airPollutionPixelData);
+
+            } // end while.
+
+            br.close();
+
+            // check if exist noNetPixelDataList.
+            if (!noNetPixelDataList.isEmpty()) {
+                // save a json file for noNetPixelDataList.
+                String originalFileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
+                String outputNoNetJsonFolderPath = outputFolderPath + File.separator + "noNetJson";
+                StringModifier.createFolderIfNoExists(Paths.get(outputNoNetJsonFolderPath));
+
+                //String altitudeString = "Alt" + String.format("%.2f", dataLayer.altitude);
+                String outputFileName = originalFileName + "_noNet.json";
+                String outputFilePath = outputNoNetJsonFolderPath + File.separator + outputFileName;
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                ArrayNode objectNodeRoot = objectMapper.createArrayNode();
+                for (AirPollutionNoNetPixelData airPollutionPixelData : noNetPixelDataList) {
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.put("X", airPollutionPixelData.X);
+                    objectNode.put("Y", airPollutionPixelData.Y);
+                    objectNode.put("AVERAGE_CONC", airPollutionPixelData.averageConcentration);
+                    objectNode.put("ZELEV", airPollutionPixelData.ZELEV);
+                    objectNode.put("ZHILL", airPollutionPixelData.ZHILL);
+                    objectNode.put("ZFLAG", airPollutionPixelData.ZFLAG);
+                    objectNode.put("AVE", airPollutionPixelData.AVE);
+                    objectNode.put("GRP", airPollutionPixelData.GRP);
+                    objectNode.put("DATE", airPollutionPixelData.DATE);
+                    objectNodeRoot.add(objectNode);
+                }
+                objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
+            }
+
+        } catch (IOException e) {
+            log.error("", e);
+        }
     }
 
     private void writeResultData(String outputFolderPath) {
@@ -639,6 +666,8 @@ public class AirPollutionDataConverterMC {
         } catch (IOException e) {
             log.error("", e);
         }
+
+        int hola = 0;
     }
 
     public void convertDataByDataStructureFile(String inputDataStructurePath, String inputFolderPath, String outputFolderPath) throws IIOInvalidTreeException, FileNotFoundException {
@@ -650,7 +679,7 @@ public class AirPollutionDataConverterMC {
         }
         // inputDataStructurePathFile = new File(inputFolderPath, "./O_24_NO2_TS_F060.pst");
         // read the data structure file.
-        // the dataStructure file is json format.
+        // the dataStructure file is JSON format.
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode objectNodeRoot = null;
         try {
@@ -707,8 +736,8 @@ public class AirPollutionDataConverterMC {
 
         // now, read one of the files to know the dates.
         DataLayer firstDataLayer = this.dataContainer.getDataLayer(0);
-        String somefilePath = firstDataLayer.filePath;
-        this.getAllDatesInFile(somefilePath, this.dataContainer.datesArray);
+        String someFilePath = firstDataLayer.filePath;
+        this.getAllDatesInFile(someFilePath, this.dataContainer.datesArray);
 
         // take the 1rst date as the start date.
         String startDate = this.dataContainer.datesArray.get(0);
@@ -720,45 +749,59 @@ public class AirPollutionDataConverterMC {
 
         // load one file and calculate the location data.
         log.info("Calculating location data.");
-        this.loadOneFileAndCalculateLocationData(somefilePath, firstDataLayer);
+        this.loadOneFileAndCalculateLocationData(someFilePath, firstDataLayer);
 
-        // make temp files for each layer.
-        this.makeTempFilesForLayers(inputFolderPath, outputFolderPath);
+        // copy the geoCoordBBox from the first data layer.
+        this.geoCoordBBox.copyFrom(firstDataLayer.getGeoCoordBBox());
 
-        // once read the data, now convert the data.
-        log.info("Converting data. Datas count : {}", this.dataContainer.datesArray.size());
-        int datesCount = this.dataContainer.datesArray.size();
-        for (int date = 0; date < datesCount; date++) {
-            String currDate = this.dataContainer.datesArray.get(date);
-            this.convertDataByDate(currDate, inputFolderPath, outputFolderPath);
-        }
-
-        // now, with the stored mosaicTexturesFilePaths, make the mosaicTexture's pngsBinaryBlock.
-        // The pngsBinaryBlock is a binary file that contains all mosaicTextures, limited to 60MB.
-        ArrayList<String> mosaicTexturesFilePaths = new ArrayList<>();
-        int mosaicTexturesCount = this.dataContainer.dateAndMosaicTexFileNames.size();
-        // traverse map.
-        log.info("Making mosaic textures. Mosaic textures count : {}", mosaicTexturesCount);
-        for (Map.Entry<String, String> entry : this.dataContainer.dateAndMosaicTexFileNames.entrySet()) {
-            String date = entry.getKey();
-            String mosaicTextureFileName = entry.getValue();
-            String mosaicTextureFilePath = outputFolderPath + File.separator + mosaicTextureFileName;
-            mosaicTexturesFilePaths.add(mosaicTextureFilePath);
-        }
-
-        this.dataContainer.pngsBinDataArray.clear();
-        log.info("Making pngs binary blocks.");
-        makePngsBinaryBlocks(mosaicTexturesFilePaths, outputFolderPath, this.dataContainer.pngsBinDataArray);
-
-        // now save indexJson file.
+        // calculate the center position from the first data layer.
         BoundingBox bbox = firstDataLayer.geoCoordBBox;
         Vector3d centerPos = bbox.GetCenterPosition();
         this.dataContainer.centerGeoCoordLongitudeDegree = centerPos.x;
         this.dataContainer.centerGeoCoordLatitudeDegree = centerPos.y;
         this.dataContainer.centerGeoCoordAltitude = 0.0;
 
+        // Make temp files for each layer. Here calculates the total min and max values.
+        this.makeTempFilesForLayers(inputFolderPath, outputFolderPath);
+
+        // make isoValues.***
+        int isoValuesCount = 16;
+        double[] isoValuesArray = new double[isoValuesCount];
+
+        // make isoValuesArray.***
+        double isoValuesIncrement = (this.totalMaxValue - this.totalMinValue) / (double) (isoValuesCount - 1);
+        for(int i = 0; i < isoValuesCount; i++) {
+            isoValuesArray[i] = this.totalMinValue + (double) (i) * isoValuesIncrement;
+        }
+
+        // once read the data, now convert the data.
+        log.info("Converting data. Datas count : {}", this.dataContainer.datesArray.size());
+        int datesCount = this.dataContainer.datesArray.size();
+        for (int date = 0; date < datesCount; date++) {
+            String currDate = this.dataContainer.datesArray.get(date);
+            this.convertDataByDate(currDate, inputFolderPath, outputFolderPath, isoValuesArray, date);
+        }
+
+        // Now, with the stored mosaicTexturesFilePaths, make the mosaicTexture's pngsBinaryBlock.
+        // The pngsBinaryBlock is a binary file that contains all mosaicTextures, limited to 60MB.
+//        ArrayList<String> mosaicTexturesFilePaths = new ArrayList<>();
+//        int mosaicTexturesCount = this.dataContainer.dateAndMosaicTexFileNames.size();
+//        // traverse map.
+//        log.info("Making mosaic textures. Mosaic textures count : {}", mosaicTexturesCount);
+//        for (Map.Entry<String, String> entry : this.dataContainer.dateAndMosaicTexFileNames.entrySet()) {
+//            String date = entry.getKey();
+//            String mosaicTextureFileName = entry.getValue();
+//            String mosaicTextureFilePath = outputFolderPath + File.separator + mosaicTextureFileName;
+//            mosaicTexturesFilePaths.add(mosaicTextureFilePath);
+//        }
+//
+//        this.dataContainer.pngsBinDataArray.clear();
+//        log.info("Making pngs binary blocks.");
+//        makePngsBinaryBlocks(mosaicTexturesFilePaths, outputFolderPath, this.dataContainer.pngsBinDataArray);
+
+        // now save indexJson file.
         log.info("Saving index.json file.");
-        this.saveIndexJsonFile(outputFolderPath);
+        this.saveIndexJsonFileMC(outputFolderPath);
 
 //        // Finally delete the temp folder.
 //        log.info("Deleting temp folder.");
@@ -843,6 +886,118 @@ public class AirPollutionDataConverterMC {
             } catch (IOException e) {
                 log.error("", e);
             }
+        }
+    }
+
+    private void saveIndexJsonFileMC(String outputFolderPath) {
+        // save the index.json file.
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode objectNodeRoot = objectMapper.createObjectNode();
+        // centerGeographicCoords.
+        ObjectNode objectCenterGeographicCoordsNode = objectMapper.createObjectNode();
+        objectNodeRoot.set("centerGeographicCoord", objectCenterGeographicCoordsNode);
+        objectCenterGeographicCoordsNode.put("longitude", this.dataContainer.centerGeoCoordLongitudeDegree);
+        objectCenterGeographicCoordsNode.put("latitude", this.dataContainer.centerGeoCoordLatitudeDegree);
+        objectCenterGeographicCoordsNode.put("altitude", this.dataContainer.centerGeoCoordAltitude);
+
+        // date as YYYYMMDD + "T" + hhmmss.
+        String dateString = String.format("%04d%02d%02dT%02d%02d%02d", this.dataContainer.year, this.dataContainer.month, this.dataContainer.day,
+                this.dataContainer.hour, this.dataContainer.minute, this.dataContainer.second);
+
+        objectNodeRoot.put("startDate", dateString);
+
+        // height_km, width_km.
+        BoundingBox bbox = new BoundingBox();
+        this.dataContainer.getGeoCoordBoundingBox(bbox);
+        double lengthX = 13100; // hard coding.
+        double lengthY = 13100; // hard coding.
+        objectNodeRoot.put("width_km", lengthX / 1000.0);
+        objectNodeRoot.put("height_km", lengthY / 1000.0);
+
+        // timeInterval & timeUnit.
+        objectNodeRoot.put("timeInterval", this.dataContainer.timeInterval);
+        objectNodeRoot.put("timeIntervalUnits", this.dataContainer.timeIntervalUnits);
+
+        // minMaxValues.
+        objectNodeRoot.put("totalMinValue", this.totalMinValue);
+        objectNodeRoot.put("totalMaxValue", this.totalMaxValue);
+
+        // glbMetaData.
+        List<String> glbMetaDataFileNames = this.dataContainer.getGlbMetaDataFileNames();
+        ArrayNode glbMetaDataFileNamesArrayNode = objectMapper.createArrayNode();
+        int glbMetaDataFileNamesCount = glbMetaDataFileNames.size();
+        for (int i = 0; i < glbMetaDataFileNamesCount; i++) {
+            String glbMetaDataFileName = glbMetaDataFileNames.get(i);
+
+            // load the jsonFile.
+            String glbMetaDataFilePath = outputFolderPath + File.separator + glbMetaDataFileName;
+            ObjectNode glbMetaDataObjectNode = null;
+            try {
+                glbMetaDataObjectNode = (ObjectNode) objectMapper.readTree(new File(glbMetaDataFilePath));
+
+                // now, delete the glbMetaDataFile.***
+                StringModifier.deleteFile(glbMetaDataFilePath);
+            } catch (IOException e) {
+                log.error("", e);
+            }
+            glbMetaDataFileNamesArrayNode.add(glbMetaDataObjectNode);
+        }
+
+        objectNodeRoot.put("glbMetaDataFileNames", glbMetaDataFileNamesArrayNode);
+
+        // "mosaicTexMetaDataJsonArray".
+//        ArrayNode mosaicTexMetaDataJsonArrayNode = objectMapper.createArrayNode();
+//        int mosaicTexMetaDataFileNamesCount = this.dataContainer.mosaicTexMetaDataFileNames.size();
+//        for (int i = 0; i < mosaicTexMetaDataFileNamesCount; i++) {
+//            String mosaicTexMetaDataFileName = this.dataContainer.mosaicTexMetaDataFileNames.get(i);
+//
+//            // load the jsonFile.
+//            String mosaicTexMetaDataFilePath = outputFolderPath + File.separator + mosaicTexMetaDataFileName;
+//            ObjectNode mosaicTexMetaDataObjectNode = null;
+//            try {
+//                mosaicTexMetaDataObjectNode = (ObjectNode) objectMapper.readTree(new File(mosaicTexMetaDataFilePath));
+//            } catch (IOException e) {
+//                log.error("", e);
+//            }
+//            mosaicTexMetaDataJsonArrayNode.add(mosaicTexMetaDataObjectNode);
+//        }
+//        //objectNodeRoot.put("mosaicTexMetaDataFileNames", mosaicTexMetaDataFileNamesArrayNode);
+//        objectNodeRoot.put("mosaicTexMetaDataFileNamesCount", mosaicTexMetaDataFileNamesCount);
+//        objectNodeRoot.put("mosaicTexMetaDataJsonArray", mosaicTexMetaDataJsonArrayNode);
+
+        // now write the pngsBinaryBlockData.
+//        HashMap<String, Integer> pngsBinDataMap = new HashMap<>();
+//        ArrayNode pngsBinDataArrayNode = objectMapper.createArrayNode();
+//        int pngsBinDataArrayCount = this.dataContainer.pngsBinDataArray.size();
+//        for (int i = 0; i < pngsBinDataArrayCount; i++) {
+//            PngsBinaryBlockData pngsBinData = this.dataContainer.pngsBinDataArray.get(i);
+//            ObjectNode pngsBinDataObjectNode = objectMapper.createObjectNode();
+//            pngsBinDataObjectNode.put("originalPngFileName", pngsBinData.originalPngFileName);
+//            pngsBinDataObjectNode.put("pngsBinaryBlockDataFileName", pngsBinData.pngsBinaryBlockDataFileName);
+//            pngsBinDataObjectNode.put("startByteIndex", pngsBinData.startByteIndex);
+//            pngsBinDataObjectNode.put("endByteIndex", pngsBinData.endByteIndex);
+//            pngsBinDataArrayNode.add(pngsBinDataObjectNode);
+//
+//            pngsBinDataMap.put(pngsBinData.pngsBinaryBlockDataFileName, i);
+//        }
+//        objectNodeRoot.put("pngsBinDataArray", pngsBinDataArrayNode);
+//
+//        // now save the pngsBinaryBlockDataFileNameMap.
+//        ArrayNode pngsBinDataMapArrayNode = objectMapper.createArrayNode();
+//        Set<String> keys = pngsBinDataMap.keySet();
+//        for (String key : keys) {
+//            ObjectNode pngsBinDataMapObjectNode = objectMapper.createObjectNode();
+//            pngsBinDataMapObjectNode.put("fileName", key);
+//            pngsBinDataMapArrayNode.add(pngsBinDataMapObjectNode);
+//        }
+//
+//        objectNodeRoot.put("pngsBinBlockFileNames", pngsBinDataMapArrayNode);
+
+        String outputFilePath = outputFolderPath + File.separator + "index.json";
+        try {
+            objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
+        } catch (IOException e) {
+            log.error("", e);
         }
     }
 
@@ -941,12 +1096,14 @@ public class AirPollutionDataConverterMC {
         }
     }
 
-    private void convertDataByDate(String date, String inputFolderPath, String outputFolderPath) throws IIOInvalidTreeException, FileNotFoundException {
+    private void convertDataByDate(String date, String inputFolderPath, String outputFolderPath, double[] isoValuesArray, int idx) throws IIOInvalidTreeException, FileNotFoundException {
         // Check if exist "outputFolderPath". Create if no exist folder.
         StringModifier.createFolderIfNoExists(Paths.get(outputFolderPath));
 
         AirPollutionVolume airPollutionVolume = new AirPollutionVolume();
         airPollutionVolume.date = date;
+        airPollutionVolume.setIdx(idx);
+        airPollutionVolume.getGeoCoordBBox().copyFrom(this.geoCoordBBox);
 
         int layersCount = this.dataContainer.getDataLayersCount();
         for (int layer = 0; layer < layersCount; layer++) {
@@ -976,32 +1133,125 @@ public class AirPollutionDataConverterMC {
 
             airPollutionSliceData.loadTempFile(tempFilePath);
         }
-        Texture2D resultMosaicTexture = new Texture2D();
-        airPollutionVolume.makeMosaicTexture(resultMosaicTexture); // here calculates volumeMinMaxValues.***
-        double[] minMaxValues = new double[2];
-        airPollutionVolume.getMinMaxValues(minMaxValues);
 
-        // now, save the mosaic texture.
-        String outputFileName = "airPollution_" + date + ".png";
-        String outputFilePath = outputFolderPath + "/" + outputFileName;
-        resultMosaicTexture.saveAsPNG(outputFilePath);
-        airPollutionVolume.mosaicPngFileName = outputFileName;
+        int isoValuesCount = isoValuesArray.length;
 
-        this.dataContainer.dateAndMosaicTexFileNames.put(date, outputFileName);
-        this.dataContainer.mosaicColumnsCount = airPollutionVolume.mosaicColumnsCount;
-        this.dataContainer.mosaicRowsCount = airPollutionVolume.mosaicRowsCount;
-        if (this.dataContainer.totalMinValue > minMaxValues[0]) {
-            this.dataContainer.totalMinValue = minMaxValues[0];
+        GaiaScene gaiaSceneMaster = null;
+        boolean addLastTopSlice = false;
+        VoxelCPGrid3D voxelCPGrid3D = airPollutionVolume.makeVoxelCPGrid3D(addLastTopSlice); // new.***
+        // now, transform the geoCoords of the voxelCPGrid3D to the target projection.
+        BoundingBox geoCoordBBox = airPollutionVolume.getGeoCoordBBox();
+        Vector3d centerCartographic = geoCoordBBox.GetCenterPosition();
+        transformCoordsOfVoxelCpGrid3DFromGeoCoordsToLocalCoords(voxelCPGrid3D, centerCartographic);
+
+
+
+
+        for(int i=0; i< isoValuesCount; i++) {
+            double currIsoValue = isoValuesArray[i];
+            if(this.totalMaxValue > currIsoValue) {
+
+                // now, quantize the isoValue into rgba byte values.
+                float quantizedIsoValue = (float) ((currIsoValue - this.totalMinValue) / (this.totalMaxValue - this.totalMinValue));
+                byte[] encodedColor4 = new byte[4];
+                GeometryUtils.encodeFloat(quantizedIsoValue, encodedColor4);
+
+                GaiaScene gaiaScene = MarchingCube.makeGaiaScene(voxelCPGrid3D, currIsoValue);
+                if (gaiaScene == null) {
+                    continue;
+                }
+
+                gaiaScene.weldVertices(0.1, false, false, false, false);
+                gaiaScene.calculateVertexNormals();
+
+                List<GaiaPrimitive> gaiaPrimitives = gaiaScene.extractPrimitives(null);
+                for(int j = 0; j < gaiaPrimitives.size(); j++) {
+                    GaiaPrimitive gaiaPrimitive = gaiaPrimitives.get(j);
+                    gaiaPrimitive.setMaterialIndex(0);
+                    // set color to vertices.***
+                    List<GaiaVertex> gaiaVertices = gaiaPrimitive.getVertices();
+                    for(int k = 0; k < gaiaVertices.size(); k++) {
+                        GaiaVertex gaiaVertex = gaiaVertices.get(k);
+                        gaiaVertex.setColor(encodedColor4);
+                    }
+                }
+
+                // set random color to material.***
+                byte[] randomColor = new byte[4];
+                float randomRed = (float) Math.random();
+                randomColor[0] = (byte) (randomRed * 255.0f);
+                float randomGreen = (float) Math.random();
+                randomColor[1] = (byte) (randomGreen * 255.0f);
+                float randomBlue = (float) Math.random();
+                randomColor[2] = (byte) (randomBlue * 255.0f);
+                float alpha = 0.5f;
+                randomColor[3] = (byte) (alpha * 255.0f);
+                List<GaiaMaterial> gaiaMaterials = gaiaScene.getMaterials();
+                if(gaiaMaterials.size() == 0){
+                    // add a new material.
+                    GaiaMaterial gaiaMaterial = new GaiaMaterial();
+                    gaiaMaterial.setDiffuseColor(new Vector4d(randomRed, randomGreen, randomBlue, alpha));
+                    gaiaMaterial.setBlend(true);
+                    gaiaMaterials.add(gaiaMaterial);
+                }
+                for(int j = 0; j < gaiaMaterials.size(); j++) {
+                    GaiaMaterial gaiaMaterial = gaiaMaterials.get(j);
+                    gaiaMaterial.setDiffuseColor(new Vector4d(randomRed, randomGreen, randomBlue, alpha));
+                    gaiaMaterial.setBlend(true);
+                }
+
+                if(gaiaSceneMaster == null) {
+                    gaiaSceneMaster = gaiaScene;
+                } else {
+                    GaiaNode rootNodeMaster = gaiaSceneMaster.getNodes().get(0);
+                    GaiaNode childNodeMaster = rootNodeMaster.getChildren().get(0);
+                    GaiaMesh meshMaster = childNodeMaster.getMeshes().get(0);
+                    GaiaPrimitive gaiaPrimitiveMaster = meshMaster.getPrimitives().get(0);
+
+                    for(int j = 0; j < gaiaPrimitives.size(); j++) {
+                        GaiaPrimitive gaiaPrimitive = gaiaPrimitives.get(j);
+                        gaiaPrimitiveMaster.addPrimitive(gaiaPrimitive);
+                    }
+                }
+
+                int hola = 0;
+            }
         }
-        if (this.dataContainer.totalMaxValue < minMaxValues[1]) {
-            this.dataContainer.totalMaxValue = minMaxValues[1];
+
+        if(gaiaSceneMaster != null) {
+            GltfWriter gltfWriter = new GltfWriter();
+            String glbFileName = "airPollution_" + date + ".glb";
+
+            // set the glbFileName to airPollutionVolume.
+            airPollutionVolume.setGlbFileName(glbFileName);
+
+            // save the glb file.
+            String glbFilePath = outputFolderPath + glbFileName;
+            gltfWriter.writeGlb(gaiaSceneMaster, glbFilePath);
+
+            // save the glbMetaData.
+            String jsonFileName = "airPollution_" + date + ".json";
+            String jsonFilePath = outputFolderPath + File.separator + jsonFileName;
+            airPollutionVolume.saveAsJsonMC(jsonFilePath);
+            this.dataContainer.getGlbMetaDataFileNames().add(jsonFileName);
         }
 
-        // Now, save the json for this volume.
-        String jsonFileName = "airPollution_" + date + ".json";
-        String jsonFilePath = outputFolderPath + File.separator + jsonFileName;
-        airPollutionVolume.saveAsJson(jsonFilePath);
-        this.dataContainer.mosaicTexMetaDataFileNames.add(jsonFileName);
+
+//        // now, save the mosaic texture.
+//        String outputFileName = "airPollution_" + date + ".png";
+//        //String outputFilePath = outputFolderPath + "/" + outputFileName;
+//        //resultMosaicTexture.saveAsPNG(outputFilePath);
+//        airPollutionVolume.mosaicPngFileName = outputFileName;
+//
+//        this.dataContainer.dateAndMosaicTexFileNames.put(date, outputFileName);
+//        this.dataContainer.mosaicColumnsCount = airPollutionVolume.mosaicColumnsCount;
+//        this.dataContainer.mosaicRowsCount = airPollutionVolume.mosaicRowsCount;
+//        if (this.dataContainer.totalMinValue > minMaxValues[0]) {
+//            this.dataContainer.totalMinValue = minMaxValues[0];
+//        }
+//        if (this.dataContainer.totalMaxValue < minMaxValues[1]) {
+//            this.dataContainer.totalMaxValue = minMaxValues[1];
+//        }
     }
 
     public void setMaxDatesCount(int maxDatesCount) {
@@ -1010,5 +1260,35 @@ public class AirPollutionDataConverterMC {
 
     public void setScale(double scale) {
         this.scale = scale;
+    }
+
+    private void transformCoordsOfVoxelCpGrid3DFromGeoCoordsToLocalCoords(VoxelCPGrid3D voxelCPGrid3D, Vector3d centerCartographic) {
+        Vector3d centerCartesian = GlobeUtils.geographicToCartesianWgs84(centerCartographic);
+        Matrix4d transformationMatrix = GlobeUtils.transformMatrixAtCartesianPointWgs84(centerCartesian);
+        Matrix4d inverseTransformationMatrix = new Matrix4d(transformationMatrix);
+        inverseTransformationMatrix.invert();
+
+        // transform the coords of the voxelCPGrid3D to the local coords.
+        int gridsCountX = voxelCPGrid3D.getGridsCountX();
+        int gridsCountY = voxelCPGrid3D.getGridsCountY();
+        int gridsCountZ = voxelCPGrid3D.getGridsCountZ();
+        for (int i = 0; i < gridsCountX; i++) {
+            for (int j = 0; j < gridsCountY; j++) {
+                for (int k = 0; k < gridsCountZ; k++) {
+                    VoxelCP voxel = voxelCPGrid3D.getVoxel(i, j, k);
+                    if (voxel != null) {
+                        Vector3d voxelPos = voxel.getPosition(); // this is the geographic coord.
+                        Vector3d cartesianWC = GlobeUtils.geographicToCartesianWgs84(voxelPos);
+                        Vector4d local = new Vector4d(cartesianWC.x, cartesianWC.y, cartesianWC.z, 1.0);
+                        // transform the coords to the local coords.
+                        inverseTransformationMatrix.transform(local, local);
+                        voxelPos.set(local.x, local.y, local.z);
+
+                        int hola = 0;
+                    }
+                }
+            }
+        }
+
     }
 }
