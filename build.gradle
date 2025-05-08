@@ -40,7 +40,6 @@ project(':mago-terrainer') {
 tasks.register('release') {
     dependsOn(':mago-terrainer:clean')
     dependsOn(':mago-terrainer:test')
-    dependsOn(':mago-terrainer:shadowJar')
     dependsOn(':mago-terrainer:javadoc')
     dependsOn(':mago-terrainer:jib')
 }
