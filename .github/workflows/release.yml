@@ -52,4 +52,4 @@ jobs:
           body: ${{ steps.changelog.outputs.BODY }}
           files: terrainer/dist/*.jar
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
