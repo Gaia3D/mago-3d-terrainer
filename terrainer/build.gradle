@@ -80,8 +80,8 @@ jib {
         image = "gaia3d/mago-3d-terrainer"
         tags = ["latest", project.version] as List<String>
         auth {
-            username = findProperty("jib.to.auth.username") ?: System.getenv("JIB_TO_AUTH_USERNAME")
-            password = findProperty("jib.to.auth.password") ?: System.getenv("JIB_TO_AUTH_PASSWORD")
+            username = project.hasProperty("jib.to.auth.username") ? project.property("jib.to.auth.username") : System.getenv("JIB_TO_AUTH_USERNAME")
+            password = project.hasProperty("jib.to.auth.password") ? project.property("jib.to.auth.password") : System.getenv("JIB_TO_AUTH_PASSWORD")
         }
     }
     container {
@@ -149,7 +149,6 @@ compileJava {
 }
 
 tasks.named('jib') {
-    dependsOn(shadowJar)
     onlyIf {
         def jarFile = layout.buildDirectory.file("../dist/mago-3d-terrainer-${project.version}.jar").get().asFile
         if (!jarFile.exists()) {
