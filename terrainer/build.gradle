@@ -135,3 +135,24 @@ shadowJar {
     archiveFileName = "mago-3d-terrainer-${project.version}.jar"
     destinationDirectory.set(file("${projectDir}/dist"))
 }
+
+clean {
+    delete file("${projectDir}/dist")
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('jib') {
+    dependsOn(shadowJar)
+    onlyIf {
+        def jarFile = file("/dist/mago-3d-terrainer-${project.version}.jar")
+        if (!jarFile.exists()) {
+            logger.lifecycle("⚠️ JAR file not found: ${jarFile.absolutePath}")
+            logger.lifecycle(" > Please build the project first.")
+            throw new GradleException("JAR file not found: ${jarFile.absolutePath}")
+        }
+        return true
+    }
+}

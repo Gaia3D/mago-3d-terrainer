@@ -81,6 +81,11 @@ docker pull gaia3d/mago-3d-terrainer
 docker run --rm -v "/workspace:/workspace" gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
 ```
 
+## Documentation
+For detailed documentation, including installation and usage instructions, please refer to the official documentation:
+- JavaDocs : [gaia3d.github.io/mago-3d-terrainer](https://gaia3d.github.io/mago-3d-terrainer)
+- Manual : [github.com/Gaia3D/mago-3d-terrainer](https://github.com/Gaia3D/mago-3d-terrainer/blob/main/MANUAL.md)
+
 ## Supported Java versions
 Supports long-term support (LTS) versions of the JDK, including JDK17 and JDK21.
 

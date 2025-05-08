@@ -47,7 +47,7 @@ tasks.register('release') {
 
 tasks.register('javadoc', Javadoc) {
     group = 'Documentation'
-    description = 'Generates Javadoc for mago-tiler module.'
+    description = 'Generates Javadoc for mago-terrainer module.'
 
     def includedProjects = [
             project(':mago-terrainer'),
