@@ -147,7 +147,7 @@ compileJava {
 tasks.named('jib') {
     dependsOn(shadowJar)
     onlyIf {
-        def jarFile = file("/dist/mago-3d-terrainer-${project.version}.jar")
+        def jarFile = layout.buildDirectory.file("/dist/mago-3d-terrainer-${project.version}.jar").get().asFile
         if (!jarFile.exists()) {
             logger.lifecycle("⚠️ JAR file not found: ${jarFile.absolutePath}")
             logger.lifecycle(" > Please build the project first.")
