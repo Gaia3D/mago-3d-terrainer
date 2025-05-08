@@ -26,9 +26,6 @@ jobs:
           JIB_TO_AUTH_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           JIB_TO_AUTH_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Run release-please
-        uses: google-github-actions/release-please-action@v4
-        with:
-          release-type: gradle
-
-          pr-title-pattern: "🎉 Release ${version} for mago-3d-terrainer"
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
