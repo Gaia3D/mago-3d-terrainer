@@ -36,7 +36,14 @@ dependencies {
     implementation "org.geotools:gt-main:26.5"
     implementation "org.geotools:gt-image:26.5"
 
+    // add shaded dependencies
     implementation "javax.media:jai_core:1.1.3"
+    implementation "javax.media:jai_imageio:1.1"
+    implementation "javax.media:jai_codec:1.1.3"
+    implementation "javax.media:jai_core:1.1.3"
+    implementation "javax.media:jai_imageio:1.1"
+
+
     implementation "org.jdom:jdom2:2.0.6"
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -51,7 +58,7 @@ dependencies {
 
 test {
     useJUnitPlatform {
-        includeTags 'Mandatory'
+        includeTags 'default'
     }
 }
 
@@ -124,6 +131,7 @@ shadowJar {
         attributes 'Implementation-Vendor-Id': 'com.gaia3d'
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
+    relocate 'org.slf4j', 'shadow.slf4j'
     archiveFileName = "mago-3d-terrainer-${project.version}.jar"
     destinationDirectory.set(file("${projectDir}/dist"))
 }

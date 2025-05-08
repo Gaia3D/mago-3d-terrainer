@@ -1,6 +1,6 @@
 subprojects {
     group "com.gaia3d"
-    version '1.10.0-release' // release, beta, alpha
+    version '1.10.1-release' // release, beta, alpha
     apply plugin: 'java'
 
     dependencies {
@@ -35,4 +35,29 @@ project(':mago-terrainer') {
     dependencies {
         implementation project(':mago-common')
     }
+}
+
+tasks.register('release') {
+    dependsOn(':mago-terrainer:clean')
+    dependsOn(':mago-terrainer:test')
+    dependsOn(':mago-terrainer:shadowJar')
+    dependsOn(':mago-terrainer:javadoc')
+    dependsOn(':mago-terrainer:jib')
+}
+
+tasks.register('javadoc', Javadoc) {
+    group = 'Documentation'
+    description = 'Generates Javadoc for mago-tiler module.'
+
+    def includedProjects = [
+            project(':mago-terrainer'),
+            project(':mago-common'),
+    ]
+
+    source = files(includedProjects.collect { it.sourceSets.main.allJava })
+    classpath = files(includedProjects.collect { it.sourceSets.main.compileClasspath })
+    destinationDir = file("/docs/")
+    options.encoding = 'UTF-8'
+    options.memberLevel = JavadocMemberLevel.PUBLIC
+    options.addStringOption('Xdoclint:none', '-quiet')
 }

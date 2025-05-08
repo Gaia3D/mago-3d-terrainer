@@ -24,7 +24,7 @@ public class QuantizedMeshHeader {
     private float MinimumHeight = 0.0f;
     private float MaximumHeight = 0.0f;
 
-    // The tile’s bounding sphere.  The X,Y,Z coordinates are again expressed
+    // The tile's bounding sphere.  The X,Y,Z coordinates are again expressed
     // in Earth-centered Fixed coordinates, and the radius is in meters.
     private double BoundingSphereCenterX = 0.0;
     private double BoundingSphereCenterY = 0.0;

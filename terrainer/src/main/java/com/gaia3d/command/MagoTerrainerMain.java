@@ -190,23 +190,9 @@ public class MagoTerrainerMain {
     private static void printStart() {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         String programInfo = globalOptions.getProgramInfo();
-        log.info("\n" +
-                "┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┏┳┓┏┓┳┓┳┓┏┓┳┳┓┏┓┳┓\n" +
-                "┃┃┃┣┫┃┓┃┃   ┫┃┃   ┃ ┣ ┣┫┣┫┣┫┃┃┃┣ ┣┫\n" +
-                "┛ ┗┛┗┗┛┗┛  ┗┛┻┛   ┻ ┗┛┛┗┛┗┛┗┻┛┗┗┛┛┗\n" +
-                programInfo + "\n" +
-                "----------------------------------------");
-    }
-
-    /**
-     * Prints the program information and the java version information.
-     */
-    private static void printVersion() {
-        GlobalOptions globalOptions = GlobalOptions.getInstance();
-        String programInfo = globalOptions.getProgramInfo();
-        String javaVersionInfo = globalOptions.getJavaVersionInfo();
-        log.info(programInfo + "\n" + javaVersionInfo);
-        log.info("----------------------------------------");
+        drawLine();
+        log.info(programInfo);
+        drawLine();
     }
 
     /**
@@ -216,7 +202,7 @@ public class MagoTerrainerMain {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         Reporter reporter = globalOptions.getReporter();
         long duration = reporter.getDuration();
-        log.info("----------------------------------------");
+        drawLine();
         log.info("[Report Summary]");
         log.info("Info : {}", reporter.getInfoCount());
         log.info("Warning : {}", reporter.getWarningCount());
@@ -225,6 +211,10 @@ public class MagoTerrainerMain {
         log.info("Total Report Count : {}", reporter.getReportList().size());
         log.info("[Process Summary]");
         log.info("End Process Time : {}", DecimalUtils.millisecondToDisplayTime(duration));
+        drawLine();
+    }
+
+    public static void drawLine() {
         log.info("----------------------------------------");
     }
 }

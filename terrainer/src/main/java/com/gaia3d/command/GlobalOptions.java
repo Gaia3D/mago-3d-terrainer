@@ -229,12 +229,12 @@ public class GlobalOptions {
         log.info("Interpolation Type: {}", instance.getInterpolationType());
         log.info("Priority Type: {}", instance.getPriorityType());
         log.info("Calculate Normals: {}", instance.isCalculateNormals());
-        log.info("----------------------------------------");
+        MagoTerrainerMain.drawLine();
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Debug Mode: {}", instance.isDebugMode());
-        log.info("----------------------------------------");
+        MagoTerrainerMain.drawLine();
     }
 
     protected static void validateInputPath(Path path) throws IOException {
@@ -270,7 +270,7 @@ public class GlobalOptions {
         String title = MagoTerrainerMain.class.getPackage().getImplementationTitle();
         String vendor = MagoTerrainerMain.class.getPackage().getImplementationVendor();
         version = version == null ? "dev-version" : version;
-        title = title == null ? "3d-terrainer" : title;
+        title = title == null ? "mago-3d-terrainer" : title;
         vendor = vendor == null ? "Gaia3D, Inc." : vendor;
         String programInfo = title + "(" + version + ") by " + vendor;
 
