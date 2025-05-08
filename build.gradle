@@ -38,7 +38,6 @@ project(':mago-terrainer') {
 }
 
 tasks.register('release') {
-    dependsOn(':mago-terrainer:clean')
     dependsOn(':mago-terrainer:test')
     dependsOn(':mago-terrainer:javadoc')
     dependsOn(':mago-terrainer:jib')
@@ -48,10 +47,8 @@ tasks.register('javadoc', Javadoc) {
     group = 'Documentation'
     description = 'Generates Javadoc for mago-terrainer module.'
 
-    def includedProjects = [
-            project(':mago-terrainer'),
-            project(':mago-common'),
-    ]
+    def includedProjects = [project(':mago-terrainer'),
+                            project(':mago-common'),]
 
     source = files(includedProjects.collect { it.sourceSets.main.allJava })
     classpath = files(includedProjects.collect { it.sourceSets.main.compileClasspath })
