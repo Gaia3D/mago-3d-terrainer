@@ -1,58 +1,35 @@
-subprojects {
-    group "com.gaia3d"
-    version '1.10.1-release' // release, beta, alpha
-    apply plugin: 'java'
+plugins {
+    id 'java'
+}
 
-    dependencies {
-        compileOnly "org.projectlombok:lombok:1.18.30"
-        annotationProcessor "org.projectlombok:lombok:1.18.30"
+repositories {
+    maven { url "https://repo.osgeo.org/repository/release/" }
+    mavenCentral()
+}
 
-        implementation 'org.slf4j:slf4j-api:1.7.25'
-        implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
-        implementation 'org.apache.logging.log4j:log4j-api:2.14.0'
-        implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+dependencies {
+    /*implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-glfw"*/
 
-        implementation "org.joml:joml:1.10.5"
+    implementation "org.locationtech.proj4j:proj4j:1.2.3"
+    implementation "org.locationtech.proj4j:proj4j-epsg:1.2.3"
 
-        implementation 'commons-logging:commons-logging:1.2'
-        implementation 'commons-io:commons-io:2.11.0'
-        implementation 'commons-cli:commons-cli:1.5.0'
-        implementation 'commons-collections:commons-collections:3.2.2'
-        implementation 'org.apache.commons:commons-text:1.10.0'
+    implementation 'org.geotools:gt-geojson:26.5'
+    implementation 'org.geotools:gt-geojsondatastore:26.5'
 
-        testCompileOnly "org.projectlombok:lombok:1.18.30"
-        testAnnotationProcessor "org.projectlombok:lombok:1.18.30"
-        testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.0"
-        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.0"
+    /*runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"*/
+}
+
+javadoc {
+    enabled = false
+}
+
+test {
+    useJUnitPlatform {
+        includeTags 'release'
     }
-}
-
-project(':mago-common') {
-    // Common module build configuration
-}
-
-project(':mago-terrainer') {
-    dependencies {
-        implementation project(':mago-common')
-    }
-}
-
-tasks.register('release') {
-    dependsOn(':mago-terrainer:javadoc')
-    dependsOn(':mago-terrainer:jib')
-}
-
-tasks.register('javadoc', Javadoc) {
-    group = 'Documentation'
-    description = 'Generates Javadoc for mago-terrainer module.'
-
-    def includedProjects = [project(':mago-terrainer'),
-                            project(':mago-common'),]
-
-    source = files(includedProjects.collect { it.sourceSets.main.allJava })
-    classpath = files(includedProjects.collect { it.sourceSets.main.compileClasspath })
-    destinationDir = file("/docs/")
-    options.encoding = 'UTF-8'
-    options.memberLevel = JavadocMemberLevel.PUBLIC
-    options.addStringOption('Xdoclint:none', '-quiet')
 }
