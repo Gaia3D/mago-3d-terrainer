@@ -6,32 +6,41 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum CommandOptions {
-    HELP("help", "h", "help", false, "Print this message"),
+    /* Default Options */
+    HELP("help", "h", false, "Print Help"),
+    LEAVE_TEMP("leaveTemp", "lt", false, "Leave temporary files for debugging"),
+    JSON("json", "j", false, "Generate layer.json from terrain data"),
+    CONTINUOUS("continue", "c", false, "Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails."),
 
-    INPUT("input", "i", "input", true, "Input folder path"),
-    OUTPUT("output", "o", "output", true, "Output folder path"),
-    LOG("log", "l", "log", true, "Log file path"),
-    DEBUG("debug", "d", "debug", false, "Debug Mode, print more detail log"),
-    LEAVE_TEMP("leaveTemp", "lt", "leaveTemp", false, "Leave temporary files for debugging"),
-    JSON("json", "j", "json", false, "Generate only layer.json from terrain data"),
-    CONTINUOUS("continue", "c", "continue", false, "Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails."),
+    /* Path Options */
+    INPUT("input", "i", true, "[Required] Input directory path"),
+    OUTPUT("output", "o", true, "[Required] Output directory path"),
+    LOG("log", "l", true, "Log file path"),
 
-    // for terrain generation
-    MINIMUM_TILE_DEPTH("minDepth", "min", "minDepth", true, "Minimum tile depth (range : 0 ~ 22) (default : 0)"),
-    MAXIMUM_TILE_DEPTH("maxDepth", "max", "maxDepth", true, "Maximum tile depth (range : 0 ~ 22) (default : 14)"),
-    INTENSITY("intensity", "is", "intensity", true, "Mesh refinement strength. (default : 4.0)"),
-    CALCULATE_NORMALS("calculateNormals", "cn", "calculateNormals", false, "Add terrain octVertexNormals for lighting effect"),
-    INTERPOLATION_TYPE("interpolationType", "it", "interpolationType", true, "Interpolation type (nearest, bilinear) (default : bilinear)"),
-    PRIORITY_TYPE("priorityType", "pt", "priorityType", true, "Priority type () (default : distance)"),
-    NODATA_VALUE("nodataValue", "nv", "nodataValue", true, "No data value for terrain data (default : -9999)"),
+    /* Terrain Generate Options */
+    MINIMUM_TILE_DEPTH("minDepth", "min", true, "Set minimum terrain tile depth [0 - 22][default : 0]"),
+    MAXIMUM_TILE_DEPTH("maxDepth", "max", true, "Set maximum terrain tile depth [0 - 22][default : 14]"),
+    INTENSITY("intensity", "is", true, "Set Mesh refinement intensity. [default : 4.0]"),
+    INTERPOLATION_TYPE("interpolationType", "it", true, "set Interpolation type [nearest, bilinear][default : bilinear]"),
+    PRIORITY_TYPE("priorityType", "pt", true, "Nesting height priority type options [resolution, higher][default : resolution]"),
+    NODATA_VALUE("nodataValue", "nv", true, "Set NODATA value for terrain generating [default : -9999]"),
+    EXT_CALCULATE_NORMALS("calculateNormals", "cn", false, "Add terrain octVertexNormals for lighting effect"),
 
-    // for optimization
-    TILING_MOSAIC_SIZE("mosaicSize", "ms", "mosaicSize", true, "Tiling mosaic buffer size per tile. (default : 16)"),
-    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", "rasterMaxSize", true, "Maximum raster size for split function. (default : 8192)");
+    /* Optimize Options */
+    TILING_MOSAIC_SIZE("mosaicSize", "ms", true, "Tiling mosaic buffer size per tile. [default : 16]"),
+    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", true, "Maximum raster size for split function. [default : 8192]"),
+
+    /* Experimental Options */
+    //INPUT_CRS("inputCrs", "ic", true, "[Experimental] Input Coordinate Reference System, EPSG Code [4326, 3857...]"),
+    //TILING_SCHEMA("tilingSchema", "ts", true, "[Experimental] Schema for the terrain data. [geodetic, mercator][default : geodetic]"),
+    //EXT_META_DATA("metadata", "md", false, "[Experimental] Generate metadata for the terrain data."),
+    //EXT_WATER_MASK("waterMask", "wm", false, "[Experimental] Generate water mask for the terrain data."),
+
+    /* Debug Options */
+    DEBUG("debug", "d", false, "[DEBUG] Print more detailed logs.");
 
     private final String longName;
     private final String shortName;
-    private final String argName;
     private final boolean argRequired;
     private final String description;
 

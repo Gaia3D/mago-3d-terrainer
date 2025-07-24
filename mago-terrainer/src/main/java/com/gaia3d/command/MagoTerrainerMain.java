@@ -24,29 +24,34 @@ public class MagoTerrainerMain {
             Options options = Configurator.createOptions();
             CommandLineParser parser = new DefaultParser();
             CommandLine command = parser.parse(Configurator.createOptions(), args);
-            boolean isHelp = command.hasOption(CommandOptions.HELP.getArgName());
-            boolean hasLogPath = command.hasOption(CommandOptions.LOG.getArgName());
+            boolean isHelp = command.hasOption(CommandOptions.HELP.getLongName());
+            boolean hasLogPath = command.hasOption(CommandOptions.LOG.getLongName());
 
-            if (command.hasOption(CommandOptions.DEBUG.getArgName())) {
+            if (command.hasOption(CommandOptions.DEBUG.getLongName())) {
                 Configurator.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
                 if (hasLogPath) {
-                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(CommandOptions.LOG.getArgName()));
+                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(CommandOptions.LOG.getLongName()));
                 }
                 Configurator.setLevel(Level.DEBUG);
             } else {
                 Configurator.initConsoleLogger();
                 if (hasLogPath) {
-                    Configurator.initFileLogger(null, command.getOptionValue(CommandOptions.LOG.getArgName()));
+                    Configurator.initFileLogger(null, command.getOptionValue(CommandOptions.LOG.getLongName()));
                 }
                 Configurator.setLevel(Level.INFO);
             }
             Configurator.setEpsg();
-            printStart();
 
-            if (isHelp) {
+            printStart();
+            if (isHelp || args.length == 0) {
                 HelpFormatter formatter = new HelpFormatter();
+                formatter.setOptionComparator(null);
                 formatter.setWidth(200);
-                formatter.printHelp("mago 3DTerrainer help", options);
+                formatter.setOptPrefix("-");
+                formatter.setSyntaxPrefix("Usage: ");
+                formatter.setLongOptPrefix(" --");
+                formatter.setLongOptSeparator(" ");
+                formatter.printHelp("command options", options);
                 return;
             }
 
@@ -142,7 +147,7 @@ public class MagoTerrainerMain {
         terrainLayer.setDefault();
         terrainLayer.setBounds(new double[]{-180.0, -90.0, 180.0, 90.0});
         terrainLayer.generateAvailableTiles(globalOptions.getInputPath());
-        if (globalOptions.isCalculateNormals()) {
+        if (globalOptions.isCalculateNormalsExtension()) {
             terrainLayer.addExtension("octvertexnormals");
         }
         terrainLayer.saveJsonFile(globalOptions.getInputPath(), "layer.json");

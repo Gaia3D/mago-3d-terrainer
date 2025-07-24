@@ -352,7 +352,7 @@ public class TileWgs84Manager {
         bounds[2] = maxLon;
         bounds[3] = maxLat;
 
-        if (globalOptions.isCalculateNormals()) {
+        if (globalOptions.isCalculateNormalsExtension()) {
             terrainLayer.addExtension("octvertexnormals");
         }
 
@@ -448,7 +448,7 @@ public class TileWgs84Manager {
         bounds[2] = maxLon;
         bounds[3] = maxLat;
 
-        if (globalOptions.isCalculateNormals()) {
+        if (globalOptions.isCalculateNormalsExtension()) {
             terrainLayer.addExtension("octvertexnormals");
         }
 

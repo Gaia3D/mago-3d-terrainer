@@ -67,7 +67,7 @@ public class RasterStandardizer {
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     public void standardize(GridCoverage2D source, File outputPath) {
-        CoordinateReferenceSystem targetCRS = globalOptions.getTargetCRS();
+        CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
         try {
             /* split */
             List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());

@@ -267,7 +267,7 @@ public class TileMatrix {
             this.refineMesh(resultMesh, tilesRange);
 
             // check if you must calculate normals
-            if (globalOptions.isCalculateNormals()) {
+            if (globalOptions.isCalculateNormalsExtension()) {
                 this.listVertices.clear();
                 this.listHalfEdges.clear();
                 resultMesh.calculateNormals(this.listVertices, this.listHalfEdges);
@@ -302,7 +302,7 @@ public class TileMatrix {
 
     public void saveQuantizedMeshes(List<TerrainMesh> separatedMeshes) throws IOException {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
-        boolean calculateNormals = globalOptions.isCalculateNormals();
+        boolean calculateNormals = globalOptions.isCalculateNormalsExtension();
 
         for (TerrainMesh mesh : separatedMeshes) {
             TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle

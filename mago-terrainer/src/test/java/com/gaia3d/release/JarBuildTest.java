@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Tag("default")
+//@Tag("default")
 @Slf4j
 class JarBuildTest {
 

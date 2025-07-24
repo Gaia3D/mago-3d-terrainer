@@ -14,13 +14,33 @@ import java.util.Objects;
 public class DefaultTest {
 
     @Test
+    void noArgs() {
+        String[] args = new String[]{};
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void help() {
         String[] args = new String[]{"-h"};
         MagoTerrainerMain.main(args);
     }
 
     @Test
-    void sampleBilinear() throws IOException {
+    void sample() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
+        File inputPath = new File(samplePath, "input");
+        File outputPath = new File(samplePath, "output");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleBilinear() {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
@@ -31,13 +51,12 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "10",
-                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
     }
 
     @Test
-    void sampleBilinearMaxDepth12() throws IOException {
+    void sampleBilinearMaxDepth12() {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
@@ -48,13 +67,12 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "12",
-                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
     }
 
     @Test
-    void sampleNearest() throws IOException {
+    void sampleNearest(){
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
@@ -66,13 +84,12 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "10",
                 "-interpolationType", "nearest",
-                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
     }
 
     @Test
-    void sampleNearestMaxDepth12() throws IOException {
+    void sampleNearestMaxDepth12() {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");
@@ -84,13 +101,12 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "12",
                 "-interpolationType", "nearest",
-                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
     }
 
     @Test
-    void sampleAnotherCrsTerrain() throws IOException {
+    void sampleAnotherCrsTerrain() {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("another-crs-sample")).getFile());
         File inputPath = new File(samplePath, "input");
@@ -101,14 +117,12 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "12",
-                //"-d",
-                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
     }
 
     @Test
-    void sampleMultiTerrain() throws IOException {
+    void sampleMultiTerrain() {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("multi-sample")).getFile());
         File inputPath = new File(samplePath, "input");
@@ -119,8 +133,6 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "12",
-                //"-d",
-                "-leaveTemp",
         };
         MagoTerrainerMain.main(args);
     }
@@ -135,7 +147,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-output", outputPath.getAbsolutePath(),
                 "-max", "12",
-                "-leaveTemp",
         };
 
         try {
@@ -155,7 +166,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-max", "12",
-                "-leaveTemp",
         };
 
         try {
@@ -177,7 +187,6 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "12",
                 "-max", "5",
-                "-leaveTemp",
         };
 
         try {
