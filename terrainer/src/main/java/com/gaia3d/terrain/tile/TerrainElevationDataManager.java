@@ -228,14 +228,16 @@ public class TerrainElevationDataManager {
             if (priorityType.equals(PriorityType.RESOLUTION)) {
 
                 double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFileName(), terrainElevationData.getGeotiffFilePath());
-                //double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFilePath());
-                boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is higher resolution
+                boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is a higher resolution
                 if (isHigherResolution) {
-                    if (noDataValue != 0.0) {
-                        candidateElevation = elevation; // original.***
-                        //candidateElevation = Math.max(candidateElevation, elevation); // new.***
-                        pixelAreaAux = pixelArea;
-                    }
+                    candidateElevation = elevation; // original.***
+                    pixelAreaAux = pixelArea;
+                    // old. bug code.***
+//                    if (noDataValue != 0.0) {
+//                        candidateElevation = elevation; // original.***
+//                        pixelAreaAux = pixelArea;
+//                    }
+                    // end old bug code.***
                 }
             } else {
                 candidateElevation = Math.max(candidateElevation, elevation);
