@@ -115,6 +115,7 @@ public class TerrainerReleaseTest {
         MagoTerrainerMain.main(args);
     }
 
+
     @Test
     void multiResolutionNodata() {
         String name = "multi-resolution-nodata";
@@ -144,7 +145,7 @@ public class TerrainerReleaseTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "14",
-                "-interpolation", "bilinear",
+                "-interpolation", "nearest",
                 "-calculateNormals",
                 "-leaveTemp"
         };
