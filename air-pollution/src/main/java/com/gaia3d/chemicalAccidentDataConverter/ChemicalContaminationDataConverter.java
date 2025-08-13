@@ -245,13 +245,13 @@ public class ChemicalContaminationDataConverter
                 int index = legendObjectNode.get("index").asInt();
                 double value = legendObjectNode.get("value").asDouble();
                 ArrayNode rgbaArrayNode = (ArrayNode) legendObjectNode.get("rgba");
-                double r = rgbaArrayNode.get(0).asDouble();
-                double g = rgbaArrayNode.get(1).asDouble();
-                double b = rgbaArrayNode.get(2).asDouble();
-                double a = rgbaArrayNode.get(3).asDouble();
+                double r, g, b, a;
+                r = rgbaArrayNode.get(0).asDouble();
+                g = rgbaArrayNode.get(1).asDouble();
+                b = rgbaArrayNode.get(2).asDouble();
+                a = rgbaArrayNode.get(3).asDouble();
 
                 legendColors.setValueAndColor(value, r, g, b, a);
-                int hola = 0;
             }
         }
 
@@ -410,7 +410,7 @@ public class ChemicalContaminationDataConverter
         this.dataContainer.totalMaxValue = totalMaxValue;
 
         // Marching cubes.*******************************************************************
-        int isoValuesCount = 15;
+        int isoValuesCount = 10;
         double[] isoValuesArray = new double[isoValuesCount];
 
         // make isoValuesArray.***
@@ -418,6 +418,19 @@ public class ChemicalContaminationDataConverter
         for(int i = 0; i < isoValuesCount; i++) {
             isoValuesArray[i] = totalMinValue + (double) (i) * isoValuesIncrement;
         }
+
+        /*
+        0 = 0.0
+1 = 1.2444444444444444E7
+2 = 2.4888888888888888E7
+3 = 3.733333333333333E7
+4 = 4.9777777777777776E7
+5 = 6.2222222222222224E7
+6 = 7.466666666666666E7
+7 = 8.71111111111111E7
+8 = 9.955555555555555E7
+9 = 1.12E8
+         */
 
         TreeMap<Double, DataSlice> treeMapVolumeData = new TreeMap<Double, DataSlice>(); // minAltitude is the key.***
 
@@ -464,7 +477,26 @@ public class ChemicalContaminationDataConverter
         String jsonIndexFilePath = outputFolderPath + "\\" + "JsonIndex.json";
         MakeIndexFile(jsonIndexFilePath, outputFolderPath, pngsBinDataArray);
 
-        int hola = 0;
+        // delete the temp files.******************************************************************************
+        // Finally, delete the temp folder.
+        log.info("Deleting temp folder.");
+        String tempFolderPath = outputFolderPath + File.separator + "temp";
+        StringModifier.deleteFolder(tempFolderPath);
+
+        // delete all mosaicTextures.
+        log.info("Deleting mosaic textures.");
+        for (String mosaicTextureFilePath : mosaicTexturesFilePaths) {
+            StringModifier.deleteFile(mosaicTextureFilePath);
+        }
+
+        // delete the jsonFiles in this.dataContainer.mosaicTexMetaDataFileNames.
+        log.info("Deleting json files.");
+        int mosaicTexMetaDataFileNamesCount = this.dataContainer.mosaicTexMetaDataFileNames.size();
+        for (int i = 0; i < mosaicTexMetaDataFileNamesCount; i++) {
+            String mosaicTexMetaDataFileName = this.dataContainer.mosaicTexMetaDataFileNames.get(i);
+            String mosaicTexMetaDataFilePath = outputFolderPath + File.separator + mosaicTexMetaDataFileName;
+            StringModifier.deleteFile(mosaicTexMetaDataFilePath);
+        }
     }
 
     private void convertDataByDateMarchingCubes(TreeMap<Double, DataSlice> treeMapVolumeData, String outputFolderPath, double[] isoValuesArray, int idx){
