@@ -116,7 +116,7 @@ class MainTest {
     void main_B_NO2_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\B_NO2\\index01.json";
         String outputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\B_NO2" + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -125,7 +125,7 @@ class MainTest {
     void main_B_PM10_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\B_PM10";
         String outputFolderPath = inputFolderPath + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -134,7 +134,7 @@ class MainTest {
     void main_B_PM25_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\B_PM25";
         String outputFolderPath = inputFolderPath + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -143,7 +143,7 @@ class MainTest {
     void main_O_NO2_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_NO2\\dataStructure_1hour.json";
         String outputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_NO2" + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -152,7 +152,7 @@ class MainTest {
     void main_O_PM10_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_PM10\\dataStructure.json";
         String outputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_PM10" + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -161,7 +161,7 @@ class MainTest {
     void main_O_PM25_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\O_PM25";
         String outputFolderPath = inputFolderPath + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -170,7 +170,7 @@ class MainTest {
     void main_OD_H2S_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\OD_H2S";
         String outputFolderPath = inputFolderPath + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -179,7 +179,7 @@ class MainTest {
     void main_OD_NH3_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\OD_NH3";
         String outputFolderPath = inputFolderPath + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
 
         Main.main(testArgs);
     }
@@ -188,7 +188,44 @@ class MainTest {
     void main_OD_OU_20241008() throws ParseException, IOException, org.apache.commons.cli.ParseException {
         String inputFolderPath = "D:\\data\\simulation-data\\AIRPOLLUTION\\newAirpollution_20241008\\OD_OU";
         String outputFolderPath = inputFolderPath + "\\output";
-        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath};
+        String[] testArgs = new String[]{"-input", inputFolderPath, "-output", outputFolderPath, "-dataType", "AIR-POLLUTION"};
+
+        Main.main(testArgs);
+    }
+
+    // Chemical Contamination test.*************************************************************************************
+    @Test
+    void main20240805() throws org.apache.commons.cli.ParseException, IOException {
+        // Chemical Contamination test.************************************
+        String inputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval";
+        String inputDataStructurePath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\dataStructure.json";
+        String outputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\output";
+
+        String[] testArgs = new String[]{
+                "-dataType", "CHEMICAL-ACCIDENT",
+                "-type", "CHEMICAL",
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-input", inputFolderPath,
+                "-output", outputFolderPath
+        };
+
+        Main.main(testArgs);
+    }
+
+    @Test
+    void chemAccident2D_20240806() throws org.apache.commons.cli.ParseException, IOException {
+        // Chemical Contamination test.************************************
+        String inputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\Air1";
+        String outputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\output2D";
+        String inputDataStructurePath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\dataStructure.json";
+
+        String[] testArgs = new String[]{
+                "-dataType", "CHEMICAL-ACCIDENT",
+                "-type", "CHEMICAL_2D",
+                "-inputDataStructurePath", inputDataStructurePath,
+                "-input", inputFolderPath,
+                "-output", outputFolderPath
+        };
 
         Main.main(testArgs);
     }

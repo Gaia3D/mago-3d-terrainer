@@ -3,12 +3,21 @@ package com.gaia3d.airPollutionDataConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.gaia3d.basic.geometry.jgltf.GltfWriter;
+import com.gaia3d.basic.geometry.voxel.VoxelCP;
+import com.gaia3d.basic.geometry.voxel.VoxelCPGrid3D;
+import com.gaia3d.basic.marchingcube.MarchingCube;
+import com.gaia3d.basic.model.*;
 import com.gaia3d.coordSystem.CoordManager;
 import com.gaia3d.geometry.BoundingBox;
 import com.gaia3d.image.Texture2D;
+import com.gaia3d.util.GlobeUtils;
+import com.gaia3d.utils.GeometryUtils;
 import com.gaia3d.utils.StringModifier;
 import lombok.extern.slf4j.Slf4j;
+import org.joml.Matrix4d;
 import org.joml.Vector3d;
+import org.joml.Vector4d;
 import org.locationtech.proj4j.BasicCoordinateTransform;
 import org.locationtech.proj4j.CRSFactory;
 import org.locationtech.proj4j.CoordinateReferenceSystem;
@@ -88,6 +97,9 @@ public class AirPollutionDataConverter {
 
     public int maxDatesAllowed = -1; // if negative value, then no limit.
     public double scale = 1.0;
+    private BoundingBox geoCoordBBox = new BoundingBox(); // minLongitude, minLatitude, minAltitude, maxLongitude, maxLatitude, maxAltitude
+    private double totalMinValue = Double.MAX_VALUE;
+    private double totalMaxValue = Double.MIN_VALUE;
 
     private void getAllDatesInFile(String filePath, ArrayList<String> resultDatesArray) {
         log.info("==================Start Reading ASCII===================");
@@ -192,8 +204,8 @@ public class AirPollutionDataConverter {
             int rowsCount = 0;
             int currDate = 0;
 
-            // read lines.
-            // Hard Coding : read 8 lines that is the header.
+            // Read lines.
+            // Hard Coding: read 8 lines that is the header.
             log.info("==================Start Reading ASCII===================");
             log.info("--------------Reading ASCII. Header lines---------------");
             for (int i = 0; i < 8; i++) {
@@ -259,6 +271,14 @@ public class AirPollutionDataConverter {
                     double convertedZ = result.z;
 
                     double pollutionValue = Double.parseDouble(vecStrings.get(2)) * this.scale;
+
+                    // calculate the total min and max values.
+                    if(pollutionValue < this.totalMinValue) {
+                        this.totalMinValue = pollutionValue;
+                    }
+                    if(pollutionValue > this.totalMaxValue) {
+                        this.totalMaxValue = pollutionValue;
+                    }
 
 
                     String key = convertedX + "," + convertedY;
@@ -722,12 +742,46 @@ public class AirPollutionDataConverter {
         log.info("Calculating location data.");
         this.loadOneFileAndCalculateLocationData(somefilePath, firstDataLayer);
 
+        // copy the geoCoordBBox from the first data layer.
+        this.geoCoordBBox.copyFrom(firstDataLayer.getGeoCoordBBox());
+
+        // calculate the center position from the first data layer.
+        BoundingBox bbox = firstDataLayer.geoCoordBBox;
+        Vector3d centerPos = bbox.GetCenterPosition();
+        this.dataContainer.centerGeoCoordLongitudeDegree = centerPos.x;
+        this.dataContainer.centerGeoCoordLatitudeDegree = centerPos.y;
+        this.dataContainer.centerGeoCoordAltitude = 0.0;
+
         // make temp files for each layer.
         this.makeTempFilesForLayers(inputFolderPath, outputFolderPath);
 
+        // marching cubes.***************************************************
+        // make isoValues.***
+        int isoValuesCount = 15;
+        double[] isoValuesArray = new double[isoValuesCount];
+
+        // make isoValuesArray.***
+        double isoValuesIncrement = (this.totalMaxValue - this.totalMinValue) / (double) (isoValuesCount - 1);
+        for(int i = 0; i < isoValuesCount; i++) {
+            isoValuesArray[i] = this.totalMinValue + (double) (i) * isoValuesIncrement;
+        }
+
+        // once read the data, now convert the data.
+        log.info("Converting data Marching-Cubes. Datas count : {}", this.dataContainer.datesArray.size());
+        int datesCount = this.dataContainer.datesArray.size();
+        for (int date = 0; date < datesCount; date++) {
+            String currDate = this.dataContainer.datesArray.get(date);
+            this.convertDataByDateMarchingCubes(currDate, inputFolderPath, outputFolderPath, isoValuesArray, date);
+        }
+
+        // now save indexJson file.
+        log.info("Saving index.json file.");
+        this.saveIndexJsonFileMC(outputFolderPath);
+        // end marching cubes.***************************************************
+
         // once read the data, now convert the data.
         log.info("Converting data. Datas count : {}", this.dataContainer.datesArray.size());
-        int datesCount = this.dataContainer.datesArray.size();
+        //int datesCount = this.dataContainer.datesArray.size();
         for (int date = 0; date < datesCount; date++) {
             String currDate = this.dataContainer.datesArray.get(date);
             this.convertDataByDate(currDate, inputFolderPath, outputFolderPath);
@@ -750,17 +804,10 @@ public class AirPollutionDataConverter {
         log.info("Making pngs binary blocks.");
         makePngsBinaryBlocks(mosaicTexturesFilePaths, outputFolderPath, this.dataContainer.pngsBinDataArray);
 
-        // now save indexJson file.
-        BoundingBox bbox = firstDataLayer.geoCoordBBox;
-        Vector3d centerPos = bbox.GetCenterPosition();
-        this.dataContainer.centerGeoCoordLongitudeDegree = centerPos.x;
-        this.dataContainer.centerGeoCoordLatitudeDegree = centerPos.y;
-        this.dataContainer.centerGeoCoordAltitude = 0.0;
-
         log.info("Saving index.json file.");
         this.saveIndexJsonFile(outputFolderPath);
 
-        // Finally delete the temp folder.
+        // Finally, delete the temp folder.
         log.info("Deleting temp folder.");
         String tempFolderPath = outputFolderPath + File.separator + "temp";
         StringModifier.deleteFolder(tempFolderPath);
@@ -778,6 +825,173 @@ public class AirPollutionDataConverter {
             String mosaicTexMetaDataFileName = this.dataContainer.mosaicTexMetaDataFileNames.get(i);
             String mosaicTexMetaDataFilePath = outputFolderPath + File.separator + mosaicTexMetaDataFileName;
             StringModifier.deleteFile(mosaicTexMetaDataFilePath);
+        }
+
+    }
+
+    private void saveIndexJsonFileMC(String outputFolderPath) {
+        // save the index.json file.
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode objectNodeRoot = objectMapper.createObjectNode();
+        // centerGeographicCoords.
+        ObjectNode objectCenterGeographicCoordsNode = objectMapper.createObjectNode();
+        objectNodeRoot.set("centerGeographicCoord", objectCenterGeographicCoordsNode);
+        objectCenterGeographicCoordsNode.put("longitude", this.dataContainer.centerGeoCoordLongitudeDegree);
+        objectCenterGeographicCoordsNode.put("latitude", this.dataContainer.centerGeoCoordLatitudeDegree);
+        objectCenterGeographicCoordsNode.put("altitude", this.dataContainer.centerGeoCoordAltitude);
+
+        // date as YYYYMMDD + "T" + hhmmss.
+        String dateString = String.format("%04d%02d%02dT%02d%02d%02d", this.dataContainer.year, this.dataContainer.month, this.dataContainer.day,
+                this.dataContainer.hour, this.dataContainer.minute, this.dataContainer.second);
+
+        objectNodeRoot.put("startDate", dateString);
+
+        // height_km, width_km.
+        BoundingBox bbox = new BoundingBox();
+        this.dataContainer.getGeoCoordBoundingBox(bbox);
+        double lengthX = 13100; // hard coding.
+        double lengthY = 13100; // hard coding.
+        objectNodeRoot.put("width_km", lengthX / 1000.0);
+        objectNodeRoot.put("height_km", lengthY / 1000.0);
+
+        // timeInterval & timeUnit.
+        objectNodeRoot.put("timeInterval", this.dataContainer.timeInterval);
+        objectNodeRoot.put("timeIntervalUnits", this.dataContainer.timeIntervalUnits);
+
+        // minMaxValues.
+        objectNodeRoot.put("totalMinValue", this.totalMinValue);
+        objectNodeRoot.put("totalMaxValue", this.totalMaxValue);
+
+        // glbMetaData.
+        List<String> glbMetaDataFileNames = this.dataContainer.getGlbMetaDataFileNames();
+        ArrayNode glbMetaDataFileNamesArrayNode = objectMapper.createArrayNode();
+        int glbMetaDataFileNamesCount = glbMetaDataFileNames.size();
+        for (int i = 0; i < glbMetaDataFileNamesCount; i++) {
+            String glbMetaDataFileName = glbMetaDataFileNames.get(i);
+
+            // load the jsonFile.
+            String glbMetaDataFilePath = outputFolderPath + File.separator + glbMetaDataFileName;
+            ObjectNode glbMetaDataObjectNode = null;
+            try {
+                glbMetaDataObjectNode = (ObjectNode) objectMapper.readTree(new File(glbMetaDataFilePath));
+
+                // now, delete the glbMetaDataFile.***
+                StringModifier.deleteFile(glbMetaDataFilePath);
+            } catch (IOException e) {
+                log.error("", e);
+            }
+            glbMetaDataFileNamesArrayNode.add(glbMetaDataObjectNode);
+        }
+
+        objectNodeRoot.put("glbMetaDataFileNames", glbMetaDataFileNamesArrayNode);
+
+        String outputFilePath = outputFolderPath + File.separator + "indexMC.json";
+        try {
+            objectMapper.writeValue(new File(outputFilePath), objectNodeRoot);
+        } catch (IOException e) {
+            log.error("", e);
+        }
+    }
+
+    private void convertDataByDateMarchingCubes(String date, String inputFolderPath, String outputFolderPath, double[] isoValuesArray, int idx) throws FileNotFoundException {
+        // Check if exist "outputFolderPath". Create if no exist folder.
+        StringModifier.createFolderIfNoExists(Paths.get(outputFolderPath));
+
+        AirPollutionVolume airPollutionVolume = new AirPollutionVolume();
+        airPollutionVolume.date = date;
+        airPollutionVolume.setIdx(idx);
+        airPollutionVolume.getGeoCoordBBox().copyFrom(this.geoCoordBBox);
+
+        int layersCount = this.dataContainer.getDataLayersCount();
+        for (int layer = 0; layer < layersCount; layer++) {
+            DataLayer dataLayer = this.dataContainer.getDataLayer(layer);
+            double altitude = dataLayer.altitude;
+            String tempFilePath = dataLayer.tempFilesMap.get(Integer.parseInt(date));
+
+            if (tempFilePath == null) {
+                log.error("tempFilePath is null");
+            }
+
+            AirPollutionSliceData airPollutionSliceData = airPollutionVolume.getOrNewAirPollutionSliceData(altitude);
+            airPollutionSliceData.minAltitude = altitude;
+
+            if (layer < layersCount - 1) {
+                DataLayer dataLayerNext = this.dataContainer.getDataLayer(layer + 1);
+                airPollutionSliceData.maxAltitude = dataLayerNext.altitude;
+            } else {
+                airPollutionSliceData.maxAltitude = altitude + 1.0;
+            }
+
+            File file = new File(tempFilePath);
+            if (!file.exists()) {
+                // error.
+                throw new FileNotFoundException();
+            }
+
+            airPollutionSliceData.loadTempFile(tempFilePath);
+        }
+
+        int isoValuesCount = isoValuesArray.length;
+
+        GaiaScene gaiaSceneMaster = null;
+        boolean addLastTopSlice = false;
+        VoxelCPGrid3D voxelCPGrid3D = airPollutionVolume.makeVoxelCPGrid3D(addLastTopSlice); // new.***
+        // now, transform the geoCoords of the voxelCPGrid3D to the target projection.
+        BoundingBox geoCoordBBox = airPollutionVolume.getGeoCoordBBox();
+        Vector3d centerCartographic = geoCoordBBox.GetCenterPosition();
+        transformCoordsOfVoxelCpGrid3DFromGeoCoordsToLocalCoords(voxelCPGrid3D, centerCartographic);
+
+        gaiaSceneMaster = MarchingCube.makeGaiaSceneOnion(voxelCPGrid3D, isoValuesArray);
+
+        if(gaiaSceneMaster != null) {
+            GltfWriter gltfWriter = new GltfWriter();
+            String glbFileName = "airPollution_" + date + ".glb";
+
+            // set the glbFileName to airPollutionVolume.
+            airPollutionVolume.setGlbFileName(glbFileName);
+
+            // save the glb file.
+            String glbFilePath = outputFolderPath + glbFileName;
+            gltfWriter.writeGlb(gaiaSceneMaster, glbFilePath);
+
+            // save the glbMetaData.
+            String jsonFileName = "airPollution_" + date + ".json";
+            String jsonFilePath = outputFolderPath + File.separator + jsonFileName;
+            airPollutionVolume.saveAsJsonMC(jsonFilePath);
+            this.dataContainer.getGlbMetaDataFileNames().add(jsonFileName);
+        }
+    }
+
+    private void transformCoordsOfVoxelCpGrid3DFromGeoCoordsToLocalCoords(VoxelCPGrid3D voxelCPGrid3D, Vector3d centerCartographic) {
+        //*************************************************
+        // input voxelCPGrid3D is in geographic coords.
+        // output voxelCPGrid3D will be in local coords.
+        //*************************************************
+        Vector3d centerCartesian = GlobeUtils.geographicToCartesianWgs84(centerCartographic);
+        Matrix4d transformationMatrix = GlobeUtils.transformMatrixAtCartesianPointWgs84(centerCartesian);
+        Matrix4d inverseTransformationMatrix = new Matrix4d(transformationMatrix);
+        inverseTransformationMatrix.invert();
+
+        // transform the coords of the voxelCPGrid3D to the local coords.
+        int gridsCountX = voxelCPGrid3D.getGridsCountX();
+        int gridsCountY = voxelCPGrid3D.getGridsCountY();
+        int gridsCountZ = voxelCPGrid3D.getGridsCountZ();
+        for (int i = 0; i < gridsCountX; i++) {
+            for (int j = 0; j < gridsCountY; j++) {
+                for (int k = 0; k < gridsCountZ; k++) {
+                    VoxelCP voxel = voxelCPGrid3D.getVoxel(i, j, k);
+                    if (voxel != null) {
+                        Vector3d voxelPos = voxel.getPosition(); // this is the geographic coord.
+                        Vector3d cartesianWC = GlobeUtils.geographicToCartesianWgs84(voxelPos);
+                        Vector4d local = new Vector4d(cartesianWC.x, cartesianWC.y, cartesianWC.z, 1.0);
+                        // transform the coords to the local coords.
+                        inverseTransformationMatrix.transform(local, local);
+                        voxelPos.set(local.x, local.y, local.z);
+
+                        int hola = 0;
+                    }
+                }
+            }
         }
 
     }

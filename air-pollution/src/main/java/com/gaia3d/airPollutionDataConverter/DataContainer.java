@@ -1,6 +1,7 @@
 package com.gaia3d.airPollutionDataConverter;
 
 import com.gaia3d.geometry.BoundingBox;
+import com.gaia3d.basic.legend.LegendColors;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,6 +34,8 @@ public class DataContainer {
 
     public double totalMinValue = 0.0;
     public double totalMaxValue = 0.0;
+
+    public LegendColors legendColors = new LegendColors();
 
     public int year = 0;
     public int month = 1; // 1 ~ 12

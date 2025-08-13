@@ -29,6 +29,20 @@ public class Texture2D {
         data = new byte[width * height * 4];
     }
 
+    public void setSize(int width, int height) {
+        this.width = width;
+        this.height = height;
+        data = new byte[width * height * 4];
+    }
+
+    public void setPixel(int x, int y, byte r, byte g, byte b, byte a) {
+        int index = (y * width + x) * 4;
+        data[index] = r;
+        data[index + 1] = g;
+        data[index + 2] = b;
+        data[index + 3] = a;
+    }
+
     public int saveAsPNG_test(String filePathName) throws FileNotFoundException {
         // This function saves the texture as PNG file.
         ImageWriter pngWriter = ImageIO.getImageWritersByFormatName("png").next();

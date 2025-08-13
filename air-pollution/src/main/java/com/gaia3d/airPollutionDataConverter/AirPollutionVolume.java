@@ -79,6 +79,8 @@ public class AirPollutionVolume {
         this.totalMaxValueOfVolume = minMaxValues[1];
         double totalValuesRange = totalMaxValueOfVolume - totalMinValueOfVolume;
 
+        resultVoxelCPGrid3D.setMinMaxValues(minMaxValues);
+
         Set<Double> keys = volumeData.keySet();
         List<Double> keysList = new ArrayList<>(keys);
 
@@ -332,7 +334,6 @@ public class AirPollutionVolume {
         try {
             JsonNode jsonNode = new ObjectMapper().readTree(mosaicTextureMetadataObjectNode.toString());
             objectMapper.writeValue(new File(jsonFilePath), jsonNode);
-            //this.dataContainer.addMosaicTexMetaDataFileName(mosaicTextureMetadataFileName);
         } catch (IOException e) {
             log.error("", e);
         }
