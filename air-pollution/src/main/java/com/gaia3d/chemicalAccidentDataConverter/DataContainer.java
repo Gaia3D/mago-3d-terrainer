@@ -30,6 +30,7 @@ public class DataContainer
     public double totalMinValue = 0.0;
     public double totalMaxValue = 0.0;
     public LegendColors legendColors = new LegendColors();
+    public List<Double> marchingCubesIsoValues = new ArrayList<>();
 
     public ArrayList<DataLayer> dataLayers = new ArrayList<>();
 

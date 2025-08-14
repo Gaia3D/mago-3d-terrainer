@@ -9,6 +9,7 @@ import com.gaia3d.basic.geometry.voxel.VoxelCP;
 import com.gaia3d.basic.geometry.voxel.VoxelCPGrid3D;
 import com.gaia3d.basic.legend.LegendColors;
 import com.gaia3d.basic.marchingcube.MarchingCube;
+import com.gaia3d.basic.model.GaiaNode;
 import com.gaia3d.basic.model.GaiaScene;
 import com.gaia3d.geometry.BoundingBox;
 import com.gaia3d.image.Texture2D;
@@ -187,6 +188,8 @@ public class ChemicalContaminationDataConverter
 			"folderPath": "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\Air8"
 		}
 	],
+	"isoValues": [ 0.0, 1.2444444444444444E7, 4.9777777777777776E7, 8.71111111111111E7, 1.12E8
+	],
 	"legend" : [
 		{
 			"index" : 0,
@@ -252,6 +255,17 @@ public class ChemicalContaminationDataConverter
                 a = rgbaArrayNode.get(3).asDouble();
 
                 legendColors.setValueAndColor(value, r, g, b, a);
+            }
+        }
+
+        // check if it has "isoValues" node.***
+        JsonNode isoValuesNode = objectNodeRoot.get("isoValues");
+        if(isoValuesNode != null && isoValuesNode.isArray()) {
+            List<Double> isoValuesList = this.dataContainer.marchingCubesIsoValues;
+            ArrayNode isoValuesArrayNode = (ArrayNode) isoValuesNode;
+            int isoValuesCount = isoValuesArrayNode.size();
+            for(int i=0; i<isoValuesCount; i++) {
+                isoValuesList.add(isoValuesArrayNode.get(i).asDouble());
             }
         }
 
@@ -410,13 +424,24 @@ public class ChemicalContaminationDataConverter
         this.dataContainer.totalMaxValue = totalMaxValue;
 
         // Marching cubes.*******************************************************************
-        int isoValuesCount = 10;
-        double[] isoValuesArray = new double[isoValuesCount];
+        List<Double> isoValuesList = this.dataContainer.marchingCubesIsoValues;
+        double[] isoValuesArray;
+        if(isoValuesList.isEmpty()) {
+            int isoValuesCount = 10;
+            isoValuesArray = new double[isoValuesCount];
 
-        // make isoValuesArray.***
-        double isoValuesIncrement = (totalMaxValue - totalMinValue) / (double) (isoValuesCount - 1);
-        for(int i = 0; i < isoValuesCount; i++) {
-            isoValuesArray[i] = totalMinValue + (double) (i) * isoValuesIncrement;
+            // make isoValuesArray.***
+            double isoValuesIncrement = (totalMaxValue - totalMinValue) / (double) (isoValuesCount - 1);
+            for (int i = 0; i < isoValuesCount; i++) {
+                isoValuesArray[i] = totalMinValue + (double) (i) * isoValuesIncrement;
+            }
+        }
+        else {
+            int isoValuesCount = isoValuesList.size();
+            isoValuesArray = new double[isoValuesCount];
+            for(int i=0; i<isoValuesCount; i++) {
+                isoValuesArray[i] = isoValuesList.get(i);
+            }
         }
 
         /*
@@ -521,6 +546,16 @@ public class ChemicalContaminationDataConverter
         }
 
         if(gaiaSceneMaster != null) {
+            // The GLTF format is yUp-axis, so we need to rotate the gaiaSceneMaster 90 degrees around the X axis.***
+            // rotate the gaiaSceneMaster 90 degrees around the X axis.***
+            Matrix4d rotationMatrix = new Matrix4d().rotateX(Math.toRadians(-90));
+            GaiaNode rootNode = gaiaSceneMaster.getNodes().get(0);
+            for (GaiaNode node : rootNode.getChildren()) {
+                Matrix4d mat = node.getTransformMatrix();
+                mat.mul(rotationMatrix);
+                node.setTransformMatrix(mat);
+            }
+
             GltfWriter gltfWriter = new GltfWriter();
             String glbFileName = "chemicalAccident_" + idx + ".glb";
 
