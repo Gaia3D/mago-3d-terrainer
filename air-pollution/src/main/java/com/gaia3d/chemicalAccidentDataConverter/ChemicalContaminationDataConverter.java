@@ -630,14 +630,14 @@ public class ChemicalContaminationDataConverter
         }
 
         // calculate the minMaxValues from the treeMapVolumeData.***
-        double[] minMaxValues = new double[2];
+        double[] volumeMinMaxValues = new double[2];
         for(Double key : treeMapVolumeData.keySet()) {
             DataSlice dataSlice = treeMapVolumeData.get(key);
-            if (dataSlice.minValue < minMaxValues[0] || minMaxValues[0] == 0.0) {
-                minMaxValues[0] = dataSlice.minValue;
+            if (dataSlice.minValue < volumeMinMaxValues[0] || volumeMinMaxValues[0] == 0.0) {
+                volumeMinMaxValues[0] = dataSlice.minValue;
             }
-            if (dataSlice.maxValue > minMaxValues[1]) {
-                minMaxValues[1] = dataSlice.maxValue;
+            if (dataSlice.maxValue > volumeMinMaxValues[1]) {
+                volumeMinMaxValues[1] = dataSlice.maxValue;
             }
         }
 
@@ -656,7 +656,7 @@ public class ChemicalContaminationDataConverter
 //        minMaxValues[0] = this.dataContainer.totalMinValue;
 //        minMaxValues[1] = this.dataContainer.totalMaxValue;
 
-        resultVoxelCPGrid3D.setMinMaxValues(minMaxValues);
+        resultVoxelCPGrid3D.setMinMaxValues(volumeMinMaxValues);
 
         double width_km = this.dataContainer.width_km;
         double height_km = this.dataContainer.height_km;
