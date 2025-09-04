@@ -277,7 +277,7 @@ public class TileMatrix {
             List<TerrainMesh> separatedMeshes = new ArrayList<>();
             TerrainMeshUtils.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
 
-            // save order :
+            // save order:
             // 1- saveSeparatedTiles()
             // 2- saveQuantizedMeshes()
             // 3- saveSeparatedChildrenTiles()
@@ -329,6 +329,44 @@ public class TileMatrix {
     }
 
     public boolean saveSeparatedTiles(List<TerrainMesh> separatedMeshes) {
+        // only save the margin tiles checking by tileRange
+        int minTileX = tilesRange.getMinTileX();
+        int maxTileX = tilesRange.getMaxTileX();
+        int minTileY = tilesRange.getMinTileY();
+        int maxTileY = tilesRange.getMaxTileY();
+        int meshesCount = separatedMeshes.size();
+        int counter = 0;
+        for (int i = 0; i < meshesCount; i++) {
+            TerrainMesh mesh = separatedMeshes.get(i);
+
+            TerrainTriangle triangle = mesh.triangles.get(0);
+            TileIndices tileIndices = triangle.getOwnerTileIndices();
+            if (tileIndices.getX() < minTileX || tileIndices.getX() > maxTileX || tileIndices.getY() < minTileY || tileIndices.getY() > maxTileY) {
+                // do not save this tile
+                continue;
+            }
+            String tileTempDirectory = globalOptions.getTileTempPath();
+            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
+            String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
+
+            if (counter >= 100) {
+                counter = 0;
+                log.debug("Saving separated tiles... L : " + tileIndices.getL() + " i : " + i + " / " + meshesCount);
+            }
+
+            try {
+                mesh.saveFile(tileFullPath);
+            } catch (IOException e) {
+                log.error("Error:", e);
+                return false;
+            }
+            counter++;
+        }
+
+        return true;
+    }
+
+    public boolean saveSeparatedTiles_original(List<TerrainMesh> separatedMeshes) {
         int meshesCount = separatedMeshes.size();
         int counter = 0;
         for (int i = 0; i < meshesCount; i++) {

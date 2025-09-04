@@ -33,7 +33,7 @@ public class TileWgs84 {
     //  |  Tile    |          |          |
     //  +----------+----------+----------+
     //  |          |          |          |
-    //  | leftTile |curr_Tile| rightTile |
+    //  | leftTile |curr_Tile |rightTile |
     //  |          |          |          |
     //  +----------+----------+----------+
     //  |          |          |          |

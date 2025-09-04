@@ -241,7 +241,7 @@ class MesherMainTest {
         String maxTileDepth = String.valueOf(18);
         String refinementStrength = String.valueOf(4);
         String originalGeoTiffFolderPath = "D:/data/DEM/busan_20250310";
-        String outputDirectory = "D:/data/mago-server/output/result_busan_20250319_L18";
+        String outputDirectory = "D:/data/mago-server/output/result_smallBusan_20250319_L18";
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
@@ -309,11 +309,29 @@ class MesherMainTest {
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
+    @Test
+    void multi_resolution_big() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note: the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        // Conversion time:
+        // maxTileDepth = 14 takes 1 hour and 56 minutes.
+
+        // 2 levels of geoTiff files. The 1rst is 1 m of definition, and the 2nd is 5 m of definition.
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(14);
+        String refinementStrength = String.valueOf(4);
+        String originalGeoTiffFolderPath = "D:/data/DEM/multi-resolution-big";
+        String outputDirectory = "D:/data/mago-server/output/multi-resolution-big_L14";
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
 
     private void convert(String inputPath, String outputPath, String minTileDepth, String maxTileDepth, String refinementStrength) throws FactoryException, TransformException, IOException {
         String logPath = outputPath + "/log.txt";
 
-        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn"};
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-debug"};
         //String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0"};
         MagoTerrainerMain.main(args);
     }

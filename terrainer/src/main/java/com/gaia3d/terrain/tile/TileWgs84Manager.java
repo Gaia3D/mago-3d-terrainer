@@ -362,7 +362,6 @@ public class TileWgs84Manager {
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             long startTime = System.currentTimeMillis();
-            //Date startDate = new Date(startTime);
 
             TileRange tilesRange = new TileRange();
 
@@ -376,7 +375,7 @@ public class TileWgs84Manager {
                 TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
             }
 
-            // Set terrainLayer.available of tileSet json
+            // Set terrainLayer.available of tileSet JSON
             terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
             this.terrainElevationDataManager.deleteObjects();
@@ -404,7 +403,19 @@ public class TileWgs84Manager {
                 boolean isFirstGeneration = (depth == minTileDepth);
                 tileMatrix.makeMatrixMesh(isFirstGeneration);
                 tileMatrix.deleteObjects();
+
+                if(!GlobalOptions.getInstance().isLeaveTemp()) {
+                    // now, delete tempFiles of subDividedTilesRange.***
+                    TileRange tilesToDeleteRange = subDividedTilesRange.clone();
+                    tilesToDeleteRange.translate(-1, -1);
+                    deleteTempFilesByTileRange(tilesToDeleteRange);
+                }
             }
+
+            if(!GlobalOptions.getInstance().isLeaveTemp()) {
+                this.deleteTempFilesByDepth(depth);
+            }
+
 
             this.terrainElevationDataManager.deleteGeoTiffManager();
             this.terrainElevationDataManager.deleteTileRaster();
@@ -426,6 +437,65 @@ public class TileWgs84Manager {
             log.info("----------------------------------------");
         }
         terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
+    }
+
+    private void deleteTempFilesByDepth(int depth) {
+        String tempPath = globalOptions.getTileTempPath();
+        String depthStr = "L" + depth;
+        String depthTempPath = tempPath + File.separator + depthStr;
+        File depthTempFolder = new File(depthTempPath);
+        if (!depthTempFolder.exists()) {
+            return;
+        }
+
+        // delete all files and folders inside the depthTempFolder and then delete the depthTempFolder itself
+        FileUtils.deleteDirectory(depthTempFolder);
+    }
+
+    private void deleteTempFilesByTileRange(TileRange tileRange) {
+        int depth = tileRange.getTileDepth();
+        String tempPath = globalOptions.getTileTempPath();
+        String depthStr = "L" + depth;
+        String depthTempPath = tempPath + File.separator + depthStr;
+        File depthTempFolder = new File(depthTempPath);
+        if (!depthTempFolder.exists()) {
+            return;
+        }
+        int minTileX = tileRange.getMinTileX();
+        int maxTileX = tileRange.getMaxTileX();
+        int minTileY = tileRange.getMinTileY();
+        int maxTileY = tileRange.getMaxTileY();
+        for (int x = minTileX; x <= maxTileX; x++) {
+            String xFolderName = "X" + x;
+            String xFolderPath = depthTempPath + File.separator + xFolderName;
+            File xFolder = new File(xFolderPath);
+            if (!xFolder.exists()) {
+                continue;
+            }
+
+            for (int y = minTileY; y <= maxTileY; y++) {
+                String tempFileName = "L" + depth + "_" + xFolderName + "_Y" + y + ".til";
+                String tempFilePath = xFolderPath + File.separator + tempFileName;
+                File tempFile = new File(tempFilePath);
+                if (tempFile.exists()) {
+                    if (tempFile.delete()) {
+                        log.debug("Deleted temp file: {}", tempFilePath);
+                    } else {
+                        log.warn("Failed to delete temp file: {}", tempFilePath);
+                    }
+                }
+            }
+
+            // if the X folder is empty, delete it.***
+            String[] remainingFiles = xFolder.list();
+            if (remainingFiles != null && remainingFiles.length == 0) {
+                if (xFolder.delete()) {
+                    log.debug("Deleted empty X folder: {}", xFolderPath);
+                } else {
+                    log.warn("Failed to delete X folder: {}", xFolderPath);
+                }
+            }
+        }
     }
 
     public void makeTileMeshesContinue() throws IOException, TransformException, FactoryException {

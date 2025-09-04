@@ -14,7 +14,10 @@ import org.geotools.geometry.DirectPosition2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 
+import javax.media.jai.RasterFactory;
 import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
+import java.awt.image.WritableRaster;
 
 @Slf4j
 @Getter
@@ -98,7 +101,14 @@ public class TerrainElevationData {
 
             // determine the grid coordinates of the point
             if (this.raster == null) {
-                this.raster = this.coverage.getRenderedImage().getData(); // original.***
+                //try {
+                    //this.raster = this.coverage.getRenderedImage().getData(); // original.***
+                    RenderedImage ri = coverage.getRenderedImage();
+                    this.raster = ri.getData();
+//                } catch (Exception e) {
+//                    log.error("[RenderedImage: Exception] Error in this.coverage.getRenderedImage().getData()", e);
+//                }
+
                 this.coverage.dispose(true);
                 this.coverage = null;
             }
@@ -107,7 +117,7 @@ public class TerrainElevationData {
         if (raster != null) {
             try {
                 value = raster.getSampleDouble(x, y, 0);
-                // check if value is NaN
+                // check if the value is NaN
                 if (Double.isNaN(value)) {
                     return globalOptions.getNoDataValue();
                 }
