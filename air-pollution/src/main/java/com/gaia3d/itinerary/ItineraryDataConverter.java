@@ -1,13 +1,11 @@
 package com.gaia3d.itinerary;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 
-public class ItineraryDataConverter
-{
-    public ItineraryDataConverter()
-    {
-
-    }
+@Slf4j
+public class ItineraryDataConverter {
 
     public void ConvertData_V2(String inputFolderPath, String outputFolderPath, String itineraryFileName) {
         // 1. Read itinerary file v2.
@@ -17,32 +15,23 @@ public class ItineraryDataConverter
         ItineraryManagerV2 itineraryManagerV2 = new ItineraryManagerV2();
         try {
             itineraryManagerV2.loadItineraryFile(itineraryFilePath);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("Error : ", e);
         }
 
         // 2. Convert data.
-        try
-        {
+        try {
             itineraryManagerV2.convertItineraryData();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("Error : ", e);
         }
 
         // 3. Write converted data.
-        try
-        {
+        try {
             itineraryManagerV2.writeItineraryFile(outputFolderPath);
+        } catch (Exception e) {
+            log.error("Error : ", e);
         }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
 
         int hola = 0;
     }
@@ -58,49 +47,38 @@ public class ItineraryDataConverter
         try {
             locationIndicesManager.loadLocationIndicesFile(locationIndicesFilePath);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error : ", e);
         }
 
         // location indices are in 5186. Convert to 4326.
-        try{
+        try {
             locationIndicesManager.convertLocationIndicesTo4326();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("Error : ", e);
         }
 
         String itineraryFilePath = inputFolderPath + "\\" + itineraryFileName;
         ItineraryManager itineraryManager = new ItineraryManager();
         try {
             itineraryManager.loadItineraryFile(itineraryFilePath);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("Error : ", e);
         }
 
         // 3. Convert data.
-        try
-        {
+        try {
             itineraryManager.convertItineraryData(locationIndicesManager);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("Error : ", e);
         }
 
         // 4. Write converted data.
         //String outputItineraryFilePath = outputFolderPath + "\\" + itineraryFileName;
-        try
-        {
+        try {
             itineraryManager.writeItineraryFile(outputFolderPath);
+        } catch (Exception e) {
+            log.error("Error : ", e);
         }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
 
         int hola = 0;
     }

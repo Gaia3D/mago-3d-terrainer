@@ -5,15 +5,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.appender.FileAppender;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import java.nio.charset.StandardCharsets;
 
-public class Configurator {
+public class Configuration {
     public static final Level LEVEL = Level.ALL;
-    private static final String DEFAULT_PATTERN = "[%d{HH:mm:ss}][%-5level] %message%n";
+    private static final String DEFAULT_PATTERN = "%message%n";
+    private static final String DEFAULT_DEBUG_PATTERN = "[%d{HH:mm:ss}][%-5level] %message%n";
 
     public static void initConsoleLogger() {
         initConsoleLogger(null);
@@ -21,9 +21,9 @@ public class Configurator {
 
     public static void initConsoleLogger(String pattern) {
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
+        org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
-        
+
         removeAllAppender(loggerConfig);
         if (pattern == null) {
             pattern = DEFAULT_PATTERN;
@@ -40,7 +40,7 @@ public class Configurator {
 
     public static void initFileLogger(String pattern, String path) {
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
+        org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
 
         if (pattern == null) {
@@ -55,22 +55,46 @@ public class Configurator {
         fileAppender.start();
     }
 
+    public static void setLevel(Level level) {
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(level);
+        ctx.updateLoggers();
+    }
+
     private static FileAppender createRollingFileAppender(PatternLayout layout, String path) {
         if (path == null) {
             path = "logs/gaia3d-tiler.log";
         }
-        return FileAppender.newBuilder().setName("FileLogger").withFileName(path).withAppend(true).withImmediateFlush(true).withBufferedIo(true).withBufferSize(8192).setLayout(layout).build();
+        return FileAppender.newBuilder()
+                .setName("FileLogger")
+                .withFileName(path)
+                .withAppend(true)
+                .withImmediateFlush(true)
+                .withBufferedIo(true)
+                .withBufferSize(8192)
+                .setLayout(layout)
+                .build();
     }
 
     private static PatternLayout createPatternLayout(String pattern) {
-        return PatternLayout.newBuilder().withPattern(pattern).withCharset(StandardCharsets.UTF_8).build();
+        return PatternLayout.newBuilder()
+                .withPattern(pattern)
+                .withCharset(StandardCharsets.UTF_8)
+                .build();
     }
 
     private static ConsoleAppender createConsoleAppender(PatternLayout layout) {
-        return ConsoleAppender.newBuilder().setName("Console").setTarget(ConsoleAppender.Target.SYSTEM_OUT).setLayout(layout).build();
+        return ConsoleAppender.newBuilder()
+                .setName("Console")
+                .setTarget(ConsoleAppender.Target.SYSTEM_OUT)
+                .setLayout(layout)
+                .build();
     }
 
     private static void removeAllAppender(LoggerConfig loggerConfig) {
-        loggerConfig.getAppenders().forEach((key, value) -> loggerConfig.removeAppender(key));
+        loggerConfig.getAppenders()
+                .forEach((key, value) -> loggerConfig.removeAppender(key));
     }
 }

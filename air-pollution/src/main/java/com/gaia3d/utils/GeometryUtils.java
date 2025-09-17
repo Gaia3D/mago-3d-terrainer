@@ -7,7 +7,6 @@ import com.gaia3d.geometry.Vertex;
 import org.joml.Vector2d;
 
 import java.util.List;
-import java.util.Vector;
 
 public class GeometryUtils {
     public static Boolean AproxEqual(double valor, double valor_a_comparar, double error) {
@@ -19,43 +18,13 @@ public class GeometryUtils {
     }
 
     public static void encodeFloat(float value, byte[] result) {
-        /*
-        var bit_shift = [16777216.0, 65536.0, 256.0, 1.0];
-        var bit_mask = [0.0, 0.00390625, 0.00390625, 0.00390625];
-
-        // calculate value_A = depth * bit_shift * vec4(255).
-        var value_A = [depth * bit_shift[0] * 255.0, depth * bit_shift[1] * 255.0, depth * bit_shift[2] * 255.0, depth * bit_shift[3] * 255.0];
-        var value_B = [256.0, 256.0, 256.0, 256.0];
-
-        var resAux = [( ManagerUtils.mod(value_A[0], value_B[0]) )/255.0,
-            ( ManagerUtils.mod(value_A[1], value_B[1]) )/255.0,
-            ( ManagerUtils.mod(value_A[2], value_B[2]) )/255.0,
-            ( ManagerUtils.mod(value_A[3], value_B[3]) )/255.0];
-
-        var resBitMasked = [resAux[0] * bit_mask[0],
-            resAux[0] * bit_mask[1],
-            resAux[1] * bit_mask[2],
-            resAux[2] * bit_mask[3]];
-
-        var res = [resAux[0] - resBitMasked[0],
-            resAux[1] - resBitMasked[1],
-            resAux[2] - resBitMasked[2],
-            resAux[3] - resBitMasked[3]];
-
-        // reverse the result.
-        var reversedResult = [res[3], res[2], res[1], res[0]];
-
-         */
-
         float[] bit_shift = {16777216.0f, 65536.0f, 256.0f, 1.0f};
         float[] bit_mask = {0.0f, 0.00390625f, 0.00390625f, 0.00390625f};
 
-        // calculate value_A = depth * bit_shift * vec4(255).
         float[] value_A = {value * bit_shift[0] * 255.0f, value * bit_shift[1] * 255.0f, value * bit_shift[2] * 255.0f, value * bit_shift[3] * 255.0f};
         float[] value_B = {256.0f, 256.0f, 256.0f, 256.0f};
 
         float[] resAux = {(mod(value_A[0], value_B[0])) / 255.0f, (mod(value_A[1], value_B[1])) / 255.0f, (mod(value_A[2], value_B[2])) / 255.0f, (mod(value_A[3], value_B[3])) / 255.0f};
-        //float[] resAux = {((value_A[0] % value_B[0])) / 255.0f, ((value_A[1]% value_B[1])) / 255.0f, ((value_A[2]% value_B[2])) / 255.0f, ((value_A[3]% value_B[3])) / 255.0f};
 
         float[] resBitMasked = {resAux[0] * bit_mask[0], resAux[0] * bit_mask[1], resAux[1] * bit_mask[2], resAux[2] * bit_mask[3]};
 
@@ -76,18 +45,13 @@ public class GeometryUtils {
         float[] bit_shift = {16777216.0f, 65536.0f, 256.0f, 1.0f};
         float[] bit_mask = {0.0f, 0.00390625f, 0.00390625f, 0.00390625f};
 
-        // calculate value_A = depth * bit_shift * vec4(255).
         float[] value_A = {value * bit_shift[0] * 255.0f, value * bit_shift[1] * 255.0f, value * bit_shift[2] * 255.0f, value * bit_shift[3] * 255.0f};
         float[] value_B = {256.0f, 256.0f, 256.0f, 256.0f};
 
         float[] resAux = {(mod(value_A[0], value_B[0])) / 255.0f, (mod(value_A[1], value_B[1])) / 255.0f, (mod(value_A[2], value_B[2])) / 255.0f, (mod(value_A[3], value_B[3])) / 255.0f};
-        //float[] resAux = {((value_A[0] % value_B[0])) / 255.0f, ((value_A[1]% value_B[1])) / 255.0f, ((value_A[2]% value_B[2])) / 255.0f, ((value_A[3]% value_B[3])) / 255.0f};
-
         float[] resBitMasked = {resAux[0] * bit_mask[0], resAux[0] * bit_mask[1], resAux[1] * bit_mask[2], resAux[2] * bit_mask[3]};
-
         float[] res = {resAux[0] - resBitMasked[0], resAux[1] - resBitMasked[1], resAux[2] - resBitMasked[2], resAux[3] - resBitMasked[3]};
 
-        // reverse the result.
         float[] reversedResult = {res[3], res[2], res[1], res[0]};
 
         result[0] = (int) (reversedResult[0] * 255.0f);
@@ -160,7 +124,8 @@ public class GeometryUtils {
 
         int valuesCount = vec_doubles.size();
         for (int i = 0; i < valuesCount; i++) {
-            double val = vec_doubles.get(i).doubleValue();
+            double val = vec_doubles.get(i)
+                    .doubleValue();
             if (i == 0) {
                 minMax.set(val, val);
             } else {

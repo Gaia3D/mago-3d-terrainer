@@ -193,10 +193,10 @@ class MainTest {
         Main.main(testArgs);
     }
 
-    // Chemical Contamination test.*************************************************************************************
+    // Chemical Contamination test**********************************************************************************
     @Test
     void main20240805() throws org.apache.commons.cli.ParseException, IOException {
-        // Chemical Contamination test.************************************
+        // Chemical Contamination test*********************************
         String inputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval";
         String inputDataStructurePath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\dataStructure.json";
         String outputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\output";
@@ -214,7 +214,7 @@ class MainTest {
 
     @Test
     void chemAccident2D_20240806() throws org.apache.commons.cli.ParseException, IOException {
-        // Chemical Contamination test.************************************
+        // Chemical Contamination test*********************************
         String inputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\Air1";
         String outputFolderPath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\output2D";
         String inputDataStructurePath = "D:\\data\\simulation-data\\CHEMICAL_CONTAMINATION\\(20240806) 화학사고 Concentration\\1minute_interval\\dataStructure.json";

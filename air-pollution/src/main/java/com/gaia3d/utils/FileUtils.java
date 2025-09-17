@@ -1,6 +1,6 @@
 package com.gaia3d.utils;
 
-import com.gaia3d.chemicalAccidentDataConverter.DataSlice;
+import com.gaia3d.converter.chemicalAccidentDataConverter.DataSlice;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 
@@ -41,7 +41,6 @@ public class FileUtils {
     public static void createAllFoldersIfNoExist(String filePath) {
         File file = new File(filePath);
         if (file.exists() && file.isDirectory()) {
-            return;
         } else {
             if (!file.mkdirs()) {
                 throw new RuntimeException("Failed to create folder: " + filePath);
@@ -55,7 +54,7 @@ public class FileUtils {
 
         if (listOfFiles == null) {
             //log.warn("No files in the folder: " + folderPath);
-            System.out.println("No files in the folder: " + folderPath);
+            log.info("No files in the folder: " + folderPath);
             return;
         }
         for (File file : listOfFiles) {
@@ -69,8 +68,8 @@ public class FileUtils {
     }
 
     public static void loadDataSlice(String dataSliceFilePath, DataSlice resultDataSlice) throws IOException {
-        // read the dataSlice file.***
-        // the dataSlice file is TXT format.***
+        // read the dataSlice file
+        // the dataSlice file is TXT format
         File file = new File(dataSliceFilePath);    //creates a new file instance
         FileReader fr = new FileReader(file);   //reads the file
         BufferedReader br = new BufferedReader(fr);  //creates a buffering character input stream
@@ -86,7 +85,7 @@ public class FileUtils {
 
         Vector<String> resultSplittedStrings = new Vector<>();
 
-        // read lines.***
+        // read lines
         while (!finished) {
             line = br.readLine();
             if (line == null) {
@@ -109,7 +108,7 @@ public class FileUtils {
                 }
             }
 
-            // now, transform strings to double values.***
+            // now, transform strings to double values
             for (int col = 0; col < columnsCount; col++) {
                 String stringValue = resultSplittedStrings.get(col);
                 Double doubleValue = Double.parseDouble(stringValue);
@@ -131,7 +130,7 @@ public class FileUtils {
             return;
         }
 
-        // now, find min max values needed for quantizing.***
+        // now, find min max values needed for quantizing
         Vector2d minMaxValues = GeometryUtils.GetMinMaxValuesVectorDoubles(vecValues);
 
         String dataSliceFileName = StringModifier.getLastNameFromPath(dataSliceFilePath);

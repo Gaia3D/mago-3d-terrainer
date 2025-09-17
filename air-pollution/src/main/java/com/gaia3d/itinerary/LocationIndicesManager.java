@@ -1,6 +1,13 @@
 package com.gaia3d.itinerary;
 
 import com.gaia3d.utils.StringModifier;
+import lombok.NoArgsConstructor;
+import org.locationtech.proj4j.BasicCoordinateTransform;
+import org.locationtech.proj4j.CRSFactory;
+import org.locationtech.proj4j.CoordinateReferenceSystem;
+import org.locationtech.proj4j.ProjCoordinate;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.operation.TransformException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,20 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
-//import org.geotools.geometry.jts.JTS;
-import org.geotools.data.util.CRSConverterFactory;
-import org.geotools.referencing.CRS;
-//import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.proj4j.BasicCoordinateTransform;
-import org.locationtech.proj4j.CRSFactory;
-import org.locationtech.proj4j.CoordinateReferenceSystem;
-import org.locationtech.proj4j.ProjCoordinate;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
-
-public class LocationIndicesManager
-{
+@NoArgsConstructor
+public class LocationIndicesManager {
     // location indices sample (data is *.csv file type) :
     // INDEX_ID,CentroidX,CentroidY
     // FP162,900323.2743,1899369.915
@@ -35,11 +30,6 @@ public class LocationIndicesManager
     // FQ165,903323.2743,1898369.915
     // ...
     public HashMap<String, LocationIndex> locationIndices = new HashMap<>();
-
-    public LocationIndicesManager()
-    {
-
-    }
 
     public boolean loadLocationIndicesFile(String locationIndicesFilePath) throws IOException {
         Charset charset = StandardCharsets.UTF_8;
@@ -55,8 +45,8 @@ public class LocationIndicesManager
         int columnsCount = 0;
         int rowsCount = 0;
 
-        // read lines.***
-        // CSV file sample.***********************************************************************************
+        // read lines
+        // CSV file sample********************************************************************************
         // INDEX_ID,CentroidX,CentroidY
         // FP162,900323.2743,1899369.915
         // FQ162,900323.2743,1898369.915
@@ -79,11 +69,11 @@ public class LocationIndicesManager
             StringModifier.splitString(line, delimiter, vecStrings, skipEmptyStrings);
 
             if (counter == 1) {
-                // this is the 1rst line.***
+                // this is the 1rst line
                 vecTitles.addAll(vecStrings);
             } else {
                 valuesLinesCount += 1;
-                int stringsCount = vecStrings.size();  // always is 3.***
+                int stringsCount = vecStrings.size();  // always is 3
                 String indexId = vecStrings.get(0);
                 double centroidX = Double.parseDouble(vecStrings.get(1));
                 double centroidY = Double.parseDouble(vecStrings.get(2));
@@ -110,7 +100,7 @@ public class LocationIndicesManager
     }
 
     public void convertLocationIndicesTo4326() throws FactoryException, TransformException {
-        // convert location indices to 4326.***
+        // convert location indices to 4326
         // https://www.osgeo.kr/17
         CRSFactory factory = new CRSFactory();
         CoordinateReferenceSystem inputCrs = null;
@@ -120,15 +110,14 @@ public class LocationIndicesManager
         }
 
         //CoordinateReferenceSystem crs4326 = null;
-        //CoordinateReferenceSystem inputCrs = CRS.decode("+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=bessel +units=m +no_defs +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43"); // korea 2000.***
-        //CoordinateReferenceSystem inputCrs = CRS.decode("EPSG:5179"); // UTMK.***
+        //CoordinateReferenceSystem inputCrs = CRS.decode("+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=bessel +units=m +no_defs +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43"); // korea 2000
+        //CoordinateReferenceSystem inputCrs = CRS.decode("EPSG:5179"); // UTMK
         //CoordinateReferenceSystem crs4326 = CRS.decode("EPSG:4326");
         //MathTransform transform = CRS.findMathTransform(inputCrs, crs4326);
 
         double[] srcPts = new double[2];
         //double[] dstPts = new double[2];
-        for (LocationIndex locationIndex : locationIndices.values())
-        {
+        for (LocationIndex locationIndex : locationIndices.values()) {
             srcPts[0] = locationIndex.centroidX;
             srcPts[1] = locationIndex.centroidY;
 

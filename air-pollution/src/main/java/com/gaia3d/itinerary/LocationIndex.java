@@ -1,7 +1,6 @@
 package com.gaia3d.itinerary;
 
-public class LocationIndex
-{
+public class LocationIndex {
     // location indices sample (data is *.csv file type) :
     // INDEX_ID,CentroidX,CentroidY
     // FP162,900323.2743,1899369.915

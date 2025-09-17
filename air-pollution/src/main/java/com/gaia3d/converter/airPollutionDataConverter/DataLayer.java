@@ -1,0 +1,48 @@
+package com.gaia3d.converter.airPollutionDataConverter;
+
+import com.gaia3d.geometry.BoundingBox;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.TreeMap;
+
+@Slf4j
+@Getter
+@Setter
+@NoArgsConstructor
+public class DataLayer {
+    public int layerIndex = -1;
+    public String filePath;
+    public double altitude = 0.0;
+
+    public int columnsCount = 0; // textureWidth.
+    public int rowsCount = 0; // textureHeight.
+
+    public BoundingBox geoCoordBBox = new BoundingBox(); // minLongitude, minLatitude, minAltitude, maxLongitude, maxLatitude, maxAltitude
+
+    public ArrayList<String> timeSlicesFileNames = new ArrayList<>();
+    public TreeMap<Integer, String> tempFilesMap;
+
+    public double minPollutionValue = 0.0;
+    public double maxPollutionValue = 0.0;
+
+    public void addTimeSliceFileName(String timeSliceFileName) {
+        timeSlicesFileNames.add(timeSliceFileName);
+    }
+
+    public String getTimeSliceFileName(int index) {
+        return timeSlicesFileNames.get(index);
+    }
+
+    public int getTimeSlicesCount() {
+        return timeSlicesFileNames.size();
+    }
+
+    public void getMinMaxValues(double[] minMaxValues) {
+        minMaxValues[0] = this.minPollutionValue;
+        minMaxValues[1] = this.maxPollutionValue;
+    }
+}

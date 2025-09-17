@@ -75,7 +75,9 @@ public class StringModifier {
 
     public static Optional<String> getExtensionByStringHandling(String filename) {
         // https://www.baeldung.com/java-file-extension
-        return Optional.ofNullable(filename).filter(f -> f.contains(".")).map(f -> f.substring(filename.lastIndexOf(".") + 1));
+        return Optional.ofNullable(filename)
+                .filter(f -> f.contains("."))
+                .map(f -> f.substring(filename.lastIndexOf(".") + 1));
     }
 
     public static boolean existFolder(Path folderPath) {

@@ -4,13 +4,11 @@ import com.gaia3d.utils.GeometryUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class Triangle {
     public Vertex vertex_0;
     public Vertex vertex_1;
     public Vertex vertex_2;
-
 
     public void setVertices(Vertex vertex0, Vertex vertex1, Vertex vertex2) {
         this.vertex_0 = vertex0;
@@ -178,7 +176,6 @@ public class Triangle {
         //        | Bx-Dx By-Dy (Bx - Dx)^2 + (By - Dy)^2 |
         //        | Cx-Dx Cy-Dy (Cx - Dx)^2 + (Cy - Dy)^2 |
         // det = (Ax-Dx)(By-Dy)(Cx-Dx)(Ay-Dy)(Bx-Dx)(Cy-Dy) - (Ax-Dx)(Cy-Dy)(Cx-Dx)(Ay-Dy)(Bx-Dx)(By-Dy)
-
 
         double a11 = A.x - D.x;
         double a12 = A.y - D.y;

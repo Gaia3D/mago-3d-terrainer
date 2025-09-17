@@ -10,7 +10,7 @@ import java.text.ParseException;
 
 @Slf4j
 class MainTest2 {
-    private String mainPath = "G:\\datas\\db37b5ec-0778-4a17-82c3-448cf4e25664\\BDI001\\";
+    private final String mainPath = "G:\\datas\\db37b5ec-0778-4a17-82c3-448cf4e25664\\BDI001\\";
 
     @Test
     void main_B_NO2_20240919_24() throws ParseException, IOException, org.apache.commons.cli.ParseException {

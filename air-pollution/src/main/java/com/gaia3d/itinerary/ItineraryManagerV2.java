@@ -3,6 +3,8 @@ package com.gaia3d.itinerary;
 import com.gaia3d.geometry.BoundingRectangle;
 import com.gaia3d.globe.Globe;
 import com.gaia3d.utils.StringModifier;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
@@ -18,10 +20,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Vector;
 
-public class ItineraryManagerV2
-{
+@Slf4j
+@NoArgsConstructor
+public class ItineraryManagerV2 {
     // itinerary file is *.csv file type.
     // itinerary file sample:
     //    개인아이디,시간,UTMK_X,UTMK_Y,INDEX_ID,GENDER,AGE,
@@ -39,11 +45,6 @@ public class ItineraryManagerV2
     // ...
 
     HashMap<String, Itinerary> map_personName_itinerary = new HashMap<>();
-    // each person has itineraryNodes array.***
-    public ItineraryManagerV2()
-    {
-
-    }
 
     private ProjCoordinate transformToWGS84(CoordinateReferenceSystem source, ProjCoordinate coordinate) {
         CRSFactory factory = new CRSFactory();
@@ -76,12 +77,11 @@ public class ItineraryManagerV2
         //    USER001,202402061120,923285.825718,1877331.084042,다바232772,M,30-39,
         //    USER001,202402061130,923285.825718,1877331.084042,다바232772,M,30-39,
 
-        // read lines.***
-        List<String> vecTitles = new ArrayList<>(); // for the 1rst line.***
-        Vector<String> vecStrings = new Vector<>(); // for the rest of lines.***
+        // read lines
+        List<String> vecTitles = new ArrayList<>(); // for the 1rst line
+        Vector<String> vecStrings = new Vector<>(); // for the rest of lines
 
         boolean skipEmptyStrings = false;
-
 
         CRSFactory factory = new CRSFactory();
         CoordinateReferenceSystem inputCrs = null;
@@ -91,7 +91,6 @@ public class ItineraryManagerV2
         }
 
         double[] srcPts = new double[2];
-
 
         while (!finished) {
             line = br.readLine();
@@ -105,17 +104,17 @@ public class ItineraryManagerV2
             StringModifier.splitString(line, delimiter, vecStrings, skipEmptyStrings);
 
             if (counter == 1) {
-                // this is the 1rst line.***
+                // this is the 1rst line
                 columnsCount = vecStrings.size();
                 vecTitles.addAll(vecStrings);
             } else {
-                // this is a data line.***
+                // this is a data line
                 rowsCount += 1;
 
                 int stringsCount = vecStrings.size();
                 if (stringsCount != columnsCount) {
-                    // error.***
-                    System.out.println("Error. Line= " + counter);
+                    // error
+                    log.info("Error. Line= " + counter);
                     break;
                 }
 
@@ -134,18 +133,16 @@ public class ItineraryManagerV2
                 srcPts[1] = centroidY;
 
                 ProjCoordinate projCoordinate = new ProjCoordinate(srcPts[0], srcPts[1], 0.0);
-                ProjCoordinate result = transformToWGS84(inputCrs, projCoordinate); // result[0] = longitude, result[1] = latitude.***
+                ProjCoordinate result = transformToWGS84(inputCrs, projCoordinate); // result[0] = longitude, result[1] = latitude
 
                 String indexId = vecStrings.get(4);
 
-
-                // check if the personName is already in the map.***
+                // check if the personName is already in the map
                 Itinerary itinerary = map_personName_itinerary.get(personName);
                 if (itinerary == null) {
                     itinerary = new Itinerary();
                     map_personName_itinerary.put(personName, itinerary);
                 }
-
 
                 ItineraryNode itineraryNode = new ItineraryNode();
                 itineraryNode.year = year;
@@ -168,27 +165,21 @@ public class ItineraryManagerV2
 
     }
 
-    public void convertItineraryData()
-    {
-        // find the center geographic coordinates for each person & calculate itineraryNodes in local coords.***
+    public void convertItineraryData() {
+        // find the center geographic coordinates for each person & calculate itineraryNodes in local coords
         int personsCount = map_personName_itinerary.size();
         int personIndex = 0;
-        for(String personName : map_personName_itinerary.keySet())
-        {
+        for (String personName : map_personName_itinerary.keySet()) {
             personIndex += 1;
-            System.out.println("converting " + personIndex + "/" + personsCount + " : " + personName);
+            log.info("converting " + personIndex + "/" + personsCount + " : " + personName);
             Itinerary itinerary = map_personName_itinerary.get(personName);
             BoundingRectangle geoCoordsBoundingRectangle = new BoundingRectangle();
             int itineraryNodesCount = itinerary.itineraryNodes.size();
-            for(int i=0; i<itineraryNodesCount; i++)
-            {
+            for (int i = 0; i < itineraryNodesCount; i++) {
                 ItineraryNode itineraryNode = itinerary.itineraryNodes.get(i);
-                if(i == 0)
-                {
+                if (i == 0) {
                     geoCoordsBoundingRectangle.init(itineraryNode.longitudeDeg, itineraryNode.latitudeDeg);
-                }
-                else
-                {
+                } else {
                     geoCoordsBoundingRectangle.addPoint(itineraryNode.longitudeDeg, itineraryNode.latitudeDeg);
                 }
             }
@@ -202,8 +193,7 @@ public class ItineraryManagerV2
             tMat.invert(tMatInv);
             Vector3d nodePosWC;
             Vector4d nodePosLC = new Vector4d(0.0, 0.0, 0.0, 1.0);
-            for(int i=0; i<itineraryNodesCount; i++)
-            {
+            for (int i = 0; i < itineraryNodesCount; i++) {
                 ItineraryNode itineraryNode = itinerary.itineraryNodes.get(i);
                 nodePosWC = Globe.GeographicToCartesianWGS84(Math.toRadians(itineraryNode.longitudeDeg), Math.toRadians(itineraryNode.latitudeDeg), 0.0);
                 nodePosLC.set(nodePosWC.x, nodePosWC.y, nodePosWC.z, 1.0);
@@ -221,9 +211,8 @@ public class ItineraryManagerV2
     }
 
     public void writeItineraryFile(String outputItineraryFolderPath) throws IOException {
-        // save each personItinerary in a file.***
-        for(String personName : map_personName_itinerary.keySet())
-        {
+        // save each personItinerary in a file
+        for (String personName : map_personName_itinerary.keySet()) {
             Itinerary itinerary = map_personName_itinerary.get(personName);
             String outputItineraryFilePath = outputItineraryFolderPath + "\\" + personName + ".json";
 

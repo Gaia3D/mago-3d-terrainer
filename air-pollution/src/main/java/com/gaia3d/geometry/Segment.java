@@ -12,8 +12,7 @@ public class Segment {
     }
 
     public double getLength() {
-        double length = startVertex.point3d.getDistanceToPoint(endVertex.point3d);
-        return length;
+        return startVertex.point3d.getDistanceToPoint(endVertex.point3d);
     }
 
     public boolean sharesVertexWith(Segment segment) {
@@ -45,7 +44,6 @@ public class Segment {
         double squaredDistanceSegment = this.startVertex.point3d.getSquaredDistanceToPoint(this.endVertex.point3d);
         return !(squaredDistance1 > squaredDistanceSegment) && !(squaredDistance2 > squaredDistanceSegment);
     }
-
 
     public BoundingRectangle getBoundingRectangleXY() {
         BoundingRectangle boundingRectangle = new BoundingRectangle();

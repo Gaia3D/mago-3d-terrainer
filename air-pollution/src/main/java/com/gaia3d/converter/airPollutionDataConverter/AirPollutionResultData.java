@@ -1,4 +1,4 @@
-package com.gaia3d.airPollutionDataConverter;
+package com.gaia3d.converter.airPollutionDataConverter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;

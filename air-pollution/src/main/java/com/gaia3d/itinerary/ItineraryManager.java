@@ -3,15 +3,12 @@ package com.gaia3d.itinerary;
 import com.gaia3d.geometry.BoundingRectangle;
 import com.gaia3d.globe.Globe;
 import com.gaia3d.utils.StringModifier;
-import org.geotools.referencing.CRS;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.joml.Vector4d;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,8 +20,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
-public class ItineraryManager
-{
+@Slf4j
+@NoArgsConstructor
+public class ItineraryManager {
     // itinerary file is *.csv file type.
     // itinerary file sample:
     // 구분,,A,B,C,D,E,F,G,H,I,J
@@ -39,11 +37,6 @@ public class ItineraryManager
     // ...
 
     HashMap<String, Itinerary> map_personName_itinerary = new HashMap<>();
-    // each person has itineraryNodes array.***
-    public ItineraryManager()
-    {
-
-    }
 
     public void loadItineraryFile(String itineraryFilePath) throws IOException {
         Charset charset = StandardCharsets.UTF_8;
@@ -59,8 +52,8 @@ public class ItineraryManager
         int columnsCount = 0;
         int rowsCount = 0;
 
-        // read lines.***
-        // CSV file sample.***********************************************************************************
+        // read lines
+        // CSV file sample********************************************************************************
         // 구분,,A,B,C,D,E,F,G,H,I,J
         // 시간,,INDEX_ID,INDEX_ID,INDEX_ID,INDEX_ID,INDEX_ID,INDEX_ID,INDEX_ID,INDEX_ID,INDEX_ID,INDEX_ID
         // 11,00,GK189,GK189,GK186,GK189,GK189,GK189,GK189,GK189,GK189,GK189
@@ -75,7 +68,7 @@ public class ItineraryManager
         boolean skipEmptyStrings = false;
         int lastHour = -1;
         int currDay = 10;
-        int currMonth = 4; // month starts in 1.***
+        int currMonth = 4; // month starts in 1
         int currYear = 2023;
         while (!finished) {
             line = br.readLine();
@@ -89,16 +82,12 @@ public class ItineraryManager
             StringModifier.splitString(line, delimiter, vecStrings, skipEmptyStrings);
 
             if (counter == 1) {
-                // this is the 1rst line.***
+                // this is the 1rst line
                 columnsCount = vecStrings.size();
-                vecTitles_1.addAll(vecStrings); // person names.***
-            }
-            else if(counter == 2)
-            {
-                vecTitles_2.addAll(vecStrings); // titles.***
-            }
-            else
-            {
+                vecTitles_1.addAll(vecStrings); // person names
+            } else if (counter == 2) {
+                vecTitles_2.addAll(vecStrings); // titles
+            } else {
                 rowsCount += 1;
                 int stringsCount = vecStrings.size();
                 if (stringsCount != columnsCount) {
@@ -108,51 +97,40 @@ public class ItineraryManager
                 int hour = Integer.parseInt(vecStrings.get(0));
                 int minute = Integer.parseInt(vecStrings.get(1));
 
-                if(hour < lastHour)
-                {
-                    // add 24 hours, so add 1 day.***
+                if (hour < lastHour) {
+                    // add 24 hours, so add 1 day
                     currDay += 1;
 
                     int feburaryDaysCount = 28;
-                    if(currYear % 4 == 0)
-                    {
+                    if (currYear % 4 == 0) {
                         feburaryDaysCount = 29;
                     }
 
-                    if(currMonth == 2)
-                    {
-                        if(currDay > feburaryDaysCount)
-                        {
+                    if (currMonth == 2) {
+                        if (currDay > feburaryDaysCount) {
                             currDay = 1;
                             currMonth += 1;
                         }
-                    }
-                    else if(currMonth == 4 || currMonth == 6 || currMonth == 9 || currMonth == 11)
-                    {
-                        if(currDay > 30)
-                        {
+                    } else if (currMonth == 4 || currMonth == 6 || currMonth == 9 || currMonth == 11) {
+                        if (currDay > 30) {
                             currDay = 1;
                             currMonth += 1;
                         }
-                    }
-                    else
-                    {
-                        if(currDay > 31)
-                        {
+                    } else {
+                        if (currDay > 31) {
                             currDay = 1;
                             currMonth += 1;
                         }
                     }
 
-                    if(currMonth > 12)  // month starts in 1.***
+                    if (currMonth > 12)  // month starts in 1
                     {
-                        currMonth = 1; // month starts in 1.***
+                        currMonth = 1; // month starts in 1
                         currYear += 1;
                     }
                 }
 
-                for(int i=2; i<stringsCount; i++)
-                {
+                for (int i = 2; i < stringsCount; i++) {
                     String person = vecTitles_1.get(i);
                     String indexId = vecStrings.get(i);
 
@@ -164,8 +142,7 @@ public class ItineraryManager
                     itineraryNode.minute = minute;
                     itineraryNode.indexId = indexId;
 
-                    if(map_personName_itinerary.containsKey(person) == false)
-                    {
+                    if (!map_personName_itinerary.containsKey(person)) {
                         map_personName_itinerary.put(person, new Itinerary());
                     }
 
@@ -180,18 +157,15 @@ public class ItineraryManager
         fr.close();
     }
 
-    public void convertItineraryData(LocationIndicesManager locationIndicesManager)
-    {
+    public void convertItineraryData(LocationIndicesManager locationIndicesManager) {
         int personsCount = map_personName_itinerary.size();
         int personIndex = 0;
-        for(String personName : map_personName_itinerary.keySet())
-        {
+        for (String personName : map_personName_itinerary.keySet()) {
             personIndex += 1;
-            System.out.println("converting " + personIndex + "/" + personsCount + " : " + personName);
+            log.info("converting " + personIndex + "/" + personsCount + " : " + personName);
             Itinerary itinerary = map_personName_itinerary.get(personName);
             int itineraryNodesCount = itinerary.itineraryNodes.size();
-            for(int i=0; i<itineraryNodesCount; i++)
-            {
+            for (int i = 0; i < itineraryNodesCount; i++) {
                 ItineraryNode itineraryNode = itinerary.itineraryNodes.get(i);
                 LocationIndex locationIndex = locationIndicesManager.locationIndices.get(itineraryNode.indexId);
 
@@ -200,23 +174,18 @@ public class ItineraryManager
             }
         }
 
-        // now find the center geographic coordinates for each person & calculate itineraryNodes in local coords.***
-        for(String personName : map_personName_itinerary.keySet())
-        {
+        // now find the center geographic coordinates for each person & calculate itineraryNodes in local coords
+        for (String personName : map_personName_itinerary.keySet()) {
             personIndex += 1;
-            System.out.println("converting " + personIndex + "/" + personsCount + " : " + personName);
+            log.info("converting " + personIndex + "/" + personsCount + " : " + personName);
             Itinerary itinerary = map_personName_itinerary.get(personName);
             BoundingRectangle geoCoordsBoundingRectangle = new BoundingRectangle();
             int itineraryNodesCount = itinerary.itineraryNodes.size();
-            for(int i=0; i<itineraryNodesCount; i++)
-            {
+            for (int i = 0; i < itineraryNodesCount; i++) {
                 ItineraryNode itineraryNode = itinerary.itineraryNodes.get(i);
-                if(i == 0)
-                {
+                if (i == 0) {
                     geoCoordsBoundingRectangle.init(itineraryNode.longitudeDeg, itineraryNode.latitudeDeg);
-                }
-                else
-                {
+                } else {
                     geoCoordsBoundingRectangle.addPoint(itineraryNode.longitudeDeg, itineraryNode.latitudeDeg);
                 }
             }
@@ -230,8 +199,7 @@ public class ItineraryManager
             tMat.invert(tMatInv);
             Vector3d nodePosWC;
             Vector4d nodePosLC = new Vector4d(0.0, 0.0, 0.0, 1.0);
-            for(int i=0; i<itineraryNodesCount; i++)
-            {
+            for (int i = 0; i < itineraryNodesCount; i++) {
                 ItineraryNode itineraryNode = itinerary.itineraryNodes.get(i);
                 nodePosWC = Globe.GeographicToCartesianWGS84(Math.toRadians(itineraryNode.longitudeDeg), Math.toRadians(itineraryNode.latitudeDeg), 0.0);
                 nodePosLC.set(nodePosWC.x, nodePosWC.y, nodePosWC.z, 1.0);
@@ -249,9 +217,8 @@ public class ItineraryManager
     }
 
     public void writeItineraryFile(String outputItineraryFolderPath) throws IOException {
-        // save each personItinerary in a file.***
-        for(String personName : map_personName_itinerary.keySet())
-        {
+        // save each personItinerary in a file
+        for (String personName : map_personName_itinerary.keySet()) {
             Itinerary itinerary = map_personName_itinerary.get(personName);
             String outputItineraryFilePath = outputItineraryFolderPath + "\\" + personName + ".json";
 

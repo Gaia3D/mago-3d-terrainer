@@ -5,7 +5,6 @@ import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class Globe {
     public static double EquatorialRadiusMeters() {
@@ -56,7 +55,6 @@ public class Globe {
         yAxis.normalize();
 
         transformMatrix.set(xAxis.x, xAxis.y, xAxis.z, 0.0, yAxis.x, yAxis.y, yAxis.z, 0.0, zAxis.x, zAxis.y, zAxis.z, 0.0, x, y, z, 1.0);
-
 
         return transformMatrix;
     }

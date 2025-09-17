@@ -1,30 +1,35 @@
 package com.gaia3d;
 
-import com.gaia3d.airPollutionDataConverter.AirPollutionDataConverter;
-import com.gaia3d.chemicalAccidentData2DConverter.ChemicalContaminationData2DConverter;
-import com.gaia3d.chemicalAccidentData2DConverter.ChemicalContaminationData2DConverterV2;
-import com.gaia3d.chemicalAccidentDataConverter.ChemicalContaminationDataConverter;
+import com.gaia3d.converter.airPollutionDataConverter.AirPollutionDataConverter;
+import com.gaia3d.converter.chemicalAccidentData2DConverter.ChemicalContaminationData2DConverter;
+import com.gaia3d.converter.chemicalAccidentData2DConverter.ChemicalContaminationData2DConverterV2;
+import com.gaia3d.converter.chemicalAccidentDataConverter.ChemicalContaminationDataConverter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
+import org.apache.logging.log4j.Level;
 
-import javax.imageio.metadata.IIOInvalidTreeException;
 import java.io.File;
-import java.io.FileNotFoundException;
 
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
 @Slf4j
 public class Main {
-    public static void main(String[] args) throws ParseException, IIOInvalidTreeException, FileNotFoundException {
-        Configurator.initConsoleLogger();
+    public static void main(String[] args) throws ParseException {
+        Configuration.initConsoleLogger();
+        Configuration.setLevel(Level.INFO);
         printStartMessage();
+
         Options options = createOptions();
         CommandLineParser parser = new DefaultParser();
         CommandLine commandLine = parser.parse(options, args);
 
         if (commandLine.hasOption("help")) {
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("AirPollutionDataConverter", options);
+            formatter.setOptionComparator(null);
+            formatter.setWidth(200);
+            formatter.setOptPrefix("-");
+            formatter.setSyntaxPrefix("Usage: ");
+            formatter.setLongOptPrefix(" --");
+            formatter.setLongOptSeparator(" ");
+            formatter.printHelp("command options", options);
             printEndMessage();
             return;
         }
@@ -49,7 +54,7 @@ public class Main {
             if (logFile.exists()) {
                 logFile.delete();
             }
-            Configurator.initFileLogger(null, logFilePath);
+            Configuration.initFileLogger(null, logFilePath);
         }
 
         String dataType = commandLine.getOptionValue("dataType");
@@ -63,15 +68,13 @@ public class Main {
 
         log.info("Start the program.");
 
-        if(dataType.equals("AIR-POLLUTION")) {
+        if (dataType.equals("AIR-POLLUTION")) {
             log.info("Data type is AIR-POLLUTION.");
             processAirPollutionData(inputFolderPath, outputFolderPath, commandLine);
-        }
-        else if(dataType.equals("CHEMICAL-ACCIDENT")) {
+        } else if (dataType.equals("CHEMICAL-ACCIDENT")) {
             log.info("Data type is CHEMICAL-ACCIDENT.");
             processChemicalAccidentData(inputFolderPath, outputFolderPath, commandLine);
-        }
-        else {
+        } else {
             log.error("Unsupported data type: {}", dataType);
             printEndMessage();
             return;
@@ -106,42 +109,32 @@ public class Main {
         String inputDataStructurePath = commandLine.getOptionValue("inputDataStructurePath");
         String type = commandLine.getOptionValue("type");
 
-        if(type.equals("CHEMICAL"))
-        {
-            // Chemical contamination.************************************
+        if (type.equals("CHEMICAL")) {
+            // Chemical contamination*********************************
             ChemicalContaminationDataConverter chemicalContaminationDataConverter = new ChemicalContaminationDataConverter();
             try {
                 chemicalContaminationDataConverter.ConvertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 log.error("Error converting chemical contamination data: ", e);
             }
-        }
-        else if(type.equals("CHEMICAL_2D"))
-        {
-            // Chemical contamination 2D.************************************
+        } else if (type.equals("CHEMICAL_2D")) {
+            // Chemical contamination 2D*********************************
             ChemicalContaminationData2DConverter txtToPngConverter = new ChemicalContaminationData2DConverter();
             try {
-            txtToPngConverter.ConvertData2DByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
-            }
-            catch (Exception e) {
+                txtToPngConverter.ConvertData2DByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
+            } catch (Exception e) {
                 log.error("Error converting chemical contamination 2D data: ", e);
             }
-        }
-        else if(type.equals("CHEMICAL_2D_V2"))
-        {
-            // Chemical contamination 2D.************************************
+        } else if (type.equals("CHEMICAL_2D_V2")) {
+            // Chemical contamination 2D*********************************
             ChemicalContaminationData2DConverterV2 txtToPngConverter = new ChemicalContaminationData2DConverterV2();
             try {
-            txtToPngConverter.ConvertData2DByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
-            }
-            catch (Exception e) {
+                txtToPngConverter.ConvertData2DByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
+            } catch (Exception e) {
                 log.error("Error converting chemical contamination 2D V2 data: ", e);
             }
-        }
-        else
-        {
-            System.out.println("Wrong type.");
+        } else {
+            log.info("Wrong type.");
         }
     }
 
@@ -171,7 +164,7 @@ public class Main {
 
         String inputDataStructurePath = inputFolderPath + dataStructureJsonFileName;
 
-        // Mode volumetric data.*****************************************************************************************
+        // Mode volumetric data**************************************************************************************
         AirPollutionDataConverter airPollDataConverter = new AirPollutionDataConverter();
 
         if (commandLine.hasOption("scale")) {
@@ -180,8 +173,7 @@ public class Main {
         }
         try {
             airPollDataConverter.convertDataByDataStructureFile(inputDataStructurePath, inputFolderPath, outputFolderPath);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error converting air pollution data: ", e);
         }
     }

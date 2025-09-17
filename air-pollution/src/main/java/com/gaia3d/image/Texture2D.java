@@ -1,6 +1,7 @@
 package com.gaia3d.image;
 
 
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.*;
@@ -14,14 +15,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-
 @Slf4j
+@NoArgsConstructor
 public class Texture2D {
     public int width, height;
     public byte[] data;
-
-    public Texture2D() {
-    }
 
     public Texture2D(int width, int height) {
         this.width = width;
@@ -60,7 +58,6 @@ public class Texture2D {
 //        bkgdNode.appendChild(bKGDRGBnode);
 //        root.appendChild(bkgdNode);
 
-
 //        // Cambiado a valores de punto flotante
 //        IIOMetadataNode whitePointNode = new IIOMetadataNode("whitePoint");
 //        whitePointNode.setAttribute("x", "0.3127");
@@ -81,7 +78,6 @@ public class Texture2D {
 //        bluePrimaryNode.setAttribute("x", "0.1500");
 //        bluePrimaryNode.setAttribute("y", "0.0600");
 //        srgbNode.appendChild(bluePrimaryNode);
-
 
     // chunk "iCCP" para indicar el perfil ICC de la imagen
 //        IIOMetadataNode iccpNode = new IIOMetadataNode("iCCP");
@@ -138,7 +134,6 @@ public class Texture2D {
         // This function saves the texture as PNG file.
         BufferedImage myImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR); // Reemplaza con tu imagen
         myImage.getRaster().setDataElements(0, 0, width, height, data);
-
 
         ImageWriter pngWriter = ImageIO.getImageWritersByFormatName("PNG").next();
         ImageWriteParam pngWriteParam = pngWriter.getDefaultWriteParam();
@@ -200,7 +195,6 @@ public class Texture2D {
         sbitNode.appendChild(RGBAnode);
 
         root.appendChild(sbitNode);
-
 
         //metadata.setFromTree(metadataFormat, root);
         metadata.mergeTree(metadataFormat, root);
@@ -330,7 +324,6 @@ public class Texture2D {
         IIOMetadataNode gamaNode = new IIOMetadataNode("gAMA");
         gamaNode.setAttribute("value", Integer.toString(gAMA_gamma));
         root.appendChild(gamaNode);
-
 
         //metadata.setFromTree(metadataFormat, root);
         metadata.mergeTree(metadataFormat, root);

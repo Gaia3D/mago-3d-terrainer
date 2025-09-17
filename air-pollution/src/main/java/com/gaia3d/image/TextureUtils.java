@@ -32,7 +32,8 @@ public class TextureUtils {
     public static Texture2D loadTexture(String imageFilePath) throws IOException {
         BufferedImage bufferedImage = ImageIO.read(new File(imageFilePath));
         Texture2D texture = new Texture2D(bufferedImage.getWidth(), bufferedImage.getHeight());
-        texture.data = ((DataBufferByte) bufferedImage.getRaster().getDataBuffer()).getData();
+        texture.data = ((DataBufferByte) bufferedImage.getRaster()
+                .getDataBuffer()).getData();
         return texture;
     }
 }

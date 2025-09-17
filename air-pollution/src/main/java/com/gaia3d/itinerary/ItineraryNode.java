@@ -1,7 +1,6 @@
 package com.gaia3d.itinerary;
 
-public class ItineraryNode
-{
+public class ItineraryNode {
     public int year;
     public int month;
     public int day;
@@ -13,8 +12,7 @@ public class ItineraryNode
 
     public String indexId;
 
-    public ItineraryNode()
-    {
+    public ItineraryNode() {
         year = 2023;
         month = 1;
         day = 1;
