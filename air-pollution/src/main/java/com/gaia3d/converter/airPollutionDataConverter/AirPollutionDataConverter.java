@@ -3,11 +3,11 @@ package com.gaia3d.converter.airPollutionDataConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.gaia3d.basic.geometry.jgltf.GltfWriter;
 import com.gaia3d.basic.geometry.voxel.VoxelCP;
 import com.gaia3d.basic.geometry.voxel.VoxelCPGrid3D;
 import com.gaia3d.basic.marchingcube.MarchingCube;
 import com.gaia3d.basic.model.GaiaScene;
+import com.gaia3d.converter.jgltf.GltfWriter;
 import com.gaia3d.coordSystem.CoordManager;
 import com.gaia3d.geometry.BoundingBox;
 import com.gaia3d.image.Texture2D;
@@ -53,6 +53,8 @@ public class AirPollutionDataConverter {
 //  349800.00000 4030300.00000       0.00000   193.10   278.00     0.00   24-HR  ALL       20081824  CART1
 //            ...
 
+    private final Map<String, AirPollutionResultData> airPollutionResultDataMap = new HashMap<>();
+    private final BoundingBox geoCoordBBox = new BoundingBox(); // minLongitude, minLatitude, minAltitude, maxLongitude, maxLatitude, maxAltitude
     //     DataStructure sample.
 //    {
 //        "layersCount": 7,
@@ -90,12 +92,8 @@ public class AirPollutionDataConverter {
 //	]
 //    }
     public DataContainer dataContainer = null;
-
-    private final Map<String, AirPollutionResultData> airPollutionResultDataMap = new HashMap<>();
-
     public int maxDatesAllowed = -1; // if negative value, then no limit.
     public double scale = 1.0;
-    private final BoundingBox geoCoordBBox = new BoundingBox(); // minLongitude, minLatitude, minAltitude, maxLongitude, maxLatitude, maxAltitude
     private double totalMinValue = Double.MAX_VALUE;
     private double totalMaxValue = Double.MIN_VALUE;
 
@@ -280,12 +278,7 @@ public class AirPollutionDataConverter {
 
                     String key = convertedX + "," + convertedY;
 
-                    AirPollutionResultData newAirPollutionNoNetPixelData = AirPollutionResultData.builder()
-                            .xPosition(convertedX)
-                            .yPosition(convertedY)
-                            .maximumValue(pollutionValue)
-                            .date(vecStrings.get(8))
-                            .build();
+                    AirPollutionResultData newAirPollutionNoNetPixelData = AirPollutionResultData.builder().xPosition(convertedX).yPosition(convertedY).maximumValue(pollutionValue).date(vecStrings.get(8)).build();
 
                     AirPollutionResultData airPollutionResultData = airPollutionResultDataMap.get(key);
                     if (airPollutionResultData == null) {
@@ -677,26 +670,20 @@ public class AirPollutionDataConverter {
         }
 
         // now, read the data.
-        this.dataContainer.sourceProj = objectNodeRoot.get("sourceProj")
-                .asText();
-        this.dataContainer.targetProj = objectNodeRoot.get("targetProj")
-                .asText();
-        this.dataContainer.timeInterval = objectNodeRoot.get("timeInterval")
-                .asDouble();
-        this.dataContainer.timeIntervalUnits = objectNodeRoot.get("timeIntervalUnits")
-                .asText();
+        this.dataContainer.sourceProj = objectNodeRoot.get("sourceProj").asText();
+        this.dataContainer.targetProj = objectNodeRoot.get("targetProj").asText();
+        this.dataContainer.timeInterval = objectNodeRoot.get("timeInterval").asDouble();
+        this.dataContainer.timeIntervalUnits = objectNodeRoot.get("timeIntervalUnits").asText();
 
         // check if exist "maxDatesCount" in objectNodeRoot.
         int maxDatesCount = -1;
         if (objectNodeRoot.has("maxDatesCount")) {
-            maxDatesCount = objectNodeRoot.get("maxDatesCount")
-                    .asInt();
+            maxDatesCount = objectNodeRoot.get("maxDatesCount").asInt();
         }
 
         this.setMaxDatesCount(maxDatesCount);
 
-        int layersCount = objectNodeRoot.get("layersCount")
-                .asInt();
+        int layersCount = objectNodeRoot.get("layersCount").asInt();
 
         log.info("==================Input Data Structure==================");
         log.info("LayersCount : {}", layersCount);
@@ -712,8 +699,7 @@ public class AirPollutionDataConverter {
         for (int layer = 0; layer < layersCount; layer++) {
             log.info("Current layer : {}", layer);
             ObjectNode objectLayersNode = (ObjectNode) objectLayersArrayNode.get(layer);
-            String fileName = objectLayersNode.get("fileName")
-                    .asText();
+            String fileName = objectLayersNode.get("fileName").asText();
             // if the fileName contains "./", then remove it.
             if (fileName.startsWith("./")) {
                 fileName = fileName.substring(2);
@@ -721,8 +707,7 @@ public class AirPollutionDataConverter {
             String filePath = inputFolderPath + fileName;
 
             DataLayer dataLayer = new DataLayer();
-            dataLayer.altitude = objectLayersNode.get("altitude")
-                    .asDouble();
+            dataLayer.altitude = objectLayersNode.get("altitude").asDouble();
             dataLayer.filePath = filePath;
             dataLayer.layerIndex = layer;
             this.dataContainer.addDataLayer(dataLayer);
@@ -844,8 +829,7 @@ public class AirPollutionDataConverter {
         objectCenterGeographicCoordsNode.put("altitude", this.dataContainer.centerGeoCoordAltitude);
 
         // date as YYYYMMDD + "T" + hhmmss.
-        String dateString = String.format("%04d%02d%02dT%02d%02d%02d", this.dataContainer.year, this.dataContainer.month, this.dataContainer.day,
-                this.dataContainer.hour, this.dataContainer.minute, this.dataContainer.second);
+        String dateString = String.format("%04d%02d%02dT%02d%02d%02d", this.dataContainer.year, this.dataContainer.month, this.dataContainer.day, this.dataContainer.hour, this.dataContainer.minute, this.dataContainer.second);
 
         objectNodeRoot.put("startDate", dateString);
 
@@ -903,8 +887,7 @@ public class AirPollutionDataConverter {
         AirPollutionVolume airPollutionVolume = new AirPollutionVolume();
         airPollutionVolume.date = date;
         airPollutionVolume.setIdx(idx);
-        airPollutionVolume.getGeoCoordBBox()
-                .copyFrom(this.geoCoordBBox);
+        airPollutionVolume.getGeoCoordBBox().copyFrom(this.geoCoordBBox);
 
         int layersCount = this.dataContainer.getDataLayersCount();
         for (int layer = 0; layer < layersCount; layer++) {
@@ -962,8 +945,7 @@ public class AirPollutionDataConverter {
             String jsonFileName = "airPollution_" + date + ".json";
             String jsonFilePath = outputFolderPath + File.separator + jsonFileName;
             airPollutionVolume.saveAsJsonMC(jsonFilePath);
-            this.dataContainer.getGlbMetaDataFileNames()
-                    .add(jsonFileName);
+            this.dataContainer.getGlbMetaDataFileNames().add(jsonFileName);
         }
     }
 
