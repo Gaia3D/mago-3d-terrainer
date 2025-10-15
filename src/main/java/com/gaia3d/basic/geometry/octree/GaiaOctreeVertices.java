@@ -1,6 +1,7 @@
 package com.gaia3d.basic.geometry.octree;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.basic.geometry.entities.GaiaTriangle;
 import com.gaia3d.basic.model.GaiaVertex;
 import lombok.Getter;
 import lombok.Setter;
@@ -63,6 +64,16 @@ public class GaiaOctreeVertices extends GaiaOctree<GaiaVertex> {
             GaiaOctreeVertices childVertex = (GaiaOctreeVertices) child;
             childVertex.makeTreeByMinVertexCount(minVertexCount);
         }
+    }
+
+    public boolean intersects(GaiaVertex vertex) {
+        GaiaBoundingBox bbox = this.getBoundingBox();
+        Vector3d position = vertex.getPosition();
+        if (position == null) {
+            log.warn("Vertex position is null.");
+            return false;
+        }
+        return bbox.intersectsPoint(position);
     }
 
     public void distributeContents() {
