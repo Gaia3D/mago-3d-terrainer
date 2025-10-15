@@ -126,6 +126,7 @@ public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
                 }
             } else if (geometryContent instanceof GaiaVertexContent vertexContent) {
                 // TODO: Handle vertex content if needed
+                throw new RuntimeException("Not implemented yet");
             } else {
                 log.warn("Unknown GeometryContent type: {}", geometryContent.getClass().getName());
             }
