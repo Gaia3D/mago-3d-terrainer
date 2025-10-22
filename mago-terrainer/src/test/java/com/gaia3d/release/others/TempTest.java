@@ -13,6 +13,36 @@ public class TempTest {
     private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
 
     @Test
+    void incheonSample() {
+        File inputPath = new File("D:\\data\\mago-3d-tiler\\temp-sample\\sun-energy-incheon-original\\IncheonDem_verG.tif");
+        File outputPath = new File(OUTPUT_PATH, "IncheonDem");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "15",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void incheon25cmSample() {
+        File inputPath = new File("D:\\data\\mago-3d-tiler\\temp-sample\\sun-energy-25cm-original\\incheonDem_5179_fixed.tif");
+        File outputPath = new File(OUTPUT_PATH, "IncheonDem5179");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
     void sejong14Intensity1() {
         File inputPath = new File(INPUT_PATH, "sejong");
         File outputPath = new File(OUTPUT_PATH, "sejong-14-intensity-4");
