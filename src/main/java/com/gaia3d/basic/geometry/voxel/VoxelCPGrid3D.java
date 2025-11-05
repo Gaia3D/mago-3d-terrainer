@@ -31,6 +31,34 @@ public class VoxelCPGrid3D {
         }
     }
 
+    public void expand(int expandX, int expandY, int expandZ) {
+        // expand one in positive direction and negative direction
+        int newGridsCountX = gridsCountX + expandX * 2;
+        int newGridsCountY = gridsCountY + expandY * 2;
+        int newGridsCountZ = gridsCountZ + expandZ * 2;
+
+        VoxelCP[][][] newVoxels = new VoxelCP[newGridsCountX][newGridsCountY][newGridsCountZ];
+        for (int x = 0; x < newGridsCountX; x++) {
+            for (int y = 0; y < newGridsCountY; y++) {
+                for (int z = 0; z < newGridsCountZ; z++) {
+                    newVoxels[x][y][z] = new VoxelCP();
+                }
+            }
+        }
+        for (int x = 0; x < gridsCountX; x++) {
+            for (int y = 0; y < gridsCountY; y++) {
+                for (int z = 0; z < gridsCountZ; z++) {
+                    newVoxels[x + expandX][y + expandY][z + expandZ] = voxels[x][y][z];
+                }
+            }
+        }
+        this.gridsCountX = newGridsCountX;
+        this.gridsCountY = newGridsCountY;
+        this.gridsCountZ = newGridsCountZ;
+        this.voxels = newVoxels;
+
+    }
+
     public VoxelCP getVoxel(int x, int y, int z) {
         if (x < 0 || x >= gridsCountX || y < 0 || y >= gridsCountY || z < 0 || z >= gridsCountZ) {
             return null;
