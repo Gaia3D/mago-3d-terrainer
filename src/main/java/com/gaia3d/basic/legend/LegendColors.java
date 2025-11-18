@@ -47,7 +47,7 @@ public class LegendColors {
         }
 
         Map.Entry<Double, GaiaColor> lowerEntry = colorMap.lowerEntry(value);
-        Map.Entry<Double, GaiaColor> higherEntry = colorMap.higherEntry(value);
+        Map.Entry<Double, GaiaColor> higherEntry = colorMap.ceilingEntry(value);
 
         if (lowerEntry == null) {
             return higherEntry.getValue(); // Return the first color if no lower entry exists

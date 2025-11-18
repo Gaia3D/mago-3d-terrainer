@@ -770,7 +770,7 @@ public class MarchingCube {
 
         for (int i = 0; i < isoValuesCount; i++) {
             double currIsoValue = isoValuesArray[i];
-            if (totalMaxValue > currIsoValue) {
+            if (totalMaxValue >= currIsoValue) {
 
                 // now, quantize the isoValue into rgba byte values.
                 //float quantizedIsoValue = (float) ((currIsoValue - totalMinValue) / (totalMaxValue - totalMinValue));
