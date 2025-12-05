@@ -493,8 +493,8 @@ public class TerrainMesh {
 
     public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
                               List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
-        // A triangle is split by the longest edge
-        // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
+        // A triangle is split by the longest edge, so
+        // the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
 
@@ -512,7 +512,7 @@ public class TerrainMesh {
             TerrainHalfEdge prevHEdgeTwin = prevHEdge.getTwin();
             TerrainHalfEdge nextHEdgeTwin = nextHEdge.getTwin();
 
-            // in this case the twin is null
+            // in this case, the twin is null
             Vector3d midPosition = longestHEdge.getMidPosition();
             double beforeZ = midPosition.z;
 

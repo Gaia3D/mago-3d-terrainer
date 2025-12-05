@@ -307,12 +307,12 @@ public class TileWgs84Utils {
         } else if (imageryType.equals("WEB_MERCATOR")) {
             double webMercatorMaxLatRad = 1.4844222297453324; // = 2*Math.atan(Math.pow(Math.E, Math.PI)) - (Math.PI/2);
 
-            // First, must know how many colums & rows there are in depth "L"
+            // First, must know how many columns and rows there are in depth "L"
             double numCols = Math.pow(2, L);
             double numRows = numCols;
 
             // calculate the angles of the tiles.
-            double lonAngDegRange = 360.0 / numCols; // the longitude are lineal
+            double lonAngDegRange = 360.0 / numCols; // the longitude is lineal
 
             // In depth L=0, the latitude range is (-webMercatorMaxLatRad, webMercatorMaxLatRad)
             double M_PI = Math.PI;
@@ -340,7 +340,7 @@ public class TileWgs84Utils {
                     midLatRad = 2.0 * Math.atan(Math.pow(M_E, midMercatorY)) - M_PI / 2.0;
                     double midLatRatio = (M_PI - midMercatorY) / (M_PI - (-M_PI));
 
-                    // must choice : the up_side of midLatRadMercator, or the down_side
+                    // must to choice: the up_side of midLatRadMercator, or the down_side
                     if (midLatRatio > y_ratio) {
                         // choice the up_side of midLatRadMercator
                         // maxLatRad no changes

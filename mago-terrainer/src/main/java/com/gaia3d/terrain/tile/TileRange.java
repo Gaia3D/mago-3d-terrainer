@@ -27,6 +27,27 @@ public class TileRange {
         this.maxTileY = maxTileY;
     }
 
+    public TileRange clone() {
+        TileRange tileRange = new TileRange();
+        tileRange.set(tileDepth, minTileX, maxTileX, minTileY, maxTileY);
+        return tileRange;
+    }
+
+    public void translate(int translateX, int translateY) {
+        this.minTileX += translateX;
+        this.maxTileX += translateX;
+        this.minTileY += translateY;
+        this.maxTileY += translateY;
+
+        if (this.minTileX < 0) {
+            this.minTileX = 0;
+        }
+
+        if (this.minTileY < 0) {
+            this.minTileY = 0;
+        }
+    }
+
     public List<TileIndices> getTileIndices(List<TileIndices> resultTileIndices) {
         if (resultTileIndices == null) {
             resultTileIndices = new ArrayList<>();

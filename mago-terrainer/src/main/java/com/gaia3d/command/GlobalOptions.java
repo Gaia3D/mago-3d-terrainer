@@ -34,7 +34,7 @@ public class GlobalOptions {
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
     private static final int DEFAULT_MOSAIC_SIZE = 16;
-    private static final int DEFAULT_MAX_RASTER_SIZE = 16384;
+    private static final int DEFAULT_MAX_RASTER_SIZE = 4000;
     private static final double DEFAULT_INTENSITY = 4.0;
     private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
     private static final CoordinateReferenceSystem DEFAULT_TARGET_CRS = DefaultGeographicCRS.WGS84;
