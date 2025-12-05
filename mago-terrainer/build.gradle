@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
 plugins {
     id "java"
     id "com.google.cloud.tools.jib" version "3.4.0"
@@ -127,8 +129,17 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
 shadowJar {
     mergeServiceFiles()
+    transform(AppendingTransformer) {
+        resource = "META-INF/registryFile.jai"
+    }
+    transform(AppendingTransformer) {
+        resource = "META-INF/registryFile.jaiext"
+    }
+
     manifest {
         attributes 'Main-Class': 'com.gaia3d.command.MagoTerrainerMain'
         attributes 'Implementation-Version': project.version
@@ -140,6 +151,7 @@ shadowJar {
     relocate 'org.slf4j', 'shadow.slf4j'
     archiveFileName = "mago-3d-terrainer-${project.version}.jar"
     destinationDirectory.set(file("${projectDir}/dist"))
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 clean {
