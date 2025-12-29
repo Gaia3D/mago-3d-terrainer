@@ -352,6 +352,10 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
 
                 GaiaFace newFace = new GaiaFace();
                 newFace.setIndices(indices);
+                if(this.surfaces.isEmpty()){
+                    GaiaSurface newSurface = new GaiaSurface();
+                    this.surfaces.add(newSurface);
+                }
                 this.surfaces.get(0).getFaces().add(newFace);
             }
         }
