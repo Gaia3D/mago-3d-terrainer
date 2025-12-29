@@ -411,6 +411,10 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
 
         // Weld the vertices.
         GaiaBoundingBox boundingBox = this.getBoundingBox(null);
+        if(boundingBox == null){
+            log.info("WeldVertices: boundingBox is null. skip welding.");
+            return;
+        }
         GaiaBoundingBox cubeBoundingBox = boundingBox.createCubeFromMinPosition();
         GaiaOctreeVertices octreeVertices = new GaiaOctreeVertices(null, cubeBoundingBox);
         octreeVertices.addContents(contents);
