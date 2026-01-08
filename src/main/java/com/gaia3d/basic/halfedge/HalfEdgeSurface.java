@@ -2766,7 +2766,7 @@ public class HalfEdgeSurface implements Serializable {
             int batchedMinX = (int) batchedBoundary.getMinX();
             int batchedMinY = (int) batchedBoundary.getMinY();
             if (!g2d.drawImage(expandedSubImage, (int) batchedBoundary.getMinX(), (int) batchedBoundary.getMinY(), null)) {
-               log.info("[WARN] HalfEdgeSurface.scissorTextures() : g2d.drawImage() returned false.");
+                log.info("[WARN] HalfEdgeSurface.scissorTextures() : g2d.drawImage() returned false.");
             }
         }
         g2d.dispose();
@@ -3213,6 +3213,10 @@ public class HalfEdgeSurface implements Serializable {
                         continue;
                     }
                     if (textureScissorData.mergeIfMergeable(textureScissorData2)) {
+                        // remove textureScissorData2
+                        scissorDataList.remove(j);
+                        scissorDatesCount = scissorDataList.size();
+                        j--;
                         merged = true;
                     }
                 }

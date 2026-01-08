@@ -220,6 +220,7 @@ public class HalfEdgeUtils {
 
         if (indicesCount > 2) {
             gaiaFace.setIndices(indices);
+            gaiaFace.setId(halfEdgeFace.getId());
         } else {
             gaiaFace = null;
         }
@@ -693,14 +694,14 @@ public class HalfEdgeUtils {
             resultWeldedFacesGroups = new ArrayList<>();
         }
 
-        Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap = new HashMap<>();
-        for (HalfEdgeFace face : facesList) {
-            List<HalfEdgeVertex> vertices = face.getVertices(null);
-            for (HalfEdgeVertex vertex : vertices) {
-                List<HalfEdgeFace> facesOfVertex = vertexFacesMap.computeIfAbsent(vertex, k -> new ArrayList<>());
-                facesOfVertex.add(face);
-            }
-        }
+//        Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap = new HashMap<>();
+//        for (HalfEdgeFace face : facesList) {
+//            List<HalfEdgeVertex> vertices = face.getVertices(null);
+//            for (HalfEdgeVertex vertex : vertices) {
+//                List<HalfEdgeFace> facesOfVertex = vertexFacesMap.computeIfAbsent(vertex, k -> new ArrayList<>());
+//                facesOfVertex.add(face);
+//            }
+//        }
 
         Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces = new HashMap<>();
         int facesCount = facesList.size();

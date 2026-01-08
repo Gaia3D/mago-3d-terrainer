@@ -54,7 +54,7 @@ public class GaiaTextureScissorData {
         mergedBoundary.addBoundingRectangle(other.texCoordBoundary);
         double mergedArea = mergedBoundary.getArea();
 
-        return !(mergedArea > thisArea + otherArea);
+        return !(mergedArea * 0.999 > thisArea + otherArea);
     }
 
     public boolean validate() {
