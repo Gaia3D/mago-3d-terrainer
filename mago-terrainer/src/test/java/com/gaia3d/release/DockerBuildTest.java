@@ -47,7 +47,7 @@ class DockerBuildTest {
         ClassLoader classLoader = getClass().getClassLoader();
 
         File input = new File(classLoader.getResource("./sample/input/sample.tif").getFile());
-        File resource = new File(input.getParent());
+        File resource = new File(input.getParentFile().getParent());
 
         String dockerImage = "gaia3d/mago-3d-terrainer:latest";
         List<String> argList = new ArrayList<>();
@@ -58,9 +58,41 @@ class DockerBuildTest {
         argList.add(resource.getAbsolutePath() + ":/workspace");
         argList.add(dockerImage);
         argList.add("--input");
-        argList.add("/workspace/sample/input");
+        argList.add("/workspace/input");
         argList.add("--output");
-        argList.add("/workspace/sample/output");
+        argList.add("/workspace/output");
+
+        runCommand(argList);
+    }
+
+    @Test
+    void runWithSimpleAndSave() throws IOException {
+        String resourcePath = "multi-resolution";
+        File inputPath = MagoTestConfig.getInputPath(resourcePath);
+        File outputPath = MagoTestConfig.getOutputPath(resourcePath);
+
+        File inputParentPath = inputPath.getParentFile();
+        File outputParentPath = outputPath.getParentFile();
+
+        String dockerImage = "gaia3d/mago-3d-terrainer:latest";
+        List<String> argList = new ArrayList<>();
+        argList.add("docker");
+        argList.add("run");
+        argList.add("--rm");
+        argList.add("-v");
+        argList.add(inputParentPath.getAbsolutePath() + ":/workspace/input");
+        argList.add("-v");
+        argList.add(outputParentPath.getAbsolutePath() + ":/workspace/output");
+        argList.add(dockerImage);
+        argList.add("--input");
+        argList.add("/workspace/input/" + inputPath.getName());
+        argList.add("--output");
+        argList.add("/workspace/output/" + outputPath.getName());
+        argList.add("--max");
+        argList.add("12");
+        argList.add("--geoid");
+        argList.add("EGM96");
+
         runCommand(argList);
     }
 

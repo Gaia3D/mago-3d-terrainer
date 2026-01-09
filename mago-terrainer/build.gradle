@@ -66,7 +66,7 @@ test {
 
 jib {
     from {
-        image = "eclipse-temurin:17-jre"
+        image = "eclipse-temurin:21-jre"
         platforms {
             platform {
                 architecture = "amd64"
@@ -112,7 +112,14 @@ jib {
     }
 }
 
-// jar task
+
+javadoc {
+    options.addStringOption("locale", "en_US")
+    options.addStringOption("encoding", "UTF-8")
+    options.addStringOption("charset", "UTF-8")
+    options.addStringOption("docencoding", "UTF-8")
+}
+
 jar {
     finalizedBy shadowJar
     manifest {
@@ -150,6 +157,13 @@ shadowJar {
     }
     relocate 'org.slf4j', 'shadow.slf4j'
     archiveFileName = "mago-3d-terrainer-${project.version}.jar"
+    doFirst {
+        def distDir = file("${projectDir}/dist")
+        if (distDir.exists()) {
+            distDir.deleteDir()
+        }
+        distDir.mkdirs()
+    }
     destinationDirectory.set(file("${projectDir}/dist"))
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

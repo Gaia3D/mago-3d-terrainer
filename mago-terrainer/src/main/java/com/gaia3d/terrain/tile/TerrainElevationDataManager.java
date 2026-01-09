@@ -103,7 +103,7 @@ public class TerrainElevationDataManager {
             }
         }
 
-        log.info("ReusedRasterTilesCount = {}", reusedRasterTilesCount + " / " + initialSize);
+        log.debug("ReusedRasterTilesCount = {}", reusedRasterTilesCount + " / " + initialSize);
 
         // now, delete TerrainElevationData's coverage that are not intersecting with the tileRange
         GeographicExtension geoExtensionTotal = null;

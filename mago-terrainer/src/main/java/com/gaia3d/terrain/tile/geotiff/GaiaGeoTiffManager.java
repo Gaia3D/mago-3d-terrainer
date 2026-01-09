@@ -38,14 +38,14 @@ public class GaiaGeoTiffManager {
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
         if (mapPathGridCoverage2d.containsKey(geoTiffFilePath)) {
-            log.info("ReUsing the GeoTiff coverage : {}", geoTiffFilePath);
+            log.debug("ReUsing the GeoTiff coverage : {}", geoTiffFilePath);
             return mapPathGridCoverage2d.get(geoTiffFilePath);
         }
 
         if (mapGeoTiffToGeoTiff4326.containsKey(geoTiffFilePath)) {
             String geoTiff4326FilePath = mapGeoTiffToGeoTiff4326.get(geoTiffFilePath);
             if (mapPathGridCoverage2d.containsKey(geoTiff4326FilePath)) {
-                log.info("ReUsing the GeoTiff coverage 4326: {}", geoTiffFilePath);
+                log.debug("ReUsing the GeoTiff coverage 4326: {}", geoTiffFilePath);
                 return mapPathGridCoverage2d.get(geoTiff4326FilePath);
             }
         }

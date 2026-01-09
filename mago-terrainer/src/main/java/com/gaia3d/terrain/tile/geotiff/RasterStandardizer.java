@@ -159,7 +159,9 @@ public class RasterStandardizer {
     public GridCoverage2D readGeoTiff(File file) {
         try {
             GeoTiffReader reader = new GeoTiffReader(file);
-            return reader.read(null);
+            GridCoverage2D coverage = reader.read(null);
+            reader.dispose();
+            return coverage;
         } catch (Exception e) {
             log.error("Failed to read GeoTiff file : {}", file.getAbsolutePath());
             log.error("Error : ", e);
@@ -328,10 +330,7 @@ public class RasterStandardizer {
                 boolean demIsNoData = Double.isNaN(H) || (hasDemNoDataVal && Double.compare(H, demNoData) == 0);
                 boolean demIsExtremeNoData = (H < -9999); // 디버그용 극단값 체크
 
-                //if (demIsExtremeNoData ==
-
                 if (demIsExtremeNoData) {
-                    log.info("H: {}, N: {}, H+N: {}", H, N, (H + N));
                     outR.setSample(x, y, 0, (float) -9999);
                 } else if (demIsNoData) {
                     // DEM NoData는 그대로 유지 (채우지 않음)

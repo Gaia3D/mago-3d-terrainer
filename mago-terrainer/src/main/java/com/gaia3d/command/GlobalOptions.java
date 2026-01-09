@@ -25,11 +25,10 @@ import java.nio.file.StandardCopyOption;
  */
 @Setter
 @Getter
-@NoArgsConstructor
 @Slf4j
 public class GlobalOptions {
     /* singleton */
-    private static final GlobalOptions instance = new GlobalOptions();
+    private static GlobalOptions instance = new GlobalOptions();
     private Reporter reporter;
 
     /* Constants */
@@ -89,12 +88,19 @@ public class GlobalOptions {
     private CoordinateReferenceSystem outputCRS;
     private TilingSchema tilingSchema;
 
+    private GlobalOptions() {};
+
     public static GlobalOptions getInstance() {
         if (instance.javaVersionInfo == null) {
             initVersionInfo();
             instance.reporter = new Reporter("mago-3d-terrainer", instance.getVersion());
         }
         return instance;
+    }
+
+    public static void recreateInstance() {
+        log.info("[INFO] Recreating GlobalOptions instance.");
+        GlobalOptions.instance = new GlobalOptions();
     }
 
     public static void init(CommandLine command) throws IOException {

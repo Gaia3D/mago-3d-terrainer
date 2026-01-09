@@ -37,6 +37,7 @@ class GaiaGeoTiffManagerTest {
             }
 
             log.info("Altitude: {}", altitude[0]);
+            reader.dispose();
         } catch (Exception e) {
             log.error("Error:", e);
         }
