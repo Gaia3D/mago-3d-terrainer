@@ -14,8 +14,11 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
  * Global options for Gaia3D Tiler.
@@ -39,6 +42,7 @@ public class GlobalOptions {
     private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
     private static final CoordinateReferenceSystem DEFAULT_TARGET_CRS = DefaultGeographicCRS.WGS84;
     private static final TilingSchema DEFAULT_TILING_SCHEMA = TilingSchema.GEODETIC;
+    private static final String DEFAULT_TEMP_DIR = "temp";
 
     /* Program Information */
     private String version;
@@ -50,6 +54,7 @@ public class GlobalOptions {
     /* Default Options */
     private String inputPath;
     private String outputPath;
+    private String geoidPath;
     private String logPath;
     private boolean layerJsonGenerate = false;
     private boolean debugMode = false;
@@ -74,6 +79,7 @@ public class GlobalOptions {
     private int maxRasterSize;
 
     /* Temporary paths for processing */
+    private String geoidTempPath;
     private String standardizeTempPath;
     private String resizedTiffTempPath;
     private String splitTiffTempPath;
@@ -103,12 +109,63 @@ public class GlobalOptions {
             String outputPath = command.getOptionValue(CommandOptions.OUTPUT.getLongName());
             validateOutputPath(new File(outputPath).toPath());
             instance.setOutputPath(outputPath);
-            instance.setResizedTiffTempPath(outputPath + File.separator + "resized");
-            instance.setTileTempPath(outputPath + File.separator + "temp");
-            instance.setSplitTiffTempPath(outputPath + File.separator + "split");
-            instance.setStandardizeTempPath(outputPath + File.separator + "standardization");
         } else {
             throw new IllegalArgumentException("Please enter the value of the output argument.");
+        }
+
+        if (command.hasOption(CommandOptions.TEMP_PATH.getLongName())) {
+            String tempPath = command.getOptionValue(CommandOptions.TEMP_PATH.getLongName());
+            File tempDir = new File(tempPath);
+            File resizedDir = new File(tempDir, "resized");
+            File splitDir = new File(tempDir, "split");
+            File standardizeDir = new File(tempDir, "standardization");
+            File geoidDir = new File(tempDir, "geoid");
+            instance.setTileTempPath(tempDir.getAbsolutePath());
+            instance.setResizedTiffTempPath(resizedDir.getAbsolutePath());
+            instance.setSplitTiffTempPath(splitDir.getAbsolutePath());
+            instance.setStandardizeTempPath(standardizeDir.getAbsolutePath());
+            instance.setGeoidTempPath(geoidDir.getAbsolutePath());
+        } else {
+            File tempDir = new File(instance.getOutputPath(), DEFAULT_TEMP_DIR);
+            File resizedDir = new File(tempDir, "resized");
+            File splitDir = new File(tempDir, "split");
+            File standardizeDir = new File(tempDir, "standardization");
+            instance.setTileTempPath(tempDir.getAbsolutePath());
+            instance.setResizedTiffTempPath(resizedDir.getAbsolutePath());
+            instance.setSplitTiffTempPath(splitDir.getAbsolutePath());
+            instance.setStandardizeTempPath(standardizeDir.getAbsolutePath());
+            instance.setGeoidTempPath(new File(tempDir, "geoid").getAbsolutePath());
+        }
+
+        if (command.hasOption(CommandOptions.GEOID_PATH.getLongName())) {
+            instance.setGeoidPath(command.getOptionValue(CommandOptions.GEOID_PATH.getLongName()));
+        }
+
+        if (command.hasOption(CommandOptions.GEOID_PATH.getLongName())) {
+            String geoidPath = command.getOptionValue(CommandOptions.GEOID_PATH.getLongName());
+            if (geoidPath == null || geoidPath.isEmpty() || geoidPath.equalsIgnoreCase("Ellipsoid")) {
+                instance.setGeoidPath(null);
+            } else if (geoidPath.equalsIgnoreCase("EGM96")) {
+                log.info("Using built-in geoid model: EGM96");
+
+                String resourcePath = "geoid/egm96_15.tif";
+                ClassLoader classLoader = GlobalOptions.class.getClassLoader();
+                try (InputStream in = classLoader.getResourceAsStream(resourcePath)) {
+                    if (in == null) {
+                        throw new IllegalArgumentException("EGM96 geoid model not found in resources: " + resourcePath);
+                    }
+                    Path tmp = Files.createTempFile("egm96_15-", ".tif");
+                    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+                    tmp.toFile().deleteOnExit();
+                    instance.setGeoidPath(tmp.toAbsolutePath().toString());
+                } catch (IOException e) {
+                    throw new IllegalStateException("Failed to extract EGM96 geoid model from classpath", e);
+                }
+            } else {
+                instance.setGeoidPath(geoidPath);
+            }
+        } else {
+            instance.setGeoidPath(null);
         }
 
         if (command.hasOption(CommandOptions.LOG.getLongName())) {
@@ -219,6 +276,8 @@ public class GlobalOptions {
         }
 
         instance.setCalculateNormalsExtension(command.hasOption(CommandOptions.EXT_CALCULATE_NORMALS.getLongName()));
+        instance.setMetaDataExtension(command.hasOption(CommandOptions.EXT_META_DATA.getLongName()));
+        instance.setWaterMaskExtension(command.hasOption(CommandOptions.EXT_WATER_MASK.getLongName()));
         printGlobalOptions();
     }
 
@@ -226,17 +285,20 @@ public class GlobalOptions {
         log.info("Input Path: {}", instance.getInputPath());
         log.info("Output Path: {}", instance.getOutputPath());
         log.info("Log Path: {}", instance.getLogPath());
+        log.info("Temp Path: {}", instance.getTileTempPath());
+        log.info("Geoid Path: {}", instance.getGeoidPath());
+        MagoTerrainerMain.drawLine();
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
+        log.info("Tiling Schema: {}", instance.getTilingSchema());
         log.info("Minimum Tile Depth: {}", instance.getMinimumTileDepth());
         log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
-        log.info("Tiling Schema: {}", instance.getTilingSchema());
         log.info("Interpolation Type: {}", instance.getInterpolationType());
         log.info("Refine Intensity: {}", instance.getIntensity());
         log.info("Priority Type: {}", instance.getPriorityType());
         log.info("NODATA Value: {}", instance.getNoDataValue());
         log.info("Extension Calculate Normals: {}", instance.isCalculateNormalsExtension());
-        //log.info("Extension Meta Data: {}", instance.isMetaDataExtension());
-        //log.info("Extension Water Mask: {}", instance.isWaterMaskExtension());
+        log.info("Extension Meta Data: {}", instance.isMetaDataExtension());
+        log.info("Extension Water Mask: {}", instance.isWaterMaskExtension());
         MagoTerrainerMain.drawLine();
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());

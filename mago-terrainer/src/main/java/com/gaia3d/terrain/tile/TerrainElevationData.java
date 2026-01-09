@@ -102,7 +102,7 @@ public class TerrainElevationData {
             // determine the grid coordinates of the point
             if (this.raster == null) {
                 //try {
-                    //this.raster = this.coverage.getRenderedImage().getData(); // original.***
+                    //this.raster = this.coverage.getRenderedImage().getData(); // original
                     RenderedImage ri = coverage.getRenderedImage();
                     this.raster = ri.getData();
 //                } catch (Exception e) {
@@ -208,7 +208,7 @@ public class TerrainElevationData {
             rowNext = geoTiffHeight - 1;
         }
 
-        // interpolation bilinear.***
+        // interpolation bilinear
         double value00 = this.getGridValue(column, row);
         double value01 = this.getGridValue(column, rowNext);
         double value10 = this.getGridValue(columnNext, row);

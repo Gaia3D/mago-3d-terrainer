@@ -118,7 +118,7 @@ public class MagoTerrainerMain {
         tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree(depth);
         log.info("[Tile] Finished generate terrain elevation data.");
 
-        // Check if the tile mesh generation is a continuation from an existing tileSet.***
+        // Check if the tile mesh generation is a continuation from an existing tileSet
         boolean isContinue = globalOptions.isContinue();
         if (isContinue) {
             log.info("[Tile] Continuing making tile meshes.");
@@ -148,6 +148,12 @@ public class MagoTerrainerMain {
         terrainLayer.generateAvailableTiles(globalOptions.getInputPath());
         if (globalOptions.isCalculateNormalsExtension()) {
             terrainLayer.addExtension("octvertexnormals");
+        }
+        if (globalOptions.isWaterMaskExtension()) {
+            terrainLayer.addExtension("watermask");
+        }
+        if (globalOptions.isMetaDataExtension()) {
+            terrainLayer.addExtension("metadata");
         }
         terrainLayer.saveJsonFile(globalOptions.getInputPath(), "layer.json");
     }

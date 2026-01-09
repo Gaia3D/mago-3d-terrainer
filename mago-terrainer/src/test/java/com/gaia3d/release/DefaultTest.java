@@ -4,9 +4,7 @@ import com.gaia3d.command.MagoTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
 import java.io.File;
-import java.io.IOException;
 import java.util.Objects;
 
 @Tag("default")
@@ -35,6 +33,23 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void sampleBilinearWithGeoid() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
+        File inputPath = new File(samplePath, "input");
+        File outputPath = new File(samplePath, "output");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-geoid", "EGM96",
+                "-min", "0",
+                "-max", "10",
         };
         MagoTerrainerMain.main(args);
     }

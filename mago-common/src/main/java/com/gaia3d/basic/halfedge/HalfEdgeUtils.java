@@ -287,7 +287,7 @@ public class HalfEdgeUtils {
                 if (isSkirt) {
                     halfEdgeVertex.setPosition(new Vector3d(x, y, skirtZ));
                 } else {
-                    // the real net vertex.***
+                    // the real net vertex
                     halfEdgeVertex.setPosition(new Vector3d(x, y, z));
                 }
 
@@ -319,7 +319,7 @@ public class HalfEdgeUtils {
 
                 if (c == 0 || c == withSkirtCols - 1 || r == 0 || r == withSkirtRows - 1 ||
                         cNext == withSkirtCols - 1 || rNext == withSkirtRows - 1) {
-                    // this is skirt face.***
+                    // this is skirt face
                     faceA.setFaceType(FaceType.SKIRT);
                     faceB.setFaceType(FaceType.SKIRT);
                 } else {

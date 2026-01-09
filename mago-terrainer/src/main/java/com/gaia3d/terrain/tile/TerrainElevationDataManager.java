@@ -82,7 +82,7 @@ public class TerrainElevationDataManager {
     public void makeAllTileWgs84Raster(TileRange tileRange, TileWgs84Manager tileWgs84Manager) {
         List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
 
-        // 1rst, delete from the mapIndicesTileRaster the tiles that are not in the tileIndicesList.***
+        // 1rst, delete from the mapIndicesTileRaster the tiles that are not in the tileIndicesList
         List<String> tileIndicesStringList = new ArrayList<>(mapIndicesTileRaster.keySet());
         int initialSize = mapIndicesTileRaster.size();
         int reusedRasterTilesCount = 0;
@@ -105,7 +105,7 @@ public class TerrainElevationDataManager {
 
         log.info("ReusedRasterTilesCount = {}", reusedRasterTilesCount + " / " + initialSize);
 
-        // now, delete TerrainElevationData's coverage that are not intersecting with the tileRange.***
+        // now, delete TerrainElevationData's coverage that are not intersecting with the tileRange
         GeographicExtension geoExtensionTotal = null;
         for (TileIndices tileIndices : tileIndicesList) {
             String imageryType = tileWgs84Manager.getImaginaryType();
@@ -271,7 +271,7 @@ public class TerrainElevationDataManager {
 
             // check if "geoTiffFileName" exist in the "geoTiffFileNames" list
             if (!geoTiffFileNames.contains(geoTiffFileName)) {
-                // if no exist, use the standardize file.***
+                // if no exist, use the standardize file
                 geoTiffFilePath = geoTiffFile.getAbsolutePath();
             } else {
                 geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;

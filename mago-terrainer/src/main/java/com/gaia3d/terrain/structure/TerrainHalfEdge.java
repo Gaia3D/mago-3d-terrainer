@@ -75,7 +75,7 @@ public class TerrainHalfEdge {
         if (next != null) {
             return next.getStartVertex();
         } else {
-            // check if exist twin.***
+            // check if exist twin
             if (twin != null) {
                 return twin.getStartVertex();
             } else {
@@ -171,8 +171,8 @@ public class TerrainHalfEdge {
     }
 
     public void getInterpolatedPositions(List<Vector3d> resultPositions, int numPositions) {
-        // this function returns the interpolated positions of this halfEdge.***
-        // resultPositions must be initialized.***
+        // this function returns the interpolated positions of this halfEdge
+        // resultPositions must be initialized
         resultPositions.clear();
         Vector3d startPos = this.getStartVertex().getPosition();
         Vector3d endPos = this.getEndVertex().getPosition();
@@ -199,14 +199,14 @@ public class TerrainHalfEdge {
     }
 
     public boolean isHalfEdgePossibleTwin(TerrainHalfEdge halfEdge, double error) {
-        // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A.***
+        // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A
         TerrainVertex startPoint_A = this.getStartVertex();
         TerrainVertex endPoint_A = this.getEndVertex();
 
         TerrainVertex startPoint_B = halfEdge.getStartVertex();
         TerrainVertex endPoint_B = halfEdge.getEndVertex();
 
-        // First do a bounding box check.***
+        // First do a bounding box check
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();
         GaiaRectangle boundingRect_B = halfEdge.getBoundingRectangle();
 
@@ -214,7 +214,7 @@ public class TerrainHalfEdge {
             return false;
         }
 
-        // 2nd compare objects as values.***
+        // 2nd compare objects as values
         return startPoint_A.isCoincidentVertexXY(endPoint_B, error) && startPoint_B.isCoincidentVertexXY(endPoint_A, error);
     }
 
@@ -253,31 +253,31 @@ public class TerrainHalfEdge {
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
-            // First, save id.***
+            // First, save id
             dataOutputStream.writeInt(id);
 
-            // 2nd, save startVertex.***
+            // 2nd, save startVertex
             if (startVertex != null) {
                 dataOutputStream.writeInt(startVertex.getId());
             } else {
                 dataOutputStream.writeInt(-1);
             }
 
-            // 3rd, save next.***
+            // 3rd, save next
             if (next != null) {
                 dataOutputStream.writeInt(next.id);
             } else {
                 dataOutputStream.writeInt(-1);
             }
 
-            // 4th, save twin.***
+            // 4th, save twin
             if (twin != null) {
                 dataOutputStream.writeInt(twin.id);
             } else {
                 dataOutputStream.writeInt(-1);
             }
 
-            // 5th, save triangle.***
+            // 5th, save triangle
             if (triangle != null) {
                 dataOutputStream.writeInt(triangle.getId());
             } else {

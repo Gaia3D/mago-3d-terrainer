@@ -20,6 +20,7 @@ See: https://github.com/CesiumGS/quantized-mesh
 - High accuracy: Generate quantized-mesh data with high accuracy.
 - Multiple data conversion: Convert multiple GeoTIFF data at once.
 - Customizable options: Provides various customization options such as min/max tile depth, tile raster max size, tile mosaic size, tile generation strength, interpolation method, etc.
+- RTIN Based Terrain Simplification: utilizes the RTIN(Right-Triangulated Irregular Network) algorithm for efficient terrain simplification.
 
 ## Usage
 You can download the released jar file or build the jar yourself via the mago-3d-terrainer project gradle script.   
@@ -32,33 +33,45 @@ gradlew jar
 
 ## Example help command
 ```
-java -jar mago-3d-terrainer-x.x.x-shadow.jar -help
+java -jar mago-3d-terrainer.jar -help
 ```
 Output:
 ```
-┳┳┓┏┓┏┓┏┓  ┏┓┳┓  ┏┳┓┏┓┳┓┳┓┏┓┳┳┓┏┓┳┓
-┃┃┃┣┫┃┓┃┃   ┫┃┃   ┃ ┣ ┣┫┣┫┣┫┃┃┃┣ ┣┫
-┛ ┗┛┗┗┛┗┛  ┗┛┻┛   ┻ ┗┛┛┗┛┗┛┗┻┛┗┗┛┛┗
-3d-terrainer(dev-version) by Gaia3D, Inc.
 ----------------------------------------
-usage: mago 3DTerrainer help
- -c,--continue                   Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails.
- -cn,--calculateNormals          Add terrain octVertexNormals for lighting effect
- -d,--debug                      Debug Mode, print more detail log
- -h,--help                       Print this message
- -i,--input <arg>                Input folder path
- -is,--intensity <arg>           Mesh refinement strength. (default : 4.0)
- -it,--interpolationType <arg>   Interpolation type (nearest, bilinear) (default : bilinear)
- -j,--json                       Generate only layer.json from terrain data
- -l,--log <arg>                  Log file path
- -lt,--leaveTemp                 Leave temporary files for debugging
- -max,--maxDepth <arg>           Maximum tile depth (range : 0 ~ 22) (default : 14)
- -min,--minDepth <arg>           Minimum tile depth (range : 0 ~ 22) (default : 0)
- -mr,--rasterMaxSize <arg>       Maximum raster size for split function. (default : 8192)
- -ms,--mosaicSize <arg>          Tiling mosaic buffer size per tile. (default : 16)
- -nv,--nodataValue <arg>         No data value for terrain data (default : -9999)
- -o,--output <arg>               Output folder path
- -pt,--priorityType <arg>        Priority type () (default : distance)
+mago-3d-terrainer(dev-version) by Gaia3D, Inc.
+----------------------------------------
+Usage: command options
+ -h, --help                       Print Help
+ -lt, --leaveTemp                 Leave temporary files for debugging
+ -j, --json                       Generate layer.json from terrain data
+ -c, --continue                   Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails.
+ -i, --input <arg>                [Required] Input directory path
+ -o, --output <arg>               [Required] Output directory path
+ -l, --log <arg>                  Log file path
+ -t, --temp <arg>                 Temporary directory path (default: {OUTPUT}/temp)
+ -g, --geoid <arg>                Set reference height option for terrain data.
+                                  Geoid file path for height correction,
+                                  (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)
+ -min, --minDepth <arg>           Set minimum terrain tile depth
+                                  (default : 0)(options: 0 - 22)
+ -max, --maxDepth <arg>           Set maximum terrain tile depth
+                                  (default : 14)(options: 0 - 22)
+ -is, --intensity <arg>           Set Mesh refinement intensity.
+                                  (default: 4.0)
+ -it, --interpolationType <arg>   Set Interpolation type
+                                  (default : bilinear)(options: nearest, bilinear)
+ -pt, --priorityType <arg>        Nesting height priority type options
+                                  (default : resolution)(options: resolution, higher)
+ -nv, --nodataValue <arg>         Set NODATA value for terrain generating
+                                  (default : -9999)
+ -cn, --calculateNormals          Add terrain octVertexNormals for lighting effect
+ -ms, --mosaicSize <arg>          Tiling mosaic buffer size per tile.
+                                  (default : 16)
+ -mr, --rasterMaxSize <arg>       Maximum raster size for split function.
+                                  (default : 8192)
+ -md, --metadata                  [Experimental] Generate metadata for the terrain data.
+ -wm, --waterMask                 [Experimental] Generate water mask for the terrain data.
+ -d, --debug                      [DEBUG] Print more detailed logs.
 ```
 This is a simple Quantized-mesh conversion code with the required argument values.
 ```

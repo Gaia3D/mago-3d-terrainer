@@ -33,7 +33,7 @@ public class TileWgs84Utils {
         double minLatDeg = geographicExtension.getMinLatitudeDeg();
         double maxLatDeg = geographicExtension.getMaxLatitudeDeg();
 
-        // south vertices.***
+        // south vertices
         List<TerrainVertex> downVertices = mesh.getDownVerticesSortedLeftToRight();
         for (TerrainVertex vertex : downVertices) {
             double latDeg = vertex.getPosition().y;
@@ -42,7 +42,7 @@ public class TileWgs84Utils {
             }
         }
 
-        // north vertices.***
+        // north vertices
         List<TerrainVertex> upVertices = mesh.getUpVerticesSortedRightToLeft();
         for (TerrainVertex vertex : upVertices) {
             double latDeg = vertex.getPosition().y;
@@ -51,7 +51,7 @@ public class TileWgs84Utils {
             }
         }
 
-        // west vertices.***
+        // west vertices
         List<TerrainVertex> leftVertices = mesh.getLeftVerticesSortedUpToDown();
         for (TerrainVertex vertex : leftVertices) {
             double lonDeg = vertex.getPosition().x;
@@ -60,7 +60,7 @@ public class TileWgs84Utils {
             }
         }
 
-        // east vertices.***
+        // east vertices
         List<TerrainVertex> rightVertices = mesh.getRightVerticesSortedDownToUp();
         for (TerrainVertex vertex : rightVertices) {
             double lonDeg = vertex.getPosition().x;

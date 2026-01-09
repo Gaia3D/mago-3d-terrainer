@@ -79,7 +79,7 @@ public class TileMatrix {
                 continue;
             }
 
-            // set twin.***
+            // set twin
             // First, must change the startVertex & endVertex of the halfEdge2
             TerrainVertex startVertex = halfEdge.getStartVertex();
             TerrainVertex endVertex = halfEdge.getEndVertex();
@@ -497,7 +497,7 @@ public class TileMatrix {
             return true;
         }
 
-        // bbox of the triangle in the raster.***
+        // bbox of the triangle in the raster
         int startCol = tileRaster.getColumn(bboxTriangle.getMinX());
         int startRow = tileRaster.getRow(bboxTriangle.getMinY());
         int endCol = tileRaster.getColumn(bboxTriangle.getMaxX());
@@ -516,7 +516,7 @@ public class TileMatrix {
         Vector2i rasterTriangleP2 = rasterTriangle.getP2();
         Vector2i rasterTriangleP3 = rasterTriangle.getP3();
 
-        // parameters used for the barycentric coordinates.***
+        // parameters used for the barycentric coordinates
         int deltaYBC = rasterTriangleP2.y - rasterTriangleP3.y;
         int deltaYCA = rasterTriangleP3.y - rasterTriangleP1.y;
         int deltaYAC = rasterTriangleP1.y - rasterTriangleP2.y;
@@ -558,7 +558,7 @@ public class TileMatrix {
                     continue;
                 }
 
-                // check if the pixel (col, row) intersects the rasterTriangle.***
+                // check if the pixel (col, row) intersects the rasterTriangle
                 intersects = false;
                 double alpha = (deltaYBC * (col - rasterTriangleP3.x) + deltaXCB * (row - rasterTriangleP3.y)) / denominator;
                 if (alpha < 0 || alpha > 1) {

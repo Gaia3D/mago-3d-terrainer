@@ -192,10 +192,10 @@ public class TerrainMeshUtils {
             triangle = childMesh.triangles.get(0); // take the first triangle
             TileIndices childTileIndices = triangle.getOwnerTileIndices();
 
-            // Now, clamp the vertices in to the tile.***
+            // Now, clamp the vertices in to the tile
             TileWgs84Utils.clampVerticesInToTile(childMesh, childTileIndices, manager.getImaginaryType(), manager.originIsLeftUp());
 
-            // Now, save the mesh.***
+            // Now, save the mesh
             String tileTempDirectory = globalOptions.getTileTempPath();
             String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
             String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;

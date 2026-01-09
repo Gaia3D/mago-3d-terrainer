@@ -66,7 +66,7 @@ public class TileWgs84Manager {
 
     private GaiaGeoTiffManager gaiaGeoTiffManager = new GaiaGeoTiffManager();
 
-    // the list of standardized geotiff files. This the real input for the terrain elevation data.***
+    // the list of standardized geotiff files. This the real input for the terrain elevation data
     private List<File> standardizedGeoTiffFiles = new ArrayList<>();
 
     // constructor
@@ -139,7 +139,7 @@ public class TileWgs84Manager {
     }
 
     public void makeTempFilesFromQuantizedMeshes(int depth) {
-        // make temp folder.***
+        // make temp folder
         String tempPath = globalOptions.getTileTempPath();
         String depthStr = "L" + depth;
         String depthTempPath = tempPath + File.separator + depthStr;
@@ -150,7 +150,7 @@ public class TileWgs84Manager {
             }
         }
 
-        // find quantized mesh files.***
+        // find quantized mesh files
         String quantizedMeshPath = globalOptions.getOutputPath() + File.separator + depth;
         File quantizedMeshFolder = new File(quantizedMeshPath);
         if (!quantizedMeshFolder.exists()) {
@@ -158,7 +158,7 @@ public class TileWgs84Manager {
             return;
         }
 
-        // start to make temp files.***
+        // start to make temp files
         int L = depth;
         int X = 0;
         int Y = 0;
@@ -226,7 +226,7 @@ public class TileWgs84Manager {
     private void makeChildrenTempFiles(int depth) {
         int childrenDepth = depth + 1;
 
-        // make temp folder.***
+        // make temp folder
         String tempPath = globalOptions.getTileTempPath();
         String depthStr = "L" + depth;
         String depthTempPath = tempPath + File.separator + depthStr;
@@ -235,7 +235,7 @@ public class TileWgs84Manager {
             return;
         }
 
-        // make the children temp folder.***
+        // make the children temp folder
         String childrenTempPath = tempPath + File.separator + "L" + childrenDepth;
         File childrenTempFolder = new File(childrenTempPath);
         if (!childrenTempFolder.exists()) {
@@ -244,7 +244,7 @@ public class TileWgs84Manager {
             }
         }
 
-        // find all XFolders inside the depthTempPath folder.***
+        // find all XFolders inside the depthTempPath folder
         List<String> xFolders = new ArrayList<>();
         FileUtils.getFolderNames(depthTempPath, xFolders);
         int xFoldersCount = xFolders.size();
@@ -258,7 +258,7 @@ public class TileWgs84Manager {
                 continue;
             }
 
-            // make children XTemp folder.***
+            // make children XTemp folder
             String childrenXTempPath = childrenTempPath + File.separator + xFolderName;
             File childrenXTempFolder = new File(childrenXTempPath);
             if (!childrenXTempFolder.exists()) {
@@ -267,7 +267,7 @@ public class TileWgs84Manager {
                 }
             }
 
-            // load the TileWgs84 files.***
+            // load the TileWgs84 files
             List<String> tileWgs84FileNames = new ArrayList<>();
             FileUtils.getFileNames(xFolderPath, ".til", tileWgs84FileNames);
             int tileWgs84FilesCount = tileWgs84FileNames.size();
@@ -295,7 +295,7 @@ public class TileWgs84Manager {
                         continue;
                     }
 
-                    // save the TileWgs84 in the children temp folder.***
+                    // save the TileWgs84 in the children temp folder
                     TerrainMeshUtils.save4ChildrenMeshes(tileWgs84.getMesh(), this, globalOptions);
                 } catch (Exception e) {
                     log.error("Error loading TileWgs84 file: {}", tileWgs84FilePath, e);
@@ -355,6 +355,12 @@ public class TileWgs84Manager {
         if (globalOptions.isCalculateNormalsExtension()) {
             terrainLayer.addExtension("octvertexnormals");
         }
+        if (globalOptions.isWaterMaskExtension()) {
+            terrainLayer.addExtension("watermask");
+        }
+        if (globalOptions.isMetaDataExtension()) {
+            terrainLayer.addExtension("metadata");
+        }
 
         log.info("----------------------------------------");
         int minTileDepth = globalOptions.getMinimumTileDepth();
@@ -405,7 +411,7 @@ public class TileWgs84Manager {
                 tileMatrix.deleteObjects();
 
                 if(!GlobalOptions.getInstance().isLeaveTemp()) {
-                    // now, delete tempFiles of subDividedTilesRange.***
+                    // now, delete tempFiles of subDividedTilesRange
                     TileRange tilesToDeleteRange = subDividedTilesRange.clone();
                     tilesToDeleteRange.translate(-1, -1);
                     deleteTempFilesByTileRange(tilesToDeleteRange);
@@ -486,7 +492,7 @@ public class TileWgs84Manager {
                 }
             }
 
-            // if the X folder is empty, delete it.***
+            // if the X folder is empty, delete it
             String[] remainingFiles = xFolder.list();
             if (remainingFiles != null && remainingFiles.length == 0) {
                 if (xFolder.delete()) {
@@ -520,6 +526,12 @@ public class TileWgs84Manager {
 
         if (globalOptions.isCalculateNormalsExtension()) {
             terrainLayer.addExtension("octvertexnormals");
+        }
+        if (globalOptions.isWaterMaskExtension()) {
+            terrainLayer.addExtension("watermask");
+        }
+        if (globalOptions.isMetaDataExtension()) {
+            terrainLayer.addExtension("metadata");
         }
 
         log.info("----------------------------------------");
@@ -742,9 +754,13 @@ public class TileWgs84Manager {
 
         standardizeRasters(rasterFileNames);
 
-        // now make the list of standardized geotiff files (20250311 jinho seongdo).***
+        // now make the list of standardized geotiff files (20250311 jinho seongdo)
         File tempFolder = new File(globalOptions.getStandardizeTempPath());
         File[] children = tempFolder.listFiles();
+        if (children == null || children.length == 0) {
+            log.error("No standardized GeoTiff files found in the standardization temp path: {}", tempFolder.getAbsolutePath());
+            throw new RuntimeException("Error: No standardized GeoTiff files found in the standardization temp path: " + tempFolder.getAbsolutePath());
+        }
         this.getStandardizedGeoTiffFiles().clear();
         for (File child : children) {
             this.getStandardizedGeoTiffFiles().add(child);
@@ -759,11 +775,24 @@ public class TileWgs84Manager {
         }
         globalOptions.setInputPath(tempFolder.getAbsolutePath());
 
-        geoTiffFileNames.forEach(geoTiffFileName -> {
-            GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
-            RasterStandardizer rasterStandardizer = new RasterStandardizer();
-            rasterStandardizer.standardize(originalGridCoverage2D, tempFolder);
-        });
+        /* check if geoid is provided */
+        String geoidPath = globalOptions.getGeoidPath();
+        boolean hasGeoid = geoidPath != null && !geoidPath.isEmpty();
+
+        if (hasGeoid) {
+            File geoidFile = new File(geoidPath);
+            geoTiffFileNames.forEach(geoTiffFileName -> {
+                GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
+                RasterStandardizer rasterStandardizer = new RasterStandardizer();
+                rasterStandardizer.standardizeWithGeoid(originalGridCoverage2D, tempFolder, geoidFile);
+            });
+        } else {
+            geoTiffFileNames.forEach(geoTiffFileName -> {
+                GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
+                RasterStandardizer rasterStandardizer = new RasterStandardizer();
+                rasterStandardizer.standardize(originalGridCoverage2D, tempFolder);
+            });
+        }
     }
 
     public void processResizeRasters(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {

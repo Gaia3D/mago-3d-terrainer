@@ -42,8 +42,8 @@ public class QuantizedMeshManager {
         List<TerrainHalfEdge> halfEdges = mesh.getHalfEdges();
         List<TerrainTriangle> triangles = mesh.getTriangles();
 
-        // 1rst, make the TerrainVertices.***
-        // TerrainVertex has the lonDeg, latDeg, height.***
+        // 1rst, make the TerrainVertices
+        // TerrainVertex has the lonDeg, latDeg, height
         short[] uBuffer = quantizedMesh.getUBuffer();
         short[] vBuffer = quantizedMesh.getVBuffer();
         short[] heightBuffer = quantizedMesh.getHeightBuffer();

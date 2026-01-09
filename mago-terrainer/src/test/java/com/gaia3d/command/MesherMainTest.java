@@ -102,7 +102,7 @@ class MesherMainTest {
     @Test
     void mainKoreaOneGeotiff() throws FactoryException, TransformException, IOException {
         //****************************************************************
-        // Note : the outFolder must be different from the inputFolder.***
+        // Note : the outFolder must be different from the inputFolder
         //****************************************************************
         String originalGeoTiffFolderPath = "D:\\QuantizedMesh_JavaProjects\\data_geoTiff_1file_korea";
         String outputDirectory = "D:\\QuantizedMesh_JavaProjects\\output\\";

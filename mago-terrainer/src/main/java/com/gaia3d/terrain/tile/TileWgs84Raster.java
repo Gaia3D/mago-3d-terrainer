@@ -132,11 +132,11 @@ public class TileWgs84Raster {
         double semiDeltaLonDeg = deltaLonDeg * 0.5;
         double semiDeltaLatDeg = deltaLatDeg * 0.5;
 
-        // make intersected terrainElevationDataList.***
+        // make intersected terrainElevationDataList
         GeographicExtension geoExtension = this.getGeographicExtension();
         List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
         resultTerrainElevDataArray.clear();
-        // Debug : check if the terrainElevationDataList is intersected with the geoExtension.***
+        // Debug : check if the terrainElevationDataList is intersected with the geoExtension
         Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap = new HashMap<>();
         terrainElevationDataManager.getTerrainElevationDataArray(geoExtension, terrainElevDataMap);
         resultTerrainElevDataArray = new ArrayList<>(terrainElevDataMap.keySet());

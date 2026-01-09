@@ -10,7 +10,7 @@ import java.io.File;
 public class TerrainerReleaseTest {
 
     private final File INPUT_PATH = new File("D:\\data\\mago-3d-terrainer\\release-sample");
-    private final File OUTPUT_PATH = new File("E:\\data\\mago-server\\output");
+    private final File OUTPUT_PATH = new File("H:\\workspace\\mago-server\\output");
 
     @Test
     void resampleBigMoreFast() {
@@ -107,10 +107,50 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "14",
-                "-interpolation", "bilinear",
+                "-max", "13",
+                "-interpolation", "nearest",
                 "-calculateNormals",
-                "-leaveTemp",
+                "-leaveTemp"
+        };
+        MagoTerrainerMain.main(args);
+    }
+    //"-geoid", "EGM96",
+
+    @Test
+    void multiResolutionWithGeoid() {
+        String name = "multi-resolution";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath() + "_geoid",
+                "-min", "0",
+                "-max", "13",
+                "-interpolation", "nearest",
+                "-calculateNormals",
+                "-geoid", "EGM96",
+                "-leaveTemp"
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void multiResolutionWithGeoidExternal() {
+        String name = "multi-resolution";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name);
+        File inputGeoidPath = new File(INPUT_PATH, "kr_ngii_KNGeoid18_4326.tif");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath() + "_kngeoid18",
+                "-min", "0",
+                "-max", "13",
+                "-interpolation", "nearest",
+                "-calculateNormals",
+                "-geoid", inputGeoidPath.getAbsolutePath(),
+                "-leaveTemp"
         };
         MagoTerrainerMain.main(args);
     }

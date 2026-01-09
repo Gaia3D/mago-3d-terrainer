@@ -136,21 +136,21 @@ public class TerrainMesh {
 
     public void determineHalfEdgesType() {
         //***********************************************************************************
-        // Note : function used after loading quantized mesh & convert it to terrain mesh.***
+        // Note : function used after loading quantized mesh & convert it to terrain mesh
         //***********************************************************************************
         GaiaRectangle boundingRectangle = getBoundingRectangle();
         double minX = boundingRectangle.getMinX();
         double minY = boundingRectangle.getMinY();
         double maxX = boundingRectangle.getMaxX();
         double maxY = boundingRectangle.getMaxY();
-        double error = 1e-13; // vertex_coincident_error defined in TileMatrix.***
+        double error = 1e-13; // vertex_coincident_error defined in TileMatrix
         for (TerrainHalfEdge halfEdge : this.halfEdges) {
             if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
 
             if (halfEdge.hasTwin()) {
-                // halfEdge is interior.***
+                // halfEdge is interior
                 halfEdge.setType(TerrainHalfEdgeType.INTERIOR);
                 continue;
             }
@@ -193,7 +193,7 @@ public class TerrainMesh {
                 }
             }
 
-            // halfEdge is interior.***
+            // halfEdge is interior
             halfEdge.setType(TerrainHalfEdgeType.INTERIOR);
         }
     }
