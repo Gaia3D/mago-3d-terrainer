@@ -62,13 +62,22 @@ public class GaiaGeoTiffManager {
 
         log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
         GridCoverage2D coverage = null;
+        GeoTiffReader reader = null;
         try {
             File file = new File(geoTiffFilePath);
-            GeoTiffReader reader = new GeoTiffReader(file);
+            reader = new GeoTiffReader(file);
             coverage = reader.read(null);
             reader.dispose();
         } catch (Exception e) {
             log.error("Error:", e);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.dispose();
+                } catch (Exception ex) {
+                    log.error("Error:", ex);
+                }
+            }
         }
 
         // save the coverage
@@ -100,6 +109,15 @@ public class GaiaGeoTiffManager {
         }
         mapPathGridCoverage2d.clear();
 
+    }
+
+    public void clear() {
+        for (GridCoverage2D c : mapPathGridCoverage2d.values()) {
+            if (c != null) c.dispose(true);
+        }
+        mapPathGridCoverage2d.clear();
+        mapPathGridCoverage2dSize.clear();
+        pathList.clear();
     }
 
     public GridCoverage2D getResizedCoverage2D(GridCoverage2D originalCoverage, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters) throws FactoryException {

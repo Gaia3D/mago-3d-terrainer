@@ -23,6 +23,7 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
 import javax.media.jai.*;
+import java.awt.*;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
@@ -31,8 +32,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -151,7 +151,7 @@ public class RasterStandardizer {
             });
 
         } catch (TransformException | IOException | InterruptedException | ExecutionException e) {
-            log.error("Failed to standardization.", e);
+            //log.error("Failed to standardization.", e);
             throw new RuntimeException(e);
         }
     }
@@ -205,6 +205,12 @@ public class RasterStandardizer {
         return new RasterInfo(tileName, gridCoverage2D);
     }
 
+    /**
+     * Split GridCoverage2D into tiles with tileSize
+     * @param coverage source GridCoverage2D
+     * @param tileSize tile size
+     * @return List<RasterInfo> tiles
+     */
     public List<RasterInfo> split(GridCoverage2D coverage, int tileSize) throws TransformException, IOException {
         List<RasterInfo> tiles = new ArrayList<>();
 
@@ -249,6 +255,12 @@ public class RasterStandardizer {
         return tiles;
     }
 
+    /**
+     * Crop GridCoverage2D with envelope
+     * @param coverage source GridCoverage2D
+     * @param envelope crop envelope
+     * @return cropped GridCoverage2D
+     */
     public GridCoverage2D crop(GridCoverage2D coverage, ReferencedEnvelope envelope) {
         try {
             Operations ops = Operations.DEFAULT;
@@ -260,6 +272,12 @@ public class RasterStandardizer {
         }
     }
 
+    /**
+     * Reproject GridCoverage2D to targetCRS
+     * @param sourceCoverage source GridCoverage2D
+     * @param targetCRS target CoordinateReferenceSystem
+     * @return reprojected GridCoverage2D
+     */
     public GridCoverage2D resample(GridCoverage2D sourceCoverage, CoordinateReferenceSystem targetCRS) {
         try {
             CoverageProcessor.updateProcessors();
@@ -271,13 +289,11 @@ public class RasterStandardizer {
             params.parameter("CoordinateReferenceSystem").setValue(targetCRS);
             params.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_NEAREST)); // INTERP_BILINEAR
 
-
             NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(sourceCoverage);
-            double nodata = Double.NaN;
             if (noDataContainer != null) {
                 double[] noDataValues = noDataContainer.getAsArray();
                 params.parameter("NoData").setValue(noDataValues);
-                nodata = noDataValues[0];
+                double nodata = noDataValues[0];
                 params.parameter("BackgroundValues").setValue(nodata);
             }
             return (GridCoverage2D) processor.doOperation(params);
@@ -288,6 +304,11 @@ public class RasterStandardizer {
         }
     }
 
+    /**
+     * Get NoData value from GridCoverage2D
+     * @param coverage GridCoverage2D
+     * @return NoData value or null
+     */
     public Double getNodata(GridCoverage2D coverage) {
         NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
         if (noDataContainer != null) {
@@ -298,58 +319,72 @@ public class RasterStandardizer {
         }
     }
 
-    public GridCoverage2D addGeoidPreserveDemNoData(GridCoverage2D dem, GridCoverage2D geoidAligned) {
+    /**
+     * Add Calculate Geoid to DEM value
+     * when DEM value is NoData, preserve NoData value
+     * @param dem digital elevation model
+     * @param alignedGeoid same grid geometry with dem
+     * @return GridCoverage2D with geoid applied
+     */
+    public GridCoverage2D addGeoidPreserveDemNoData(GridCoverage2D dem, GridCoverage2D alignedGeoid) {
+        double globalNodata = globalOptions.getNoDataValue();
+
         RenderedImage demImg = dem.getRenderedImage();
-        RenderedImage geoImg = geoidAligned.getRenderedImage();
+        RenderedImage geoidImg = alignedGeoid.getRenderedImage();
 
-        // 출력은 DEM과 동일한 크기/타입으로 가는 게 보통 편함
-        int w = demImg.getWidth();
-        int h = demImg.getHeight();
-
-        // DEM의 NoData 추출 시도
-        Double demNoDataVal = getNodata(dem); // 위 유틸
+        Double demNoDataVal = getNodata(dem);
         boolean hasDemNoDataVal = demNoDataVal != null;
         double demNoData = hasDemNoDataVal ? demNoDataVal : Double.NaN;
 
-        // DEM/Geoid raster 읽기 (타일 단위면 getData(…)로 윈도우 읽는 방식이 더 빠르지만, 우선 전체)
-        Raster demR = demImg.getData();
-        Raster geoR = geoImg.getData();
+        Raster demRaster = demImg.getData();
+        Raster geoRaster = geoidImg.getData();
 
-        // 출력 raster
-        WritableRaster outR = RasterFactory.createBandedRaster(
-                DataBuffer.TYPE_FLOAT, w, h, 1, null
+        Rectangle demRectangle = demRaster.getBounds();
+        Rectangle geoidRectangle = geoRaster.getBounds();
+        Rectangle intersection = demRectangle.intersection(geoidRectangle);
+
+        WritableRaster outRaster = RasterFactory.createBandedRaster(
+                DataBuffer.TYPE_FLOAT, demRectangle.width, demRectangle.height, 1, null
         );
 
-        // 계산
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                double H = demR.getSampleDouble(x, y, 0);
-                double N = geoR.getSampleDouble(x, y, 0);
+        for (int y = demRectangle.y; y < demRectangle.y + demRectangle.height; y++) {
+            for (int x = demRectangle.x; x < demRectangle.x + demRectangle.width; x++) {
+                int outputX = x - demRectangle.x;
+                int outputY = y - demRectangle.y;
+                outRaster.setSample(outputX, outputY, 0, (float) demRaster.getSampleDouble(x, y, 0));
+            }
+        }
 
-                // DEM NoData 판정: (1) NaN, (2) 명시 NoData 값
-                boolean demIsNoData = Double.isNaN(H) || (hasDemNoDataVal && Double.compare(H, demNoData) == 0);
-                boolean demIsExtremeNoData = (H < -9999); // 디버그용 극단값 체크
+        for (int y = intersection.y; y < intersection.y + intersection.height; y++) {
+            for (int x = intersection.x; x < intersection.x + intersection.width; x++) {
+                int outputX = x - demRectangle.x;
+                int outputY = y - demRectangle.y;
 
-                if (demIsExtremeNoData) {
-                    outR.setSample(x, y, 0, (float) -9999);
-                } else if (demIsNoData) {
-                    // DEM NoData는 그대로 유지 (채우지 않음)
-                    outR.setSample(x, y, 0, (float) H);
+                double H = demRaster.getSampleDouble(x, y, 0);
+                if (H < -9999) {
+                    outRaster.setSample(outputX, outputY, 0, (float) globalNodata);
+                } else if (Double.isNaN(H) || (hasDemNoDataVal && Double.compare(H, demNoData) == 0)) {
+                    outRaster.setSample(outputX, outputY, 0, (float) globalNodata);
                 } else {
-                    // 유효한 DEM만 geoid 더함
-                    outR.setSample(x, y, 0, (float) (H + N));
+                    double N = geoRaster.getSampleDouble(x, y, 0);
+                    outRaster.setSample(outputX, outputY, 0, (float) (H + N));
                 }
             }
         }
 
-        // coverage 생성 (Envelope/CRS는 DEM 그대로)
         return new GridCoverageFactory().create(
                 dem.getName(),
-                outR,
+                outRaster,
                 dem.getEnvelope()
         );
     }
 
+    /**
+     * Check if two CRS are the same
+     * @param sourceCRS source CoordinateReferenceSystem
+     * @param targetCRS target CoordinateReferenceSystem
+     * @return true if same, false otherwise
+     */
     public boolean isSameCRS(CoordinateReferenceSystem sourceCRS, CoordinateReferenceSystem targetCRS) {
         Iterator<ReferenceIdentifier> sourceCRSIterator = sourceCRS.getIdentifiers().iterator();
         Iterator<ReferenceIdentifier> targetCRSIterator = targetCRS.getIdentifiers().iterator();

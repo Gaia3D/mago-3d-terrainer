@@ -212,7 +212,6 @@ public class TerrainElevationDataManager {
             return resultElevation;
         }
 
-        double noDataValue = globalOptions.getNoDataValue();
         PriorityType priorityType = globalOptions.getPriorityType();
 
         intersects[0] = false;
@@ -227,7 +226,8 @@ public class TerrainElevationDataManager {
             /* check if the priority is resolution */
             if (priorityType.equals(PriorityType.RESOLUTION)) {
                 double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFileName(), terrainElevationData.getGeotiffFilePath());
-                boolean isHigherResolution = pixelAreaAux > pixelArea; // smaller pixelArea is a higher resolution
+                // smaller pixelArea is a higher resolution
+                boolean isHigherResolution = pixelAreaAux > pixelArea;
                 if (isHigherResolution) {
                     candidateElevation = elevation;
                     pixelAreaAux = pixelArea;

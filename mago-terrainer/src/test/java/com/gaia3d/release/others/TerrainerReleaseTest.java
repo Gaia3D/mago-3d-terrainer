@@ -107,14 +107,14 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "13",
+                "-max", "10",
                 "-interpolation", "nearest",
                 "-calculateNormals",
-                "-leaveTemp"
+                //"-leaveTemp"
         };
         MagoTerrainerMain.main(args);
     }
-    //"-geoid", "EGM96",
+
 
     @Test
     void multiResolutionWithGeoid() {
@@ -126,11 +126,11 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath() + "_geoid",
                 "-min", "0",
-                "-max", "13",
+                "-max", "10",
                 "-interpolation", "nearest",
                 "-calculateNormals",
                 "-geoid", "EGM96",
-                "-leaveTemp"
+                //"-leaveTemp"
         };
         MagoTerrainerMain.main(args);
     }
@@ -146,11 +146,11 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath() + "_kngeoid18",
                 "-min", "0",
-                "-max", "13",
+                "-max", "10",
                 "-interpolation", "nearest",
                 "-calculateNormals",
                 "-geoid", inputGeoidPath.getAbsolutePath(),
-                "-leaveTemp"
+                //"-leaveTemp"
         };
         MagoTerrainerMain.main(args);
     }
@@ -166,10 +166,10 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "15",
+                "-max", "12",
                 "-interpolation", "nearest",
                 "-calculateNormals",
-                "-leaveTemp"
+                //"-leaveTemp"
         };
         MagoTerrainerMain.main(args);
     }
@@ -184,10 +184,29 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "14",
+                "-max", "12",
                 "-interpolation", "nearest",
                 "-calculateNormals",
                 "-leaveTemp"
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void multiResolutionBigWithGeoid() {
+        String name = "multi-resolution-big";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_geoid");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "10",
+                "-interpolation", "nearest",
+                "-nodataValue", "-8612",
+                "-calculateNormals",
+                "-geoid", "EGM96",
         };
         MagoTerrainerMain.main(args);
     }

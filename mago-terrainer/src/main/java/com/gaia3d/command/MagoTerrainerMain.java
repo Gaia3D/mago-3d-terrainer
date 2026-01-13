@@ -5,6 +5,7 @@ import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TerrainLayer;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
+import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.util.DecimalUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
@@ -15,6 +16,7 @@ import org.opengis.referencing.operation.TransformException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
 
 @Slf4j
 public class MagoTerrainerMain {
@@ -110,7 +112,8 @@ public class MagoTerrainerMain {
         log.info("[Pre][Resize] Finished GeoTiff Resizing files.");
 
         log.info("[Tile] Start generate terrain elevation data.");
-        tileWgs84Manager.setTerrainElevationDataManager(new TerrainElevationDataManager());
+        TerrainElevationDataManager terrainElevationDataManager = new TerrainElevationDataManager();
+        tileWgs84Manager.setTerrainElevationDataManager(terrainElevationDataManager);
         tileWgs84Manager.getTerrainElevationDataManager().setTileWgs84Manager(tileWgs84Manager);
         tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
 
@@ -163,34 +166,20 @@ public class MagoTerrainerMain {
      */
     private static void cleanTemp() {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
+
         File tileTempFolder = new File(globalOptions.getTileTempPath());
         if (tileTempFolder.exists() && tileTempFolder.isDirectory()) {
-            try {
-                log.info("[Post] Deleting tileTempFolder");
-                FileUtils.deleteDirectory(tileTempFolder);
-            } catch (IOException e) {
-                log.error("[Post] Failed to delete tileTempFolder.", e);
-            }
+            FileUtils.deleteQuietly(tileTempFolder);
         }
 
         File splitTempFolder = new File(globalOptions.getSplitTiffTempPath());
         if (splitTempFolder.exists() && splitTempFolder.isDirectory()) {
-            try {
-                log.info("[Post] Deleting splitTempFolder");
-                FileUtils.deleteDirectory(splitTempFolder);
-            } catch (IOException e) {
-                log.error("[Post] Failed to delete splitTempFolder.", e);
-            }
+            FileUtils.deleteQuietly(splitTempFolder);
         }
 
         File resizedTempFolder = new File(globalOptions.getResizedTiffTempPath());
         if (resizedTempFolder.exists() && resizedTempFolder.isDirectory()) {
-            try {
-                log.info("[Post] Deleting resizedTempFolder");
-                FileUtils.deleteDirectory(resizedTempFolder);
-            } catch (IOException e) {
-                log.error("[Post] Failed to delete resizedTempFolder.", e);
-            }
+            FileUtils.deleteQuietly(resizedTempFolder);
         }
     }
 

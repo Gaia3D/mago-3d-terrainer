@@ -96,6 +96,37 @@ class DockerBuildTest {
         runCommand(argList);
     }
 
+    @Test
+    void runWithSimpleAndSave2() throws IOException {
+        String resourcePath = "multi-resolution-big";
+        File inputPath = MagoTestConfig.getInputPath(resourcePath);
+        File outputPath = MagoTestConfig.getOutputPath(resourcePath);
+
+        File inputParentPath = inputPath.getParentFile();
+        File outputParentPath = outputPath.getParentFile();
+
+        String dockerImage = "gaia3d/mago-3d-terrainer:latest";
+        List<String> argList = new ArrayList<>();
+        argList.add("docker");
+        argList.add("run");
+        argList.add("--rm");
+        argList.add("-v");
+        argList.add(inputParentPath.getAbsolutePath() + ":/workspace/input");
+        argList.add("-v");
+        argList.add(outputParentPath.getAbsolutePath() + ":/workspace/output");
+        argList.add(dockerImage);
+        argList.add("--input");
+        argList.add("/workspace/input/" + inputPath.getName());
+        argList.add("--output");
+        argList.add("/workspace/output/" + outputPath.getName());
+        argList.add("--max");
+        argList.add("12");
+        argList.add("--geoid");
+        argList.add("EGM96");
+
+        runCommand(argList);
+    }
+
     private void runCommand(List<String> argList) throws IOException {
         String[] args = argList.toArray(new String[0]);
 

@@ -14,10 +14,8 @@ import org.geotools.geometry.DirectPosition2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 
-import javax.media.jai.RasterFactory;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
-import java.awt.image.WritableRaster;
 
 @Slf4j
 @Getter
@@ -26,7 +24,6 @@ public class TerrainElevationData {
     private GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     private Vector2d pixelSizeMeters;
-    // the terrain elevation data is stored in a geotiff file
     private TerrainElevationDataManager terrainElevDataManager = null;
     private String geotiffFilePath = "";
     private String geotiffFileName = "";
@@ -88,10 +85,8 @@ public class TerrainElevationData {
     public double getGridValue(int x, int y) {
         double value = 0.0;
         if (raster == null) {
-            GaiaGeoTiffManager gaiaGeoTiffManager = null;
-
             if (this.coverage == null) {
-                gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
+                GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
                 this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
             }
 
@@ -101,14 +96,8 @@ public class TerrainElevationData {
 
             // determine the grid coordinates of the point
             if (this.raster == null) {
-                //try {
-                    //this.raster = this.coverage.getRenderedImage().getData(); // original
-                    RenderedImage ri = coverage.getRenderedImage();
-                    this.raster = ri.getData();
-//                } catch (Exception e) {
-//                    log.error("[RenderedImage: Exception] Error in this.coverage.getRenderedImage().getData()", e);
-//                }
-
+                RenderedImage ri = coverage.getRenderedImage();
+                this.raster = ri.getData();
                 this.coverage.dispose(true);
                 this.coverage = null;
             }

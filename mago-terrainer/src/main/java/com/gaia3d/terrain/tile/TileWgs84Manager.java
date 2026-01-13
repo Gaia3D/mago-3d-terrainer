@@ -136,6 +136,10 @@ public class TileWgs84Manager {
         this.maxTriangleSizeForTileDepthList.clear();
         this.minTriangleSizeForTileDepthList.clear();
         this.mapNoUsableGeotiffPaths.clear();
+        this.gaiaGeoTiffManager.deleteObjects();
+        this.gaiaGeoTiffManager.clear();
+
+        javax.media.jai.JAI.getDefaultInstance().getTileCache().flush();
     }
 
     public void makeTempFilesFromQuantizedMeshes(int depth) {
@@ -820,7 +824,6 @@ public class TileWgs84Manager {
         // load all geoTiffFiles
         List<String> geoTiffFileNames = new ArrayList<>();
         FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
-        CoordinateReferenceSystem targetCRS = CRS.decode("EPSG:3857");
 
         if (currentFolderPath == null) {
             currentFolderPath = "";
@@ -841,7 +844,6 @@ public class TileWgs84Manager {
             }
 
             GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
-
             CoordinateReferenceSystem crsTarget = originalGridCoverage2D.getCoordinateReferenceSystem2D();
             if (!(crsTarget instanceof ProjectedCRS || crsTarget instanceof GeographicCRS)) {
                 log.error("The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems");
@@ -869,8 +871,8 @@ public class TileWgs84Manager {
                 // check if exist the file
                 if (FileUtils.isFileExists(resizedGeoTiffFilePath)) {
                     // in this case, just assign the resizedGeoTiffFolderPath
-                    String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
-                    this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
+                    String resizedGeoTiffSetFolderPathForThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
+                    this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSetFolderPathForThisDepth);
                     continue;
                 }
 
@@ -880,8 +882,8 @@ public class TileWgs84Manager {
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
                 resizedGridCoverage2D.dispose(true);
 
-                String resizedGeoTiffSETFolderPath_forThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
-                this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSETFolderPath_forThisDepth);
+                String resizedGeoTiffSetFolderPathForThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
+                this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSetFolderPathForThisDepth);
             }
         }
 
