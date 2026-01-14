@@ -360,4 +360,10 @@ public class HalfEdgePrimitive implements Serializable {
             surface.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
         }
     }
+
+    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
+        for (HalfEdgeSurface surface : surfaces) {
+            surface.decimateInteriorOfBox(decimateParameters, boundingBox);
+        }
+    }
 }

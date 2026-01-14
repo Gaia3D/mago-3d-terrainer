@@ -109,55 +109,24 @@ public enum CameraDirectionType {
     public static CameraDirectionType getBestObliqueCameraDirectionType(Vector3d normal) {
         CameraDirectionType result = CameraDirectionType.CAMERA_DIRECTION_UNKNOWN;
 
-        Vector3d camDirYPos = new Vector3d(0, 1, -1);
-        camDirYPos.normalize();
-
-        Vector3d camDirYNeg = new Vector3d(0, -1, -1);
-        camDirYNeg.normalize();
-
-        Vector3d camDirXPos = new Vector3d(1, 0, -1);
-        camDirXPos.normalize();
-
-        Vector3d camDirXNeg = new Vector3d(-1, 0, -1);
-        camDirXNeg.normalize();
-
-        double dotYPos = normal.dot(camDirYPos);
-        double dotYNeg = normal.dot(camDirYNeg);
-        double dotXPos = normal.dot(camDirXPos);
-        double dotXNeg = normal.dot(camDirXNeg);
-
-        // choose the most opposite direction
-        // the most opposite direction is the most negative dot product
-        if (dotYPos < dotYNeg) {
-            if (dotYPos < dotXPos) {
-                if (dotYPos < dotXNeg) {
-                    result = CameraDirectionType.CAMERA_DIRECTION_YPOS_ZNEG;
-                } else {
-                    result = CameraDirectionType.CAMERA_DIRECTION_XNEG_ZNEG;
-                }
-            } else {
-                if (dotXPos < dotXNeg) {
-                    result = CameraDirectionType.CAMERA_DIRECTION_XPOS_ZNEG;
-                } else {
-                    result = CameraDirectionType.CAMERA_DIRECTION_XNEG_ZNEG;
-                }
+        // invert normal and do dot product test
+        Vector3d invertedNormal = new Vector3d(normal).mul(-1.0);
+        double maxDot = -Double.MAX_VALUE;
+        for (CameraDirectionType cameraDirectionType : CameraDirectionType.values()) {
+            // In oblique camera direction selection, we only consider oblique directions.
+            if (cameraDirectionType == CAMERA_DIRECTION_UNKNOWN || cameraDirectionType == CAMERA_DIRECTION_XPOS ||
+                    cameraDirectionType == CAMERA_DIRECTION_XNEG || cameraDirectionType == CAMERA_DIRECTION_ZPOS ||
+                    cameraDirectionType == CAMERA_DIRECTION_ZNEG || cameraDirectionType == CAMERA_DIRECTION_YPOS ||
+                    cameraDirectionType == CAMERA_DIRECTION_YNEG) {
+                continue;
             }
-        } else {
-            if (dotYNeg < dotXPos) {
-                if (dotYNeg < dotXNeg) {
-                    result = CameraDirectionType.CAMERA_DIRECTION_XNEG_ZNEG;
-                } else {
-                    result = CameraDirectionType.CAMERA_DIRECTION_XNEG_ZNEG;
-                }
-            } else {
-                if (dotXPos < dotXNeg) {
-                    result = CameraDirectionType.CAMERA_DIRECTION_XPOS_ZNEG;
-                } else {
-                    result = CameraDirectionType.CAMERA_DIRECTION_YPOS_ZNEG;
-                }
+            Vector3d cameraDirection = getCameraDirection(cameraDirectionType);
+            double dot = invertedNormal.dot(cameraDirection);
+            if (dot > maxDot) {
+                maxDot = dot;
+                result = cameraDirectionType;
             }
         }
-
         return result;
     }
 

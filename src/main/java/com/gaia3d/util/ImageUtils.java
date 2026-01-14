@@ -366,6 +366,20 @@ public class ImageUtils {
         return newImage;
     }
 
+    public static BufferedImage fillColor(BufferedImage image, Color newColor) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        BufferedImage newImage = new BufferedImage(width, height, image.getType());
+        //boolean hasAlpha = image.getColorModel().hasAlpha();
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                newImage.setRGB(i, j, newColor.getRGB());
+            }
+        }
+        newImage.flush();
+        return newImage;
+    }
+
     public static BufferedImage changeBackgroundColor(BufferedImage image, Color oldColor, Color newColor) {
         int width = image.getWidth();
         int height = image.getHeight();

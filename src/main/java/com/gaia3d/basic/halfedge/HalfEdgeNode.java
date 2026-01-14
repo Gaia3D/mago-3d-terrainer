@@ -447,4 +447,13 @@ public class HalfEdgeNode implements Serializable {
             child.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
         }
     }
+
+    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
+        for (HalfEdgeMesh mesh : meshes) {
+            mesh.decimateInteriorOfBox(decimateParameters, boundingBox);
+        }
+        for (HalfEdgeNode child : children) {
+            child.decimateInteriorOfBox(decimateParameters, boundingBox);
+        }
+    }
 }
