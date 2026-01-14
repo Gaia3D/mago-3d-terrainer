@@ -20,6 +20,7 @@ public class GaiaBaker extends Modifier {
 
     /**
      * Bakes the transformation of a GaiaScene.
+     *
      * @param scene the GaiaScene to bake
      */
     @Override
@@ -33,6 +34,7 @@ public class GaiaBaker extends Modifier {
 
     /**
      * Bakes the transformation of aGaiaNode.
+     *
      * @param node the GaiaNode to bake
      */
     public void apply(GaiaNode node) {
@@ -76,7 +78,8 @@ public class GaiaBaker extends Modifier {
     private void initTransformMatrix(GaiaNode node) {
         Matrix4d transformMatrix = new Matrix4d();
         transformMatrix.identity();
-        node.setTransformMatrix(transformMatrix);
+        node.getTransformMatrix().set(transformMatrix);
+        node.getPreMultipliedTransformMatrix().set(transformMatrix);
 
         List<GaiaNode> children = node.getChildren();
         if (children != null && !children.isEmpty()) {
