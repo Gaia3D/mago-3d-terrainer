@@ -11,6 +11,8 @@ import org.geotools.api.coverage.processing.Operation;
 import org.geotools.api.parameter.ParameterValueGroup;
 import org.geotools.api.referencing.ReferenceIdentifier;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.crs.GeographicCRS;
+import org.geotools.api.referencing.datum.Ellipsoid;
 import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -22,6 +24,8 @@ import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.awt.*;
 import java.awt.image.DataBuffer;
@@ -182,9 +186,47 @@ public class RasterStandardizer {
             outputStream.flush();
             outputStream.close();
             writer.dispose();
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Unable to map projection")) {
+                log.warn("[Raster][I/O] IAU CRS cannot be encoded in GeoTIFF. Writing with WGS84 carrier CRS: {}",
+                         outputFile.getName());
+                writeGeotiffWithCarrierCrs(coverage, outputFile);
+            } else {
+                log.error("Failed to write GeoTiff file : {}", outputFile.getAbsolutePath());
+                log.error("Error : ", e);
+            }
         } catch (Exception e) {
             log.error("Failed to write GeoTiff file : {}", outputFile.getAbsolutePath());
             log.error("Error : ", e);
+        }
+    }
+
+    private void writeGeotiffWithCarrierCrs(GridCoverage2D coverage, File outputFile) {
+        try {
+            GridCoverageFactory coverageFactory = new GridCoverageFactory();
+            ReferencedEnvelope carrierEnvelope = new ReferencedEnvelope(
+                coverage.getEnvelope2D().getMinimum(0),
+                coverage.getEnvelope2D().getMaximum(0),
+                coverage.getEnvelope2D().getMinimum(1),
+                coverage.getEnvelope2D().getMaximum(1),
+                DefaultGeographicCRS.WGS84
+            );
+            GridCoverage2D carrierCoverage = coverageFactory.create(
+                coverage.getName(),
+                coverage.getRenderedImage(),
+                carrierEnvelope
+            );
+
+            FileOutputStream outputStream = new FileOutputStream(outputFile);
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+            GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
+            writer.write(carrierCoverage, null);
+            outputStream.flush();
+            outputStream.close();
+            writer.dispose();
+            carrierCoverage.dispose(true);
+        } catch (Exception e) {
+            log.error("Failed to write GeoTiff with carrier CRS: {}", outputFile.getAbsolutePath(), e);
         }
     }
 
@@ -420,15 +462,35 @@ public class RasterStandardizer {
      * @return true if same, false otherwise
      */
     public boolean isSameCRS(CoordinateReferenceSystem sourceCRS, CoordinateReferenceSystem targetCRS) {
+        // Try identifier-based comparison first (fast path)
         Iterator<ReferenceIdentifier> sourceCRSIterator = sourceCRS.getIdentifiers().iterator();
         Iterator<ReferenceIdentifier> targetCRSIterator = targetCRS.getIdentifiers().iterator();
 
         if (sourceCRSIterator.hasNext() && targetCRSIterator.hasNext()) {
             String sourceCRSCode = sourceCRSIterator.next().getCode();
             String targetCRSCode = targetCRSIterator.next().getCode();
-            return sourceCRSCode.equals(targetCRSCode);
-        } else {
-            return false;
+            if (sourceCRSCode.equals(targetCRSCode)) {
+                return true;
+            }
         }
+        // Fallback: metadata-based comparison (handles IAU CRS and other edge cases)
+        if (CRS.equalsIgnoreMetadata(sourceCRS, targetCRS)) {
+            return true;
+        }
+        // Handle unknown source CRS (e.g., lunar GeoTIFFs without IAU authority):
+        // If the source has no identifiers but both are geographic CRS with matching ellipsoids,
+        // treat them as equivalent — the data is already in the correct coordinate space.
+        if (!sourceCRSIterator.hasNext() && sourceCRS instanceof GeographicCRS && targetCRS instanceof GeographicCRS) {
+            Ellipsoid sourceEllipsoid = ((GeographicCRS) sourceCRS).getDatum().getEllipsoid();
+            Ellipsoid targetEllipsoid = ((GeographicCRS) targetCRS).getDatum().getEllipsoid();
+            double sourceSemiMajor = sourceEllipsoid.getSemiMajorAxis();
+            double targetSemiMajor = targetEllipsoid.getSemiMajorAxis();
+            double sourceSemiMinor = sourceEllipsoid.getSemiMinorAxis();
+            double targetSemiMinor = targetEllipsoid.getSemiMinorAxis();
+            if (Math.abs(sourceSemiMajor - targetSemiMajor) < 1.0 && Math.abs(sourceSemiMinor - targetSemiMinor) < 1.0) {
+                return true;
+            }
+        }
+        return false;
     }
 }

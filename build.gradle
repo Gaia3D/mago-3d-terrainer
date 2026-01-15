@@ -40,6 +40,7 @@ subprojects {
         implementation "org.geotools:gt-process-raster"
         implementation "org.geotools:gt-process-feature"
         implementation "org.geotools:gt-epsg-hsql"
+        implementation "org.geotools:gt-iau-wkt"
 
         implementation "org.jdom:jdom2:2.0.6.1"
 

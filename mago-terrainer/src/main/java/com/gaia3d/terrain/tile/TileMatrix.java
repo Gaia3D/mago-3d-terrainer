@@ -10,6 +10,7 @@ import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.terrain.util.TerrainMeshUtils;
 import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.GeometryUtils;
 import com.gaia3d.util.GlobeUtils;
@@ -406,7 +407,7 @@ public class TileMatrix {
         this.listHalfEdges.clear();
         GaiaBoundingBox bboxTriangle = triangle.getBoundingBox(this.listVertices, this.listHalfEdges);
         double bboxMaxLength = bboxTriangle.getLongestDistanceXY();
-        double equatorialRadius = GlobeUtils.EQUATORIAL_RADIUS;
+        double equatorialRadius = GlobalOptions.getInstance().getCelestialBody().getEquatorialRadius();
         double bboxMaxLengthInMeters = Math.toRadians(bboxMaxLength) * equatorialRadius;
 
         int currL = triangle.getOwnerTileIndices().getL();
@@ -469,8 +470,9 @@ public class TileMatrix {
             Vector3d triangleNormalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
             GeographicExtension geographicExtension = tileRaster.getGeographicExtension();
             Vector3d centerGeoCoord = geographicExtension.getMidPoint();
-            double[] centerCartesian = GlobeUtils.geographicToCartesianWgs84(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z);
-            Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPointWgs84(centerCartesian[0], centerCartesian[1], centerCartesian[2]);
+            CelestialBody body = GlobalOptions.getInstance().getCelestialBody();
+            double[] centerCartesian = GlobeUtils.geographicToCartesian(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z, body);
+            Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPoint(centerCartesian[0], centerCartesian[1], centerCartesian[2], body);
             cosAng = (float) GeometryUtils.cosineBetweenUnitaryVectors(triangleNormalDouble.x, triangleNormalDouble.y, triangleNormalDouble.z, normalAtCartesian.x, normalAtCartesian.y, normalAtCartesian.z);
         }
 
