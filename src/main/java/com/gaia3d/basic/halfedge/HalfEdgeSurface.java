@@ -1417,7 +1417,10 @@ public class HalfEdgeSurface implements Serializable {
 
             // if the abs(dotProd) between collapseHedgeDirection and normalA is near to 1.0, then continue
             double dotProd = Math.abs(collapseHedgeDirection.dot(normalA));
-            if (dotProd > 0.75) {
+            double limitDotProd = 0.9; // 0.75 is ok, 0.9 is more restrict
+            // arccos(0.9) = 25.84 deg
+            // arccos(0.75) = 41.41 deg
+            if (dotProd > limitDotProd) {
                 return false;
             }
 
