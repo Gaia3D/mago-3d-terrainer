@@ -16,10 +16,10 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.CRS;
 import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.TransformException;
 
 import java.io.File;
 import java.io.IOException;
@@ -296,7 +296,7 @@ public class TerrainElevationDataManager {
             terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
-            gridCoverage2D.dispose(true);
+            //gridCoverage2D.dispose(true);
 
         }
 
@@ -314,39 +314,11 @@ public class TerrainElevationDataManager {
             return gridAreaMap.get(fileName);
         }
 
-        Double pixelArea = 0.0d;
-        //File file = new File(path);
-        //String fileName = file.getName();
-
+        double pixelArea = 0.0d;
         File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
         File tempFile = new File(standardizationTempPath, fileName);
 
         if (tempFile.exists()) {
-            try {
-                GaiaGeoTiffManager gaiaGeoTiffManager = this.getGaiaGeoTiffManager();
-                GridCoverage2D coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
-                Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
-                pixelArea = originalArea.x * originalArea.y;
-            } catch (FactoryException e) {
-                log.error("[getPixelArea : FactoryException] Error in getPixelArea", e);
-            }
-        }
-        gridAreaMap.put(fileName, pixelArea);
-        return gridAreaMap.get(fileName);
-    }
-
-    public Double putAndGetGridAreaMap_original(String path) {
-        Double pixelArea = 0.0d;
-        File file = new File(path);
-        String fileName = file.getName();
-        if (gridAreaMap.containsKey(fileName)) {
-            return gridAreaMap.get(fileName);
-        }
-
-        File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());
-        File tempFile = new File(standardizationTempPath, fileName);
-
-        if (tempFile.exists() && !file.equals(tempFile)) {
             try {
                 GaiaGeoTiffManager gaiaGeoTiffManager = this.getGaiaGeoTiffManager();
                 GridCoverage2D coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());

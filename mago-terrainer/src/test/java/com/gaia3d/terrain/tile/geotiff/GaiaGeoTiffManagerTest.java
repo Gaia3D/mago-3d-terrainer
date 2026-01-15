@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.junit.jupiter.api.Test;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.File;
 import java.util.List;
@@ -31,7 +31,7 @@ class GaiaGeoTiffManagerTest {
         }*/
 
         RasterStandardizer reprojector = new RasterStandardizer();
-        GridCoverage2D source = reprojector.readGeoTiff(inputFile);
+        //GridCoverage2D source = reprojector.readGeoTiff(inputFile);
         //GridCoverage2D target = reprojector.wrap(source, targetCRS);
         //GridCoverage2D target = reprojector.affine(source, targetCRS);
         //GridCoverage2D target = reprojector.reproject(source, targetCRS);

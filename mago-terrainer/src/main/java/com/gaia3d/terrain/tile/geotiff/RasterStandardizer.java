@@ -1,10 +1,17 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.GlobalOptions;
-import it.geosolutions.jaiext.JAIExt;
-import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.imagen.Interpolation;
+import org.eclipse.imagen.RasterFactory;
+import org.eclipse.imagen.media.range.NoDataContainer;
+import org.geotools.api.coverage.grid.GridEnvelope;
+import org.geotools.api.coverage.processing.Operation;
+import org.geotools.api.parameter.ParameterValueGroup;
+import org.geotools.api.referencing.ReferenceIdentifier;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -15,14 +22,7 @@ import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.opengis.coverage.grid.GridEnvelope;
-import org.opengis.coverage.processing.Operation;
-import org.opengis.parameter.ParameterValueGroup;
-import org.opengis.referencing.ReferenceIdentifier;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.TransformException;
 
-import javax.media.jai.*;
 import java.awt.*;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
@@ -32,12 +32,10 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * RasterStandardizer
@@ -48,22 +46,21 @@ import java.util.stream.Collectors;
 public class RasterStandardizer {
 
     static {
-        JAIExt.registerJAIDescriptor("Warp");
+        /*JAIExt.registerJAIDescriptor("Warp");
         JAIExt.registerJAIDescriptor("Affine");
         JAIExt.registerJAIDescriptor("Rescale");
         JAIExt.registerJAIDescriptor("Warp/Affine");
-
         JAIExt.initJAIEXT();
 
         JAI jaiInstance = JAI.getDefaultInstance();
         TileCache tileCache = jaiInstance.getTileCache();
-        tileCache.setMemoryCapacity(1024 * 1024 * 1024); // 512MB
+        tileCache.setMemoryCapacity(1024 * 1024 * 1024);
         tileCache.setMemoryThreshold(0.75f);
 
         TileScheduler tileScheduler = jaiInstance.getTileScheduler();
         // availableProcessors = Runtime.getRuntime().availableProcessors();
         tileScheduler.setParallelism(Runtime.getRuntime().availableProcessors());
-        tileScheduler.setPriority(Thread.NORM_PRIORITY);
+        tileScheduler.setPriority(Thread.NORM_PRIORITY);*/
     }
 
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
@@ -72,33 +69,34 @@ public class RasterStandardizer {
         CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
         try {
             /* split */
+            log.info("[Pre][Standardization] Splitting source raster into tiles... {}", outputPath.getName());
             List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());
+            log.info("[Pre][Standardization] Splitting completed. Total tiles: {}", splitTiles.size());
 
             /* resampling */
-            ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-            List<RasterInfo> resampledTiles = pool.submit(() -> splitTiles.parallelStream().map(tile -> {
-                        GridCoverage2D gridCoverage2D = tile.getGridCoverage2D();
-                        CoordinateReferenceSystem sourceCRS = gridCoverage2D.getCoordinateReferenceSystem();
-                        if (isSameCRS(sourceCRS, targetCRS)) {
-                            return tile;
-                        } else {
-                            tile.setGridCoverage2D(resample(gridCoverage2D, targetCRS));
-                        }
-                        return tile;
-                    }
-            ).collect(Collectors.toList())).get();
-
-            int total = resampledTiles.size();
+            int total = splitTiles.size();
             AtomicInteger count = new AtomicInteger(0);
-            resampledTiles.forEach((tile) -> {
-                int index = count.incrementAndGet();
-                GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
-                File tileFile = new File(outputPath, tile.getName() + ".tif");
-                log.info("[Pre][Standardization][{}/{}] : {}", index, total, tileFile.getAbsolutePath());
-                writeGeotiff(reprojectedTile, tileFile);
-            });
+            splitTiles.forEach(tile -> {
+                log.info("[Pre][Standardization][{}/{}] Resampling tile {}", count.incrementAndGet(), total, tile.getName());
 
-        } catch (TransformException | IOException | InterruptedException | ExecutionException e) {
+                GridCoverage2D gridCoverage2D = tile.getGridCoverage2D();
+                CoordinateReferenceSystem sourceCRS = gridCoverage2D.getCoordinateReferenceSystem();
+                GridCoverage2D resampledGridCoverage2D;
+                if (isSameCRS(sourceCRS, targetCRS)) {
+                    resampledGridCoverage2D = gridCoverage2D;
+                } else {
+                    resampledGridCoverage2D = resample(gridCoverage2D, targetCRS);
+                }
+                tile.setGridCoverage2D(resampledGridCoverage2D);
+                File tileFile = new File(outputPath, tile.getName() + ".tif");
+                writeGeotiff(tile.getGridCoverage2D(), tileFile);
+
+                resampledGridCoverage2D.dispose(true);
+                tile.getGridCoverage2D().dispose(true);
+                tile.setGridCoverage2D(null);
+                log.info("[Pre][Standardization][{}/{}] Completed tile {}", count.get(), total, tile.getName());
+            });
+        } catch (TransformException | IOException e) {
             log.error("Failed to standardization.", e);
             throw new RuntimeException(e);
         }
@@ -106,15 +104,27 @@ public class RasterStandardizer {
 
     public void standardizeWithGeoid(GridCoverage2D source, File outputPath, File geoidFile) {
         // load geoid data
-        GridCoverage2D geoidCoverage = readGeoTiff(geoidFile);
-        CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
-        try {
-            /* split */
-            List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());
 
-            /* resampling */
-            ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-            List<RasterInfo> resampledTiles = pool.submit(() -> splitTiles.parallelStream().map(tile -> {
+        GeoTiffReader reader = null;
+        try {
+            reader = new GeoTiffReader(geoidFile);
+            GridCoverage2D geoidCoverage = reader.read(null);
+
+            //GridCoverage2D geoidCoverage = readGeoTiff(geoidFile);
+            CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
+            try {
+                /* split */
+                log.info("[Pre][Standardization][with Geoid] Splitting source raster into tiles... {}", outputPath.getName());
+                List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());
+                log.info("[Pre][Standardization][with Geoid] Splitting completed. Total tiles: {}", splitTiles.size());
+
+                int total = splitTiles.size();
+                AtomicInteger count = new AtomicInteger(0);
+
+                /* resampling */
+                splitTiles.forEach(tile -> {
+                    log.info("[Pre][Standardization][with Geoid][{}/{}] Resampling tile {}", count.incrementAndGet(), total, tile.getName());
+
                     GridCoverage2D gridCoverage = tile.getGridCoverage2D();
                     CoordinateReferenceSystem sourceCRS = gridCoverage.getCoordinateReferenceSystem();
                     GridCoverage2D resampledGridCoverage2D;
@@ -126,46 +136,36 @@ public class RasterStandardizer {
                     tile.setGridCoverage2D(resampledGridCoverage2D);
 
                     GridGeometry2D demGrid = resampledGridCoverage2D.getGridGeometry();
-                    GridCoverage2D resampledGeoidCoverage = resample(geoidCoverage, targetCRS);
-                    GridCoverage2D geoidAligned = (GridCoverage2D) Operations.DEFAULT.resample(
-                            resampledGeoidCoverage,
-                            targetCRS,
-                            demGrid,
-                            Interpolation.getInstance(Interpolation.INTERP_BILINEAR)
-                    );
-
-                    GridCoverage2D ellipsoidalDem = addGeoidPreserveDemNoData(resampledGridCoverage2D, geoidAligned);
+                    GridCoverage2D geoidAligned = resampleGeoid(geoidCoverage, demGrid, demGrid.getCoordinateReferenceSystem());
+                    GridCoverage2D ellipsoidalDem = addGeoidPreserveDemNoData(gridCoverage, geoidAligned);
                     tile.setGridCoverage2D(ellipsoidalDem);
-                    return tile;
+
+                    GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
+                    File tileFile = new File(outputPath, tile.getName() + ".tif");
+                    writeGeotiff(reprojectedTile, tileFile);
+
+                    reprojectedTile.dispose(true);
+                    geoidAligned.dispose(true);
+                    ellipsoidalDem.dispose(true);
+                    gridCoverage.dispose(true);
+                    tile.getGridCoverage2D().dispose(true);
+                    tile.setGridCoverage2D(null);
+                    log.info("[Pre][Standardization][with Geoid][{}/{}] Completed tile {}", count.get(), total, tile.getName());
+                });
+            } catch (TransformException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.dispose();
+                } catch (Exception ex) {
+                    log.error("Error:", ex);
                 }
-            ).collect(Collectors.toList())).get();
-
-            int total = resampledTiles.size();
-            AtomicInteger count = new AtomicInteger(0);
-            resampledTiles.forEach((tile) -> {
-                int index = count.incrementAndGet();
-                GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
-                File tileFile = new File(outputPath, tile.getName() + ".tif");
-                log.info("[Pre][Standardization][{}/{}] : {}", index, total, tileFile.getAbsolutePath());
-                writeGeotiff(reprojectedTile, tileFile);
-            });
-
-        } catch (TransformException | IOException | InterruptedException | ExecutionException e) {
-            //log.error("Failed to standardization.", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public GridCoverage2D readGeoTiff(File file) {
-        try {
-            GeoTiffReader reader = new GeoTiffReader(file);
-            GridCoverage2D coverage = reader.read(null);
-            reader.dispose();
-            return coverage;
-        } catch (Exception e) {
-            log.error("Failed to read GeoTiff file : {}", file.getAbsolutePath());
-            log.error("Error : ", e);
-            throw new RuntimeException(e);
+            }
         }
     }
 
@@ -179,8 +179,9 @@ public class RasterStandardizer {
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
             GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
             writer.write(coverage, null);
-            writer.dispose();
+            outputStream.flush();
             outputStream.close();
+            writer.dispose();
         } catch (Exception e) {
             log.error("Failed to write GeoTiff file : {}", outputFile.getAbsolutePath());
             log.error("Error : ", e);
@@ -291,10 +292,45 @@ public class RasterStandardizer {
 
             NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(sourceCoverage);
             if (noDataContainer != null) {
-                double[] noDataValues = noDataContainer.getAsArray();
-                params.parameter("NoData").setValue(noDataValues);
-                double nodata = noDataValues[0];
-                params.parameter("BackgroundValues").setValue(nodata);
+                double[] backgroundValues = noDataContainer.getAsArray();
+                params.parameter("BackgroundValues").setValue(backgroundValues);
+            } else {
+                double[] backgroundValues = new double[] {globalOptions.getNoDataValue()};
+                params.parameter("BackgroundValues").setValue(backgroundValues);
+            }
+            return (GridCoverage2D) processor.doOperation(params);
+        } catch (Exception e) {
+            log.error("Failed to reproject tile : {}", sourceCoverage.getName());
+            log.error("Error : ", e);
+            return sourceCoverage;
+        }
+    }
+
+    /**
+     * Reproject GridCoverage2D to targetCRS
+     * @param sourceCoverage source GridCoverage2D
+     * @param targetCRS target CoordinateReferenceSystem
+     * @return reprojected GridCoverage2D
+     */
+    public GridCoverage2D resampleGeoid(GridCoverage2D sourceCoverage, GridGeometry2D gridGeometry, CoordinateReferenceSystem targetCRS) {
+        try {
+            CoverageProcessor.updateProcessors();
+            CoverageProcessor processor = CoverageProcessor.getInstance();
+
+            Operation operation = processor.getOperation("Resample");
+            ParameterValueGroup params = operation.getParameters();
+            params.parameter("Source").setValue(sourceCoverage);
+            params.parameter("CoordinateReferenceSystem").setValue(targetCRS);
+            params.parameter("GridGeometry").setValue(gridGeometry);
+            params.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_BILINEAR));
+
+            NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(sourceCoverage);
+            if (noDataContainer != null) {
+                double[] backgroundValues = noDataContainer.getAsArray();
+                params.parameter("BackgroundValues").setValue(backgroundValues);
+            } else {
+                double[] backgroundValues = new double[] {globalOptions.getNoDataValue()};
+                params.parameter("BackgroundValues").setValue(backgroundValues);
             }
             return (GridCoverage2D) processor.doOperation(params);
         } catch (Exception e) {
@@ -343,9 +379,7 @@ public class RasterStandardizer {
         Rectangle geoidRectangle = geoRaster.getBounds();
         Rectangle intersection = demRectangle.intersection(geoidRectangle);
 
-        WritableRaster outRaster = RasterFactory.createBandedRaster(
-                DataBuffer.TYPE_FLOAT, demRectangle.width, demRectangle.height, 1, null
-        );
+        WritableRaster outRaster = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, demRectangle.width, demRectangle.height, 1, null);
 
         for (int y = demRectangle.y; y < demRectangle.y + demRectangle.height; y++) {
             for (int x = demRectangle.x; x < demRectangle.x + demRectangle.width; x++) {
@@ -361,7 +395,7 @@ public class RasterStandardizer {
                 int outputY = y - demRectangle.y;
 
                 double H = demRaster.getSampleDouble(x, y, 0);
-                if (H < -9999) {
+                if (H <= -9999) {
                     outRaster.setSample(outputX, outputY, 0, (float) globalNodata);
                 } else if (Double.isNaN(H) || (hasDemNoDataVal && Double.compare(H, demNoData) == 0)) {
                     outRaster.setSample(outputX, outputY, 0, (float) globalNodata);
@@ -372,11 +406,11 @@ public class RasterStandardizer {
             }
         }
 
-        return new GridCoverageFactory().create(
-                dem.getName(),
-                outRaster,
-                dem.getEnvelope()
-        );
+        // dispose
+        demRaster = null;
+        geoRaster = null;
+
+        return new GridCoverageFactory().create(dem.getName(), outRaster, dem.getEnvelope());
     }
 
     /**

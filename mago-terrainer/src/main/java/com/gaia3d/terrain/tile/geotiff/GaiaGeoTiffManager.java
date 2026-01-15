@@ -9,10 +9,11 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.joml.Vector2i;
-import org.opengis.coverage.grid.GridGeometry;
-import org.opengis.geometry.Envelope;
-import org.opengis.referencing.FactoryException;
+import org.geotools.api.coverage.grid.GridGeometry;
+import org.geotools.api.referencing.FactoryException;
+import org.locationtech.jts.geom.Envelope;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -67,10 +68,9 @@ public class GaiaGeoTiffManager {
             File file = new File(geoTiffFilePath);
             reader = new GeoTiffReader(file);
             coverage = reader.read(null);
-            reader.dispose();
         } catch (Exception e) {
             log.error("Error:", e);
-        } finally {
+        } /*finally {
             if (reader != null) {
                 try {
                     reader.dispose();
@@ -78,7 +78,7 @@ public class GaiaGeoTiffManager {
                     log.error("Error:", ex);
                 }
             }
-        }
+        }*/
 
         // save the coverage
         mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
@@ -98,7 +98,7 @@ public class GaiaGeoTiffManager {
     public Vector2i getGridCoverage2DSize(String geoTiffFilePath) {
         if (!mapPathGridCoverage2dSize.containsKey(geoTiffFilePath)) {
             GridCoverage2D coverage = loadGeoTiffGridCoverage2D(geoTiffFilePath);
-            coverage.dispose(true);
+            //coverage.dispose(true);
         }
         return mapPathGridCoverage2dSize.get(geoTiffFilePath);
     }
@@ -124,7 +124,7 @@ public class GaiaGeoTiffManager {
         GridCoverage2D resizedCoverage = null;
 
         GridGeometry originalGridGeometry = originalCoverage.getGridGeometry();
-        Envelope envelopeOriginal = originalCoverage.getEnvelope();
+        ReferencedEnvelope envelopeOriginal = originalCoverage.getEnvelope2D();
 
         int gridSpanX = originalGridGeometry.getGridRange().getSpan(0); // num of pixels
         int gridSpanY = originalGridGeometry.getGridRange().getSpan(1); // num of pixels
@@ -158,6 +158,7 @@ public class GaiaGeoTiffManager {
         FileOutputStream outputStream = new FileOutputStream(outputFile);
         BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
         GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
+        coverage.getRenderedImage().getData();
         writer.write(coverage, null);
         writer.dispose();
         outputStream.close();

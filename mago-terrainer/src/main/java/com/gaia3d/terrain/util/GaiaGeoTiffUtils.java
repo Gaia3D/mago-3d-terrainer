@@ -2,29 +2,26 @@ package com.gaia3d.terrain.util;
 
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.util.GlobeUtils;
+import org.geotools.api.geometry.Position;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.geometry.jts.JTS;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.joml.Vector2d;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
-import org.opengis.coverage.grid.GridEnvelope;
-import org.opengis.coverage.grid.GridGeometry;
-import org.opengis.geometry.DirectPosition;
-import org.opengis.geometry.Envelope;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
+import org.locationtech.jts.geom.*;
+import org.geotools.api.coverage.grid.GridEnvelope;
+import org.geotools.api.coverage.grid.GridGeometry;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.TransformException;
 
 public class GaiaGeoTiffUtils {
     public static Vector2d getLongitudeLatitudeDegree(GridCoverage2D coverage, int coordX, int coordY, GeometryFactory gf, MathTransform targetToWgs) throws TransformException {
         GridCoordinates2D coord = new GridCoordinates2D(coordX, coordY);
-        DirectPosition p = coverage.getGridGeometry().gridToWorld(coord);
+        Position p = coverage.getGridGeometry().gridToWorld(coord);
         Point point = gf.createPoint(new Coordinate(p.getOrdinate(0), p.getOrdinate(1)));
         Geometry wgsP = JTS.transform(point, targetToWgs);
         Point centroid = wgsP.getCentroid();
@@ -44,21 +41,21 @@ public class GaiaGeoTiffUtils {
 
     public static void getEnvelopeSpanInMetersOfGridCoverage2D(GridCoverage2D coverage, double[] resultEnvelopeSpanMeters) throws FactoryException {
         if (isGridCoverage2DWGS84(coverage)) {
-            Envelope envelope = coverage.getEnvelope();
+            ReferencedEnvelope envelope = coverage.getEnvelope2D();
             double minLat = envelope.getMinimum(1);
             double maxLat = envelope.getMaximum(1);
             double midLat = (minLat + maxLat) / 2.0;
             double radius = GlobeUtils.getRadiusAtLatitude(midLat);
             double degToRadFactor = GlobeUtils.DEGREE_TO_RADIAN_FACTOR;
 
-            Envelope envelopeOriginal = coverage.getEnvelope();
+            ReferencedEnvelope envelopeOriginal = coverage.getEnvelope2D();
             // int degrees
             double envelopeSpanX = envelopeOriginal.getSpan(0);
             double envelopeSpanY = envelopeOriginal.getSpan(1);
             resultEnvelopeSpanMeters[0] = (envelopeSpanX * degToRadFactor) * radius;
             resultEnvelopeSpanMeters[1] = (envelopeSpanY * degToRadFactor) * radius;
         } else {
-            Envelope envelopeOriginal = coverage.getEnvelope();
+            ReferencedEnvelope envelopeOriginal = coverage.getEnvelope2D();
             resultEnvelopeSpanMeters[0] = envelopeOriginal.getSpan(0);
             resultEnvelopeSpanMeters[1] = envelopeOriginal.getSpan(1);
         }
@@ -78,7 +75,7 @@ public class GaiaGeoTiffUtils {
     public static GeographicExtension getGeographicExtension(GridCoverage2D coverage, GeometryFactory gf, MathTransform targetToWgs, GeographicExtension resultGeoExtension) throws TransformException {
         // get geographic extension
         GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
-        Envelope envelope = coverage.getEnvelope();
+        ReferencedEnvelope envelope = coverage.getEnvelope2D();
 
         double minLon = 0.0;
         double minLat = 0.0;
@@ -138,7 +135,7 @@ public class GaiaGeoTiffUtils {
     public static GeographicExtension getGeographicExtension_original(GridCoverage2D coverage, GeometryFactory gf, MathTransform targetToWgs, GeographicExtension resultGeoExtension) throws TransformException {
         // get geographic extension
         GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
-        Envelope envelope = coverage.getEnvelope();
+        ReferencedEnvelope envelope = coverage.getEnvelope2D();
 
         double minLon = 0.0;
         double minLat = 0.0;

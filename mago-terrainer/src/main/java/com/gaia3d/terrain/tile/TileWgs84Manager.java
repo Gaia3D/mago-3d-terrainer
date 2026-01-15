@@ -21,11 +21,11 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
 import org.geotools.referencing.CRS;
 import org.joml.Vector2d;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.crs.GeographicCRS;
-import org.opengis.referencing.crs.ProjectedCRS;
-import org.opengis.referencing.operation.TransformException;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.crs.GeographicCRS;
+import org.geotools.api.referencing.crs.ProjectedCRS;
+import org.geotools.api.referencing.operation.TransformException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -138,8 +138,6 @@ public class TileWgs84Manager {
         this.mapNoUsableGeotiffPaths.clear();
         this.gaiaGeoTiffManager.deleteObjects();
         this.gaiaGeoTiffManager.clear();
-
-        javax.media.jai.JAI.getDefaultInstance().getTileCache().flush();
     }
 
     public void makeTempFilesFromQuantizedMeshes(int depth) {
@@ -789,6 +787,7 @@ public class TileWgs84Manager {
                 GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
                 RasterStandardizer rasterStandardizer = new RasterStandardizer();
                 rasterStandardizer.standardizeWithGeoid(originalGridCoverage2D, tempFolder, geoidFile);
+                originalGridCoverage2D.dispose(true);
             });
         } else {
             geoTiffFileNames.forEach(geoTiffFileName -> {
@@ -880,7 +879,7 @@ public class TileWgs84Manager {
                 GridCoverage2D resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
                 FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
-                resizedGridCoverage2D.dispose(true);
+                //resizedGridCoverage2D.dispose(true);
 
                 String resizedGeoTiffSetFolderPathForThisDepth = globalOptions.getResizedTiffTempPath() + File.separator + depthStr;
                 this.depthGeoTiffFolderPathMap.put(depth, resizedGeoTiffSetFolderPathForThisDepth);

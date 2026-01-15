@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,6 +78,7 @@ public class GlobalOptions {
     private int maxRasterSize;
 
     /* Temporary paths for processing */
+    private String rootTempPath;
     private String geoidTempPath;
     private String standardizeTempPath;
     private String resizedTiffTempPath;
@@ -121,12 +122,14 @@ public class GlobalOptions {
 
         if (command.hasOption(CommandOptions.TEMP_PATH.getLongName())) {
             String tempPath = command.getOptionValue(CommandOptions.TEMP_PATH.getLongName());
-            File tempDir = new File(tempPath);
-            File resizedDir = new File(tempDir, "resized");
-            File splitDir = new File(tempDir, "split");
-            File standardizeDir = new File(tempDir, "standardization");
-            File geoidDir = new File(tempDir, "geoid");
-            instance.setTileTempPath(tempDir.getAbsolutePath());
+            String sufix = java.util.UUID.randomUUID().toString();
+            File tempFullPath = new File(tempPath, sufix);
+            File resizedDir = new File(tempFullPath, "resized");
+            File splitDir = new File(tempFullPath, "split");
+            File standardizeDir = new File(tempFullPath, "standardization");
+            File geoidDir = new File(tempFullPath, "geoid");
+            instance.setRootTempPath(tempFullPath.getAbsolutePath());
+            instance.setTileTempPath(tempFullPath.getAbsolutePath());
             instance.setResizedTiffTempPath(resizedDir.getAbsolutePath());
             instance.setSplitTiffTempPath(splitDir.getAbsolutePath());
             instance.setStandardizeTempPath(standardizeDir.getAbsolutePath());
@@ -136,6 +139,7 @@ public class GlobalOptions {
             File resizedDir = new File(tempDir, "resized");
             File splitDir = new File(tempDir, "split");
             File standardizeDir = new File(tempDir, "standardization");
+            instance.setRootTempPath(tempDir.getAbsolutePath());
             instance.setTileTempPath(tempDir.getAbsolutePath());
             instance.setResizedTiffTempPath(resizedDir.getAbsolutePath());
             instance.setSplitTiffTempPath(splitDir.getAbsolutePath());
@@ -290,9 +294,15 @@ public class GlobalOptions {
     protected static void printGlobalOptions() {
         log.info("Input Path: {}", instance.getInputPath());
         log.info("Output Path: {}", instance.getOutputPath());
-        log.info("Log Path: {}", instance.getLogPath());
         log.info("Temp Path: {}", instance.getTileTempPath());
-        log.info("Geoid Path: {}", instance.getGeoidPath());
+        if (instance.getLogPath() != null) {
+            log.info("Log Path: {}", instance.getLogPath());
+        }
+        if (instance.getGeoidPath() != null) {
+            log.info("Geoid: {}", instance.getGeoidPath());
+        } else {
+            log.info("Geoid: Ellipsoid");
+        }
         MagoTerrainerMain.drawLine();
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Tiling Schema: {}", instance.getTilingSchema());

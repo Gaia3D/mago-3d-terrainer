@@ -202,11 +202,77 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "10",
+                "-max", "12",
                 "-interpolation", "nearest",
                 "-nodataValue", "-8612",
                 "-calculateNormals",
                 "-geoid", "EGM96",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void seoulTerrainQuadWithGeoid() {
+        String name = "seoul-terrain-quad";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_geoid");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+                "-geoid", "EGM96",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void koreaWithGeoid() {
+        String name = "korea-terrain";
+        File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample", "dem05-all-5186-nodata.tif");
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_nodata_geoid");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-temp", "C:/temp/",
+                "-calculateNormals",
+                "-geoid", "EGM96",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void nodata9999TestGeoid() {
+        String name = "nodata-9999-test";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_geoid");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+                "-geoid", "EGM96",
+        };
+        MagoTerrainerMain.main(args);
+    }
+
+    @Test
+    void koreaWithGeoidOnlyJson() {
+        String name = "korea-terrain";
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_geoid");
+
+        String[] args = new String[]{
+                "-input", outputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-calculateNormals",
+                "-json"
         };
         MagoTerrainerMain.main(args);
     }

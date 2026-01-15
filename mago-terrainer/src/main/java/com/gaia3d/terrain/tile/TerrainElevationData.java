@@ -4,13 +4,13 @@ import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.InterpolationType;
-import it.geosolutions.jaiext.range.NoDataContainer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.imagen.media.range.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.util.CoverageUtilities;
-import org.geotools.geometry.DirectPosition2D;
+import org.geotools.geometry.Position2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 
@@ -34,7 +34,7 @@ public class TerrainElevationData {
     private double maxAltitude = Double.MIN_VALUE;
     private double[] altitude = new double[1];
     private NoDataContainer noDataContainer = null;
-    private DirectPosition2D worldPosition = null; // longitude supplied first
+    private Position2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
     private int geoTiffHeight = -1;
     private Vector2i gridCoverage2DSize = null;
@@ -98,7 +98,7 @@ public class TerrainElevationData {
             if (this.raster == null) {
                 RenderedImage ri = coverage.getRenderedImage();
                 this.raster = ri.getData();
-                this.coverage.dispose(true);
+                //this.coverage.dispose(true);
                 this.coverage = null;
             }
         }

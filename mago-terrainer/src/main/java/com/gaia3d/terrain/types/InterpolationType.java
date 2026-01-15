@@ -2,8 +2,8 @@ package com.gaia3d.terrain.types;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.imagen.Interpolation;
 
-import javax.media.jai.Interpolation;
 
 @Getter
 @RequiredArgsConstructor

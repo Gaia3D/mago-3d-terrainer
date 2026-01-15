@@ -15,7 +15,7 @@ import org.geotools.referencing.ReferencingFactoryFinder;
 import org.geotools.referencing.factory.PropertyAuthorityFactory;
 import org.geotools.referencing.factory.ReferencingFactoryContainer;
 import org.geotools.util.factory.Hints;
-import org.opengis.referencing.crs.CRSAuthorityFactory;
+import org.geotools.api.referencing.crs.CRSAuthorityFactory;
 
 import java.io.File;
 import java.io.IOException;

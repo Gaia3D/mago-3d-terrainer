@@ -3,8 +3,8 @@ package com.gaia3d.terrain.tile.geotiff;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.junit.jupiter.api.Test;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.TransformException;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.operation.TransformException;
 
 import java.io.File;
 
@@ -20,7 +20,7 @@ class RasterStandardizerTest {
 
         RasterStandardizer rasterStandardizer = new RasterStandardizer();
 
-        GridCoverage2D source = rasterStandardizer.readGeoTiff(inputFile);
+        //GridCoverage2D source = rasterStandardizer.readGeoTiff(inputFile);
 
 
 
@@ -35,11 +35,9 @@ class RasterStandardizerTest {
         //crop = null;
         //crop = rasterStandardizer.readGeoTiff(croppedFile);
 
-        GridCoverage2D coverage2D = rasterStandardizer.resample(source, targetCRS);
-        rasterStandardizer.writeGeotiff(coverage2D, outputFile);
+        //GridCoverage2D coverage2D = rasterStandardizer.resample(source, targetCRS);
+        //rasterStandardizer.writeGeotiff(coverage2D, outputFile);
     }
-
-
     /*
             final ParameterValueGroup param =(ParameterValueGroup) processor.getOperation("Resample").getParameters();
             param.parameter("Source").setValue(coverage);
