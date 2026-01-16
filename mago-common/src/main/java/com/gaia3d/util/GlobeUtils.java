@@ -2,6 +2,9 @@ package com.gaia3d.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.ReferenceIdentifier;
+import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.joml.Matrix4d;
@@ -11,10 +14,6 @@ import org.locationtech.proj4j.BasicCoordinateTransform;
 import org.locationtech.proj4j.CRSFactory;
 import org.locationtech.proj4j.CoordinateReferenceSystem;
 import org.locationtech.proj4j.ProjCoordinate;
-import org.geotools.api.referencing.FactoryException;
-import org.geotools.api.referencing.ReferenceIdentifier;
-import org.geotools.api.referencing.operation.MathTransform;
-import org.geotools.api.referencing.operation.TransformException;
 
 import java.util.List;
 
@@ -49,13 +48,7 @@ public class GlobeUtils {
     }
 
     public static double radiusAtLatitudeRad(double latRad) {
-        double cosLat = Math.cos(latRad);
         double sinLat = Math.sin(latRad);
-        /*
-        double numerator = Math.pow(EARTH_RADIUS_EQUATOR * cosLat, 2) + Math.pow(EARTH_RADIUS_POLAR * sinLat, 2);
-        double denominator = Math.pow(EARTH_RADIUS_EQUATOR * cosLat, 2) + Math.pow(EARTH_RADIUS_POLAR * sinLat, 2);
-        return Math.sqrt(numerator / denominator);
-         */
         return EQUATORIAL_RADIUS / Math.sqrt(1.0 - FIRST_ECCENTRICITY_SQUARED * sinLat * sinLat);
     }
 
@@ -65,6 +58,18 @@ public class GlobeUtils {
         double avgRadius = (radiusMin + radiusMax) / 2.0;
 
         return avgRadius * (maxLatRad - minLatRad);
+    }
+
+    public static double[] distanceBetweenDegrees(double[] minDegrees, double[] maxDegrees) {
+        double minLatRad = minDegrees[1] * DEGREE_TO_RADIAN_FACTOR;
+        double maxLatRad = maxDegrees[1] * DEGREE_TO_RADIAN_FACTOR;
+        double minLonRad = minDegrees[0] * DEGREE_TO_RADIAN_FACTOR;
+        double maxLonRad = maxDegrees[0] * DEGREE_TO_RADIAN_FACTOR;
+
+        double latDistance = distanceBetweenLatitudesRad(minLatRad, maxLatRad);
+        double lonDistance = distanceBetweenLongitudesRad((minLatRad + maxLatRad) / 2.0, minLonRad, maxLonRad);
+
+        return new double[] { lonDistance, latDistance };
     }
 
     public static double distanceBetweenLongitudesRad(double latRad, double minLonRad, double maxLonRad) {
@@ -120,6 +125,7 @@ public class GlobeUtils {
         return transformMatrix;
     }
 
+
     public static Vector3d normalAtCartesianPointWgs84(Vector3d cartesian) {
         return normalAtCartesianPointWgs84(cartesian.x, cartesian.y, cartesian.z);
     }
@@ -138,10 +144,10 @@ public class GlobeUtils {
         return cartesianToGeographicWgs84(new Vector3d(x, y, z));
     }
 
-    public static Vector3d cartesianToGeographicWgs84(Vector3d position) {
-        double x = position.x;
-        double y = position.y;
-        double z = position.z;
+    public static Vector3d cartesianToGeographicWgs84(Vector3d cartographic) {
+        double x = cartographic.x;
+        double y = cartographic.y;
+        double z = cartographic.z;
 
         double xxpyy = x * x + y * y;
         double sqrtXXpYY = Math.sqrt(xxpyy);
@@ -204,8 +210,24 @@ public class GlobeUtils {
     }
 
     public static ProjCoordinate transform(CoordinateReferenceSystem source, ProjCoordinate coordinate) {
-        BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, wgs84);
+        return transform(source, wgs84, coordinate);
+    }
+
+    public static ProjCoordinate transform(CoordinateReferenceSystem source, CoordinateReferenceSystem target,ProjCoordinate coordinate) {
+        BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, target);
         return transformer.transform(coordinate, new ProjCoordinate());
+    }
+
+    public static Vector3d transform(CoordinateReferenceSystem source, Vector3d coordinate) {
+        ProjCoordinate srcCoord = new ProjCoordinate(coordinate.x, coordinate.y, coordinate.z);
+        ProjCoordinate dstCoord = transform(source, srcCoord);
+        return new Vector3d(dstCoord.x, dstCoord.y, dstCoord.z);
+    }
+
+    public static Vector3d transform(CoordinateReferenceSystem source, CoordinateReferenceSystem target, Vector3d coordinate) {
+        ProjCoordinate srcCoord = new ProjCoordinate(coordinate.x, coordinate.y, coordinate.z);
+        ProjCoordinate dstCoord = transform(source, target, srcCoord);
+        return new Vector3d(dstCoord.x, dstCoord.y, dstCoord.z);
     }
 
     public static Coordinate transformOnGeotools(org.geotools.api.referencing.crs.CoordinateReferenceSystem source, Coordinate coordinate) {
@@ -284,12 +306,18 @@ public class GlobeUtils {
             return null;
         } else {
             String epsgCode = "EPSG:" + epsg;
-            CoordinateReferenceSystem crsWgs84 = factory.createFromName(epsgCode);
-            if (crsWgs84 == null) {
-                log.error("[ERROR] Failed to create CRS from EPSG code: {}", epsgCode);
+            CoordinateReferenceSystem testCrs;
+            try {
+                testCrs = factory.createFromName(epsgCode);
+                if (testCrs == null) {
+                    log.error("[ERROR] Failed to create CRS from EPSG code: {}", epsgCode);
+                    return null;
+                }
+            } catch (RuntimeException e) {
+                log.error("[ERROR] Failed to create CRS from EPSG code: {}", epsgCode, e);
                 return null;
             }
-            return crsWgs84;
+            return testCrs;
         }
     }
 }

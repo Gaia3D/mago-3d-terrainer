@@ -15,6 +15,8 @@ public class GaiaTextureScissorData {
     private GaiaRectangle batchedBoundary;
     private GaiaRectangle texCoordBoundary;
     private List<HalfEdgeFace> faces;
+    private int expandedPixel;
+    private GaiaRectangle noExpandedBoundary;
 
     public GaiaRectangle getOriginBoundary() {
         if (originBoundary == null) {
@@ -30,7 +32,6 @@ public class GaiaTextureScissorData {
             return false;
         }
 
-        currentBoundary.addBoundingRectangle(other.currentBoundary);
         texCoordBoundary.addBoundingRectangle(other.texCoordBoundary);
         faces.addAll(other.faces);
         other.faces.clear(); // clear the faces of the other.
@@ -39,9 +40,6 @@ public class GaiaTextureScissorData {
     }
 
     public boolean isMergeable(GaiaTextureScissorData other) {
-        if (currentBoundary == null || other.currentBoundary == null) {
-            return false;
-        }
         if (texCoordBoundary == null || other.texCoordBoundary == null) {
             return false;
         }
@@ -50,12 +48,32 @@ public class GaiaTextureScissorData {
         }
 
         // check the current boundary.
-        double thisArea = currentBoundary.getArea();
-        double otherArea = other.currentBoundary.getArea();
-        GaiaRectangle mergedBoundary = new GaiaRectangle(currentBoundary);
-        mergedBoundary.addBoundingRectangle(other.currentBoundary);
+        double thisArea = texCoordBoundary.getArea();
+        double otherArea = other.texCoordBoundary.getArea();
+        GaiaRectangle mergedBoundary = new GaiaRectangle(texCoordBoundary);
+        mergedBoundary.addBoundingRectangle(other.texCoordBoundary);
         double mergedArea = mergedBoundary.getArea();
 
-        return !(mergedArea > thisArea + otherArea);
+        return !(mergedArea * 0.999 > thisArea + otherArea);
+    }
+
+    public boolean validate() {
+        if (currentBoundary == null || noExpandedBoundary == null) {
+            return true;
+        }
+        if (Math.abs(noExpandedBoundary.getMinX() - (currentBoundary.getMinX() + expandedPixel)) > 0.1) {
+            return false;
+        }
+        if (Math.abs(noExpandedBoundary.getMinY() - (currentBoundary.getMinY() + expandedPixel)) > 0.1) {
+            return false;
+        }
+        if (Math.abs(noExpandedBoundary.getMaxX() - (currentBoundary.getMaxX() - expandedPixel)) > 0.1) {
+            return false;
+        }
+        if (Math.abs(noExpandedBoundary.getMaxY() - (currentBoundary.getMaxY() - expandedPixel)) > 0.1) {
+            return false;
+        }
+
+        return true;
     }
 }
