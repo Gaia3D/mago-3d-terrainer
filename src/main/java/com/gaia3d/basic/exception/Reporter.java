@@ -19,9 +19,10 @@ import java.util.List;
 @Slf4j
 @Getter
 @Setter
+@Deprecated
 public class Reporter {
     private final String REPORT_FILE_NAME = "report";
-    private final String REPORT_FILE_EXTENSION = ".txt";
+    private final String REPORT_FILE_EXTENSION = ".log";
     private final String REPORT_FILE_ENCODING = "UTF-8";
     private List<Report> reportList = new ArrayList<>();
     private LocalDateTime startTime;
@@ -51,6 +52,31 @@ public class Reporter {
 
     public void addReport(Exception e) {
         this.addReport(e, ReportLevel.ERROR);
+    }
+
+    public void addReport(String message, ReportLevel level) {
+        Report report = new Report();
+        report.setLevel(level);
+        report.setMessage(message);
+        report.setDetailMessage(message);
+        report.setUpdateTime(LocalDateTime.now());
+        report.setException(null);
+        this.addReport(report);
+
+        switch (level) {
+            case WARN:
+                warningCount++;
+                break;
+            case ERROR:
+                errorCount++;
+                break;
+            case FATAL:
+                fatalCount++;
+                break;
+            default:
+                infoCount++;
+                break;
+        }
     }
 
     public void addReport(Exception e, ReportLevel level) {
@@ -104,7 +130,7 @@ public class Reporter {
         stringBuilder.append("Fatal Count : ").append(fatalCount).append("\n");
         stringBuilder.append("Total Report Count : ").append(reportList.size()).append("\n");
         addLine(stringBuilder);
-        if (reportList.size() > 0) {
+        if (!reportList.isEmpty()) {
             stringBuilder.append("[Detail Report]\n");
         } else {
             stringBuilder.append("[No Detail Report]\n");
@@ -119,8 +145,10 @@ public class Reporter {
             if (report.getDetailMessage() != null) {
                 stringBuilder.append(report.getDetailMessage()).append("\n");
             }
-            for (StackTraceElement element : report.getException().getStackTrace()) {
-                stringBuilder.append(element.toString()).append("\n");
+            if (report.getException() != null) {
+                for (StackTraceElement element : report.getException().getStackTrace()) {
+                    stringBuilder.append(element.toString()).append("\n");
+                }
             }
             addLine(stringBuilder);
         }

@@ -38,8 +38,6 @@ public class GaiaFace extends FaceStructure implements Serializable {
             GaiaVertex vertex3 = vertices.get(indices3);
             this.faceNormal = calcNormal(vertex1, vertex2, vertex3);
         }
-//        Vector3d firstNormal = vertices.get(0).getNormal();
-//        this.faceNormal = new Vector3d(firstNormal);
     }
 
     public GaiaBoundingBox getBoundingBox(List<GaiaVertex> vertices, GaiaBoundingBox resultBoundingBox) {
@@ -51,6 +49,21 @@ public class GaiaFace extends FaceStructure implements Serializable {
             resultBoundingBox.addPoint(vertex.getPosition());
         }
         return resultBoundingBox;
+    }
+
+    public void copyFrom(GaiaFace sourceFace) {
+        this.id = sourceFace.id;
+        this.classifyId = sourceFace.classifyId;
+        if (sourceFace.indices != null) {
+            this.indices = sourceFace.indices.clone();
+        } else {
+            this.indices = null;
+        }
+        if (sourceFace.faceNormal != null) {
+            this.faceNormal = new Vector3d(sourceFace.faceNormal);
+        } else {
+            this.faceNormal = null;
+        }
     }
 
     public boolean validateNormal(Vector3d normal) {
@@ -151,7 +164,14 @@ public class GaiaFace extends FaceStructure implements Serializable {
             if (vectorA.distance(vectorB) < error || vectorA.distance(vectorC) < error || vectorB.distance(vectorC) < error) {
                 return true;
             }
+
+            // check if the area of the triangle is zero.
+            double area = GeometryUtils.getTriangleArea(vertex1, vertex2, vertex3);
+            if (area < error) {
+                return true;
+            }
         }
+
 
         return false;
     }

@@ -115,21 +115,7 @@ public class HalfEdgeNode implements Serializable {
     }
 
     public GaiaBoundingBox calculateBoundingBox(GaiaBoundingBox resultBBox) {
-//        if (resultBBox == null) {
-//            resultBBox = new GaiaBoundingBox();
-//        }
-//        for (HalfEdgeMesh mesh : meshes) {
-//            resultBBox = mesh.calculateBoundingBox(resultBBox);
-//        }
-//        for (HalfEdgeNode child : children) {
-//            resultBBox = child.calculateBoundingBox(resultBBox);
-//        }
-//        return resultBBox;
         GaiaBoundingBox boundingBox = null;
-//        Matrix4d transformMatrix = new Matrix4d(this.transformMatrix);
-//        if (parentTransformMatrix != null) {
-//            parentTransformMatrix.mul(transformMatrix, transformMatrix);
-//        }
         for (HalfEdgeMesh mesh : this.getMeshes()) {
             GaiaBoundingBox meshBoundingBox = mesh.calculateBoundingBox(null);
             if (meshBoundingBox == null) {
@@ -206,9 +192,6 @@ public class HalfEdgeNode implements Serializable {
                 clonedNode.children.add(clonedChild);
             }
         }
-//        if (boundingBox != null && clonedNode != null) {
-//            clonedNode.boundingBox = boundingBox.clone();
-//        }
         return clonedNode;
     }
 
@@ -462,6 +445,15 @@ public class HalfEdgeNode implements Serializable {
         }
         for (HalfEdgeNode child : children) {
             child.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
+        }
+    }
+
+    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
+        for (HalfEdgeMesh mesh : meshes) {
+            mesh.decimateInteriorOfBox(decimateParameters, boundingBox);
+        }
+        for (HalfEdgeNode child : children) {
+            child.decimateInteriorOfBox(decimateParameters, boundingBox);
         }
     }
 }

@@ -85,11 +85,6 @@ public class HalfEdgeMesh implements Serializable {
     }
 
     public void writeFile(ObjectOutputStream outputStream) {
-        /*
-        private List<HalfEdgePrimitive> primitives = new ArrayList<>();
-        private GaiaBoundingBox boundingBox = null;
-         */
-
         try {
             outputStream.writeInt(primitives.size());
             for (HalfEdgePrimitive primitive : primitives) {
@@ -206,6 +201,12 @@ public class HalfEdgeMesh implements Serializable {
     public void decimate(DecimateParameters decimateParameters) {
         for (HalfEdgePrimitive primitive : primitives) {
             primitive.decimate(decimateParameters);
+        }
+    }
+
+    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
+        for (HalfEdgePrimitive primitive : primitives) {
+            primitive.decimateInteriorOfBox(decimateParameters, boundingBox);
         }
     }
 
