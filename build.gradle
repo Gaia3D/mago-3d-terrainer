@@ -79,6 +79,9 @@ project(':mago-common') {
 
 project(':mago-io') {
     // Common module build configuration
+    dependencies {
+        implementation project(':mago-common')
+    }
 }
 
 project(':mago-terrainer') {
