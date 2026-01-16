@@ -28,19 +28,12 @@ public class MagoTerrainerMain {
             CommandLine command = parser.parse(Configurator.createOptions(), args);
             boolean isHelp = command.hasOption(CommandOptions.HELP.getLongName());
             boolean hasLogPath = command.hasOption(CommandOptions.LOG.getLongName());
+            String logPath = hasLogPath ? command.getOptionValue(CommandOptions.LOG.getLongName()) : null;
 
             if (command.hasOption(CommandOptions.DEBUG.getLongName())) {
-                Configurator.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
-                if (hasLogPath) {
-                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(CommandOptions.LOG.getLongName()));
-                }
-                Configurator.setLevel(Level.DEBUG);
+                Configurator.configure(Level.DEBUG, "[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", logPath);
             } else {
-                Configurator.initConsoleLogger();
-                if (hasLogPath) {
-                    Configurator.initFileLogger(null, command.getOptionValue(CommandOptions.LOG.getLongName()));
-                }
-                Configurator.setLevel(Level.INFO);
+                Configurator.configure(Level.INFO, null, logPath);
             }
             Configurator.setEpsg();
 
@@ -85,7 +78,8 @@ public class MagoTerrainerMain {
         } catch (IOException e) {
             log.error("Failed to run process, Please check the arguments.", e);
             throw new RuntimeException(e);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            log.error("An unexpected error occurred.", e);
             throw new RuntimeException(e);
         }
         printEnd();

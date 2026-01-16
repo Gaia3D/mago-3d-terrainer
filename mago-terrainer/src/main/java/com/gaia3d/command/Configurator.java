@@ -30,6 +30,32 @@ public class Configurator {
     public static final Level LEVEL = Level.ALL;
     private static final String DEFAULT_PATTERN = "%message%n";
 
+    public static void configure(Level level, String pattern, String logPath) throws IOException {
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+
+        removeAllAppender(loggerConfig);
+        
+        if (pattern == null) {
+            pattern = DEFAULT_PATTERN;
+        }
+        PatternLayout layout = createPatternLayout(pattern);
+
+        // Console Appender
+        ConsoleAppender consoleAppender = createConsoleAppender(layout);
+        consoleAppender.start();
+        loggerConfig.addAppender(consoleAppender, level, null);
+
+        // File Appender
+        FileAppender fileAppender = createRollingFileAppender(layout, logPath);
+        fileAppender.start();
+        loggerConfig.addAppender(fileAppender, level, null);
+
+        loggerConfig.setLevel(level);
+        ctx.updateLoggers();
+    }
+    
     public static void initConsoleLogger() {
         initConsoleLogger(null);
     }
@@ -106,9 +132,12 @@ public class Configurator {
 
     private static FileAppender createRollingFileAppender(PatternLayout layout, String path) throws IOException {
         if (path == null) {
-            path = "logs/gaia3d-mesher.log";
+            path = "logs/mago-terrainer.log";
         }
         File file = new File(path);
+        if (file.getParentFile() != null && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
         if (file.exists() && file.isFile()) {
             File backup = new File(path + "_" + file.lastModified());
             Files.move(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
