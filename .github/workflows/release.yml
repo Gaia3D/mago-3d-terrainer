@@ -1,55 +1,28 @@
-name: Build and Release
-
+name: Build & Docker Image Distribution
 on:
   push:
-    tags:
-      - 'v*-release' # Trigger on version tags like v1.0,0-release
-
+    branches:
+      - main
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # Fetch all history for accurate changelog generation
 
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Build with Gradle
         run: ./gradlew release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           JIB_TO_AUTH_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           JIB_TO_AUTH_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Generate grouped changelog
-        id: changelog
-        run: |
-          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"%s" > commits.txt
-
-          echo "## ✨ Features" > grouped_changelog.md
-          grep "^feat" commits.txt | sed 's/^/- /' >> grouped_changelog.md
-
-          echo -e "\n## 🐛 Fixes" >> grouped_changelog.md
-          grep "^fix" commits.txt | sed 's/^/- /' >> grouped_changelog.md
-
-          echo -e "\n## 📝 Others" >> grouped_changelog.md
-          grep -v -e "^feat" -e "^fix" commits.txt | sed 's/^/- /' >> grouped_changelog.md
-
-          echo "BODY<<EOF" >> $GITHUB_OUTPUT
-          cat grouped_changelog.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          body: ${{ steps.changelog.outputs.BODY }}
-          files: terrainer/dist/*.jar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
