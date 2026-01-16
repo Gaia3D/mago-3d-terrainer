@@ -4,3 +4,6 @@ project(':mago-terrainer').projectDir = new File(settingsDir, './mago-terrainer'
 
 include ':mago-common'
 project(':mago-common').projectDir = new File(settingsDir, './mago-common')
+
+include ':mago-io'
+project(':mago-io').projectDir = new File(settingsDir, './mago-io')
