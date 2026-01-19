@@ -210,7 +210,7 @@ public class RasterStandardizer {
      * Split GridCoverage2D into tiles with tileSize
      * @param coverage source GridCoverage2D
      * @param tileSize tile size
-     * @return List<RasterInfo> tiles
+     * @return tiles
      */
     public List<RasterInfo> split(GridCoverage2D coverage, int tileSize) throws TransformException, IOException {
         List<RasterInfo> tiles = new ArrayList<>();
