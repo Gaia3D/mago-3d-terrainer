@@ -322,7 +322,7 @@ public class TerrainElevationDataManager {
         }
 
         Double pixelArea = 0.0d;
-        File file = new File(path);
+        //File file = new File(path);
         //String fileName = file.getName();
 
         File standardizationTempPath = new File(globalOptions.getStandardizeTempPath());

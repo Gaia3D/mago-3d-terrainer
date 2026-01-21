@@ -115,7 +115,6 @@ public class MagoTerrainerMain {
 
         // Check if the tile mesh generation is a continuation from an existing tileSet.***
         boolean isContinue = globalOptions.isContinue();
-        //isContinue = true; // test
         if (isContinue) {
             log.info("[Tile] Continuing making tile meshes.");
             tileWgs84Manager.makeTileMeshesContinue();

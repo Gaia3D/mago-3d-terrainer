@@ -357,12 +357,12 @@ public class TileWgs84Manager {
         }
 
         log.info("----------------------------------------");
-        int minTileDepth = globalOptions.getMinimumTileDepth();
+        //int minTileDepth = globalOptions.getMinimumTileDepth();
+        int minTileDepth = 0;
         int maxTileDepth = globalOptions.getMaximumTileDepth();
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             long startTime = System.currentTimeMillis();
-            //Date startDate = new Date(startTime);
 
             TileRange tilesRange = new TileRange();
 
@@ -376,7 +376,7 @@ public class TileWgs84Manager {
                 TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
             }
 
-            // Set terrainLayer.available of tileSet json
+            // Set terrainLayer.available of tileSet JSON
             terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
             this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
             this.terrainElevationDataManager.deleteObjects();

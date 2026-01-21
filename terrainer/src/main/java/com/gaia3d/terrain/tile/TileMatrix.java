@@ -277,7 +277,7 @@ public class TileMatrix {
             List<TerrainMesh> separatedMeshes = new ArrayList<>();
             TerrainMeshUtils.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
 
-            // save order :
+            // save order:
             // 1- saveSeparatedTiles()
             // 2- saveQuantizedMeshes()
             // 3- saveSeparatedChildrenTiles()
