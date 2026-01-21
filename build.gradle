@@ -1,63 +1,47 @@
-subprojects {
-    group "com.gaia3d"
-    version '1.10.1-release' // release, beta, alpha
-    apply plugin: 'java'
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'maven-publish'
+}
 
-    dependencies {
-        compileOnly "org.projectlombok:lombok:1.18.30"
-        annotationProcessor "org.projectlombok:lombok:1.18.30"
+repositories {
+    maven { url "https://repo.osgeo.org/repository/release/" }
+    mavenCentral()
+}
 
-        implementation 'org.slf4j:slf4j-api:1.7.25'
-        implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
-        implementation 'org.apache.logging.log4j:log4j-api:2.14.0'
-        implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+dependencies {
 
-        implementation "org.joml:joml:1.10.5"
+}
 
-        implementation 'commons-logging:commons-logging:1.2'
-        implementation 'commons-io:commons-io:2.11.0'
-        implementation 'commons-cli:commons-cli:1.5.0'
-        implementation 'commons-collections:commons-collections:3.2.2'
-        implementation 'org.apache.commons:commons-text:1.10.0'
-
-        testCompileOnly "org.projectlombok:lombok:1.18.30"
-        testAnnotationProcessor "org.projectlombok:lombok:1.18.30"
-        testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.0"
-        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.0"
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'mago-common'
+        }
+    }
+    repositories {
+        maven {
+            name = "github"
+            url = uri("https://maven.pkg.github.com/gaia3d/mago-3d-tiler")
+            credentials {
+                username = findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 }
 
-project(':mago-common') {
-    // Common module build configuration
+javadoc {
+    enabled = false
+    options.addStringOption("locale", "en_US")
+    options.addStringOption("encoding", "UTF-8")
+    options.addStringOption("charset", "UTF-8")
+    options.addStringOption("docencoding", "UTF-8")
 }
 
-project(':mago-terrainer') {
-    dependencies {
-        implementation project(':mago-common')
+test {
+    useJUnitPlatform {
+        includeTags 'release'
     }
-}
-
-tasks.register('release') {
-    dependsOn(':mago-terrainer:clean')
-    dependsOn(':mago-terrainer:test')
-    dependsOn(':mago-terrainer:shadowJar')
-    dependsOn(':mago-terrainer:javadoc')
-    dependsOn(':mago-terrainer:jib')
-}
-
-tasks.register('javadoc', Javadoc) {
-    group = 'Documentation'
-    description = 'Generates Javadoc for mago-terrainer module.'
-
-    def includedProjects = [
-            project(':mago-terrainer'),
-            project(':mago-common'),
-    ]
-
-    source = files(includedProjects.collect { it.sourceSets.main.allJava })
-    classpath = files(includedProjects.collect { it.sourceSets.main.compileClasspath })
-    destinationDir = file("/docs/")
-    options.encoding = 'UTF-8'
-    options.memberLevel = JavadocMemberLevel.PUBLIC
-    options.addStringOption('Xdoclint:none', '-quiet')
 }

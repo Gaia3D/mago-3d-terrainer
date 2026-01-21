@@ -1,5 +1,0 @@
-rootProject.name = 'mago-terrainer'
-/*
-include ':mago-common'
-project(':mago-common').projectDir = new File(settingsDir, '../common')
-*/
