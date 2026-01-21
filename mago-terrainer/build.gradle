@@ -1,0 +1,159 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
+plugins {
+    id "java"
+    id "com.google.cloud.tools.jib" version "3.4.0"
+    id "com.gradleup.shadow" version "9.0.1"
+}
+
+repositories {
+    maven { url "https://repo.osgeo.org/repository/release/"}
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7.1'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+test {
+    useJUnitPlatform {
+        includeTags 'default'
+    }
+}
+
+jib {
+    from {
+        image = "eclipse-temurin:21-jre"
+        platforms {
+            platform {
+                architecture = "amd64"
+                os = "linux"
+            }
+            platform {
+                architecture = "arm64"
+                os = "linux"
+            }
+        }
+    }
+    to {
+        image = "gaia3d/mago-3d-terrainer"
+        tags = ["latest", project.version] as List<String>
+        if (findProperty("jib.to.auth.username") || System.getenv("JIB_TO_AUTH_USERNAME")) {
+            auth {
+                username = findProperty("jib.to.auth.username") ?: System.getenv("JIB_TO_AUTH_USERNAME")
+                password = findProperty("jib.to.auth.password") ?: System.getenv("JIB_TO_AUTH_PASSWORD")
+            }
+        }
+    }
+    container {
+        appRoot = "/mago-3d-terrainer"
+        creationTime = "USE_CURRENT_TIMESTAMP"
+        jvmFlags = [
+                "-Djava.awt.headless=true",
+                "-Dfile.encoding=UTF-8",
+                "-XX:+UseContainerSupport",
+                "-XX:MaxGCPauseMillis=100",
+                "-XX:+UseStringDeduplication",
+                "-XX:InitialRAMPercentage=50.0",
+                "-XX:MaxRAMPercentage=50.0"
+        ]
+        entrypoint = ["java", "-jar", "/app/mago-3d-terrainer-${project.version}.jar"]
+    }
+    extraDirectories {
+        paths {
+            path {
+                from = file("dist")
+                into = "/app"
+            }
+        }
+    }
+}
+
+
+javadoc {
+    options.addStringOption("locale", "en_US")
+    options.addStringOption("encoding", "UTF-8")
+    options.addStringOption("charset", "UTF-8")
+    options.addStringOption("docencoding", "UTF-8")
+}
+
+jar {
+    finalizedBy shadowJar
+    manifest {
+        attributes "Main-Class": "com.gaia3d.command.MagoTerrainerMain"
+        attributes 'Implementation-Version': project.version
+        attributes 'Implementation-Title': 'mago-3d-terrainer'
+        attributes 'Implementation-Vendor': 'Gaia3d, Inc.'
+        attributes 'Implementation-Vendor-Id': 'com.gaia3d'
+        attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
+    }
+}
+
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
+shadowJar {
+    mergeServiceFiles()
+
+    transform(AppendingTransformer) {
+        resource = "META-INF/registryFile.jai"
+    }
+    transform(AppendingTransformer) {
+        resource = "META-INF/registryFile.jaiext"
+    }
+    transform(AppendingTransformer) {
+        resource = "META-INF/registryFile.imagen"
+    }
+
+    manifest {
+        attributes(
+                'Main-Class': 'com.gaia3d.command.MagoTerrainerMain',
+                'Implementation-Version': project.version,
+                'Implementation-Title': 'mago-3d-terrainer',
+                'Implementation-Vendor': 'Gaia3d, Inc.',
+                'Implementation-Vendor-Id': 'com.gaia3d',
+                'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
+        )
+    }
+
+    // relocate는 정말 필요할 때만 (일단은 빼고 테스트 추천)
+    // relocate 'org.slf4j', 'shadow.slf4j'
+    archiveFileName = "mago-3d-terrainer-${project.version}.jar"
+    destinationDirectory.set(file("${projectDir}/dist"))
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    doFirst {
+        def distDir = file("${projectDir}/dist")
+        if (distDir.exists()) {
+            distDir.deleteDir()
+        }
+        distDir.mkdirs()
+    }
+}
+
+clean {
+    delete file("${projectDir}/dist")
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('jib') {
+    dependsOn(shadowJar)
+    onlyIf {
+        def jarFile = file("${projectDir}/dist/mago-3d-terrainer-${project.version}.jar")
+        if (!jarFile.exists()) {
+            logger.lifecycle("⚠️ JAR file not found: ${jarFile.absolutePath}")
+            logger.lifecycle(" > Please build the project first.")
+            throw new GradleException("JAR file not found: ${jarFile.absolutePath}")
+        }
+        return true
+    }
+}
