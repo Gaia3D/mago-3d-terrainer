@@ -1,6 +1,6 @@
 package com.gaia3d.release.others;
 
-import com.gaia3d.command.MagoTerrainerMain;
+import com.gaia3d.command.Mago3DTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +25,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 //"-d",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -42,7 +42,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 //"-d",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -58,7 +58,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 //"-d",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class MaxLevelTest {
                 "-max", "16",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 "-mosaicSize", "4",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -107,7 +107,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 "-mosaicSize", "16",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 //"-d",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -141,7 +141,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 "-mosaicSize", "64",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -158,7 +158,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 "-mosaicSize", "128",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -172,7 +172,7 @@ public class MaxLevelTest {
                 "-min", "0",
                 "-max", "17",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -186,7 +186,7 @@ public class MaxLevelTest {
                 "-min", "0",
                 "-max", "18",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -201,7 +201,7 @@ public class MaxLevelTest {
                 "-max", "10",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -217,7 +217,7 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 //"-d",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -232,6 +232,6 @@ public class MaxLevelTest {
                 "-calculateNormals",
                 //"-d",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 }

@@ -401,11 +401,11 @@ public class TileWgs84Manager {
             int total = subDividedTilesRanges.size();
             for (TileRange subDividedTilesRange : subDividedTilesRanges) {
                 int progress = counter.incrementAndGet();
-                log.info("[Tile][{}/{}][{}/{}] generate wgs84 raster all tiles...", depth, maxTileDepth, progress, total);
+                log.info("[Tile][{}/{}][{}/{}] generate raster tiles...", depth, maxTileDepth, progress, total);
                 TileRange expandedTilesRange = subDividedTilesRange.expand1();
                 this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
 
-                log.info("[Tile][{}/{}][{}/{}] process tiling...", depth, maxTileDepth, progress, total);
+                log.info("[Tile][{}/{}][{}/{}] process quantized mesh tiling...", depth, maxTileDepth, progress, total);
                 TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
 
                 boolean isFirstGeneration = (depth == minTileDepth);
@@ -441,7 +441,7 @@ public class TileWgs84Manager {
             String freeMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory());
             // jvm used memory
             String usedMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
-            log.info("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
+            log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
         terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
@@ -628,7 +628,7 @@ public class TileWgs84Manager {
             String freeMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory());
             // jvm used memory
             String usedMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
-            log.info("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
+            log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
         terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");

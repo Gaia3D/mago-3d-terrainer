@@ -1,6 +1,6 @@
 package com.gaia3d.terrain.tile;
 
-import com.gaia3d.command.Configurator;
+import com.gaia3d.command.LoggingConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.imagen.Interpolation;
 import org.geotools.api.geometry.Position;
@@ -18,7 +18,7 @@ class GaiaGeoTiffManagerTest {
 
     @Test
     void test() {
-        Configurator.initConsoleLogger();
+        LoggingConfiguration.initConsoleLogger();
         GridCoverage2D coverage = null;
         try {
             File file = new File("C:\\Users\\znkim\\Downloads\\seoul-100.tif");

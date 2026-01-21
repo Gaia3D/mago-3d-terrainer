@@ -1,6 +1,6 @@
 package com.gaia3d.terrain.tile.geotiff;
 
-import com.gaia3d.command.Configurator;
+import com.gaia3d.command.LoggingConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -16,7 +16,7 @@ class GaiaGeoTiffManagerTest {
 
     @Test
     void reprojection() {
-        Configurator.initConsoleLogger();
+        LoggingConfiguration.initConsoleLogger();
 
         File inputFile = new File("D:\\dem30-5186\\dem30-5186-part.tif"); // 5186
         //File inputFile = new File("D:\\dem05-5186-part-real\\dem05-parts-5186-crop.tif"); // 5186

@@ -1,10 +1,8 @@
 package com.gaia3d.command;
 
-import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.types.PriorityType;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
@@ -29,7 +27,7 @@ import java.nio.file.StandardCopyOption;
 public class GlobalOptions {
     /* singleton */
     private static GlobalOptions instance = new GlobalOptions();
-    private Reporter reporter;
+    private CommandLineConfiguration commandLineConfiguration = new DefaultCommandLineConfiguration();
 
     /* Constants */
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
@@ -47,8 +45,8 @@ public class GlobalOptions {
     private String version;
     private String javaVersionInfo;
     private String programInfo;
-    private long startTime = 0;
-    private long endTime = 0;
+    private long startTimeMillis = System.currentTimeMillis();
+    private long endTimeMillis = 0;
 
     /* Default Options */
     private String inputPath;
@@ -89,12 +87,13 @@ public class GlobalOptions {
     private CoordinateReferenceSystem outputCRS;
     private TilingSchema tilingSchema;
 
-    private GlobalOptions() {};
+    private GlobalOptions () {
+        // Private constructor for singleton
+    }
 
     public static GlobalOptions getInstance() {
         if (instance.javaVersionInfo == null) {
             initVersionInfo();
-            instance.reporter = new Reporter("mago-3d-terrainer", instance.getVersion());
         }
         return instance;
     }
@@ -291,6 +290,13 @@ public class GlobalOptions {
         printGlobalOptions();
     }
 
+    public long getProcessTimeMillis() {
+        long endTimeMillis = System.currentTimeMillis();
+        long processTimeMillis = endTimeMillis - startTimeMillis;
+        this.endTimeMillis = endTimeMillis;
+        return processTimeMillis;
+    }
+
     protected static void printGlobalOptions() {
         log.info("Input Path: {}", instance.getInputPath());
         log.info("Output Path: {}", instance.getOutputPath());
@@ -299,11 +305,11 @@ public class GlobalOptions {
             log.info("Log Path: {}", instance.getLogPath());
         }
         if (instance.getGeoidPath() != null) {
-            log.info("Geoid: {}", instance.getGeoidPath());
+            log.info("Geoid Model(Height Reference): {}", instance.getGeoidPath());
         } else {
-            log.info("Geoid: Ellipsoid");
+            log.info("Geoid Model(Height Reference): Ellipsoid");
         }
-        MagoTerrainerMain.drawLine();
+        Mago3DTerrainerMain.drawLine();
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Tiling Schema: {}", instance.getTilingSchema());
         log.info("Minimum Tile Depth: {}", instance.getMinimumTileDepth());
@@ -315,12 +321,12 @@ public class GlobalOptions {
         log.info("Extension Calculate Normals: {}", instance.isCalculateNormalsExtension());
         log.info("Extension Meta Data: {}", instance.isMetaDataExtension());
         log.info("Extension Water Mask: {}", instance.isWaterMaskExtension());
-        MagoTerrainerMain.drawLine();
+        Mago3DTerrainerMain.drawLine();
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Debug Mode: {}", instance.isDebugMode());
-        MagoTerrainerMain.drawLine();
+        Mago3DTerrainerMain.drawLine();
     }
 
     protected static void validateInputPath(Path path) throws IOException {
@@ -352,15 +358,15 @@ public class GlobalOptions {
         String javaVersion = System.getProperty("java.version");
         String javaVendor = System.getProperty("java.vendor");
         String javaVersionInfo = "JAVA Version : " + javaVersion + " (" + javaVendor + ") ";
-        String version = MagoTerrainerMain.class.getPackage().getImplementationVersion();
-        String title = MagoTerrainerMain.class.getPackage().getImplementationTitle();
-        String vendor = MagoTerrainerMain.class.getPackage().getImplementationVendor();
+        String version = Mago3DTerrainerMain.class.getPackage().getImplementationVersion();
+        String title = Mago3DTerrainerMain.class.getPackage().getImplementationTitle();
+        String vendor = Mago3DTerrainerMain.class.getPackage().getImplementationVendor();
         version = version == null ? "dev-version" : version;
         title = title == null ? "mago-3d-terrainer" : title;
         vendor = vendor == null ? "Gaia3D, Inc." : vendor;
         String programInfo = title + "(" + version + ") by " + vendor;
 
-        instance.setStartTime(System.currentTimeMillis());
+        instance.setStartTimeMillis(System.currentTimeMillis());
         instance.setProgramInfo(programInfo);
         instance.setJavaVersionInfo(javaVersionInfo);
     }

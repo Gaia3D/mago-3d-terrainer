@@ -1,6 +1,6 @@
 package com.gaia3d.release;
 
-import com.gaia3d.command.MagoTerrainerMain;
+import com.gaia3d.command.Mago3DTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -14,13 +14,13 @@ public class DefaultTest {
     @Test
     void noArgs() {
         String[] args = new String[]{};
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
     void help() {
-        String[] args = new String[]{"-h"};
-        MagoTerrainerMain.main(args);
+        String[] args = new String[]{"--help"};
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -34,7 +34,7 @@ public class DefaultTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -51,7 +51,7 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "10",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -67,7 +67,7 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "10",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -83,7 +83,7 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "12",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -100,7 +100,7 @@ public class DefaultTest {
                 "-max", "10",
                 "-interpolationType", "nearest",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -117,7 +117,7 @@ public class DefaultTest {
                 "-max", "12",
                 "-interpolationType", "nearest",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "12",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -149,7 +149,7 @@ public class DefaultTest {
                 "-min", "0",
                 "-max", "12",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -165,7 +165,7 @@ public class DefaultTest {
         };
 
         try {
-            MagoTerrainerMain.main(args);
+            Mago3DTerrainerMain.main(args);
         } catch (Exception e) {
             log.error("", e);
         }
@@ -184,7 +184,7 @@ public class DefaultTest {
         };
 
         try {
-            MagoTerrainerMain.main(args);
+            Mago3DTerrainerMain.main(args);
         } catch (Exception e) {
             log.error("", e);
         }
@@ -205,7 +205,7 @@ public class DefaultTest {
         };
 
         try {
-            MagoTerrainerMain.main(args);
+            Mago3DTerrainerMain.main(args);
         } catch (Exception e) {
             log.error("", e);
         }

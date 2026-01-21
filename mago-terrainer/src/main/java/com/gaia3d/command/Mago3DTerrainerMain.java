@@ -5,7 +5,6 @@ import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TerrainLayer;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
-import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.util.DecimalUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
@@ -16,33 +15,37 @@ import org.geotools.api.referencing.operation.TransformException;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryNotEmptyException;
 
 @Slf4j
-public class MagoTerrainerMain {
+public class Mago3DTerrainerMain {
 
     public static void main(String[] args) {
         try {
-            Options options = Configurator.createOptions();
-            CommandLineParser parser = new DefaultParser();
-            CommandLine command = parser.parse(Configurator.createOptions(), args);
+            GlobalOptions globalOptions = GlobalOptions.getInstance();
+            CommandLineConfiguration commandLine = globalOptions.getCommandLineConfiguration();
+            Options options = commandLine.createOptions();
+            CommandLine command = commandLine.createCommandLine(options, args);
             boolean isHelp = command.hasOption(CommandOptions.HELP.getLongName());
+            boolean isQuiet = command.hasOption(CommandOptions.QUIET.getLongName());
             boolean hasLogPath = command.hasOption(CommandOptions.LOG.getLongName());
+            boolean isDebug = command.hasOption(CommandOptions.DEBUG.getLongName());
 
-            if (command.hasOption(CommandOptions.DEBUG.getLongName())) {
-                Configurator.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
+            if (isQuiet) {
+                LoggingConfiguration.setLevel(Level.OFF);
+            } else if (isDebug) {
+                LoggingConfiguration.initConsoleLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n");
                 if (hasLogPath) {
-                    Configurator.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(CommandOptions.LOG.getLongName()));
+                    LoggingConfiguration.initFileLogger("[%p][%d{HH:mm:ss}][%C{2}(%M:%L)]::%message%n", command.getOptionValue(CommandOptions.LOG.getLongName()));
                 }
-                Configurator.setLevel(Level.DEBUG);
+                LoggingConfiguration.setLevel(Level.DEBUG);
             } else {
-                Configurator.initConsoleLogger();
+                LoggingConfiguration.initConsoleLogger();
                 if (hasLogPath) {
-                    Configurator.initFileLogger(null, command.getOptionValue(CommandOptions.LOG.getLongName()));
+                    LoggingConfiguration.initFileLogger(null, command.getOptionValue(CommandOptions.LOG.getLongName()));
                 }
-                Configurator.setLevel(Level.INFO);
+                LoggingConfiguration.setLevel(Level.INFO);
             }
-            Configurator.setEpsg();
+            LoggingConfiguration.setEpsg();
 
             printStart();
             if (isHelp || args.length == 0) {
@@ -58,8 +61,6 @@ public class MagoTerrainerMain {
             }
 
             GlobalOptions.init(command);
-            GlobalOptions globalOptions = GlobalOptions.getInstance();
-
             if (GlobalOptions.getInstance().isLayerJsonGenerate()) {
                 log.info("[Generate][layer.json] Start generating layer.json.");
                 executeLayerJsonGenerate();
@@ -89,7 +90,7 @@ public class MagoTerrainerMain {
             throw new RuntimeException(e);
         }
         printEnd();
-        Configurator.destroyLogger();
+        LoggingConfiguration.destroyLogger();
     }
 
     /**
@@ -136,8 +137,6 @@ public class MagoTerrainerMain {
         log.info("[Post][Clear] Start deleting memory objects.");
         tileWgs84Manager.deleteObjects();
         log.info("[Post][Clear] Finished deleting memory objects.");
-
-        globalOptions.getReporter().writeReportFile(new File(globalOptions.getOutputPath()));
     }
 
     /**
@@ -199,17 +198,10 @@ public class MagoTerrainerMain {
      */
     private static void printEnd() {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
-        Reporter reporter = globalOptions.getReporter();
-        long duration = reporter.getDuration();
+
         drawLine();
-        log.info("[Report Summary]");
-        log.info("Info : {}", reporter.getInfoCount());
-        log.info("Warning : {}", reporter.getWarningCount());
-        log.info("Error : {}", reporter.getErrorCount());
-        log.info("Fatal : {}", reporter.getFatalCount());
-        log.info("Total Report Count : {}", reporter.getReportList().size());
         log.info("[Process Summary]");
-        log.info("End Process Time : {}", DecimalUtils.millisecondToDisplayTime(duration));
+        log.info("Total process time : {} sec", DecimalUtils.millisecondToDisplayTime(globalOptions.getProcessTimeMillis()));
         drawLine();
     }
 

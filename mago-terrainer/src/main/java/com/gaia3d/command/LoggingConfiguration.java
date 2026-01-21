@@ -26,7 +26,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Set;
 
 @Slf4j
-public class Configurator {
+public class LoggingConfiguration {
     public static final Level LEVEL = Level.ALL;
     private static final String DEFAULT_PATTERN = "%message%n";
 

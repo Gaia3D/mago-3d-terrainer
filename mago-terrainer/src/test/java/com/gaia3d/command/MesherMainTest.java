@@ -17,7 +17,7 @@ class MesherMainTest {
     @Test
     void help() {
         String[] args = new String[]{"-h"};
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -30,7 +30,7 @@ class MesherMainTest {
                 "-min", "0",
                 "-max", "10",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -43,7 +43,7 @@ class MesherMainTest {
                 "-min", "0",
                 "-max", "10",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -56,7 +56,7 @@ class MesherMainTest {
                 "-min", "0",
                 "-max", "12",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -70,7 +70,7 @@ class MesherMainTest {
                 "-max", "8",
                 //"-d",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -333,6 +333,6 @@ class MesherMainTest {
 
         String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-debug"};
         //String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0"};
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 }

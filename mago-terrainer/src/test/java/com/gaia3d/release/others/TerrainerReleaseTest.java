@@ -1,6 +1,6 @@
 package com.gaia3d.release.others;
 
-import com.gaia3d.command.MagoTerrainerMain;
+import com.gaia3d.command.Mago3DTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +25,7 @@ public class TerrainerReleaseTest {
                 "-leaveTemp",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -42,7 +42,7 @@ public class TerrainerReleaseTest {
                 "-leaveTemp",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -60,7 +60,7 @@ public class TerrainerReleaseTest {
                 "-leaveTemp",
                 "-log", new File(outputPath, "log.txt").getAbsolutePath()
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class TerrainerReleaseTest {
                 "-max", "10",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class TerrainerReleaseTest {
                 "-interpolation", "nearest",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -112,7 +112,7 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 //"-leaveTemp"
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
 
@@ -132,7 +132,7 @@ public class TerrainerReleaseTest {
                 "-geoid", "EGM96",
                 //"-leaveTemp"
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -152,7 +152,7 @@ public class TerrainerReleaseTest {
                 "-geoid", inputGeoidPath.getAbsolutePath(),
                 //"-leaveTemp"
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
 
@@ -171,7 +171,7 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 //"-leaveTemp"
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -189,7 +189,7 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 "-leaveTemp"
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -208,7 +208,7 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 "-geoid", "EGM96",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -225,7 +225,7 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 "-geoid", "EGM96",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -243,7 +243,7 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 "-geoid", "EGM96",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -260,7 +260,7 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 "-geoid", "EGM96",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -274,6 +274,6 @@ public class TerrainerReleaseTest {
                 "-calculateNormals",
                 "-json"
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 }

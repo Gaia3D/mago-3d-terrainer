@@ -8,6 +8,7 @@ import lombok.Getter;
 public enum CommandOptions {
     /* Default Options */
     HELP("help", "h", false, "Print Help"),
+    QUIET("quiet", "q", false, "Suppress all output except errors"),
     LEAVE_TEMP("leaveTemp", "lt", false, "Leave temporary files for debugging"),
     JSON("json", "j", false, "Generate layer.json from terrain data"),
     CONTINUOUS("continue", "c", false, "Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails."),

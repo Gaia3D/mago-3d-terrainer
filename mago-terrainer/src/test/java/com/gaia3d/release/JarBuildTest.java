@@ -1,8 +1,7 @@
 package com.gaia3d.release;
 
-import com.gaia3d.command.Configurator;
+import com.gaia3d.command.LoggingConfiguration;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -11,14 +10,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 //@Tag("default")
 @Slf4j
 class JarBuildTest {
 
     static {
-        Configurator.initConsoleLogger();
+        LoggingConfiguration.initConsoleLogger();
     }
 
     private String getJarPathFromDist() {
