@@ -51,7 +51,8 @@ public class TileWgs84Manager {
     private int geoTiffFilesCount = 0;
 
     private double vertexCoincidentError = 1e-11; // 1e-12 is good
-    private int triangleRefinementMaxIterations = 5;
+    // Complex lunar terrain requires more refinement passes than Earth geodetic tiles
+    private int triangleRefinementMaxIterations = 20;
     private TerrainLayer terrainLayer = null;
     private boolean originIsLeftUp = false; // false = origin is left-down (Cesium Tile System)
 
@@ -764,8 +765,13 @@ public class TileWgs84Manager {
             throw new RuntimeException("Error: No standardized GeoTiff files found in the standardization temp path: " + tempFolder.getAbsolutePath());
         }
         this.getStandardizedGeoTiffFiles().clear();
-        for (File child : children) {
-            this.getStandardizedGeoTiffFiles().add(child);
+        if (children != null) {
+            for (File child : children) {
+                // Only add .tif files, skip WorldFile sidecars (.prj, .tfw, etc.)
+                if (child.isFile() && child.getName().toLowerCase().endsWith(".tif")) {
+                    this.getStandardizedGeoTiffFiles().add(child);
+                }
+            }
         }
     }
 

@@ -39,22 +39,28 @@ public class TileWgs84Raster {
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
 
-        if (lonDeg < minLonDeg || lonDeg > maxLonDeg) {
-            return -1;
-        }
+        // Clamp longitude to valid bounds instead of returning -1
+        // This handles floating-point precision errors at tile boundaries
+        double clampedLonDeg = Math.max(minLonDeg, Math.min(maxLonDeg, lonDeg));
 
-        return (int) ((lonDeg - minLonDeg) / deltaLonDeg);
+        int col = (int) ((clampedLonDeg - minLonDeg) / deltaLonDeg);
+
+        // Ensure column is within valid raster range
+        return Math.max(0, Math.min(rasterWidth - 1, col));
     }
 
     public int getRow(double latDeg) {
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        if (latDeg < minLatDeg || latDeg > maxLatDeg) {
-            return -1;
-        }
+        // Clamp latitude to valid bounds instead of returning -1
+        // This handles floating-point precision errors at tile boundaries
+        double clampedLatDeg = Math.max(minLatDeg, Math.min(maxLatDeg, latDeg));
 
-        return (int) ((latDeg - minLatDeg) / deltaLatDeg);
+        int row = (int) ((clampedLatDeg - minLatDeg) / deltaLatDeg);
+
+        // Ensure row is within valid raster range
+        return Math.max(0, Math.min(rasterHeight - 1, row));
     }
 
     public double getLonDeg(int col) {
@@ -80,24 +86,34 @@ public class TileWgs84Raster {
         int col = getColumn(lonDeg);
         int row = getRow(latDeg);
 
+        // getColumn/getRow now always return valid indices (clamped)
+        // but add safety check just in case
         if (col < 0 || col >= rasterWidth || row < 0 || row >= rasterHeight) {
-            log.info("getElevationBilinear: col or row is out of range. col = {}, row = {}", col, row);
-            return Float.NaN;
+            log.error("getElevationBilinear: unexpected out of range after clamping. col = {}, row = {}", col, row);
+            // Return edge elevation instead of NaN
+            col = Math.max(0, Math.min(rasterWidth - 1, col));
+            row = Math.max(0, Math.min(rasterHeight - 1, row));
+            return getElevation(col, row);
         }
+
+        // Handle edge case: if at the last column/row, use same pixel for interpolation
+        int col1 = Math.min(col + 1, rasterWidth - 1);
+        int row1 = Math.min(row + 1, rasterHeight - 1);
 
         double lon0 = getLonDeg(col);
         double lat0 = getLatDeg(row);
 
-        double lon1 = getLonDeg(col + 1);
-        double lat1 = getLatDeg(row + 1);
+        double lon1 = getLonDeg(col1);
+        double lat1 = getLatDeg(row1);
 
-        double dx = (lonDeg - lon0) / (lon1 - lon0);
-        double dy = (latDeg - lat0) / (lat1 - lat0);
+        // Avoid division by zero when at edge pixels
+        double dx = (lon1 - lon0) > 0 ? (lonDeg - lon0) / (lon1 - lon0) : 0.0;
+        double dy = (lat1 - lat0) > 0 ? (latDeg - lat0) / (lat1 - lat0) : 0.0;
 
         float z00 = getElevation(col, row);
-        float z01 = getElevation(col, row + 1);
-        float z10 = getElevation(col + 1, row);
-        float z11 = getElevation(col + 1, row + 1);
+        float z01 = getElevation(col, row1);
+        float z10 = getElevation(col1, row);
+        float z11 = getElevation(col1, row1);
 
         float z0 = z00 + (z01 - z00) * (float) dy;
         float z1 = z10 + (z11 - z10) * (float) dy;

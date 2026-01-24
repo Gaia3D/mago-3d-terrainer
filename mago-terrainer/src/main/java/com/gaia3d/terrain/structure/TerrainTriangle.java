@@ -183,6 +183,15 @@ public class TerrainTriangle {
         }
         listHalfEdges.clear();
 
+        // Debug logging for degenerate triangles
+        if (longestHalfEdge == null) {
+            log.debug("Triangle {} has no half-edge with length > 0 (degenerate triangle). " +
+                      "HalfEdges count: {}, TileIndices: {}",
+                      this.id,
+                      listHalfEdges.size(),
+                      this.ownerTileIndices != null ? this.ownerTileIndices.getString() : "null");
+        }
+
         return longestHalfEdge;
     }
 

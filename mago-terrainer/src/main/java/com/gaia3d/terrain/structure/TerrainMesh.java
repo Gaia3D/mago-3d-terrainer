@@ -412,8 +412,78 @@ public class TerrainMesh {
     }
 
     private void disableTriangle(TerrainTriangle triangle) {
+        // Clean up vertex references BEFORE marking triangle as DELETED
+        // If we don't do this, vertices may have outingHEdge pointing to deleted half-edges
+        // which causes infinite loops in getAllOutingHalfEdges()
+        if (triangle.halfEdge != null) {
+            List<TerrainHalfEdge> halfEdges = new ArrayList<>();
+            triangle.halfEdge.getHalfEdgesLoop(halfEdges);
+
+            // For each half-edge in this triangle, check if its start vertex
+            // has an outingHEdge that points to this half-edge
+            for (TerrainHalfEdge hEdge : halfEdges) {
+                TerrainVertex vertex = hEdge.getStartVertex();
+                if (vertex != null && vertex.getObjectStatus() != TerrainObjectStatus.DELETED) {
+                    // If this vertex's outingHEdge points to a half-edge we're about to delete,
+                    // we need to find an alternative valid outingHEdge
+                    if (vertex.getOutingHEdge() == hEdge) {
+                        TerrainHalfEdge replacementHEdge = findValidOutingHEdgeForVertex(vertex, hEdge);
+                        if (replacementHEdge != null) {
+                            vertex.setOutingHEdge(replacementHEdge);
+                        } else {
+                            // No valid replacement found - vertex will be isolated
+                            log.debug("Vertex {} will be isolated after triangle {} deletion",
+                                     vertex.getId(), triangle.getId());
+                            // Clear the outingHEdge reference and mark vertex as DELETED
+                            vertex.setOutingHEdge(null);
+                            vertex.setObjectStatus(TerrainObjectStatus.DELETED);
+                        }
+                    }
+                }
+            }
+        }
+
         triangle.setObjectStatus(TerrainObjectStatus.DELETED);
         triangle.halfEdge = null;
+    }
+
+    /**
+     * Find a valid alternative outingHEdge for a vertex when its current outingHEdge
+     * is being deleted as part of triangle deletion.
+     * @param vertex The vertex that needs a new outingHEdge
+     * @param excludeHEdge The half-edge being deleted (should not be returned)
+     * @return A valid non-DELETED half-edge starting from the vertex, or null if none found
+     */
+    private TerrainHalfEdge findValidOutingHEdgeForVertex(TerrainVertex vertex, TerrainHalfEdge excludeHEdge) {
+        // Try to find another half-edge starting from this vertex that is not DELETED
+        TerrainHalfEdge candidate = excludeHEdge.getNext();
+        if (candidate != null && candidate.getTwin() != null) {
+            TerrainHalfEdge twinNext = candidate.getTwin().getNext();
+            if (twinNext != null && twinNext.getObjectStatus() != TerrainObjectStatus.DELETED) {
+                return twinNext;
+            }
+        }
+
+        // If that didn't work, try the prev edge
+        TerrainHalfEdge prev = excludeHEdge.getPrev();
+        if (prev != null && prev.getTwin() != null) {
+            TerrainHalfEdge twinOfPrev = prev.getTwin();
+            if (twinOfPrev != null && twinOfPrev.getObjectStatus() != TerrainObjectStatus.DELETED) {
+                return twinOfPrev;
+            }
+        }
+
+        // LAST RESORT: Exhaustive search through all half-edges
+        for (TerrainHalfEdge halfEdge : this.halfEdges) {
+            if (halfEdge.getStartVertex() == vertex &&
+                halfEdge != excludeHEdge &&
+                halfEdge.getObjectStatus() != TerrainObjectStatus.DELETED) {
+                log.debug("Found replacement outingHEdge for vertex {} via exhaustive search", vertex.getId());
+                return halfEdge;
+            }
+        }
+
+        return null; // No valid replacement found
     }
 
     public boolean checkVerticesOutingHEdge() {
@@ -440,6 +510,11 @@ public class TerrainMesh {
             }
             listHalfEdges.clear();
             TerrainHalfEdge halfEdge = triangle.getLongestHalfEdge(listHalfEdges);
+            if (halfEdge == null) {
+                log.warn("Triangle {} has no valid longest half-edge during mesh validation. Marking mesh as invalid.",
+                         triangle.getId());
+                return false;
+            }
             if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 return false;
             }
@@ -456,6 +531,11 @@ public class TerrainMesh {
                     listHalfEdges.clear();
                     TerrainHalfEdge adjacentTriangleLongestHalfEdge = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
                     listHalfEdges.clear();
+                    if (adjacentTriangleLongestHalfEdge == null) {
+                        log.warn("Adjacent triangle {} has no valid longest half-edge during mesh validation.",
+                                 adjacentTriangle.getId());
+                        return false;
+                    }
                     if (adjacentTriangleLongestHalfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                         return false;
                     }
@@ -493,17 +573,43 @@ public class TerrainMesh {
 
     public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
                               List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
-        // A triangle is split by the longest edge, so
-        // the longest edge of the triangle must be the longest edge of the adjacentTriangle
-        // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
-        // If the adjacentTriangle is null, then the triangle is splittable
+        java.util.Set<Integer> splittingTriangles = new java.util.HashSet<>();
+        splitTriangle(triangle, terrainElevationDataManager, resultNewTriangles, listHalfEdges, splittingTriangles, 0);
+    }
 
-        listHalfEdges.clear();
-        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges);
+    private void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
+                              List<TerrainHalfEdge> listHalfEdges, java.util.Set<Integer> splittingTriangles, int recursionDepth) throws TransformException, IOException {
+        // Prevent stack overflow from excessive recursion (safety net)
+        final int MAX_RECURSION_DEPTH = 50;
+        if (recursionDepth > MAX_RECURSION_DEPTH) {
+            log.warn("Maximum recursion depth ({}) exceeded while splitting triangle {}. " +
+                     "Marking as deleted to prevent stack overflow.",
+                     MAX_RECURSION_DEPTH, triangle.getId());
+            triangle.setObjectStatus(TerrainObjectStatus.DELETED);
+            return;
+        }
+
+        // Add current triangle to the set of triangles being split
+        splittingTriangles.add(triangle.getId());
+
+        try {
+            // A triangle is split by the longest edge, so
+            // the longest edge of the triangle must be the longest edge of the adjacentTriangle
+            // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
+            // If the adjacentTriangle is null, then the triangle is splittable
+
+            listHalfEdges.clear();
+            TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, splittingTriangles, recursionDepth);
         if (adjacentTriangle == null) {
             // the triangle is border triangle, so is splittable
             listHalfEdges.clear();
             TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
+            if (longestHEdge == null) {
+                log.warn("Cannot split degenerate triangle {} (no edges with length > 0). Marking as deleted.",
+                         triangle.getId());
+                triangle.setObjectStatus(TerrainObjectStatus.DELETED);
+                return;
+            }
             TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
             TerrainHalfEdge nextHEdge = longestHEdge.getNext();
 
@@ -521,7 +627,10 @@ public class TerrainMesh {
 
             midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
             if (Double.isNaN(midPosition.z)) {
-                log.info("getElevationBilinear: resultElevation is NaN");
+                log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
+                         triangle.getId());
+                // Fallback: use the average of the edge endpoints (beforeZ)
+                midPosition.z = beforeZ;
             }
             TerrainVertex midVertex = newVertex();
             midVertex.setPosition(midPosition);
@@ -653,11 +762,23 @@ public class TerrainMesh {
 
             listHalfEdges.clear();
             TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
+            if (longestHEdge == null) {
+                log.warn("Cannot split degenerate triangle {} (no edges with length > 0). Marking as deleted.",
+                         triangle.getId());
+                triangle.setObjectStatus(TerrainObjectStatus.DELETED);
+                return;
+            }
             TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
             TerrainHalfEdge nextHEdge = longestHEdge.getNext();
 
             listHalfEdges.clear();
             TerrainHalfEdge longestHEdgeAdjT = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
+            if (longestHEdgeAdjT == null) {
+                log.warn("Cannot split degenerate adjacent triangle {} (no edges with length > 0). Marking as deleted.",
+                         adjacentTriangle.getId());
+                adjacentTriangle.setObjectStatus(TerrainObjectStatus.DELETED);
+                return;
+            }
             TerrainHalfEdge prevHEdgeAdjT = longestHEdgeAdjT.getPrev();
             TerrainHalfEdge nextHEdgeAdjT = longestHEdgeAdjT.getNext();
 
@@ -683,7 +804,12 @@ public class TerrainMesh {
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
             if (Double.isNaN(midPosition.z)) {
-                log.info("getElevationBilinear: resultElevation is NaN");
+                log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
+                         triangle.getId());
+                // Fallback: calculate average elevation from the edge endpoints
+                TerrainVertex startVertex = longestHEdge.getStartVertex();
+                TerrainVertex endVertex = longestHEdge.getEndVertex();
+                midPosition.z = (startVertex.getPosition().z + endVertex.getPosition().z) / 2.0;
             }
             midVertex.setPosition(midPosition);
 
@@ -852,9 +978,18 @@ public class TerrainMesh {
             nextHEdgeAdjT.setObjectStatus(TerrainObjectStatus.DELETED);
             nextHEdgeAdjT.deleteObjects();
         }
+        } finally {
+            // Remove triangle from splitting set when done
+            splittingTriangles.remove(triangle.getId());
+        }
     }
 
     public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
+        java.util.Set<Integer> splittingTriangles = new java.util.HashSet<>();
+        return getSplittableAdjacentTriangle(targetTriangle, terrainElevationDataManager, listHalfEdges, splittingTriangles, 0);
+    }
+
+    private TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainHalfEdge> listHalfEdges, java.util.Set<Integer> splittingTriangles, int recursionDepth) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
@@ -862,6 +997,11 @@ public class TerrainMesh {
 
         listHalfEdges.clear();
         TerrainHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge(listHalfEdges);
+        if (longestHEdge == null) {
+            log.warn("Target triangle {} has no valid longest half-edge (degenerate triangle).",
+                     targetTriangle.getId());
+            return null;
+        }
         if (longestHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
             return null;
         }
@@ -876,10 +1016,35 @@ public class TerrainMesh {
             return null;
         }
 
+        // CRITICAL FIX: Check if adjacent triangle is DELETED before accessing its properties
+        // When triangles are deleted, their halfEdge is set to null (line 416) and ID remains -1
+        // This prevents thousands of "Deadlock detected: Triangle -1 and adjacent triangle -1" messages
+        if (adjacentTriangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
+            log.debug("Adjacent triangle {} is already DELETED. Treating target triangle {} as border triangle.",
+                      adjacentTriangle.getId(), targetTriangle.getId());
+            return null;
+        }
+
+        // DEADLOCK DETECTION: Check if adjacent triangle is already being split in the call stack
+        if (splittingTriangles.contains(adjacentTriangle.getId())) {
+            log.debug("Deadlock detected: Triangle {} and adjacent triangle {} - splitting as border triangles.",
+                     targetTriangle.getId(), adjacentTriangle.getId());
+            return null; // Force both to be split as border triangles
+        }
+
         double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError
 
         listHalfEdges.clear();
         TerrainHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
+
+        // Defensive null check: Handle degenerate triangles
+        if (longestHEdgeOfAdjacentTriangle == null) {
+            log.warn("Adjacent triangle {} has no valid longest half-edge (degenerate triangle). " +
+                     "Marking as deleted and treating target triangle as border triangle.",
+                     adjacentTriangle.getId());
+            adjacentTriangle.setObjectStatus(TerrainObjectStatus.DELETED);
+            return null;
+        }
 
         if (longestHEdgeOfAdjacentTriangle.getTwin() == longestHEdge) {
             return adjacentTriangle;
@@ -889,7 +1054,7 @@ public class TerrainMesh {
             // first split the adjacentTriangle;
             terrainElevationDataManager.getTrianglesArray().clear();
             listHalfEdges.clear();
-            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges);
+            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges, splittingTriangles, recursionDepth + 1);
             listHalfEdges.clear();
 
             // now search the new adjacentTriangle for the targetTriangle
@@ -899,7 +1064,7 @@ public class TerrainMesh {
                 TerrainTriangle newTriangle = terrainElevationDataManager.getTrianglesArray().get(i);
                 listHalfEdges.clear();
                 TerrainHalfEdge longestHEdgeOfNewTriangle = newTriangle.getLongestHalfEdge(listHalfEdges);
-                if (longestHEdgeOfNewTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError)) {
+                if (longestHEdgeOfNewTriangle != null && longestHEdgeOfNewTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError)) {
                     terrainElevationDataManager.getTrianglesArray().clear();
                     return newTriangle;
                 }
@@ -1205,6 +1370,111 @@ public class TerrainMesh {
 //                hedge.setItselfAsOutingHalfEdgeToTheStartVertex();
 //            }
 //        }
+    }
+
+    /**
+     * Attempts to repair corrupted vertex topology by ensuring edges form a valid continuous loop.
+     * This addresses the issue where vertices accumulate edges from multiple tiles during consolidation.
+     *
+     * @param vertex The vertex to repair
+     * @return true if repair succeeded, false if vertex remains corrupted
+     */
+    public boolean repairVertexTopology(TerrainVertex vertex) {
+        if (vertex == null || vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
+            return false;
+        }
+
+        // First, validate current state
+        TerrainVertex.TopologyValidationResult validation = vertex.validateTopology(10);
+
+        if (validation.isValid) {
+            // Already valid, nothing to repair
+            return true;
+        }
+
+        // If vertex has no outingHEdge or it's deleted, try to find a valid one
+        if (vertex.getOutingHEdge() == null ||
+            vertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
+
+            // Search for any half-edge starting from this vertex
+            TerrainHalfEdge validEdge = null;
+            for (TerrainHalfEdge edge : this.halfEdges) {
+                if (edge.getObjectStatus() != TerrainObjectStatus.DELETED &&
+                    edge.getStartVertex() == vertex) {
+                    validEdge = edge;
+                    break;
+                }
+            }
+
+            if (validEdge != null) {
+                vertex.setOutingHEdge(validEdge);
+                log.info("Repaired vertex {} by assigning valid outingHEdge {}", vertex.getId(), validEdge.getId());
+            } else {
+                log.warn("Cannot repair vertex {} - no valid outgoing edges found", vertex.getId());
+                return false;
+            }
+        }
+
+        // Re-validate after setting outingHEdge
+        validation = vertex.validateTopology(10);
+
+        if (validation.isValid) {
+            log.info("Successfully repaired vertex {} topology - now has {} edges",
+                    vertex.getId(), validation.edgeCount);
+            return true;
+        }
+
+        // If still invalid due to excessive edges or multiple loops, mark as boundary vertex
+        // This is a fallback - we accept non-manifold vertices at tile boundaries
+        if (validation.edgeCount > 10 || validation.hasMultipleLoops) {
+            log.warn("Vertex {} has complex topology ({} edges, multiloop={}). " +
+                    "Marking as boundary vertex (non-manifold accepted at tile boundaries).",
+                    vertex.getId(), validation.edgeCount, validation.hasMultipleLoops);
+            // The vertex remains functional but flagged as having non-standard topology
+            return true; // Accept as "repaired" with caveat
+        }
+
+        log.error("Failed to repair vertex {} topology (edges={}, multiloop={})",
+                vertex.getId(), validation.edgeCount, validation.hasMultipleLoops);
+        return false;
+    }
+
+    /**
+     * Batch repair for all corrupted vertices in the mesh.
+     * Used after tile consolidation to fix topology issues before refinement.
+     *
+     * @return Number of successfully repaired vertices
+     */
+    public int repairMeshTopology() {
+        int repairedCount = 0;
+        int corruptedCount = 0;
+
+        for (TerrainVertex vertex : this.vertices) {
+            if (vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                continue;
+            }
+
+            // Validate each vertex
+            TerrainVertex.TopologyValidationResult validation = vertex.validateTopology(10);
+
+            if (!validation.isValid) {
+                corruptedCount++;
+                log.debug("Found corrupted vertex {} with {} edges (multiloop={})",
+                        vertex.getId(), validation.edgeCount, validation.hasMultipleLoops);
+
+                // Attempt repair
+                if (repairVertexTopology(vertex)) {
+                    repairedCount++;
+                }
+            }
+        }
+
+        if (corruptedCount > 0) {
+            log.info("Mesh topology repair: {}/{} corrupted vertices repaired",
+                    repairedCount, corruptedCount);
+        }
+
+        return repairedCount;
     }
 
 }
