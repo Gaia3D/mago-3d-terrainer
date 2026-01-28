@@ -137,7 +137,7 @@ public class RasterStandardizer {
 
                     GridGeometry2D demGrid = resampledGridCoverage2D.getGridGeometry();
                     GridCoverage2D geoidAligned = resampleGeoid(geoidCoverage, demGrid, demGrid.getCoordinateReferenceSystem());
-                    GridCoverage2D ellipsoidalDem = addGeoidPreserveDemNoData(gridCoverage, geoidAligned);
+                    GridCoverage2D ellipsoidalDem = addGeoidPreserveDemNoData(resampledGridCoverage2D, geoidAligned);
                     tile.setGridCoverage2D(ellipsoidalDem);
 
                     GridCoverage2D reprojectedTile = tile.getGridCoverage2D();

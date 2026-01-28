@@ -96,7 +96,7 @@ tasks.register('release') {
     dependsOn(':mago-terrainer:jib')
 }
 
-tasks.register('javadoc', Javadoc) {
+tasks.register('javadocs', Javadoc) {
     group = 'Documentation'
     description = 'Generates Javadoc for mago-terrainer module.'
 
