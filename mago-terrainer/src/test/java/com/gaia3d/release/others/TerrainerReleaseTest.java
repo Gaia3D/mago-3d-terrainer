@@ -166,10 +166,10 @@ public class TerrainerReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
-                "-max", "12",
+                "-max", "13",
                 "-interpolation", "nearest",
                 "-calculateNormals",
-                //"-leaveTemp"
+                "-leaveTemp"
         };
         Mago3DTerrainerMain.main(args);
     }
@@ -241,6 +241,7 @@ public class TerrainerReleaseTest {
                 "-max", "14",
                 "-temp", "C:/temp/",
                 "-calculateNormals",
+
                 "-geoid", "EGM96",
         };
         Mago3DTerrainerMain.main(args);
@@ -273,6 +274,23 @@ public class TerrainerReleaseTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-calculateNormals",
                 "-json"
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void crackTest() {
+        String name = "crack_test";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-max", "14",
+                "-leaveTemp",
+                "-calculateNormals",
+                "-geoid", "EGM96",
         };
         Mago3DTerrainerMain.main(args);
     }

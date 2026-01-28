@@ -297,7 +297,6 @@ public class TerrainElevationDataManager {
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
             //gridCoverage2D.dispose(true);
-
         }
 
         // now check if exist folders inside the terrainElevationDataFolderPath
