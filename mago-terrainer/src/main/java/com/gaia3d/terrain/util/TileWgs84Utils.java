@@ -21,6 +21,23 @@ public class TileWgs84Utils {
         return angRad * GlobeUtils.EQUATORIAL_RADIUS;
     }
 
+    public static int getMaxTileDepthByPixelSizeMeters(double pixelSizeMeters) {
+        int depth = 0;
+        double currTileSizeMeters = pixelSizeMeters * 256.0;
+        while (true) {
+            double tileSizeMeters = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+            if (tileSizeMeters <= currTileSizeMeters) {
+                break;
+            }
+            depth++;
+            if (depth > 28) {
+                depth = 28;
+                break;
+            }
+        }
+        return depth;
+    }
+
     public static void clampVerticesInToTile(TerrainMesh mesh, TileIndices tileIndices, String imaginaryType, boolean originIsLeftUp) {
         // clamp the vertices in to the tile
         // Obtain the geographicExtension by tileIndices
@@ -129,7 +146,7 @@ public class TileWgs84Utils {
     }
 
 
-    public static TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices resultTileIndices, boolean originIsLeftUp) {
+    public static TileIndices selectTileIndices_original(int depth, double longitude, double latitude, TileIndices resultTileIndices, boolean originIsLeftUp) {
         // Given a geographic point (longitude, latitude) & a depth, this function returns the tileIndices for the specific depth.**
         double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
 
@@ -158,6 +175,40 @@ public class TileWgs84Utils {
         return resultTileIndices;
     }
 
+    public static TileIndices selectTileIndices(
+            int depth,
+            double longitude,
+            double latitude,
+            TileIndices out,
+            boolean originIsLeftUp) {
+
+        if (out == null) {
+            out = new TileIndices();
+        }
+
+        int tilesX = 1 << (depth + 1); // 2,4,8,...
+        int tilesY = 1 << depth;       // 1,2,4,...
+
+        double angRangeLon = 360.0 / tilesX;
+        double angRangeLat = 180.0 / tilesY;
+
+        int x = (int) Math.floor((longitude + 180.0) / angRangeLon);
+        int y;
+
+        if (originIsLeftUp) {
+            y = (int) Math.floor((90.0 - latitude) / angRangeLat);
+        } else {
+            y = (int) Math.floor((latitude + 90.0) / angRangeLat);
+        }
+
+        // Clamp (CRÍTICO para 180 / 90)
+        x = Math.max(0, Math.min(x, tilesX - 1));
+        y = Math.max(0, Math.min(y, tilesY - 1));
+
+        out.set(x, y, depth);
+        return out;
+    }
+
     public static void selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, TileRange tilesRange, boolean originIsLeftUp) {
         // Given a geographic rectangle (minLon, minLat, maxLon, maxLat) & a depth, this function returns all
         // tilesIndices intersected by the rectangle for the specific depth.**
@@ -169,6 +220,17 @@ public class TileWgs84Utils {
         int maxX = rightDownTileName.getX();
         int maxY = leftDownTileName.getY(); // origin is left-up.
         int minY = rightUpTileName.getY();
+
+        if(depth == 0) {
+            if (tilesRange != null) {
+                tilesRange.setTileDepth(depth);
+                tilesRange.setMinTileX(minX);
+                tilesRange.setMaxTileX(maxX);
+                tilesRange.setMinTileY(minY);
+                tilesRange.setMaxTileY(maxY);
+            }
+            return;
+        }
 
         double xMin = -180.0;
         double yMin = -90.0;

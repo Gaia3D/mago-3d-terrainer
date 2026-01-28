@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.gaia3d.terrain.tile.custom.AvailableTileSet;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -212,6 +213,60 @@ public class TerrainLayer {
             objectNodeTileDepth.put("endY", tilesRange.getMaxTileY());
 
             objectNodeTileDepth_array.add(objectNodeTileDepth);
+            objectNodeAvailable.add(objectNodeTileDepth_array);
+        }
+
+        objectNodeRoot.set("available", objectNodeAvailable);
+
+        // Save the json index file
+        try {
+            JsonNode jsonNode = new ObjectMapper().readTree(objectNodeRoot.toString());
+            objectMapper.writeValue(new File(fullFileName), jsonNode);
+        } catch (IOException e) {
+            log.error("Error:", e);
+        }
+    }
+
+    public void saveJsonFileCustom(String outputDirectory, String layerJsonName, AvailableTileSet availableTileSet) {
+        String fullFileName = outputDirectory + File.separator + layerJsonName;
+        FileUtils.createAllFoldersIfNoExist(outputDirectory);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode objectNodeRoot = objectMapper.createObjectNode();
+        objectNodeRoot.put("tilejson", this.tilejson);
+        objectNodeRoot.put("name", this.name);
+        objectNodeRoot.put("description", this.description);
+        objectNodeRoot.put("version", this.version);
+        objectNodeRoot.put("format", this.format);
+        objectNodeRoot.put("attribution", this.attribution);
+        objectNodeRoot.put("template", this.template);
+        objectNodeRoot.put("legend", this.legend);
+        objectNodeRoot.put("scheme", this.scheme);
+        objectNodeRoot.put("projection", this.projection);
+        objectNodeRoot.putArray("tiles").add(this.tiles[0]);
+        objectNodeRoot.putArray("bounds").add(this.bounds[0]).add(this.bounds[1]).add(this.bounds[2]).add(this.bounds[3]);
+
+        if (this.extensions != null && this.extensions.size() > 0) {
+            ArrayNode objectNodeExtensions = objectMapper.createArrayNode();
+            for (String extension : this.extensions) {
+                objectNodeExtensions.add(extension);
+            }
+            objectNodeRoot.set("extensions", objectNodeExtensions);
+        }
+
+        ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
+        Map<Integer, List<TileRange>> mapDepthAvailableTileRanges = availableTileSet.getMapDepthAvailableTileRanges();
+        for(Integer tileDepth : mapDepthAvailableTileRanges.keySet()) {
+            List<TileRange> tileRanges = mapDepthAvailableTileRanges.get(tileDepth);
+            ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
+            for(TileRange tilesRange : tileRanges) {
+                ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
+                objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
+                objectNodeTileDepth.put("endX", tilesRange.getMaxTileX());
+                objectNodeTileDepth.put("startY", tilesRange.getMinTileY());
+                objectNodeTileDepth.put("endY", tilesRange.getMaxTileY());
+                objectNodeTileDepth_array.add(objectNodeTileDepth);
+            }
             objectNodeAvailable.add(objectNodeTileDepth_array);
         }
 
