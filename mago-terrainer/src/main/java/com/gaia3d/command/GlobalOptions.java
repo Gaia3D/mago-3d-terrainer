@@ -32,7 +32,7 @@ public class GlobalOptions {
     /* Constants */
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
+    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = -1;
     private static final int DEFAULT_MOSAIC_SIZE = 16;
     private static final int DEFAULT_MAX_RASTER_SIZE = 4000;
     private static final double DEFAULT_INTENSITY = 4.0;
@@ -219,7 +219,7 @@ public class GlobalOptions {
             instance.setLayerJsonGenerate(true);
         }
 
-        if (instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {
+        if (instance.getMaximumTileDepth() >= 0 && instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {
             throw new IllegalArgumentException("Minimum tile depth must be less than or equal to maximum tile depth.");
         }
 
@@ -313,7 +313,11 @@ public class GlobalOptions {
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Tiling Schema: {}", instance.getTilingSchema());
         log.info("Minimum Tile Depth: {}", instance.getMinimumTileDepth());
-        log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
+        if (instance.getMaximumTileDepth() == -1) {
+            log.info("Maximum Tile Depth: Unlimited");
+        } else {
+            log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
+        }
         log.info("Interpolation Type: {}", instance.getInterpolationType());
         log.info("Refine Intensity: {}", instance.getIntensity());
         log.info("Priority Type: {}", instance.getPriorityType());

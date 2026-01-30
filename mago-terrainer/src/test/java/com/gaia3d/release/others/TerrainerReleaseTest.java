@@ -72,8 +72,8 @@ public class TerrainerReleaseTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "10",
+                //"-min", "0",
+                //"-max", "10",
                 "-calculateNormals",
         };
         Mago3DTerrainerMain.main(args);
@@ -229,9 +229,9 @@ public class TerrainerReleaseTest {
     }
 
     @Test
-    void koreaWithGeoid() {
+    void koreaWithGeoid5m() {
         String name = "korea-terrain";
-        File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample", "dem05-all-5186-nodata.tif");
+        File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample/", "dem05-all-4326-cog.tif");
         File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_nodata_geoid");
 
         String[] args = new String[]{
@@ -239,9 +239,39 @@ public class TerrainerReleaseTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "14",
-                "-temp", "C:/temp/",
                 "-calculateNormals",
+                "-geoid", "EGM96",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
 
+    @Test
+    void koreaWithGeoid100m() {
+        String name = "korea-mini-terrain";
+        File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample/", "korea-compressed.tif");
+        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_nodata_geoid");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-min", "0",
+                "-max", "14",
+                "-calculateNormals",
+                "-geoid", "EGM96",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void koreaWithGeoid100mTest() {
+        String name = "korea-mini-terrain";
+        File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample/", "korea-compressed.tif");
+        File outputPath = new File(OUTPUT_PATH, name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-calculateNormals",
                 "-geoid", "EGM96",
         };
         Mago3DTerrainerMain.main(args);
