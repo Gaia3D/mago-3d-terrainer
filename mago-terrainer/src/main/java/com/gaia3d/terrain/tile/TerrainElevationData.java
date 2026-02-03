@@ -97,6 +97,10 @@ public class TerrainElevationData {
             // determine the grid coordinates of the point
             if (this.raster == null) {
                 RenderedImage ri = coverage.getRenderedImage();
+                if(ri == null) {
+                    log.error("RenderedImage is null");
+                    return globalOptions.getNoDataValue();
+                }
                 this.raster = ri.getData();
                 //this.coverage.dispose(true);
                 this.coverage = null;

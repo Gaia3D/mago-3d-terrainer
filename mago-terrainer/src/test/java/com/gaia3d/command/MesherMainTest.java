@@ -350,11 +350,11 @@ class MesherMainTest {
         //*******************************************************************
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(12);
+        String maxTileDepth = String.valueOf(10);
         String refinementStrength = String.valueOf(3);
         //"-interpolation", "nearest",
         String originalGeoTiffFolderPath = "E:/data/DEM/KimJinHun_multiKorea/dem_4_zones_intersecting";
-        String outputDirectory = "C:/data/mago-server/output/KimJinHun_multiKorea_dem_4_zones_intersecting_L12";
+        String outputDirectory = "C:/data/mago-server/output/KimJinHun_multiKorea_dem_4_zones_intersecting_L10";
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
@@ -365,12 +365,31 @@ class MesherMainTest {
         //*******************************************************************
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(16);
+        String maxTileDepth = String.valueOf(12);
         String refinementStrength = String.valueOf(3);
         //"-interpolation", "nearest",
         String originalGeoTiffFolderPath = "E:/data/DEM/KimJinHun_multiKorea/dem_4_zones_intersecting";
-        String outputDirectory = "C:/data/mago-server/output/KimJinHun_multiKorea_dem_4_zones_intersecting_L12_continuedL14";
+        String outputDirectory = "C:/data/mago-server/output/KimJinHun_multiKorea_dem_4_zones_intersecting_L10";
         convertContinue(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+    }
+
+    @Test
+    void jinHo_error() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note: the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(13);
+        String refinementStrength = String.valueOf(3);
+        //"-interpolation", "nearest",
+        String inputPath = "E:/data/DEM/20260203-dem-input-no-set-error/multi-resolution-nodata";
+        String outputPath = "C:/data/mago-server/output/jinHo_errorData";
+        String logPath = outputPath + "/log.txt";
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-cn", "-interpolation", "nearest"};
+//        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-debug",
+//        "-interpolation", "nearest"};
+        Mago3DTerrainerMain.main(args);
     }
 
 

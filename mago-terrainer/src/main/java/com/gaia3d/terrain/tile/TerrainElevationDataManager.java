@@ -284,9 +284,7 @@ public class TerrainElevationDataManager {
             }
 
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
-
             GridCoverage2D gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
-            gridCoverage2D.getRenderedImage().getData(); // force loading the data
             terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
             terrainElevationData.setGeotiffFileName(geoTiffFileName);
 
@@ -297,7 +295,7 @@ public class TerrainElevationDataManager {
             terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
-            gridCoverage2D.dispose(true);
+            // Important: Do not dispose the gridCoverage2D here, because it can be stored in the myGaiaGeoTiffManager cache map.
         }
 
         // now check if exist folders inside the terrainElevationDataFolderPath
