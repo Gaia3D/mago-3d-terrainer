@@ -63,11 +63,11 @@ public class GaiaGeoTiffManager {
 
         log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
         GridCoverage2D coverage = null;
-        GeoTiffReader reader = null;
         try {
             File file = new File(geoTiffFilePath);
-            reader = new GeoTiffReader(file);
+            GeoTiffReader reader = new GeoTiffReader(file);
             coverage = reader.read(null);
+            reader.dispose();
         } catch (Exception e) {
             log.error("Error:", e);
         } /*finally {

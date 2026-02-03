@@ -74,7 +74,7 @@ public class GaiaGeoTiffUtils {
 
     public static GeographicExtension getGeographicExtension(GridCoverage2D coverage, GeometryFactory gf, MathTransform targetToWgs, GeographicExtension resultGeoExtension) throws TransformException {
         // get geographic extension
-        GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
+        //GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
         ReferencedEnvelope envelope = coverage.getEnvelope2D();
 
         double minLon = 0.0;

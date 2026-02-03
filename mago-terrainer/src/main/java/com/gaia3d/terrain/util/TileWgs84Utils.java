@@ -27,6 +27,7 @@ public class TileWgs84Utils {
         while (true) {
             double tileSizeMeters = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
             if (tileSizeMeters <= currTileSizeMeters) {
+                depth++;
                 break;
             }
             depth++;

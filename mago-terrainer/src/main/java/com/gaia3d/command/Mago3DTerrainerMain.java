@@ -15,6 +15,8 @@ import org.geotools.api.referencing.operation.TransformException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 public class Mago3DTerrainerMain {
@@ -129,18 +131,18 @@ public class Mago3DTerrainerMain {
         log.info("[Tile] Start generate terrain elevation data.");
         TerrainElevationDataManager terrainElevationDataManager = new TerrainElevationDataManager();
         tileWgs84Manager.setTerrainElevationDataManager(terrainElevationDataManager);
-        tileWgs84Manager.getTerrainElevationDataManager().setTileWgs84Manager(tileWgs84Manager);
-        tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
+        terrainElevationDataManager.setTileWgs84Manager(tileWgs84Manager);
+        terrainElevationDataManager.setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
 
         int depth = 0;
-        tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree(depth);
+        terrainElevationDataManager.makeTerrainQuadTree(depth);
         log.info("[Tile] Finished generate terrain elevation data.");
 
         // Check if the tile mesh generation is a continuation from an existing tileSet
         boolean isContinue = globalOptions.isContinue();
         if (isContinue) {
             log.info("[Tile] Continuing making tile meshes.");
-            tileWgs84Manager.makeTileMeshesContinue();
+            tileWgs84Manager.makeTileMeshesContinueCustom();
             log.info("[Tile] Finished making tile meshes.");
         } else {
             log.info("[Tile] Start making tile meshes.");
@@ -151,6 +153,8 @@ public class Mago3DTerrainerMain {
         log.info("[Post][Clear] Start deleting memory objects.");
         tileWgs84Manager.deleteObjects();
         log.info("[Post][Clear] Finished deleting memory objects.");
+
+        System.gc();
     }
 
     /**

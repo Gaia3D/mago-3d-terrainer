@@ -256,13 +256,14 @@ public class TerrainElevationDataManager {
         }
 
         // now load all geotiff and make geotiff geoExtension data
-        GridCoverage2D gridCoverage2D = null;
+        //GridCoverage2D gridCoverage2D = null;
         String geoTiffFileName = null;
         String geoTiffFilePath = null;
 
         CoordinateReferenceSystem crsTarget = null;
         CoordinateReferenceSystem crsWgs84 = null;
         MathTransform targetToWgs = null;
+        crsWgs84 = CRS.decode("EPSG:4326", true);
 
         Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
 
@@ -284,19 +285,19 @@ public class TerrainElevationDataManager {
 
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
 
-            gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            GridCoverage2D gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            gridCoverage2D.getRenderedImage().getData(); // force loading the data
             terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
             terrainElevationData.setGeotiffFileName(geoTiffFileName);
 
             crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
-            crsWgs84 = CRS.decode("EPSG:4326", true);
             targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
 
             GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, terrainElevationData.getGeographicExtension());
             terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
-            //gridCoverage2D.dispose(true);
+            gridCoverage2D.dispose(true);
         }
 
         // now check if exist folders inside the terrainElevationDataFolderPath
@@ -333,7 +334,7 @@ public class TerrainElevationDataManager {
 
     public void deleteGeoTiffManager() {
         if (myGaiaGeoTiffManager != null) {
-            myGaiaGeoTiffManager.deleteObjects();
+            myGaiaGeoTiffManager.clear();
             myGaiaGeoTiffManager = null;
         }
     }
