@@ -600,7 +600,9 @@ public class TileWgs84Manager {
         int minTileDepth = 0;
         int maxTileDepth = globalOptions.getMaximumTileDepth();
         int availableMaxDepth = this.availableTileSet.getMaxAvailableDepth();
-        if(availableMaxDepth < maxTileDepth) {
+        if (maxTileDepth < 0) {
+            maxTileDepth = availableMaxDepth;
+        } else if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
 
@@ -1162,15 +1164,8 @@ public class TileWgs84Manager {
             throw new RuntimeException("Error: No GeoTiff files found in the input path: " + terrainElevationDataFolderPath);
         }
 
-        // process each geotiff file to calculate available tiles
-        // load all geoTiffFiles
-        List<String> geoTiffFileNames = new ArrayList<>();
-        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
-
-        String currentFolderPath = "";
-
         // now load all geotiff and make geotiff geoExtension data
-        int geoTiffFilesSize = geoTiffFileNames.size();
+        int geoTiffFilesSize = rasterFileNames.size();
         int geoTiffFilesCount = 0;
 
         // for depth = 0, set the available tile range to the whole world
@@ -1183,16 +1178,14 @@ public class TileWgs84Manager {
         tileRanges.add(tilesRange);
 
         // TODO : Multi-threading
-        for (String geoTiffFileName : geoTiffFileNames) {
+        for (String geoTiffFileName : rasterFileNames) {
             log.info("[Pre][Resize GeoTiff][{}/{}] resizing geoTiff : {} ", ++geoTiffFilesCount, geoTiffFilesSize, geoTiffFileName);
-            String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
-
             // check if the geotiffFileName is no usable
-            if (this.mapNoUsableGeotiffPaths.containsKey(geoTiffFilePath)) {
+            if (this.mapNoUsableGeotiffPaths.containsKey(geoTiffFileName)) {
                 continue;
             }
 
-            GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
             CoordinateReferenceSystem crsTarget = originalGridCoverage2D.getCoordinateReferenceSystem2D();
             if (!(crsTarget instanceof ProjectedCRS || crsTarget instanceof GeographicCRS)) {
                 log.error("The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems");
@@ -1211,7 +1204,7 @@ public class TileWgs84Manager {
             try{
                 GaiaGeoTiffUtils.getGeographicExtension(originalGridCoverage2D, gf, targetToWgs, geographicExtension);
             } catch (Exception ex) {
-                log.error("Error calculating geographic extension for geotiff: {}", geoTiffFilePath, ex);
+                log.error("Error calculating geographic extension for geotiff: {}", geoTiffFileName, ex);
                 continue;
             }
 
@@ -1219,6 +1212,9 @@ public class TileWgs84Manager {
         }
         availableTileSet.recombineTileRanges();
 
+        if (globalOptions.getMaximumTileDepth() < 0) {
+            globalOptions.setMaximumTileDepth(availableTileSet.getMaxAvailableDepth());
+        }
         System.gc();
     }
 }
