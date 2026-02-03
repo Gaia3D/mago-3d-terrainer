@@ -90,6 +90,10 @@ public class FileUtils {
                     deleteDirectory(child);
                 }
             }
+        } else if (depthTempFolder.isFile()) {
+            if (!depthTempFolder.delete()) {
+                log.warn("Failed to delete file: " + depthTempFolder.getAbsolutePath());
+            }
         }
         if (!depthTempFolder.delete()) {
             log.warn("Failed to delete file or folder: " + depthTempFolder.getAbsolutePath());
