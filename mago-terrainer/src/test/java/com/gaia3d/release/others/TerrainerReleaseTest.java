@@ -169,7 +169,6 @@ public class TerrainerReleaseTest {
                 "-max", "13",
                 "-interpolation", "nearest",
                 "-calculateNormals",
-                "-leaveTemp"
         };
         Mago3DTerrainerMain.main(args);
     }
@@ -203,7 +202,7 @@ public class TerrainerReleaseTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-min", "0",
                 "-max", "12",
-                "-interpolation", "nearest",
+                //"-interpolation", "nearest",
                 "-nodataValue", "-8612",
                 "-calculateNormals",
                 "-geoid", "EGM96",
@@ -232,7 +231,7 @@ public class TerrainerReleaseTest {
     void koreaWithGeoid5m() {
         String name = "korea-terrain";
         File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample/", "dem05-all-4326-cog.tif");
-        File outputPath = new File(OUTPUT_PATH, "TR_" + name + "_nodata_geoid");
+        File outputPath = new File(OUTPUT_PATH, name + "_nodata_geoid");
 
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
@@ -264,7 +263,7 @@ public class TerrainerReleaseTest {
 
     @Test
     void koreaWithGeoid100mTest() {
-        String name = "korea-mini-terrain";
+        String name = "korea-100m-dem";
         File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample/", "korea-compressed.tif");
         File outputPath = new File(OUTPUT_PATH, name);
 
@@ -286,10 +285,10 @@ public class TerrainerReleaseTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
-                "-max", "14",
-                "-calculateNormals",
-                "-geoid", "EGM96",
+                //"-min", "0",
+                //"-max", "14",
+                //"-calculateNormals",
+                //"-geoid", "EGM96",
         };
         Mago3DTerrainerMain.main(args);
     }
@@ -319,6 +318,38 @@ public class TerrainerReleaseTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-max", "14",
                 "-leaveTemp",
+                "-calculateNormals",
+                "-geoid", "EGM96",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void globalTest() {
+        String name = "global-test";
+        File inputPath = new File(INPUT_PATH, name);
+        File outputPath = new File(OUTPUT_PATH, name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-max", "8",
+                "-leaveTemp",
+                "-calculateNormals",
+                //"-geoid", "EGM96",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void globalCopernicusDem90m() {
+        String name = "global-copernicus-dem-90m";
+        File inputPath = new File("E:\\copernicus_dem_90m");
+        File outputPath = new File(OUTPUT_PATH, name);
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-max", "8",
                 "-calculateNormals",
                 "-geoid", "EGM96",
         };
