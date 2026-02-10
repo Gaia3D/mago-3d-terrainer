@@ -7,8 +7,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.io.File;
 import java.io.IOException;
@@ -87,7 +87,7 @@ public class GlobalOptions {
     private CoordinateReferenceSystem outputCRS;
     private TilingSchema tilingSchema;
 
-    private GlobalOptions () {
+    private GlobalOptions() {
         // Private constructor for singleton
     }
 
@@ -187,7 +187,6 @@ public class GlobalOptions {
 
         // TODO : Add support for input CRS and tiling schema options
         instance.setTilingSchema(DEFAULT_TILING_SCHEMA);
-
 
         if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getLongName())) {
             int maxDepth = Integer.parseInt(command.getOptionValue(CommandOptions.MAXIMUM_TILE_DEPTH.getLongName()));

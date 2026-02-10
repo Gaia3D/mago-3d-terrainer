@@ -1,13 +1,15 @@
 package com.gaia3d.command;
 
 
-import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TerrainLayer;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
 import com.gaia3d.util.DecimalUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.geotools.api.referencing.FactoryException;
@@ -15,8 +17,6 @@ import org.geotools.api.referencing.operation.TransformException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 public class Mago3DTerrainerMain {

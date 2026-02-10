@@ -222,7 +222,7 @@ public class TileWgs84Utils {
         int maxY = leftDownTileName.getY(); // origin is left-up.
         int minY = rightUpTileName.getY();
 
-        if(depth == 0) {
+        if (depth == 0) {
             if (tilesRange != null) {
                 tilesRange.setTileDepth(depth);
                 tilesRange.setMinTileX(minX);

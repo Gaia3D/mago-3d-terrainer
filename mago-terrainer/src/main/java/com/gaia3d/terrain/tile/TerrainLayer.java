@@ -256,10 +256,10 @@ public class TerrainLayer {
 
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         Map<Integer, List<TileRange>> mapDepthAvailableTileRanges = availableTileSet.getMapDepthAvailableTileRanges();
-        for(Integer tileDepth : mapDepthAvailableTileRanges.keySet()) {
+        for (Integer tileDepth : mapDepthAvailableTileRanges.keySet()) {
             List<TileRange> tileRanges = mapDepthAvailableTileRanges.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
-            for(TileRange tilesRange : tileRanges) {
+            for (TileRange tilesRange : tileRanges) {
                 ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
                 objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
                 objectNodeTileDepth.put("endX", tilesRange.getMaxTileX());

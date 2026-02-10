@@ -41,7 +41,6 @@ public enum TileRangeIntersectionType {
     //     |             |
     //     +-------------+
 
-
     // A contains 2 vertexes of B and B no contains any vertex of A (and vice versa)
     // A contains 2 vertexes of B and B contains 1 vertex of A (and vice versa)
     // A contains 2 vertexes of B and B contains 2 vertexes of A (partial overlap)

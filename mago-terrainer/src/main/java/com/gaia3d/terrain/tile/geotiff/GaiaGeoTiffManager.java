@@ -5,15 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.geotools.api.coverage.grid.GridGeometry;
+import org.geotools.api.referencing.FactoryException;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.joml.Vector2i;
-import org.geotools.api.coverage.grid.GridGeometry;
-import org.geotools.api.referencing.FactoryException;
-import org.locationtech.jts.geom.Envelope;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -113,7 +112,7 @@ public class GaiaGeoTiffManager {
 
     public void clear() {
         for (GridCoverage2D c : mapPathGridCoverage2d.values()) {
-            if (c != null) c.dispose(true);
+            if (c != null) {c.dispose(true);}
         }
         mapPathGridCoverage2d.clear();
         mapPathGridCoverage2dSize.clear();

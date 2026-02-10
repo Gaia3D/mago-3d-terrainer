@@ -11,11 +11,11 @@ import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.geotools.api.referencing.crs.CRSAuthorityFactory;
 import org.geotools.referencing.ReferencingFactoryFinder;
 import org.geotools.referencing.factory.PropertyAuthorityFactory;
 import org.geotools.referencing.factory.ReferencingFactoryContainer;
 import org.geotools.util.factory.Hints;
-import org.geotools.api.referencing.crs.CRSAuthorityFactory;
 
 import java.io.File;
 import java.io.IOException;

@@ -287,15 +287,15 @@ public class TileRange {
 
         // check if the tile is horizontally touching in right or left side
         if (this.maxTileX + 1 == tileRange.getMinTileX() ||
-            tileRange.getMaxTileX() + 1 == this.minTileX) {
+                tileRange.getMaxTileX() + 1 == this.minTileX) {
             // check if they have same Y range
             if (this.minTileY == tileRange.getMinTileY() && this.maxTileY == tileRange.getMaxTileY()) {
                 return TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING;
-        }
+            }
 
-        // check if the tile is vertically touching in top or bottom side
+            // check if the tile is vertically touching in top or bottom side
         } else if (this.maxTileY + 1 == tileRange.getMinTileY() ||
-                   tileRange.getMaxTileY() + 1 == this.minTileY) {
+                tileRange.getMaxTileY() + 1 == this.minTileY) {
             // check if they have same X range
             if (this.minTileX == tileRange.getMinTileX() && this.maxTileX == tileRange.getMaxTileX()) {
                 return TileRangeIntersectionType.VERTICAL_FULL_TOUCHING;
@@ -376,7 +376,7 @@ public class TileRange {
             return TileRangeIntersectionType.B_CONTAINS_2_A_1;
         }
 
-        if(!this.intersects(tileRange)) {
+        if (!this.intersects(tileRange)) {
             // check if they are fully touching
             TileRangeIntersectionType fullTouchingType = this.isFullTouching(tileRange);
             if (fullTouchingType != TileRangeIntersectionType.UNKNOWN) {

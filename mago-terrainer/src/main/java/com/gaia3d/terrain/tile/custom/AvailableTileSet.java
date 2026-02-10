@@ -36,7 +36,7 @@ public class AvailableTileSet {
     public void addAvailableExtensions(double pixelSizeMeters, GeographicExtension extension) {
         int maxDepth = TileWgs84Utils.getMaxTileDepthByPixelSizeMeters(pixelSizeMeters);
         boolean originIsLeftUp = false;
-        for(int depth = 0; depth <= maxDepth; depth++) {
+        for (int depth = 0; depth <= maxDepth; depth++) {
             List<TileRange> tileRanges = mapDepthAvailableTileRanges.computeIfAbsent(depth, k -> new java.util.ArrayList<>());
 
             GeographicExtension extensionCopy = new GeographicExtension();
@@ -53,28 +53,28 @@ public class AvailableTileSet {
         }
     }
 
-    public void recombineTileRanges(){
+    public void recombineTileRanges() {
         // for each depth, recombine tile ranges to remove intersections
-        for(Integer depth : mapDepthAvailableTileRanges.keySet()) {
+        for (Integer depth : mapDepthAvailableTileRanges.keySet()) {
             List<TileRange> tileRanges = mapDepthAvailableTileRanges.get(depth);
             List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
             mapDepthAvailableTileRanges.put(depth, noIntersectedTileRanges);
         }
     }
 
-    private List<TileRange> recombineTileRanges(List<TileRange> tileRanges){
+    private List<TileRange> recombineTileRanges(List<TileRange> tileRanges) {
         List<TileRange> noIntersectedTileRanges = new java.util.ArrayList<>(tileRanges);
         int tileRangesCount = noIntersectedTileRanges.size();
-        if(tileRangesCount <= 1) {
+        if (tileRangesCount <= 1) {
             return noIntersectedTileRanges;
         }
 
-        for(int i = 0; i < noIntersectedTileRanges.size(); i++) {
+        for (int i = 0; i < noIntersectedTileRanges.size(); i++) {
             TileRange tileRangeA = noIntersectedTileRanges.get(i);
-            for(int j = i + 1; j < noIntersectedTileRanges.size(); j++) {
+            for (int j = i + 1; j < noIntersectedTileRanges.size(); j++) {
                 TileRange tileRangeB = noIntersectedTileRanges.get(j);
 
-                if(tileRangeA.intersects(tileRangeB)) {
+                if (tileRangeA.intersects(tileRangeB)) {
                     TileRangeIntersectionType tileRangeIntersectionType = tileRangeA.getIntersectionType(tileRangeB);
                     //      A_CONTAINS_2_B_0                A_CONTAINS_2_B_1                    PARTIAL_OVERLAP                 A_CONTAINS_1_B_1
                     //     +--------------+                 +--------------+                 +---------+----+------+            +--------------+
@@ -116,7 +116,7 @@ public class AvailableTileSet {
                     //     |             |
                     //     +-------------+
 
-                    if(tileRangeIntersectionType == TileRangeIntersectionType.PARTIAL_OVERLAP ||
+                    if (tileRangeIntersectionType == TileRangeIntersectionType.PARTIAL_OVERLAP ||
                             tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_B ||
                             tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_A ||
                             tileRangeIntersectionType == TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING ||
@@ -127,7 +127,7 @@ public class AvailableTileSet {
                         //j--;
                         i = -1;
                         break;
-                    } else if(tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_2_B_0 ||
+                    } else if (tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_2_B_0 ||
                             tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_2_B_1) {
                         // In this case must split the tiles.
                         List<TileRange> splitTileRanges = split2ZonesTileRange(tileRangeA, tileRangeB, tileRangeIntersectionType);
@@ -136,7 +136,7 @@ public class AvailableTileSet {
                         noIntersectedTileRanges.addAll(splitTileRanges);
                         i = -1;
                         break;
-                    }else if(tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_2_A_0 ||
+                    } else if (tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_2_A_0 ||
                             tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_2_A_1) {
                         // In this case must split the tiles.
                         List<TileRange> splitTileRanges = split2ZonesTileRange(tileRangeB, tileRangeA, tileRangeIntersectionType);
@@ -145,7 +145,7 @@ public class AvailableTileSet {
                         noIntersectedTileRanges.addAll(splitTileRanges);
                         i = -1;
                         break;
-                    }else if(tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_1_B_1) {
+                    } else if (tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_1_B_1) {
                         // In this case must split the tiles.
                         List<TileRange> splitTileRanges = split3ZonesTileRange(tileRangeA, tileRangeB, tileRangeIntersectionType);
                         noIntersectedTileRanges.remove(tileRangeA);
@@ -159,7 +159,7 @@ public class AvailableTileSet {
                 } else {
                     // check touching cases
                     TileRangeIntersectionType tileRangeIntersectionType = tileRangeA.getIntersectionType(tileRangeB);
-                    if(tileRangeIntersectionType == TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING ||
+                    if (tileRangeIntersectionType == TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING ||
                             tileRangeIntersectionType == TileRangeIntersectionType.VERTICAL_FULL_TOUCHING) {
                         // In this case we can unify both ranges
                         tileRangeA.union(tileRangeB);
@@ -177,7 +177,7 @@ public class AvailableTileSet {
 
     private List<TileRange> split3ZonesTileRange(TileRange tileRangeBig, TileRange tileRangeSmall, TileRangeIntersectionType intersectionType) {
         // A_CONTAINS_1_B_1
-        if(intersectionType != TileRangeIntersectionType.A_CONTAINS_1_B_1) {
+        if (intersectionType != TileRangeIntersectionType.A_CONTAINS_1_B_1) {
             throw new IllegalArgumentException("Invalid intersection type for split3ZonesTileRange: " + intersectionType);
         }
 
@@ -186,8 +186,8 @@ public class AvailableTileSet {
 
         // must determine in what corner is the small range respect the big one
         // check horizontally and vertically
-        if(tileRangeSmall.getMinTileX() < tileRangeBig.getMinTileX()) {
-            if(tileRangeSmall.getMinTileY() < tileRangeBig.getMinTileY()) {
+        if (tileRangeSmall.getMinTileX() < tileRangeBig.getMinTileX()) {
+            if (tileRangeSmall.getMinTileY() < tileRangeBig.getMinTileY()) {
                 // small(B) is on the left-bottom corner of big(A)
                 //                                              split vertically                      split horizontally
                 //                 +--------------+                    +--------------+                    +--------------+
@@ -211,7 +211,7 @@ public class AvailableTileSet {
                 int bigMinY = tileRangeBig.getMinTileY();
                 int bottomY = bigMinY - 1; // just one tile outside
                 int topY = bigMinY; // first tile of big
-                for(TileRange splitTileRangeX : splitTileRangesX) {
+                for (TileRange splitTileRangeX : splitTileRangesX) {
                     if (splitTileRangeX.intersects(tileRangeBig)) {
                         List<TileRange> splitTileRangesY = splitTileRangeX.splitTileRangeByY(bottomY, topY);
                         // now select the no intersected ranges
@@ -224,7 +224,7 @@ public class AvailableTileSet {
                         resultTileRanges.add(splitTileRangeX);
                     }
                 }
-            } else if(tileRangeSmall.getMaxTileY() > tileRangeBig.getMaxTileY()) {
+            } else if (tileRangeSmall.getMaxTileY() > tileRangeBig.getMaxTileY()) {
                 // small(B) is on the left-top corner of big(A)
                 //                                              split vertically                      split horizontally
                 //            +---------+                   +-------+  +----+                   +-------+  +----+
@@ -247,7 +247,7 @@ public class AvailableTileSet {
                 int bigMaxY = tileRangeBig.getMaxTileY();
                 int bottomY = bigMaxY; // first tile of big
                 int topY = bigMaxY + 1; // just one tile outside
-                for(TileRange splitTileRangeX : splitTileRangesX) {
+                for (TileRange splitTileRangeX : splitTileRangesX) {
                     if (splitTileRangeX.intersects(tileRangeBig)) {
                         List<TileRange> splitTileRangesY = splitTileRangeX.splitTileRangeByY(bottomY, topY);
                         // now select the no intersected ranges
@@ -261,8 +261,8 @@ public class AvailableTileSet {
                     }
                 }
             }
-        } else if(tileRangeSmall.getMaxTileX() > tileRangeBig.getMaxTileX()) {
-            if(tileRangeSmall.getMinTileY() < tileRangeBig.getMinTileY()) {
+        } else if (tileRangeSmall.getMaxTileX() > tileRangeBig.getMaxTileX()) {
+            if (tileRangeSmall.getMinTileY() < tileRangeBig.getMinTileY()) {
                 // small(B) is on the right-bottom corner of big(A)
                 //                                                  split vertically                      split horizontally
                 //         +--------------+                      +--------------+                           +--------------+
@@ -285,7 +285,7 @@ public class AvailableTileSet {
                 int bigMinY = tileRangeBig.getMinTileY();
                 int bottomY = bigMinY - 1; // just one tile outside
                 int topY = bigMinY; // first tile of big
-                for(TileRange splitTileRangeX : splitTileRangesX) {
+                for (TileRange splitTileRangeX : splitTileRangesX) {
                     if (splitTileRangeX.intersects(tileRangeBig)) {
                         List<TileRange> splitTileRangesY = splitTileRangeX.splitTileRangeByY(bottomY, topY);
                         // now select the no intersected ranges
@@ -298,7 +298,7 @@ public class AvailableTileSet {
                         resultTileRanges.add(splitTileRangeX);
                     }
                 }
-            } else if(tileRangeSmall.getMaxTileY() > tileRangeBig.getMaxTileY()) {
+            } else if (tileRangeSmall.getMaxTileY() > tileRangeBig.getMaxTileY()) {
                 // small(B) is on the right-top corner of big(A)
                 //                                                  split vertically                      split horizontally
                 //                   +---------+                           +----+  +----+                             +----+  +----+
@@ -321,7 +321,7 @@ public class AvailableTileSet {
                 int bigMaxY = tileRangeBig.getMaxTileY();
                 int bottomY = bigMaxY; // first tile of big
                 int topY = bigMaxY + 1; // just one tile outside
-                for(TileRange splitTileRangeX : splitTileRangesX) {
+                for (TileRange splitTileRangeX : splitTileRangesX) {
                     if (splitTileRangeX.intersects(tileRangeBig)) {
                         List<TileRange> splitTileRangesY = splitTileRangeX.splitTileRangeByY(bottomY, topY);
                         // now select the no intersected ranges
@@ -341,7 +341,7 @@ public class AvailableTileSet {
 
     private List<TileRange> split2ZonesTileRange(TileRange tileRangeBig, TileRange tileRangeSmall, TileRangeIntersectionType intersectionType) {
         // A_CONTAINS_2_B_0 || A_CONTAINS_2_B_1 || B_CONTAINS_2_A_0 || B_CONTAINS_2_A_1
-        if(intersectionType != TileRangeIntersectionType.A_CONTAINS_2_B_0 &&
+        if (intersectionType != TileRangeIntersectionType.A_CONTAINS_2_B_0 &&
                 intersectionType != TileRangeIntersectionType.A_CONTAINS_2_B_1 &&
                 intersectionType != TileRangeIntersectionType.B_CONTAINS_2_A_0 &&
                 intersectionType != TileRangeIntersectionType.B_CONTAINS_2_A_1) {
@@ -353,7 +353,7 @@ public class AvailableTileSet {
 
         // must determine in what side is the small range respect the big one
         // check horizontally and vertically
-        if(tileRangeSmall.getMinTileX() < tileRangeBig.getMinTileX()) {
+        if (tileRangeSmall.getMinTileX() < tileRangeBig.getMinTileX()) {
             // small(B) is on the left side of big(A)
             //                 +--------------+
             //                 |              |
@@ -368,13 +368,13 @@ public class AvailableTileSet {
             List<TileRange> splitTileRanges = tileRangeSmall.splitTileRangeByX(leftX, rightX);
 
             // now select the no intersected ranges
-            for(TileRange splitTileRange : splitTileRanges) {
-                if(!splitTileRange.intersects(tileRangeBig)) {
+            for (TileRange splitTileRange : splitTileRanges) {
+                if (!splitTileRange.intersects(tileRangeBig)) {
                     resultTileRanges.add(splitTileRange);
                 }
             }
 
-        } else if(tileRangeSmall.getMaxTileX() > tileRangeBig.getMaxTileX()) {
+        } else if (tileRangeSmall.getMaxTileX() > tileRangeBig.getMaxTileX()) {
             // small(B) is on the right side of big(A)
             //                 +--------------+
             //                 |              |
@@ -389,13 +389,13 @@ public class AvailableTileSet {
             List<TileRange> splitTileRanges = tileRangeSmall.splitTileRangeByX(leftX, rightX);
 
             // now select the no intersected ranges
-            for(TileRange splitTileRange : splitTileRanges) {
-                if(!splitTileRange.intersects(tileRangeBig)) {
+            for (TileRange splitTileRange : splitTileRanges) {
+                if (!splitTileRange.intersects(tileRangeBig)) {
                     resultTileRanges.add(splitTileRange);
                 }
             }
 
-        } else if(tileRangeSmall.getMinTileY() < tileRangeBig.getMinTileY()) {
+        } else if (tileRangeSmall.getMinTileY() < tileRangeBig.getMinTileY()) {
             // small(B) is on the bottom side of big(A)
             //                 +--------------+
             //                 |         A    |
@@ -410,13 +410,13 @@ public class AvailableTileSet {
             List<TileRange> splitTileRanges = tileRangeSmall.splitTileRangeByY(bottomY, topY);
 
             // now select the no intersected ranges
-            for(TileRange splitTileRange : splitTileRanges) {
-                if(!splitTileRange.intersects(tileRangeBig)) {
+            for (TileRange splitTileRange : splitTileRanges) {
+                if (!splitTileRange.intersects(tileRangeBig)) {
                     resultTileRanges.add(splitTileRange);
                 }
             }
 
-        } else if(tileRangeSmall.getMaxTileY() > tileRangeBig.getMaxTileY()) {
+        } else if (tileRangeSmall.getMaxTileY() > tileRangeBig.getMaxTileY()) {
             // small(B) is on the top side of big(A)
             //                    +--------+
             //                    |   B    |
@@ -431,7 +431,7 @@ public class AvailableTileSet {
             List<TileRange> splitTileRanges = tileRangeSmall.splitTileRangeByY(bottomY, topY);
 
             // now select the no intersected ranges
-            for(TileRange splitTileRange : splitTileRanges) {
+            for (TileRange splitTileRange : splitTileRanges) {
                 if (!splitTileRange.intersects(tileRangeBig)) {
                     resultTileRanges.add(splitTileRange);
                 }
@@ -441,14 +441,14 @@ public class AvailableTileSet {
         return resultTileRanges;
     }
 
-    public void TEST_recombineTileRanges(){
+    public void TEST_recombineTileRanges() {
         //TEST_recombineTileRanges_1();
         //TEST_recombineTileRanges_2();
         TEST_recombineTileRanges_3zones();
         TEST_recombineTileRanges_Nzones();
     }
 
-    public void TEST_recombineTileRanges_1(){
+    public void TEST_recombineTileRanges_1() {
         //      A_CONTAINS_2_B_0
         //     +--------------+
         //     |              |
@@ -471,13 +471,13 @@ public class AvailableTileSet {
         originalTileRanges.add(tileRange.clone());
 
         List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if(!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
+        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
             int hola = 0;
         }
         int hola = 0;
     }
 
-    public void TEST_recombineTileRanges_2(){
+    public void TEST_recombineTileRanges_2() {
         //      A_CONTAINS_1_B_1
         List<TileRange> tileRanges = new java.util.ArrayList<>();
         List<TileRange> originalTileRanges = new java.util.ArrayList<>();
@@ -494,13 +494,13 @@ public class AvailableTileSet {
         originalTileRanges.add(tileRange.clone());
 
         List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if(!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
+        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
             int hola = 0;
         }
         int hola = 0;
     }
 
-    public void TEST_recombineTileRanges_3zones(){
+    public void TEST_recombineTileRanges_3zones() {
         //      A_CONTAINS_1_B_1
         List<TileRange> tileRanges = new java.util.ArrayList<>();
         List<TileRange> originalTileRanges = new java.util.ArrayList<>();
@@ -532,13 +532,13 @@ public class AvailableTileSet {
         originalTileRanges.add(tileRange.clone());
 
         List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if(!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
+        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
             int hola = 0;
         }
         int hola = 0;
     }
 
-    public void TEST_recombineTileRanges_Nzones(){
+    public void TEST_recombineTileRanges_Nzones() {
         //      A_CONTAINS_1_B_1
         List<TileRange> tileRanges = new java.util.ArrayList<>();
         List<TileRange> originalTileRanges = new java.util.ArrayList<>();
@@ -570,22 +570,22 @@ public class AvailableTileSet {
         originalTileRanges.add(tileRange.clone());
 
         List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if(!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
+        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
             int hola = 0;
         }
         int hola = 0;
     }
 
     public boolean CHECK_tileRangesCoversEqualToTileRanges(List<TileRange> tileRangesA, List<TileRange> tileRangesB) {
-        for(TileRange tileRangeA : tileRangesA) {
-            if(!CHECK_tileRangeIsCoveredByTileRanges(tileRangeA, tileRangesB)) {
+        for (TileRange tileRangeA : tileRangesA) {
+            if (!CHECK_tileRangeIsCoveredByTileRanges(tileRangeA, tileRangesB)) {
                 return false;
             }
         }
 
         // now check the other way
-        for(TileRange tileRangeB : tileRangesB) {
-            if(!CHECK_tileRangeIsCoveredByTileRanges(tileRangeB, tileRangesA)) {
+        for (TileRange tileRangeB : tileRangesB) {
+            if (!CHECK_tileRangeIsCoveredByTileRanges(tileRangeB, tileRangesA)) {
                 return false;
             }
         }
@@ -599,10 +599,10 @@ public class AvailableTileSet {
         int minY = tileRange.getMinTileY();
         int maxY = tileRange.getMaxTileY();
         TileIndices tileIndices = new TileIndices();
-        for(int x = minX; x <= maxX; x++) {
-            for(int y = minY; y <= maxY; y++) {
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
                 tileIndices.set(x, y, tileRange.getTileDepth());
-                if(!CHECK_tileIndicesIsCoveredByTileRanges(tileIndices, tileRanges)) {
+                if (!CHECK_tileIndicesIsCoveredByTileRanges(tileIndices, tileRanges)) {
                     return false;
                 }
             }
@@ -611,8 +611,8 @@ public class AvailableTileSet {
     }
 
     public boolean CHECK_tileIndicesIsCoveredByTileRanges(TileIndices tileIndices, List<TileRange> tileRanges) {
-        for(TileRange tileRange : tileRanges) {
-            if(tileRange.intersects(tileIndices)) {
+        for (TileRange tileRange : tileRanges) {
+            if (tileRange.intersects(tileIndices)) {
                 return true;
             }
         }

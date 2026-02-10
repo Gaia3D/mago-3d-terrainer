@@ -18,16 +18,16 @@ import com.gaia3d.util.StringUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.geotools.api.referencing.operation.MathTransform;
-import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
-import org.geotools.referencing.CRS;
-import org.joml.Vector2d;
 import org.geotools.api.referencing.FactoryException;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.api.referencing.crs.GeographicCRS;
 import org.geotools.api.referencing.crs.ProjectedCRS;
+import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.api.referencing.operation.TransformException;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
+import org.geotools.referencing.CRS;
+import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.BufferedInputStream;
@@ -418,7 +418,7 @@ public class TileWgs84Manager {
                 tileMatrix.makeMatrixMesh(isFirstGeneration);
                 tileMatrix.deleteObjects();
 
-                if(!GlobalOptions.getInstance().isLeaveTemp()) {
+                if (!GlobalOptions.getInstance().isLeaveTemp()) {
                     // now, delete tempFiles of subDividedTilesRange
                     TileRange tilesToDeleteRange = subDividedTilesRange.clone();
                     tilesToDeleteRange.translate(-1, -1);
@@ -426,10 +426,9 @@ public class TileWgs84Manager {
                 }
             }
 
-            if(!GlobalOptions.getInstance().isLeaveTemp()) {
+            if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
-
 
             this.terrainElevationDataManager.deleteGeoTiffManager();
             this.terrainElevationDataManager.deleteTileRaster();
@@ -488,7 +487,7 @@ public class TileWgs84Manager {
         int maxTileDepth = globalOptions.getMaximumTileDepth();
 
         int availableMaxDepth = this.availableTileSet.getMaxAvailableDepth();
-        if(availableMaxDepth < maxTileDepth) {
+        if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
 
@@ -544,7 +543,7 @@ public class TileWgs84Manager {
                 tileMatrix.deleteObjects();
             }
 
-            if(!GlobalOptions.getInstance().isLeaveTemp()) {
+            if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
 
@@ -646,12 +645,12 @@ public class TileWgs84Manager {
                 tileMatrix.makeMatrixMesh(isFirstGeneration);
                 tileMatrix.deleteObjects();
 
-                if(!GlobalOptions.getInstance().isLeaveTemp()) {
+                if (!GlobalOptions.getInstance().isLeaveTemp()) {
                     // now, delete tempFiles of subDividedTilesRange
                     TileRange tilesToDeleteRange = subDividedTilesRange.clone();
                     //tilesToDeleteRange.translate(-1, -1);
-                    if(tilesToDeleteRange.getMaxTileX() - tilesToDeleteRange.getMinTileX() > 6 &&
-                       tilesToDeleteRange.getMaxTileY() - tilesToDeleteRange.getMinTileY() > 6){
+                    if (tilesToDeleteRange.getMaxTileX() - tilesToDeleteRange.getMinTileX() > 6 &&
+                            tilesToDeleteRange.getMaxTileY() - tilesToDeleteRange.getMinTileY() > 6) {
                         tilesToDeleteRange = tilesToDeleteRange.expand(-1);
                         deleteTempFilesByTileRange(tilesToDeleteRange);
                     }
@@ -662,7 +661,7 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteTileRaster();
             this.terrainElevationDataManager.deleteCoverage();
 
-            if(!GlobalOptions.getInstance().isLeaveTemp()) {
+            if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
 
@@ -1201,7 +1200,7 @@ public class TileWgs84Manager {
             MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
 
             GeographicExtension geographicExtension = new GeographicExtension();
-            try{
+            try {
                 GaiaGeoTiffUtils.getGeographicExtension(originalGridCoverage2D, gf, targetToWgs, geographicExtension);
             } catch (Exception ex) {
                 log.error("Error calculating geographic extension for geotiff: {}", geoTiffFileName, ex);

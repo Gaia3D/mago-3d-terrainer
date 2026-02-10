@@ -295,7 +295,7 @@ public class RasterStandardizer {
                 double[] backgroundValues = noDataContainer.getAsArray();
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             } else {
-                double[] backgroundValues = new double[] {globalOptions.getNoDataValue()};
+                double[] backgroundValues = new double[]{globalOptions.getNoDataValue()};
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             }
             return (GridCoverage2D) processor.doOperation(params);
@@ -329,7 +329,7 @@ public class RasterStandardizer {
                 double[] backgroundValues = noDataContainer.getAsArray();
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             } else {
-                double[] backgroundValues = new double[] {globalOptions.getNoDataValue()};
+                double[] backgroundValues = new double[]{globalOptions.getNoDataValue()};
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             }
             return (GridCoverage2D) processor.doOperation(params);
