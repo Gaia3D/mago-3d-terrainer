@@ -91,8 +91,13 @@ project(':mago-terrainer') {
     }
 }
 
-tasks.register('release') {
+tasks.register('publish') {
     dependsOn(':mago-terrainer:javadoc')
+    dependsOn(':mago-terrainer:jib')
+}
+
+
+tasks.register('release') {
     dependsOn(':mago-terrainer:jib')
 }
 
