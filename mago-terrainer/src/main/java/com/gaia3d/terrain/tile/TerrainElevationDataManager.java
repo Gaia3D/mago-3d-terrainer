@@ -223,7 +223,7 @@ public class TerrainElevationDataManager {
                 continue;
             }
 
-            /* check if the priority is resolution */
+            // Prioritize by resolution when configured.
             if (priorityType.equals(PriorityType.RESOLUTION)) {
                 double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFileName(), terrainElevationData.getGeotiffFilePath());
                 // smaller pixelArea is a higher resolution

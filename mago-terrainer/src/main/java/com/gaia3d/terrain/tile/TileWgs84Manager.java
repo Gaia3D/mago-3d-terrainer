@@ -1014,7 +1014,7 @@ public class TileWgs84Manager {
         }
         globalOptions.setInputPath(tempFolder.getAbsolutePath());
 
-        /* check if geoid is provided */
+        // Apply geoid correction only when geoid data is configured.
         String geoidPath = globalOptions.getGeoidPath();
         boolean hasGeoid = geoidPath != null && !geoidPath.isEmpty();
 

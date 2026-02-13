@@ -135,9 +135,7 @@ public class TerrainMesh {
     }
 
     public void determineHalfEdgesType() {
-        //***********************************************************************************
-        // Note : function used after loading quantized mesh & convert it to terrain mesh
-        //***********************************************************************************
+        // Used after loading a quantized mesh and converting it to a terrain mesh.
         GaiaRectangle boundingRectangle = getBoundingRectangle();
         double minX = boundingRectangle.getMinX();
         double minY = boundingRectangle.getMinY();
