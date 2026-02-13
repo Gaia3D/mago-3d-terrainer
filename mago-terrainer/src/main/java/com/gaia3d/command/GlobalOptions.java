@@ -25,11 +25,11 @@ import java.nio.file.StandardCopyOption;
 @Getter
 @Slf4j
 public class GlobalOptions {
-    /* singleton */
+    // Singleton
     private static GlobalOptions instance = new GlobalOptions();
     private CommandLineConfiguration commandLineConfiguration = new DefaultCommandLineConfiguration();
 
-    /* Constants */
+    // Constants
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = -1;
@@ -41,14 +41,14 @@ public class GlobalOptions {
     private static final TilingSchema DEFAULT_TILING_SCHEMA = TilingSchema.GEODETIC;
     private static final String DEFAULT_TEMP_DIR = "temp";
 
-    /* Program Information */
+    // Program information
     private String version;
     private String javaVersionInfo;
     private String programInfo;
     private long startTimeMillis = System.currentTimeMillis();
     private long endTimeMillis = 0;
 
-    /* Default Options */
+    // Default options
     private String inputPath;
     private String outputPath;
     private String geoidPath;
@@ -58,7 +58,7 @@ public class GlobalOptions {
     private boolean leaveTemp = false;
     private boolean isContinue = false;
 
-    /* Tiling options */
+    // Tiling options
     private int minimumTileDepth;
     private int maximumTileDepth;
     private InterpolationType interpolationType;
@@ -66,16 +66,16 @@ public class GlobalOptions {
     private double noDataValue;
     private double intensity;
 
-    /* Extensions */
+    // Extensions
     private boolean isCalculateNormalsExtension;
     private boolean isMetaDataExtension;
     private boolean isWaterMaskExtension;
 
-    /* Migration options */
+    // Migration options
     private int mosaicSize;
     private int maxRasterSize;
 
-    /* Temporary paths for processing */
+    // Temporary paths for processing
     private String rootTempPath;
     private String geoidTempPath;
     private String standardizeTempPath;
@@ -185,7 +185,7 @@ public class GlobalOptions {
         instance.setContinue(command.hasOption(CommandOptions.CONTINUOUS.getLongName()));
         instance.setOutputCRS(DEFAULT_TARGET_CRS);
 
-        // TODO : Add support for input CRS and tiling schema options
+        // Reserved for future support of input CRS and tiling schema options.
         instance.setTilingSchema(DEFAULT_TILING_SCHEMA);
 
         if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getLongName())) {

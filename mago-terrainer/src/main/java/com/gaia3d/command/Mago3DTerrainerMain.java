@@ -107,18 +107,14 @@ public class Mago3DTerrainerMain {
      * @throws TransformException if a transform error occurs.
      */
     private static void executeCustomTree() throws Exception {
-        //**************************************************************************************************
-        // In custom-tree, the leaf nodes can be in different depths, so we need to handle that accordingly.
-        //**************************************************************************************************
+        // In custom-tree mode, leaf nodes can have different depths.
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
 
-        // New.**********************************************************************************************
         log.info("[Pre][AvailableTileSet] Start calculating available tiles for each depth.");
         tileWgs84Manager.calculateAvailableTilesForEachDepth();
         log.info("[Pre][AvailableTileSet] Finished calculating available tiles for each depth.");
-        // End New.******************************************************************************************
 
         log.info("[Pre][Standardization] Start GeoTiff Standardization files.");
         tileWgs84Manager.processStandardizeRasters();
@@ -146,7 +142,7 @@ public class Mago3DTerrainerMain {
             log.info("[Tile] Finished making tile meshes.");
         } else {
             log.info("[Tile] Start making tile meshes.");
-            tileWgs84Manager.makeTileMeshesCustom(); // New.****************
+            tileWgs84Manager.makeTileMeshesCustom();
             log.info("[Tile] Finished making tile meshes.");
         }
 

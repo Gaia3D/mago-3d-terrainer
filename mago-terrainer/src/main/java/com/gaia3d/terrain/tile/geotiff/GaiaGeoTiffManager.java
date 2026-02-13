@@ -69,15 +69,7 @@ public class GaiaGeoTiffManager {
             reader.dispose();
         } catch (Exception e) {
             log.error("Error:", e);
-        } /*finally {
-            if (reader != null) {
-                try {
-                    reader.dispose();
-                } catch (Exception ex) {
-                    log.error("Error:", ex);
-                }
-            }
-        }*/
+        }
 
         // save the coverage
         mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
