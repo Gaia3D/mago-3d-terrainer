@@ -61,14 +61,19 @@ public class GaiaGeoTiffManager {
         }
 
         log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
-        GridCoverage2D coverage = null;
+        GeoTiffReader reader = null;
+        GridCoverage2D coverage;
         try {
             File file = new File(geoTiffFilePath);
-            GeoTiffReader reader = new GeoTiffReader(file);
+            reader = new GeoTiffReader(file);
             coverage = reader.read(null);
-            reader.dispose();
         } catch (Exception e) {
-            log.error("Error:", e);
+            log.error("Failed to read GeoTIFF file: {}", geoTiffFilePath, e);
+            throw new RuntimeException("Failed to read GeoTIFF file: " + geoTiffFilePath, e);
+        } finally {
+            if (reader != null) {
+                reader.dispose();
+            }
         }
 
         // save the coverage
