@@ -271,7 +271,7 @@ public class GaiaMesh extends MeshStructure implements Serializable {
             resultFaces = new ArrayList<>();
         }
         for (GaiaPrimitive primitive : primitives) {
-            primitive.extractGaiaAllFaces(resultFaces);
+            primitive.extractGaiaFaces(resultFaces);
         }
         return resultFaces;
     }

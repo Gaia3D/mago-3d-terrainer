@@ -4,6 +4,7 @@ import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.geometry.entities.GaiaPlane;
 import com.gaia3d.basic.geometry.octree.GaiaOctree;
 import com.gaia3d.basic.geometry.octree.GaiaOctreeVertices;
+import com.gaia3d.basic.geometry.octree.GeometryContent;
 import com.gaia3d.basic.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
@@ -12,6 +13,7 @@ import org.joml.Vector3d;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class HalfEdgeUtils {
@@ -1304,23 +1306,27 @@ public class HalfEdgeUtils {
         // Weld the vertices
         GaiaBoundingBox boundingBox = new GaiaBoundingBox();
         gaiaVertices.forEach(gaiaVertex -> {
-            boundingBox.addPoint(gaiaVertex.getPosition());
+            boundingBox.addPoint(gaiaVertex.getCenterPoint());
         });
 
         // make bbox as cube
         GaiaBoundingBox cubeBoundingBox = boundingBox.createCubeFromMinPosition();
         GaiaOctreeVertices octreeVertices = new GaiaOctreeVertices(null, cubeBoundingBox);
-        octreeVertices.addContents(gaiaVertices);
+
+        List<GeometryContent> gaiaContents = gaiaVertices.stream().map(v -> (GeometryContent) v).collect(Collectors.toList());
+        octreeVertices.addContents(gaiaContents);
         octreeVertices.setLimitDepth(10);
         octreeVertices.setLimitBoxSize(1.0); // 1m
         octreeVertices.makeTreeByMinVertexCount(50);
 
-        List<GaiaOctree<GaiaVertex>> octreesWithContents = octreeVertices.extractOctreesWithContents();
+        List<GaiaOctree<GeometryContent>> octreesWithContents = octreeVertices.extractOctreesWithContents();
 
         Map<GaiaVertex, GaiaVertex> mapVertexToVertexMaster = new HashMap<>();
 
-        for (GaiaOctree<GaiaVertex> octree : octreesWithContents) {
-            List<GaiaVertex> vertices = octree.getContents();
+        for (GaiaOctree<GeometryContent> octree : octreesWithContents) {
+            List<GaiaVertex> vertices = octree.getContents().stream()
+                    .map(c -> (GaiaVertex) c)
+                    .collect(Collectors.toList());
             getWeldableVertexMap(mapVertexToVertexMaster, vertices, error, checkTexCoord, checkNormal, checkColor, checkBatchId);
         }
 
@@ -1345,7 +1351,7 @@ public class HalfEdgeUtils {
             GaiaFace face = gaiaSurface.getFaces().get(j);
             int[] indices = face.getIndices();
             for (int k = 0; k < indices.length; k++) {
-                GaiaVertex vertex = gaiaVertices.get(indices[k]);
+                GaiaVertex vertex = (GaiaVertex) gaiaVertices.get(indices[k]);
                 GaiaVertex vertexMaster = mapVertexToVertexMaster.get(vertex);
                 int index = vertexIdxMap.get(vertexMaster);
                 indices[k] = index;
@@ -1375,9 +1381,9 @@ public class HalfEdgeUtils {
         }
 
         // delete no used vertices
-        for (GaiaVertex vertex : gaiaVertices) {
-            if (!mapVertexMasters.containsKey(vertex)) {
-                vertex.clear();
+        for (GeometryContent vertex : gaiaVertices) {
+            if (!mapVertexMasters.containsKey(vertex) && vertex instanceof GaiaVertex gaiaVertex) {
+                gaiaVertex.clear();
             }
         }
         gaiaVertices.clear();

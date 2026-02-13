@@ -24,7 +24,7 @@ public class GaiaUnWelder extends Modifier {
 
     public void unweldVertices(GaiaPrimitive primitive) {
         List<GaiaVertex> newVertices = new ArrayList<>();
-        List<GaiaFace> faces = primitive.extractGaiaAllFaces(null);
+        List<GaiaFace> faces = primitive.extractGaiaFaces(null);
         for (GaiaFace face : faces) {
             int[] indices = face.getIndices();
             int[] newIndices = new int[indices.length];

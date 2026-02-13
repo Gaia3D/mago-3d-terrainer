@@ -3807,6 +3807,8 @@ public class HalfEdgeSurface implements Serializable {
     public void weldVertices(double error, boolean checkTexCoord, boolean checkNormal, boolean checkColor, boolean checkBatchId) {
         // make a provisional GaiaSurface
         List<GaiaVertex> gaiaVertices = new ArrayList<>();
+
+        List<GaiaVertex> gaiaVerticesTyped = new ArrayList<>();
         GaiaSurface gaiaSurface = this.getGaiaSurface(gaiaVertices);
 
         HalfEdgeUtils.weldVerticesGaiaSurface(gaiaSurface, gaiaVertices, error, checkTexCoord, checkNormal, checkColor, checkBatchId);
