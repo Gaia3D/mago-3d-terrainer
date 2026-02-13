@@ -7,6 +7,7 @@ import com.gaia3d.terrain.tile.geotiff.TileRangeIntersectionType;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @Getter
 @Setter
+@Slf4j
 public class AvailableTileSet {
     private final Map<Integer, List<TileRange>> mapDepthAvailableTileRanges; // Key: tile depth, Value: list of tile ranges
 
@@ -155,7 +157,6 @@ public class AvailableTileSet {
                         break;
                     }
 
-                    int hola = 0;
                 } else {
                     // check touching cases
                     TileRangeIntersectionType tileRangeIntersectionType = tileRangeA.getIntersectionType(tileRangeB);
@@ -440,183 +441,4 @@ public class AvailableTileSet {
 
         return resultTileRanges;
     }
-
-    public void TEST_recombineTileRanges() {
-        //TEST_recombineTileRanges_1();
-        //TEST_recombineTileRanges_2();
-        TEST_recombineTileRanges_3zones();
-        TEST_recombineTileRanges_Nzones();
-    }
-
-    public void TEST_recombineTileRanges_1() {
-        //      A_CONTAINS_2_B_0
-        //     +--------------+
-        //     |              |
-        //     |         +----+----+
-        //     |    A    |    | B  |
-        //     |         +----+----+
-        //     |              |
-        //     +--------------+
-        List<TileRange> tileRanges = new java.util.ArrayList<>();
-        List<TileRange> originalTileRanges = new java.util.ArrayList<>();
-        int depth = 15;
-        TileRange tileRange = new TileRange();
-        tileRange.set(depth, 1000, 1003, 1000, 1005);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1002, 1006, 1002, 1004);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
-            int hola = 0;
-        }
-        int hola = 0;
-    }
-
-    public void TEST_recombineTileRanges_2() {
-        //      A_CONTAINS_1_B_1
-        List<TileRange> tileRanges = new java.util.ArrayList<>();
-        List<TileRange> originalTileRanges = new java.util.ArrayList<>();
-
-        int depth = 15;
-        TileRange tileRange = new TileRange();
-        tileRange.set(depth, 1000, 1003, 1000, 1005);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1002, 1006, 990, 1004);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
-            int hola = 0;
-        }
-        int hola = 0;
-    }
-
-    public void TEST_recombineTileRanges_3zones() {
-        //      A_CONTAINS_1_B_1
-        List<TileRange> tileRanges = new java.util.ArrayList<>();
-        List<TileRange> originalTileRanges = new java.util.ArrayList<>();
-
-        int depth = 15;
-        TileRange tileRange = new TileRange();
-        tileRange.set(depth, 1000, 1007, 1000, 1007);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1002, 1005, 1005, 1009);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1004, 1009, 1004, 1010);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1002, 1013, 996, 1001);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1010, 1012, 1004, 1010);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
-            int hola = 0;
-        }
-        int hola = 0;
-    }
-
-    public void TEST_recombineTileRanges_Nzones() {
-        //      A_CONTAINS_1_B_1
-        List<TileRange> tileRanges = new java.util.ArrayList<>();
-        List<TileRange> originalTileRanges = new java.util.ArrayList<>();
-
-        int depth = 15;
-        TileRange tileRange = new TileRange();
-//        tileRange.set(depth, 1000, 1007, 1000, 1007);
-//        tileRanges.add(tileRange);
-//        originalTileRanges.add(tileRange.clone());
-//
-//        tileRange = new TileRange();
-//        tileRange.set(depth, 1002, 1005, 1005, 1009);
-//        tileRanges.add(tileRange);
-//        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1004, 1009, 1004, 1010);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-//        tileRange = new TileRange();
-//        tileRange.set(depth, 1002, 1013, 996, 1001);
-//        tileRanges.add(tileRange);
-//        originalTileRanges.add(tileRange.clone());
-
-        tileRange = new TileRange();
-        tileRange.set(depth, 1010, 1012, 1004, 1010);
-        tileRanges.add(tileRange);
-        originalTileRanges.add(tileRange.clone());
-
-        List<TileRange> noIntersectedTileRanges = recombineTileRanges(tileRanges);
-        if (!CHECK_tileRangesCoversEqualToTileRanges(originalTileRanges, noIntersectedTileRanges)) {
-            int hola = 0;
-        }
-        int hola = 0;
-    }
-
-    public boolean CHECK_tileRangesCoversEqualToTileRanges(List<TileRange> tileRangesA, List<TileRange> tileRangesB) {
-        for (TileRange tileRangeA : tileRangesA) {
-            if (!CHECK_tileRangeIsCoveredByTileRanges(tileRangeA, tileRangesB)) {
-                return false;
-            }
-        }
-
-        // now check the other way
-        for (TileRange tileRangeB : tileRangesB) {
-            if (!CHECK_tileRangeIsCoveredByTileRanges(tileRangeB, tileRangesA)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public boolean CHECK_tileRangeIsCoveredByTileRanges(TileRange tileRange, List<TileRange> tileRanges) {
-        int minX = tileRange.getMinTileX();
-        int maxX = tileRange.getMaxTileX();
-        int minY = tileRange.getMinTileY();
-        int maxY = tileRange.getMaxTileY();
-        TileIndices tileIndices = new TileIndices();
-        for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                tileIndices.set(x, y, tileRange.getTileDepth());
-                if (!CHECK_tileIndicesIsCoveredByTileRanges(tileIndices, tileRanges)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    public boolean CHECK_tileIndicesIsCoveredByTileRanges(TileIndices tileIndices, List<TileRange> tileRanges) {
-        for (TileRange tileRange : tileRanges) {
-            if (tileRange.intersects(tileIndices)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 }
