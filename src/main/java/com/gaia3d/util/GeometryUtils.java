@@ -2,7 +2,7 @@ package com.gaia3d.util;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.geometry.GaiaRectangle;
-import com.gaia3d.basic.geometry.octree.GaiaFaceContent;
+import com.gaia3d.basic.geometry.octree.GaiaFaceData;
 import com.gaia3d.basic.halfedge.PlaneType;
 import com.gaia3d.basic.model.*;
 import org.joml.Vector2d;
@@ -521,11 +521,11 @@ public class GeometryUtils {
         return resultScene;
     }
 
-    public static Vector4d getAverageColor(List<GaiaFaceContent> faceContentList) {
+    public static Vector4d getAverageColor(List<GaiaFaceData> faceContentList) {
         Vector4d resultColor = new Vector4d();
         resultColor.set(0.0, 0.0, 0.0, 0.0);
         int averageColorCount = 0;
-        for (GaiaFaceContent faceContent : faceContentList) {
+        for (GaiaFaceData faceContent : faceContentList) {
             Vector4d color = faceContent.getPrimaryColor();
             if (color == null) {
                 continue;
