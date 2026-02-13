@@ -3,6 +3,11 @@ package com.gaia3d.basic.remesher;
 import com.gaia3d.basic.exchangable.GaiaSet;
 import com.gaia3d.basic.exchangable.SceneInfo;
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.basic.geometry.modifier.topology.GaiaExtractor;
+import com.gaia3d.basic.geometry.modifier.topology.GaiaTriangulator;
+import com.gaia3d.basic.geometry.modifier.topology.GaiaWelder;
+import com.gaia3d.basic.geometry.modifier.topology.GaiaWeldOptions;
+import com.gaia3d.basic.geometry.modifier.transform.GaiaBaker;
 import com.gaia3d.basic.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
@@ -19,14 +24,15 @@ import java.util.Map;
 public class ReMesherVertexCluster {
     private static Map<GaiaVertex, List<GaiaFace>> makeMapVertexToFaces(GaiaScene gaiaScene) {
         Map<GaiaVertex, List<GaiaFace>> mapVertexToFaces = new HashMap<>();
-        List<GaiaPrimitive> primitives = gaiaScene.extractPrimitives(null);
+        GaiaExtractor extractor = new GaiaExtractor();
+        List<GaiaPrimitive> primitives = extractor.extractAllPrimitives(gaiaScene);
         for (GaiaPrimitive primitive : primitives) {
             List<GaiaVertex> vertices = primitive.getVertices();
             List<GaiaSurface> surfaces = primitive.getSurfaces();
             for (GaiaSurface surface : surfaces) {
                 List<GaiaFace> faces = surface.getFaces();
                 for (GaiaFace face : faces) {
-                    int indices[] = face.getIndices();
+                    int[] indices = face.getIndices();
                     for (int index : indices) {
                         GaiaVertex vertex = vertices.get(index);
                         List<GaiaFace> faceList = mapVertexToFaces.computeIfAbsent(vertex, k -> new java.util.ArrayList<>());
@@ -38,15 +44,49 @@ public class ReMesherVertexCluster {
         return mapVertexToFaces;
     }
 
-    public static void reMeshScene(GaiaScene gaiaScene, ReMeshParameters reMeshParams, Map<Vector3i, List<GaiaVertex>> vertexClusters) {
+    public static void getVertexClusterBoundingBox(Map<Vector3i, List<GaiaVertex>> vertexClusters, Vector3i resultMinCellIndex, Vector3i resultMaxCellIndex) {
+        List<Vector3i> cellIndices = vertexClusters.keySet().stream().toList();
+        int cellIndicesCount = cellIndices.size();
+        for (int i = 0; i < cellIndicesCount; i++) {
+            Vector3i cellIndex = cellIndices.get(i);
+            int currCellX = cellIndex.x;
+            int currCellY = cellIndex.y;
+            int currCellZ = cellIndex.z;
+
+            if (i == 0) {
+                resultMinCellIndex.x = currCellX;
+                resultMinCellIndex.y = currCellY;
+                resultMinCellIndex.z = currCellZ;
+
+                resultMaxCellIndex.x = currCellX;
+                resultMaxCellIndex.y = currCellY;
+                resultMaxCellIndex.z = currCellZ;
+                continue;
+            }
+
+            if (resultMinCellIndex.x > currCellX) resultMinCellIndex.x = currCellX;
+            if (resultMinCellIndex.y > currCellY) resultMinCellIndex.y = currCellY;
+            if (resultMinCellIndex.z > currCellZ) resultMinCellIndex.z = currCellZ;
+
+            if (resultMaxCellIndex.x < currCellX) resultMaxCellIndex.x = currCellX;
+            if (resultMaxCellIndex.y < currCellY) resultMaxCellIndex.y = currCellY;
+            if (resultMaxCellIndex.z < currCellZ) resultMaxCellIndex.z = currCellZ;
+        }
+    }
+
+    public static void reMeshScene(GaiaScene gaiaScene, ReMeshParameters reMeshParams, Map<Vector3i, List<GaiaVertex>> vertexClusters,
+                                   Vector3i sceneMinCellIndex, Vector3i sceneMaxCellIndex) {
         //************************************************************************************
-        // Note: the gaiaScene must spend its transform matrix before calling this method.****
-        // Note: the gaiaScene must join all surfaces before calling this method.*************
+        // Note: the gaiaScene must spend its transform matrix before calling this method*
+        // Note: the gaiaScene must join all surfaces before calling this method**********
         //************************************************************************************
         Map<GaiaVertex, List<GaiaFace>> mapVertexToFaces = makeMapVertexToFaces(gaiaScene);
         Map<GaiaVertex, Integer> vertexToIndexMap = new HashMap<>();
 
-        List<GaiaPrimitive> primitives = gaiaScene.extractPrimitives(null);
+        //GaiaBoundingBox originalBBox = gaiaScene.updateBoundingBox();
+
+        GaiaExtractor extractor = new GaiaExtractor();
+        List<GaiaPrimitive> primitives = extractor.extractAllPrimitives(gaiaScene);
         // There are only 1 primitive in the gaiaScene, so we can use it directly.
         List<GaiaVertex> vertices = primitives.get(0).getVertices();
 
@@ -59,9 +99,17 @@ public class ReMesherVertexCluster {
             vertexToIndexMap.put(vertex, i);
         }
 
-        Vector3i sceneMinCellIndex = null;
-        Vector3i sceneMaxCellIndex = null;
+//        GaiaBoundingBox sceneBoundingBox = gaiaScene.updateBoundingBox();
+//        double minX = sceneBoundingBox.getMinX();
+//        double minY = sceneBoundingBox.getMinY();
+//        double minZ = sceneBoundingBox.getMinZ();
+//        double maxX = sceneBoundingBox.getMaxX();
+//        double maxY = sceneBoundingBox.getMaxY();
+//        double maxZ = sceneBoundingBox.getMaxZ();
+//
+//        double error = 0.01; // 1 cm error margin
 
+        boolean firstVertex = true;
         for (GaiaPrimitive primitive : primitives) {
             List<GaiaSurface> surfaces = primitive.getSurfaces();
             for (GaiaSurface surface : surfaces) {
@@ -80,9 +128,14 @@ public class ReMesherVertexCluster {
                         int currCellY = cellIndex.y;
                         int currCellZ = cellIndex.z;
 
-                        if (sceneMinCellIndex == null) {
-                            sceneMinCellIndex = new Vector3i(currCellX, currCellY, currCellZ);
-                            sceneMaxCellIndex = new Vector3i(currCellX, currCellY, currCellZ);
+                        if (firstVertex) {
+                            sceneMinCellIndex.x = currCellX;
+                            sceneMinCellIndex.y = currCellY;
+                            sceneMinCellIndex.z = currCellZ;
+                            sceneMaxCellIndex.x = currCellX;
+                            sceneMaxCellIndex.y = currCellY;
+                            sceneMaxCellIndex.z = currCellZ;
+                            firstVertex = false;
                         } else {
                             if (currCellX < sceneMinCellIndex.x) sceneMinCellIndex.x = currCellX;
                             if (currCellY < sceneMinCellIndex.y) sceneMinCellIndex.y = currCellY;
@@ -107,7 +160,7 @@ public class ReMesherVertexCluster {
             }
 
             // check if exists the average position for the cell
-            Vector3d averagePosition = cellAveragePositions.get(cellIndex);
+            Vector3d averagePosition = cellAveragePositions.get(cellIndex); // original
             if (averagePosition == null) {
                 // Calculate the average position of the cluster
                 averagePosition = new Vector3d();
@@ -153,7 +206,7 @@ public class ReMesherVertexCluster {
         mapVertexToFaces.clear();
 
         if (sceneMinCellIndex != null && sceneMaxCellIndex != null) {
-            sceneMinCellIndex.x += 1;
+            sceneMinCellIndex.x += 1; // to avoid boundary problems, do not delete the vertices in the boundary cells.
             sceneMinCellIndex.y += 1;
             sceneMinCellIndex.z += 1;
             sceneMaxCellIndex.x -= 1;
@@ -162,80 +215,8 @@ public class ReMesherVertexCluster {
             reMeshParams.deleteCellAveragePositionInsideBox(sceneMinCellIndex, sceneMaxCellIndex);
         }
 
-        // now delete degenerate faces.***
-        primitives.get(0).deleteDegeneratedFaces(); // here deletes no used vertices either.
-    }
-
-    public static void reMesh(List<SceneInfo> sceneInfos, ReMeshParameters reMeshParameters, GaiaBoundingBox nodeBBox, Matrix4d nodeTMatrix, List<GaiaScene> resultGaiaScenes) {
-
-        // Take FboManager from engine
-        Matrix4d nodeMatrixInv = new Matrix4d(nodeTMatrix);
-        nodeMatrixInv.invert();
-
-        // render the scenes
-        int scenesCount = sceneInfos.size();
-        int counter = 0;
-        Map<Vector3i, List<GaiaVertex>> vertexClusters = new HashMap<>();
-
-        for (int i = 0; i < scenesCount; i++) {
-            // load and render, one by one
-            SceneInfo sceneInfo = sceneInfos.get(i);
-            String scenePath = sceneInfo.getScenePath();
-            Matrix4d sceneTMat = sceneInfo.getTransformMatrix();
-
-            // must find the local position of the scene rel to node
-            Vector3d scenePosWC = new Vector3d(sceneTMat.m30(), sceneTMat.m31(), sceneTMat.m32());
-            Vector3d scenePosLC = nodeMatrixInv.transformPosition(scenePosWC, new Vector3d());
-
-            // calculate the local sceneTMat
-            Matrix4d sceneTMatLC = new Matrix4d();
-            sceneTMatLC.identity();
-            sceneTMatLC.m30(scenePosLC.x);
-            sceneTMatLC.m31(scenePosLC.y);
-            sceneTMatLC.m32(scenePosLC.z);
-
-            // load the set file
-            GaiaSet gaiaSet = null;
-            GaiaScene gaiaScene = null;
-            Path path = Paths.get(scenePath);
-            try {
-                gaiaSet = GaiaSet.readFile(path);
-            } catch (Exception e) {
-                log.error("[ERROR] reading the file: ", e);
-            }
-
-            if (gaiaSet == null) {
-                log.error("[ERROR] GaiaSet is null for path: {}", scenePath);
-                continue;
-            }
-
-            //**************************************************************************************************************************
-            // Note: to reMesh or decimate the scene, 1- it must spend its transform matrix, 2- join all surfaces, 3- and weld vertices.
-            //**************************************************************************************************************************
-
-            gaiaScene = new GaiaScene(gaiaSet);
-            gaiaScene.makeTriangularFaces();
-            GaiaNode gaiaNode = gaiaScene.getNodes().get(0);
-            gaiaNode.setTransformMatrix(new Matrix4d(sceneTMatLC));
-            gaiaNode.setPreMultipliedTransformMatrix(new Matrix4d(sceneTMatLC));
-            gaiaScene.spendTranformMatrix();
-            gaiaScene.joinAllSurfaces();
-            double weldError = 1e-6; // 1e-6 is a good value for remeshing
-            gaiaScene.weldVertices(weldError, false, false, false, false);
-
-            vertexClusters.clear();
-            reMeshScene(gaiaScene, reMeshParameters, vertexClusters);
-
-
-            gaiaSet.clear();
-
-            resultGaiaScenes.add(gaiaScene);
-
-            counter++;
-            if (counter > 20) {
-                //System.gc();
-                counter = 0;
-            }
-        } // for each scene
+        // now delete degenerate faces
+        GaiaPrimitive primitive = primitives.get(0);
+        primitive.deleteDegeneratedFaces(); // here deletes no used vertices either.
     }
 }

@@ -12,12 +12,12 @@ import java.util.List;
 @Slf4j
 @Setter
 @Getter
-public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
+public class GaiaOctreeFaces extends GaiaOctree<GaiaFaceData> {
     private int limitDepth = 5;
     private double limitSize = 1.0; // Minimum size of the bounding box to stop subdividing
     private boolean contentsCanBeInMultipleChildren = false;
 
-    public GaiaOctreeFaces(GaiaOctree<GeometryContent> parent, GaiaBoundingBox boundingBox) {
+    public GaiaOctreeFaces(GaiaOctree<GaiaFaceData> parent, GaiaBoundingBox boundingBox) {
         super(parent, boundingBox);
 
         if (parent != null) {
@@ -33,7 +33,7 @@ public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
     }
 
     public void distributeContentsByCenterPoint() {
-        List<GeometryContent> contents = this.getContents();
+        List<GaiaFaceData> contents = this.getContents();
         if (contents.isEmpty()) {
             return;
         }
@@ -50,24 +50,24 @@ public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
         double midZ = (minZ + maxZ) / 2.0;
 
         int debugCounter = 0;
-        List<GaiaOctree<GeometryContent>> children = this.getChildren();
-        for (GeometryContent geometryContent : contents) {
-            Vector3d centerPoint = geometryContent.getCenterPoint();
+        List<GaiaOctree<GaiaFaceData>> children = this.getChildren();
+        for (GaiaFaceData faceData : contents) {
+            Vector3d centerPoint = faceData.getCenterPoint();
             if (centerPoint.x < midX) {
                 // 0, 3, 4, 7
                 if (centerPoint.y < midY) {
                     // 0, 4
                     if (centerPoint.z < midZ) {
-                        children.get(0).addContent(geometryContent);
+                        children.get(0).addContent(faceData);
                     } else {
-                        children.get(4).addContent(geometryContent);
+                        children.get(4).addContent(faceData);
                     }
                 } else {
                     // 3, 7
                     if (centerPoint.z < midZ) {
-                        children.get(3).addContent(geometryContent);
+                        children.get(3).addContent(faceData);
                     } else {
-                        children.get(7).addContent(geometryContent);
+                        children.get(7).addContent(faceData);
                     }
                 }
             } else {
@@ -75,16 +75,16 @@ public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
                 if (centerPoint.y < midY) {
                     // 1, 5
                     if (centerPoint.z < midZ) {
-                        children.get(1).addContent(geometryContent);
+                        children.get(1).addContent(faceData);
                     } else {
-                        children.get(5).addContent(geometryContent);
+                        children.get(5).addContent(faceData);
                     }
                 } else {
                     // 2, 6
                     if (centerPoint.z < midZ) {
-                        children.get(2).addContent(geometryContent);
+                        children.get(2).addContent(faceData);
                     } else {
-                        children.get(6).addContent(geometryContent);
+                        children.get(6).addContent(faceData);
                     }
                 }
             }
@@ -102,33 +102,26 @@ public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
     }
 
     public void distributeContentsByIntersection() {
-        List<GeometryContent> contents = this.getContents();
+        List<GaiaFaceData> contents = this.getContents();
         if (contents.isEmpty()) {
             return;
         }
 
-        List<GaiaOctree<GeometryContent>> children = this.getChildren();
-        for (GeometryContent geometryContent : contents) {
-            if (geometryContent instanceof GaiaFaceContent faceContent) {
-                GaiaTriangle triangle = faceContent.getTriangle();
-                for (int i = 0; i < children.size(); i++) {
-                    GaiaOctreeFaces child = (GaiaOctreeFaces) children.get(i);
-                    if (child == null) {
-                        log.error("[ERROR][distributeContentsByIntersection] : Child octree is null at index " + i);
-                        continue;
-                    }
-                    if (child.intersects(triangle)) {
-                        child.addContent(geometryContent);
-                        if (!this.contentsCanBeInMultipleChildren) {
-                            break;
-                        }
+        List<GaiaOctree<GaiaFaceData>> children = this.getChildren();
+        for (GaiaFaceData faceData : contents) {
+            GaiaTriangle triangle = faceData.getTriangle();
+            for (int i = 0; i < children.size(); i++) {
+                GaiaOctreeFaces child = (GaiaOctreeFaces) children.get(i);
+                if (child == null) {
+                    log.error("[ERROR][distributeContentsByIntersection] : Child octree is null at index " + i);
+                    continue;
+                }
+                if (child.intersects(triangle)) {
+                    child.addContent(faceData);
+                    if (!this.contentsCanBeInMultipleChildren) {
+                        break;
                     }
                 }
-            } else if (geometryContent instanceof GaiaVertexContent vertexContent) {
-                // TODO: Handle vertex content if needed
-                throw new RuntimeException("Not implemented yet");
-            } else {
-                log.warn("Unknown GeometryContent type: {}", geometryContent.getClass().getName());
             }
         }
 
@@ -152,7 +145,7 @@ public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
             return;
         }
 
-        List<GeometryContent> contents = this.getContents();
+        List<GaiaFaceData> contents = this.getContents();
         if (contents.isEmpty()) {
             return;
         }
@@ -160,8 +153,8 @@ public class GaiaOctreeFaces extends GaiaOctree<GeometryContent> {
         createChildren();
         distributeContentsByIntersection();
 
-        List<GaiaOctree<GeometryContent>> children = this.getChildren();
-        for (GaiaOctree<GeometryContent> child : children) {
+        List<GaiaOctree<GaiaFaceData>> children = this.getChildren();
+        for (GaiaOctree<GaiaFaceData> child : children) {
             GaiaOctreeFaces childFaces = (GaiaOctreeFaces) child;
             childFaces.makeTree();
         }

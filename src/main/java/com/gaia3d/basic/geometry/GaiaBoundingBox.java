@@ -19,8 +19,6 @@ import org.joml.Vector3d;
 import java.io.Serializable;
 import java.util.List;
 
-import static com.gaia3d.util.VectorUtils.cross;
-
 /**
  * GaiaBoundingBox is a class to store the bounding box of a geometry.
  * It can be used to calculate the center and volume of the geometry.
@@ -57,6 +55,31 @@ public class GaiaBoundingBox implements Serializable {
         return new Vector3d(maxX - minX, maxY - minY, maxZ - minZ);
     }
 
+    public GaiaBoundingBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+        this.minX = minX;
+        this.minY = minY;
+        this.minZ = minZ;
+        this.maxX = maxX;
+        this.maxY = maxY;
+        this.maxZ = maxZ;
+        this.isInit = true;
+    }
+
+    public boolean isValid() {
+        boolean isInvalid = Double.isNaN(minX) || Double.isNaN(minY) || Double.isNaN(minZ) || Double.isNaN(maxX) || Double.isNaN(maxY) || Double.isNaN(maxZ);
+        boolean isInverted = minX > maxX || minY > maxY || minZ > maxZ;
+        boolean isZeroVolume = (minX == maxX) || (minY == maxY) || (minZ == maxZ);
+
+        if (isInvalid) {
+            log.debug("Bounding box is invalid (NaN values).");
+        } else if (isInverted) {
+            log.debug("Bounding box is inverted (min values greater than max values).");
+        } else if (isZeroVolume) {
+            log.debug("Bounding box has zero volume (one or more dimensions are zero).");
+        }
+        return !isInvalid && !isInverted && !isZeroVolume;
+    }
+
     public double getMaxRadius() {
         Vector3d center = getCenter();
         Vector3d minPosition = getMinPosition();
@@ -64,6 +87,22 @@ public class GaiaBoundingBox implements Serializable {
         double radiusY = Math.abs(center.y - minPosition.y);
         double radiusZ = Math.abs(center.z - minPosition.z);
         return Math.sqrt(radiusX * radiusX + radiusY * radiusY + radiusZ * radiusZ);
+    }
+
+    public GaiaBoundingBox createIntersection(GaiaBoundingBox other) {
+        double ixMin = Math.max(this.minX, other.minX);
+        double iyMin = Math.max(this.minY, other.minY);
+        double izMin = Math.max(this.minZ, other.minZ);
+
+        double ixMax = Math.min(this.maxX, other.maxX);
+        double iyMax = Math.min(this.maxY, other.maxY);
+        double izMax = Math.min(this.maxZ, other.maxZ);
+
+        if (ixMin >= ixMax || iyMin >= iyMax || izMin >= izMax) {
+            return null; // No intersection
+        }
+
+        return new GaiaBoundingBox(ixMin, iyMin, izMin, ixMax, iyMax, izMax);
     }
 
     public boolean intersectsPoint(Vector3d point) {
@@ -81,7 +120,7 @@ public class GaiaBoundingBox implements Serializable {
 
         // Check if the barycentric coordinates of the triangle are inside the bounding box.
         Vector3d barycenter = triangle.getBarycenter();
-        if( intersectsPoint(barycenter)) {
+        if (intersectsPoint(barycenter)) {
             return true; // The barycenter of the triangle is inside the bounding box.
         }
 
@@ -96,7 +135,7 @@ public class GaiaBoundingBox implements Serializable {
         // Check the distance of the bbox center to the triangle plane.
         double maxRadius = getMaxRadius();
         GaiaPlane trianglePlane = triangle.getPlane();
-        if(trianglePlane == null) {
+        if (trianglePlane == null) {
             log.info("[INFO][intersectsTriangle] : Triangle plane is null.");
             return false; // No valid triangle plane to check against.
         }
@@ -121,10 +160,6 @@ public class GaiaBoundingBox implements Serializable {
 
         // Check if some edges of the bounding box intersect the triangle.
         if (intersectsAASegmentsToTriangle(triangle)) {
-//            if (!this.intersects(triangleBbox)) {
-//                intersectsAASegmentsToTriangle(triangle);
-//                int hola = 0;
-//            }
             return true; // At least one axis-aligned segment intersects the triangle.
         }
 
@@ -133,7 +168,7 @@ public class GaiaBoundingBox implements Serializable {
 
     private boolean intersectsAASegmentsToTriangle(GaiaTriangle triangle) {
         GaiaPlane trianglePlane = triangle.getPlane();
-        if(trianglePlane == null){
+        if (trianglePlane == null) {
             log.info("[INFO][intersectsAASegmentsToTriangle] : Triangle plane is null.");
             return false; // No valid triangle plane to check against.
         }
@@ -211,13 +246,6 @@ public class GaiaBoundingBox implements Serializable {
                 return false; // No intersection with the triangle plane.
             }
 
-//            double dist1 = trianglePlane.distanceToPoint(aaSegment.getStartPoint());
-//            double dist2 = trianglePlane.distanceToPoint(aaSegment.getEndPoint());
-//            if(dist1>0 && dist2>0 || dist1<0 && dist2<0) {
-//                intersectionPoint = trianglePlane.intersectionAASegment(aaSegment, axis);
-//                int hola = 0;
-//            }
-
             Vector3d[] trianglePoints = triangle.getPoints();
 
             Vector2d p = null;
@@ -270,8 +298,7 @@ public class GaiaBoundingBox implements Serializable {
             boolean hasPos = (area1 > 0) || (area2 > 0) || (area3 > 0);
 
             return !(hasNeg && hasPos);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("[ERROR][intersectsAASegmentToTriangle] : Exception occurred while checking intersection.", e);
             return false; // An exception occurred, cannot determine intersection.
         }
@@ -378,8 +405,40 @@ public class GaiaBoundingBox implements Serializable {
         this.isInit = true;
     }
 
+    public void addPoint(double[] xyz) {
+        addPoint(xyz[0], xyz[1], xyz[2]);
+    }
+
     public void addPoint(double x, double y, double z) {
-        addPoint(new Vector3d(x, y, z));
+        /*addPoint(new Vector3d(x, y, z));*/
+        if (isInit) {
+            if (x < minX) {
+                minX = x;
+            }
+            if (y < minY) {
+                minY = y;
+            }
+            if (z < minZ) {
+                minZ = z;
+            }
+            if (x > maxX) {
+                maxX = x;
+            }
+            if (y > maxY) {
+                maxY = y;
+            }
+            if (z > maxZ) {
+                maxZ = z;
+            }
+        } else {
+            isInit = true;
+            minX = x;
+            minY = y;
+            minZ = z;
+            maxX = x;
+            maxY = y;
+            maxZ = z;
+        }
     }
 
     public void addPoint(Vector3d vector3d) {
@@ -622,5 +681,18 @@ public class GaiaBoundingBox implements Serializable {
         double maxY = minY + maxSize;
         double maxZ = minZ + maxSize;
         return new GaiaBoundingBox(minX, minY, minZ, maxX, maxY, maxZ, true);
+    }
+
+    public List<Vector3d> getVertices() {
+        return List.of(
+                new Vector3d(minX, minY, minZ),
+                new Vector3d(maxX, minY, minZ),
+                new Vector3d(maxX, maxY, minZ),
+                new Vector3d(minX, maxY, minZ),
+                new Vector3d(minX, minY, maxZ),
+                new Vector3d(maxX, minY, maxZ),
+                new Vector3d(maxX, maxY, maxZ),
+                new Vector3d(minX, maxY, maxZ)
+        );
     }
 }

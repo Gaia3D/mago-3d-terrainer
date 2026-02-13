@@ -160,7 +160,7 @@ public class GaiaOctree<E> {
         } else {
             GaiaOctreeCoordinate parentCoord = this.parent.getCoordinate();
             GaiaOctreeCoordinate coord = new GaiaOctreeCoordinate();
-            // now set children coords
+
             int L = parentCoord.getDepth();
             int X = parentCoord.getX();
             int Y = parentCoord.getY();

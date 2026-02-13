@@ -112,14 +112,6 @@ public class HalfEdgePrimitive implements Serializable {
     }
 
     public void writeFile(ObjectOutputStream outputStream) {
-        /*
-        private Integer accessorIndices = -1;
-        private Integer materialIndex = -1;
-        private List<HalfEdgeSurface> surfaces = new ArrayList<>();
-        private List<HalfEdgeVertex> vertices = new ArrayList<>(); // vertices of all surfaces
-        private GaiaBoundingBox boundingBox = null;
-         */
-
         try {
             // accessorIndices
             outputStream.writeInt(accessorIndices);
@@ -366,6 +358,12 @@ public class HalfEdgePrimitive implements Serializable {
     public void getIntersectedFacesByPlane(PlaneType planeType, Vector3d planePosition, List<HalfEdgeFace> resultFaces, double error) {
         for (HalfEdgeSurface surface : surfaces) {
             surface.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
+        }
+    }
+
+    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
+        for (HalfEdgeSurface surface : surfaces) {
+            surface.decimateInteriorOfBox(decimateParameters, boundingBox);
         }
     }
 }
