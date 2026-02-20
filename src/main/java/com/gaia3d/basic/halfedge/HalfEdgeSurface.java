@@ -297,7 +297,7 @@ public class HalfEdgeSurface implements Serializable {
 //        octree.extractOctreesWithContents(nodesWithContents2);
 
         int nodesWithContentsCount = nodesWithContents.size();
-        log.info("nodesWithContentsCount = " + nodesWithContentsCount);
+        log.debug("nodesWithContentsCount = " + nodesWithContentsCount);
         for (int i = 0; i < nodesWithContentsCount; i++) {
             HalfEdgeOctreeVertices node = (HalfEdgeOctreeVertices) nodesWithContents.get(i);
             List<HalfEdgeVertex> vertices = node.getContents();
@@ -388,7 +388,7 @@ public class HalfEdgeSurface implements Serializable {
         int originalHalfEdgesCount = halfEdges.size();
         int originalVerticesCount = vertices.size();
 
-        log.info("halfEdgesCount = " + originalHalfEdgesCount);
+        log.debug("halfEdgesCount = " + originalHalfEdgesCount);
         int counterAux = 0;
         int hedgesCollapsedCount = 0;
         int frontierHedgesCollapsedCount = 0;
@@ -556,8 +556,8 @@ public class HalfEdgeSurface implements Serializable {
                 finished = true;
             }
 
-            log.info("iteration = " + iteration + ", hedgesCollapsedInOneIteration = " + hedgesCollapsedInOneIteration);
-            log.info("iteration = " + iteration + ", frontierHedgesCollapsedInOneIteration = " + frontierHedgesCollapsedInOneIteration);
+            log.debug("iteration = " + iteration + ", hedgesCollapsedInOneIteration = " + hedgesCollapsedInOneIteration);
+            log.debug("iteration = " + iteration + ", frontierHedgesCollapsedInOneIteration = " + frontierHedgesCollapsedInOneIteration);
 
             iteration++;
 
@@ -567,7 +567,6 @@ public class HalfEdgeSurface implements Serializable {
             this.removeDeletedObjects();
             this.weldVertices(1e-4, false, false, false, false);
         }
-
 
 //        boolean checkTexCoord = false;
 //        boolean checkNormal = false;
@@ -580,7 +579,7 @@ public class HalfEdgeSurface implements Serializable {
 
         dirty = true;
 
-        log.info("*** TOTAL HALFEDGES DELETED = " + hedgesCollapsedCount);
+        log.debug("*** TOTAL HALFEDGES DELETED = " + hedgesCollapsedCount);
 
         int finalFacesCount = faces.size();
         int finalHalfEdgesCount = halfEdges.size();
@@ -590,9 +589,9 @@ public class HalfEdgeSurface implements Serializable {
         int halfEdgesCountDiff = originalHalfEdgesCount - finalHalfEdgesCount;
         int verticesCountDiff = originalVerticesCount - finalVerticesCount;
 
-        log.info("faces % deleted = " + (facesCountDiff * 100.0) / originalFacesCount);
-        log.info("halfEdges % deleted = " + (halfEdgesCountDiff * 100.0) / originalHalfEdgesCount);
-        log.info("vertices % deleted = " + (verticesCountDiff * 100.0) / originalVerticesCount);
+        log.debug("faces % deleted = " + (facesCountDiff * 100.0) / originalFacesCount);
+        log.debug("halfEdges % deleted = " + (halfEdgesCountDiff * 100.0) / originalHalfEdgesCount);
+        log.debug("vertices % deleted = " + (verticesCountDiff * 100.0) / originalVerticesCount);
     }
 
     public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
@@ -605,7 +604,7 @@ public class HalfEdgeSurface implements Serializable {
         int originalHalfEdgesCount = halfEdges.size();
         int originalVerticesCount = vertices.size();
 
-        log.info("halfEdgesCount = " + originalHalfEdgesCount);
+        log.debug("halfEdgesCount = " + originalHalfEdgesCount);
         int counterAux = 0;
         int hedgesCollapsedCount = 0;
         int frontierHedgesCollapsedCount = 0;
@@ -2838,7 +2837,7 @@ public class HalfEdgeSurface implements Serializable {
         double originalArea = texWidth * texHeight;
         double atlasArea = maxWidth * maxHeight;
         double diffPercent = (atlasArea - originalArea) / originalArea * 100.0;
-        log.info("scissorProcess : diffPercent ( % ) = " + (int) diffPercent + " %");
+        log.debug("scissorProcess : diffPercent ( % ) = " + (int) diffPercent + " %");
         if (atlasArea > originalArea) {
 
         }
