@@ -227,7 +227,6 @@ public class GltfWriter {
             node.setMatrix(quantizationMatrix.get(new float[16]));
 
             if (node.getRotation() != null && node.getTranslation() != null) {
-                log.warn("[WARN] When using quantization, rotation and translation are ignored.");
                 node.setRotation(null);
                 node.setTranslation(null);
             }
