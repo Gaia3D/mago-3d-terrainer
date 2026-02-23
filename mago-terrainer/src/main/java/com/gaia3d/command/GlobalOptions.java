@@ -34,7 +34,7 @@ public class GlobalOptions {
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = -1;
     private static final int DEFAULT_MOSAIC_SIZE = 16;
-    private static final int DEFAULT_MAX_RASTER_SIZE = 4000;
+    private static final int DEFAULT_MAX_RASTER_SIZE = 4096;
     private static final double DEFAULT_INTENSITY = 4.0;
     private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
     private static final CoordinateReferenceSystem DEFAULT_TARGET_CRS = DefaultGeographicCRS.WGS84;
@@ -47,6 +47,8 @@ public class GlobalOptions {
     private String programInfo;
     private long startTimeMillis = System.currentTimeMillis();
     private long endTimeMillis = 0;
+    private long availableProcessors = Runtime.getRuntime().availableProcessors();
+    private long maxHeapMemory = Runtime.getRuntime().maxMemory();
 
     // Default options
     private String inputPath;
@@ -104,6 +106,7 @@ public class GlobalOptions {
     }
 
     public static void init(CommandLine command) throws IOException {
+        checkHeapMemory();
         if (command.hasOption(CommandOptions.INPUT.getLongName())) {
             instance.setInputPath(command.getOptionValue(CommandOptions.INPUT.getLongName()));
             validateInputPath(new File(instance.getInputPath()).toPath());
@@ -297,6 +300,14 @@ public class GlobalOptions {
     }
 
     protected static void printGlobalOptions() {
+        log.info("Java Version Info: {}", instance.javaVersionInfo);
+        log.info("Program Info: {}", instance.programInfo);
+        log.info("Available Processors: {}", instance.availableProcessors);
+        log.info("Max Heap Memory: {} MB", instance.maxHeapMemory / (1024 * 1024));
+        checkHeapMemory();
+
+        Mago3DTerrainerMain.drawLine();
+
         log.info("Input Path: {}", instance.getInputPath());
         log.info("Output Path: {}", instance.getOutputPath());
         log.info("Temp Path: {}", instance.getTileTempPath());
@@ -357,7 +368,7 @@ public class GlobalOptions {
         }
     }
 
-    private static void initVersionInfo() {
+    protected static void initVersionInfo() {
         String javaVersion = System.getProperty("java.version");
         String javaVendor = System.getProperty("java.vendor");
         String javaVersionInfo = "JAVA Version : " + javaVersion + " (" + javaVendor + ") ";
@@ -372,5 +383,13 @@ public class GlobalOptions {
         instance.setStartTimeMillis(System.currentTimeMillis());
         instance.setProgramInfo(programInfo);
         instance.setJavaVersionInfo(javaVersionInfo);
+    }
+
+    protected static void checkHeapMemory() {
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        long recommendedMemory = 16L * 1024 * 1024 * 1024; // 16GB
+        if (maxMemory < recommendedMemory) {
+            log.warn("Maximum memory is less than the recommended 16GB. Current max memory: {} GB. Consider allocating more memory for better performance.", maxMemory / (1024 * 1024 * 1024));
+        }
     }
 }

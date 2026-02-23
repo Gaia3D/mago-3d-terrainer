@@ -985,6 +985,7 @@ public class TileWgs84Manager {
             log.error("Input path is not exist or not a directory: {}", inputPath);
             throw new RuntimeException("Error: Input path is not exist or not a directory: " + inputPath);
         }
+        log.info("Found {} GeoTiff files in the input path: {}", rasterFileNames.size(), inputPath);
 
         if (rasterFileNames.isEmpty()) {
             log.error("No GeoTiff files found in the input path: {}", inputPath);
