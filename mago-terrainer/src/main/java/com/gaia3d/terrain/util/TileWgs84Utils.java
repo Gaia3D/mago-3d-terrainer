@@ -202,7 +202,7 @@ public class TileWgs84Utils {
             y = (int) Math.floor((latitude + 90.0) / angRangeLat);
         }
 
-        // Clamp (CRÍTICO para 180 / 90)
+        // Clamp (CRITICAL para 180 / 90)
         x = Math.max(0, Math.min(x, tilesX - 1));
         y = Math.max(0, Math.min(y, tilesY - 1));
 
