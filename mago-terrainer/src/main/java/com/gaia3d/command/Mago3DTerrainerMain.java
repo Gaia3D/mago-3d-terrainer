@@ -70,12 +70,7 @@ public class Mago3DTerrainerMain {
                 return;
             } else {
                 log.info("[Generate] Start Terrainer process.");
-                boolean fulltree = false;
-                if (fulltree) {
-                    executeFullTree();
-                } else {
-                    executeCustomTree();
-                }
+                executeCustomTree();
                 log.info("[Generate] Finished Terrainer process.");
                 if (!globalOptions.isLeaveTemp()) {
                     cleanTemp();
