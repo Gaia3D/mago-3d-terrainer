@@ -97,6 +97,10 @@ public class TerrainElevationData {
             // determine the grid coordinates of the point
             if (this.raster == null) {
                 RenderedImage ri = coverage.getRenderedImage();
+                if (ri == null) {
+                    log.error("RenderedImage is null");
+                    return globalOptions.getNoDataValue();
+                }
                 this.raster = ri.getData();
                 //this.coverage.dispose(true);
                 this.coverage = null;
@@ -203,7 +207,7 @@ public class TerrainElevationData {
         double value10 = this.getGridValue(columnNext, row);
         double value11 = this.getGridValue(columnNext, rowNext);
 
-        /* check noDataValue */
+        // Ignore noDataValue samples.
         double noDataValue = globalOptions.getNoDataValue();
         boolean hasNoData = (value00 == noDataValue) || (value01 == noDataValue) || (value10 == noDataValue) || (value11 == noDataValue);
         if (hasNoData) {

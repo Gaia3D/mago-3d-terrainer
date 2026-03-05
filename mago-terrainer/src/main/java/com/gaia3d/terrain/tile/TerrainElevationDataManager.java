@@ -12,14 +12,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.referencing.CRS;
-import org.joml.Vector2d;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.geotools.api.referencing.FactoryException;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.api.referencing.operation.TransformException;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.referencing.CRS;
+import org.joml.Vector2d;
+import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -223,7 +223,7 @@ public class TerrainElevationDataManager {
                 continue;
             }
 
-            /* check if the priority is resolution */
+            // Prioritize by resolution when configured.
             if (priorityType.equals(PriorityType.RESOLUTION)) {
                 double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFileName(), terrainElevationData.getGeotiffFilePath());
                 // smaller pixelArea is a higher resolution
@@ -256,13 +256,14 @@ public class TerrainElevationDataManager {
         }
 
         // now load all geotiff and make geotiff geoExtension data
-        GridCoverage2D gridCoverage2D = null;
+        //GridCoverage2D gridCoverage2D = null;
         String geoTiffFileName = null;
         String geoTiffFilePath = null;
 
         CoordinateReferenceSystem crsTarget = null;
         CoordinateReferenceSystem crsWgs84 = null;
         MathTransform targetToWgs = null;
+        crsWgs84 = CRS.decode("EPSG:4326", true);
 
         Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
 
@@ -283,21 +284,18 @@ public class TerrainElevationDataManager {
             }
 
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
-
-            gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            GridCoverage2D gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
             terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
             terrainElevationData.setGeotiffFileName(geoTiffFileName);
 
             crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
-            crsWgs84 = CRS.decode("EPSG:4326", true);
             targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
 
             GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, terrainElevationData.getGeographicExtension());
             terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
-            //gridCoverage2D.dispose(true);
-
+            // Important: Do not dispose the gridCoverage2D here, because it can be stored in the myGaiaGeoTiffManager cache map.
         }
 
         // now check if exist folders inside the terrainElevationDataFolderPath
@@ -334,7 +332,7 @@ public class TerrainElevationDataManager {
 
     public void deleteGeoTiffManager() {
         if (myGaiaGeoTiffManager != null) {
-            myGaiaGeoTiffManager.deleteObjects();
+            myGaiaGeoTiffManager.clear();
             myGaiaGeoTiffManager = null;
         }
     }

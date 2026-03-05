@@ -14,10 +14,10 @@ import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.GeometryUtils;
 import com.gaia3d.util.GlobeUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.geotools.api.referencing.operation.TransformException;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import org.geotools.api.referencing.operation.TransformException;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -52,7 +52,7 @@ public class TileMatrix {
     public void deleteObjects() {
         for (List<TileWgs84> row : tilesMatrixRowCol) {
             for (TileWgs84 tile : row) {
-                if (tile != null) tile.deleteObjects();
+                if (tile != null) {tile.deleteObjects();}
             }
         }
 

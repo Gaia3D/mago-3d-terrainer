@@ -4,6 +4,7 @@ import com.gaia3d.command.Mago3DTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
 import java.io.File;
 import java.util.Objects;
 
@@ -87,7 +88,7 @@ public class DefaultTest {
     }
 
     @Test
-    void sampleNearest(){
+    void sampleNearest() {
         ClassLoader classLoader = getClass().getClassLoader();
         File samplePath = new File(Objects.requireNonNull(classLoader.getResource("sample")).getFile());
         File inputPath = new File(samplePath, "input");

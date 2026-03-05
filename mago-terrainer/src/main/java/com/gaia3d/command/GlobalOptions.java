@@ -7,8 +7,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,30 +25,32 @@ import java.nio.file.StandardCopyOption;
 @Getter
 @Slf4j
 public class GlobalOptions {
-    /* singleton */
+    // Singleton
     private static GlobalOptions instance = new GlobalOptions();
     private CommandLineConfiguration commandLineConfiguration = new DefaultCommandLineConfiguration();
 
-    /* Constants */
+    // Constants
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
+    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = -1;
     private static final int DEFAULT_MOSAIC_SIZE = 16;
-    private static final int DEFAULT_MAX_RASTER_SIZE = 4000;
+    private static final int DEFAULT_MAX_RASTER_SIZE = 4096;
     private static final double DEFAULT_INTENSITY = 4.0;
     private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
     private static final CoordinateReferenceSystem DEFAULT_TARGET_CRS = DefaultGeographicCRS.WGS84;
     private static final TilingSchema DEFAULT_TILING_SCHEMA = TilingSchema.GEODETIC;
     private static final String DEFAULT_TEMP_DIR = "temp";
 
-    /* Program Information */
+    // Program information
     private String version;
     private String javaVersionInfo;
     private String programInfo;
     private long startTimeMillis = System.currentTimeMillis();
     private long endTimeMillis = 0;
+    private long availableProcessors = Runtime.getRuntime().availableProcessors();
+    private long maxHeapMemory = Runtime.getRuntime().maxMemory();
 
-    /* Default Options */
+    // Default options
     private String inputPath;
     private String outputPath;
     private String geoidPath;
@@ -58,7 +60,7 @@ public class GlobalOptions {
     private boolean leaveTemp = false;
     private boolean isContinue = false;
 
-    /* Tiling options */
+    // Tiling options
     private int minimumTileDepth;
     private int maximumTileDepth;
     private InterpolationType interpolationType;
@@ -66,16 +68,16 @@ public class GlobalOptions {
     private double noDataValue;
     private double intensity;
 
-    /* Extensions */
+    // Extensions
     private boolean isCalculateNormalsExtension;
     private boolean isMetaDataExtension;
     private boolean isWaterMaskExtension;
 
-    /* Migration options */
+    // Migration options
     private int mosaicSize;
     private int maxRasterSize;
 
-    /* Temporary paths for processing */
+    // Temporary paths for processing
     private String rootTempPath;
     private String geoidTempPath;
     private String standardizeTempPath;
@@ -87,7 +89,7 @@ public class GlobalOptions {
     private CoordinateReferenceSystem outputCRS;
     private TilingSchema tilingSchema;
 
-    private GlobalOptions () {
+    private GlobalOptions() {
         // Private constructor for singleton
     }
 
@@ -104,6 +106,7 @@ public class GlobalOptions {
     }
 
     public static void init(CommandLine command) throws IOException {
+        checkHeapMemory();
         if (command.hasOption(CommandOptions.INPUT.getLongName())) {
             instance.setInputPath(command.getOptionValue(CommandOptions.INPUT.getLongName()));
             validateInputPath(new File(instance.getInputPath()).toPath());
@@ -185,9 +188,8 @@ public class GlobalOptions {
         instance.setContinue(command.hasOption(CommandOptions.CONTINUOUS.getLongName()));
         instance.setOutputCRS(DEFAULT_TARGET_CRS);
 
-        // TODO : Add support for input CRS and tiling schema options
+        // Reserved for future support of input CRS and tiling schema options.
         instance.setTilingSchema(DEFAULT_TILING_SCHEMA);
-
 
         if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getLongName())) {
             int maxDepth = Integer.parseInt(command.getOptionValue(CommandOptions.MAXIMUM_TILE_DEPTH.getLongName()));
@@ -219,7 +221,7 @@ public class GlobalOptions {
             instance.setLayerJsonGenerate(true);
         }
 
-        if (instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {
+        if (instance.getMaximumTileDepth() >= 0 && instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {
             throw new IllegalArgumentException("Minimum tile depth must be less than or equal to maximum tile depth.");
         }
 
@@ -298,6 +300,14 @@ public class GlobalOptions {
     }
 
     protected static void printGlobalOptions() {
+        log.info("Java Version Info: {}", instance.javaVersionInfo);
+        log.info("Program Info: {}", instance.programInfo);
+        log.info("Available Processors: {}", instance.availableProcessors);
+        log.info("Max Heap Memory: {} MB", instance.maxHeapMemory / (1024 * 1024));
+        checkHeapMemory();
+
+        Mago3DTerrainerMain.drawLine();
+
         log.info("Input Path: {}", instance.getInputPath());
         log.info("Output Path: {}", instance.getOutputPath());
         log.info("Temp Path: {}", instance.getTileTempPath());
@@ -313,7 +323,11 @@ public class GlobalOptions {
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Tiling Schema: {}", instance.getTilingSchema());
         log.info("Minimum Tile Depth: {}", instance.getMinimumTileDepth());
-        log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
+        if (instance.getMaximumTileDepth() == -1) {
+            log.info("Maximum Tile Depth: Unlimited");
+        } else {
+            log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
+        }
         log.info("Interpolation Type: {}", instance.getInterpolationType());
         log.info("Refine Intensity: {}", instance.getIntensity());
         log.info("Priority Type: {}", instance.getPriorityType());
@@ -354,7 +368,7 @@ public class GlobalOptions {
         }
     }
 
-    private static void initVersionInfo() {
+    protected static void initVersionInfo() {
         String javaVersion = System.getProperty("java.version");
         String javaVendor = System.getProperty("java.vendor");
         String javaVersionInfo = "JAVA Version : " + javaVersion + " (" + javaVendor + ") ";
@@ -369,5 +383,13 @@ public class GlobalOptions {
         instance.setStartTimeMillis(System.currentTimeMillis());
         instance.setProgramInfo(programInfo);
         instance.setJavaVersionInfo(javaVersionInfo);
+    }
+
+    protected static void checkHeapMemory() {
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        long recommendedMemory = 16L * 1024 * 1024 * 1024; // 16GB
+        if (maxMemory < recommendedMemory) {
+            log.warn("Maximum memory is less than the recommended 16GB. Current max memory: {} GB. Consider allocating more memory for better performance.", maxMemory / (1024 * 1024 * 1024));
+        }
     }
 }

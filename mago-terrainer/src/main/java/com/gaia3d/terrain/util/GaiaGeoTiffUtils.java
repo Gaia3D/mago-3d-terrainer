@@ -2,7 +2,13 @@ package com.gaia3d.terrain.util;
 
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.util.GlobeUtils;
+import org.geotools.api.coverage.grid.GridEnvelope;
+import org.geotools.api.coverage.grid.GridGeometry;
 import org.geotools.api.geometry.Position;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.geometry.jts.JTS;
@@ -10,13 +16,10 @@ import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.joml.Vector2d;
-import org.locationtech.jts.geom.*;
-import org.geotools.api.coverage.grid.GridEnvelope;
-import org.geotools.api.coverage.grid.GridGeometry;
-import org.geotools.api.referencing.FactoryException;
-import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
-import org.geotools.api.referencing.operation.MathTransform;
-import org.geotools.api.referencing.operation.TransformException;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 
 public class GaiaGeoTiffUtils {
     public static Vector2d getLongitudeLatitudeDegree(GridCoverage2D coverage, int coordX, int coordY, GeometryFactory gf, MathTransform targetToWgs) throws TransformException {
@@ -74,7 +77,7 @@ public class GaiaGeoTiffUtils {
 
     public static GeographicExtension getGeographicExtension(GridCoverage2D coverage, GeometryFactory gf, MathTransform targetToWgs, GeographicExtension resultGeoExtension) throws TransformException {
         // get geographic extension
-        GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
+        //GridEnvelope gridRange2D = coverage.getGridGeometry().getGridRange();
         ReferencedEnvelope envelope = coverage.getEnvelope2D();
 
         double minLon = 0.0;

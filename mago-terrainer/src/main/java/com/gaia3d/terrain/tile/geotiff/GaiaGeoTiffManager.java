@@ -5,15 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.geotools.api.coverage.grid.GridGeometry;
+import org.geotools.api.referencing.FactoryException;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.joml.Vector2i;
-import org.geotools.api.coverage.grid.GridGeometry;
-import org.geotools.api.referencing.FactoryException;
-import org.locationtech.jts.geom.Envelope;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -62,23 +61,20 @@ public class GaiaGeoTiffManager {
         }
 
         log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
-        GridCoverage2D coverage = null;
         GeoTiffReader reader = null;
+        GridCoverage2D coverage;
         try {
             File file = new File(geoTiffFilePath);
             reader = new GeoTiffReader(file);
             coverage = reader.read(null);
         } catch (Exception e) {
-            log.error("Error:", e);
-        } /*finally {
+            log.error("Failed to read GeoTIFF file: {}", geoTiffFilePath, e);
+            throw new RuntimeException("Failed to read GeoTIFF file: " + geoTiffFilePath, e);
+        } finally {
             if (reader != null) {
-                try {
-                    reader.dispose();
-                } catch (Exception ex) {
-                    log.error("Error:", ex);
-                }
+                reader.dispose();
             }
-        }*/
+        }
 
         // save the coverage
         mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
@@ -113,7 +109,7 @@ public class GaiaGeoTiffManager {
 
     public void clear() {
         for (GridCoverage2D c : mapPathGridCoverage2d.values()) {
-            if (c != null) c.dispose(true);
+            if (c != null) {c.dispose(true);}
         }
         mapPathGridCoverage2d.clear();
         mapPathGridCoverage2dSize.clear();

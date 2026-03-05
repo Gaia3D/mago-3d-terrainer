@@ -1,13 +1,15 @@
 package com.gaia3d.command;
 
 
-import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TerrainLayer;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
 import com.gaia3d.util.DecimalUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.geotools.api.referencing.FactoryException;
@@ -68,7 +70,7 @@ public class Mago3DTerrainerMain {
                 return;
             } else {
                 log.info("[Generate] Start Terrainer process.");
-                execute();
+                executeCustomTree();
                 log.info("[Generate] Finished Terrainer process.");
                 if (!globalOptions.isLeaveTemp()) {
                     cleanTemp();
@@ -94,12 +96,65 @@ public class Mago3DTerrainerMain {
     }
 
     /**
+     * Executes the terrainer process, in custom tree mode.
+     * @throws IOException if an I/O error occurs.
+     * @throws FactoryException if a factory error occurs.
+     * @throws TransformException if a transform error occurs.
+     */
+    private static void executeCustomTree() throws Exception {
+        // In custom-tree mode, leaf nodes can have different depths.
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+
+        TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
+
+        log.info("[Pre][AvailableTileSet] Start calculating available tiles for each depth.");
+        tileWgs84Manager.calculateAvailableTilesForEachDepth();
+        log.info("[Pre][AvailableTileSet] Finished calculating available tiles for each depth.");
+
+        log.info("[Pre][Standardization] Start GeoTiff Standardization files.");
+        tileWgs84Manager.processStandardizeRasters();
+        log.info("[Pre][Standardization] Finished GeoTiff Standardization files.");
+
+        log.info("[Pre][Resize] Start GeoTiff Resizing files.");
+        tileWgs84Manager.processResizeRasters(globalOptions.getInputPath(), null);
+        log.info("[Pre][Resize] Finished GeoTiff Resizing files.");
+
+        log.info("[Tile] Start generate terrain elevation data.");
+        TerrainElevationDataManager terrainElevationDataManager = new TerrainElevationDataManager();
+        tileWgs84Manager.setTerrainElevationDataManager(terrainElevationDataManager);
+        terrainElevationDataManager.setTileWgs84Manager(tileWgs84Manager);
+        terrainElevationDataManager.setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
+
+        int depth = 0;
+        terrainElevationDataManager.makeTerrainQuadTree(depth);
+        log.info("[Tile] Finished generate terrain elevation data.");
+
+        // Check if the tile mesh generation is a continuation from an existing tileSet
+        boolean isContinue = globalOptions.isContinue();
+        if (isContinue) {
+            log.info("[Tile] Continuing making tile meshes.");
+            tileWgs84Manager.makeTileMeshesContinueCustom();
+            log.info("[Tile] Finished making tile meshes.");
+        } else {
+            log.info("[Tile] Start making tile meshes.");
+            tileWgs84Manager.makeTileMeshesCustom();
+            log.info("[Tile] Finished making tile meshes.");
+        }
+
+        log.info("[Post][Clear] Start deleting memory objects.");
+        tileWgs84Manager.deleteObjects();
+        log.info("[Post][Clear] Finished deleting memory objects.");
+
+        System.gc();
+    }
+
+    /**
      * Executes the terrainer process.
      * @throws IOException if an I/O error occurs.
      * @throws FactoryException if a factory error occurs.
      * @throws TransformException if a transform error occurs.
      */
-    private static void execute() throws Exception {
+    private static void executeFullTree() throws Exception {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();

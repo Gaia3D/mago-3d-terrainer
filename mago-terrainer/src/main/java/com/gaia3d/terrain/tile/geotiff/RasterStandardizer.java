@@ -38,42 +38,21 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * RasterStandardizer
- * This Class for Standardization data CRS and size.
+ * Standardizes raster CRS and size for terrain processing.
  */
 @Slf4j
 @NoArgsConstructor
 public class RasterStandardizer {
-
-    static {
-        /*JAIExt.registerJAIDescriptor("Warp");
-        JAIExt.registerJAIDescriptor("Affine");
-        JAIExt.registerJAIDescriptor("Rescale");
-        JAIExt.registerJAIDescriptor("Warp/Affine");
-        JAIExt.initJAIEXT();
-
-        JAI jaiInstance = JAI.getDefaultInstance();
-        TileCache tileCache = jaiInstance.getTileCache();
-        tileCache.setMemoryCapacity(1024 * 1024 * 1024);
-        tileCache.setMemoryThreshold(0.75f);
-
-        TileScheduler tileScheduler = jaiInstance.getTileScheduler();
-        // availableProcessors = Runtime.getRuntime().availableProcessors();
-        tileScheduler.setParallelism(Runtime.getRuntime().availableProcessors());
-        tileScheduler.setPriority(Thread.NORM_PRIORITY);*/
-    }
 
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     public void standardize(GridCoverage2D source, File outputPath) {
         CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
         try {
-            /* split */
             log.info("[Pre][Standardization] Splitting source raster into tiles... {}", outputPath.getName());
             List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());
             log.info("[Pre][Standardization] Splitting completed. Total tiles: {}", splitTiles.size());
 
-            /* resampling */
             int total = splitTiles.size();
             AtomicInteger count = new AtomicInteger(0);
             splitTiles.forEach(tile -> {
@@ -113,7 +92,6 @@ public class RasterStandardizer {
             //GridCoverage2D geoidCoverage = readGeoTiff(geoidFile);
             CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
             try {
-                /* split */
                 log.info("[Pre][Standardization][with Geoid] Splitting source raster into tiles... {}", outputPath.getName());
                 List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());
                 log.info("[Pre][Standardization][with Geoid] Splitting completed. Total tiles: {}", splitTiles.size());
@@ -121,7 +99,6 @@ public class RasterStandardizer {
                 int total = splitTiles.size();
                 AtomicInteger count = new AtomicInteger(0);
 
-                /* resampling */
                 splitTiles.forEach(tile -> {
                     log.info("[Pre][Standardization][with Geoid][{}/{}] Resampling tile {}", count.incrementAndGet(), total, tile.getName());
 
@@ -137,7 +114,7 @@ public class RasterStandardizer {
 
                     GridGeometry2D demGrid = resampledGridCoverage2D.getGridGeometry();
                     GridCoverage2D geoidAligned = resampleGeoid(geoidCoverage, demGrid, demGrid.getCoordinateReferenceSystem());
-                    GridCoverage2D ellipsoidalDem = addGeoidPreserveDemNoData(gridCoverage, geoidAligned);
+                    GridCoverage2D ellipsoidalDem = addGeoidPreserveDemNoData(resampledGridCoverage2D, geoidAligned);
                     tile.setGridCoverage2D(ellipsoidalDem);
 
                     GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
@@ -295,7 +272,7 @@ public class RasterStandardizer {
                 double[] backgroundValues = noDataContainer.getAsArray();
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             } else {
-                double[] backgroundValues = new double[] {globalOptions.getNoDataValue()};
+                double[] backgroundValues = new double[]{globalOptions.getNoDataValue()};
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             }
             return (GridCoverage2D) processor.doOperation(params);
@@ -329,7 +306,7 @@ public class RasterStandardizer {
                 double[] backgroundValues = noDataContainer.getAsArray();
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             } else {
-                double[] backgroundValues = new double[] {globalOptions.getNoDataValue()};
+                double[] backgroundValues = new double[]{globalOptions.getNoDataValue()};
                 params.parameter("BackgroundValues").setValue(backgroundValues);
             }
             return (GridCoverage2D) processor.doOperation(params);
