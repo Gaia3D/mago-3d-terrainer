@@ -105,9 +105,15 @@ public class GaiaBoundingBox implements Serializable {
         return new GaiaBoundingBox(ixMin, iyMin, izMin, ixMax, iyMax, izMax);
     }
 
-    public boolean intersectsPoint(Vector3d point) {
+    /*public boolean intersectsPoint(Vector3d point) {
         // Check if the point is inside the bounding box.
         return !(point.x <= minX) && !(point.x >= maxX) && !(point.y <= minY) && !(point.y >= maxY) && !(point.z <= minZ) && !(point.z >= maxZ);
+    }*/
+
+    // optimize speed
+    public boolean intersectsPoint(Vector3d point) {
+        // Check if the point is inside the bounding box.
+        return (point.x > minX) && (point.x < maxX) && (point.y > minY) && (point.y < maxY) && (point.z > minZ) && (point.z < maxZ);
     }
 
     public boolean intersectsTriangle(GaiaTriangle triangle) {
