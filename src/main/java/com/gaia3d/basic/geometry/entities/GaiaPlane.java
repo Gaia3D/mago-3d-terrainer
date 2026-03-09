@@ -36,6 +36,14 @@ public class GaiaPlane {
         this.d = -position.dot(normal);
     }
 
+    public static GaiaPlane setPlaneFromPositionAndNormal(Vector3d position, Vector3d normal) {
+        double a = normal.x;
+        double b = normal.y;
+        double c = normal.z;
+        double d = -position.dot(normal);
+        return new GaiaPlane(a, b, c, d);
+    }
+
     public double distanceToPoint(Vector3d point) {
         return a * point.x + b * point.y + c * point.z + d;
     }
