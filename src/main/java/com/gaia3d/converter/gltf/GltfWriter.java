@@ -20,6 +20,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4d;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
+import org.joml.Vector4d;
 import org.lwjgl.opengl.GL20;
 
 import javax.imageio.IIOImage;
@@ -645,17 +646,24 @@ public class GltfWriter {
         }
 
         MaterialPbrMetallicRoughness pbrMetallicRoughness = new MaterialPbrMetallicRoughness();
-        if (!diffuseTextures.isEmpty()) {
+        if (diffuseTextures != null && !diffuseTextures.isEmpty()) {
             GaiaTexture gaiaTexture = diffuseTextures.get(0);
             int textureId = createTexture(gltf, binary, gaiaTexture);
             TextureInfo textureInfo = new TextureInfo();
             textureInfo.setIndex(textureId);
+
+            Vector4d diffuseColor = gaiaMaterial.getDiffuseColor();
+            float[] baseColorFactor = new float[]{(float) diffuseColor.x, (float) diffuseColor.y, (float) diffuseColor.z, (float) diffuseColor.w};
+            pbrMetallicRoughness.setBaseColorFactor(baseColorFactor);
+            //pbrMetallicRoughness.setBaseColorFactor(new float[]{1.0f, 1.0f, 1.0f, 1.0f});
             pbrMetallicRoughness.setBaseColorTexture(textureInfo);
-            pbrMetallicRoughness.setBaseColorFactor(new float[]{1.0f, 1.0f, 1.0f, 1.0f});
             pbrMetallicRoughness.setMetallicFactor(0.0f);
             pbrMetallicRoughness.setRoughnessFactor(1.0f);
         } else {
-            pbrMetallicRoughness.setBaseColorFactor(new float[]{1.0f, 1.0f, 1.0f, 1.0f});
+            Vector4d diffuseColor = gaiaMaterial.getDiffuseColor();
+            float[] baseColorFactor = new float[]{(float) diffuseColor.x, (float) diffuseColor.y, (float) diffuseColor.z, (float) diffuseColor.w};
+            pbrMetallicRoughness.setBaseColorFactor(baseColorFactor);
+            //pbrMetallicRoughness.setBaseColorFactor(new float[]{0.0f, 1.0f, 1.0f, 1.0f});
             pbrMetallicRoughness.setMetallicFactor(0.0f);
             pbrMetallicRoughness.setRoughnessFactor(1.0f);
         }
