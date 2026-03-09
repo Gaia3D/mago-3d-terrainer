@@ -1,7 +1,6 @@
 package com.gaia3d.basic.geometry.modifier;
 
 import com.gaia3d.basic.halfedge.*;
-import com.gaia3d.basic.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 
@@ -49,7 +48,9 @@ abstract public class HalfEdgeModifier {
 
         List<HalfEdgeSurface> surfaces = primitive.getSurfaces();
         for (HalfEdgeSurface surface : surfaces) {
-            applySurface(productTransformMatrix, vertices, surface);
+            // Note: In HalfEdgeScene, the vertices are managed by surfaces, no by primitives
+            List<HalfEdgeVertex> surfaceVertices = surface.getVertices();
+            applySurface(productTransformMatrix, surfaceVertices, surface);
         }
     }
 

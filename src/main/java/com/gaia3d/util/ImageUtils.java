@@ -432,6 +432,134 @@ public class ImageUtils {
         return true;
     }
 
+    public static BufferedImage correctGammaSaturation(BufferedImage src, double gamma, float saturationFactor) {
+        int w = src.getWidth();
+        int h = src.getHeight();
+
+        boolean hasAlpha = src.getColorModel().hasAlpha();
+
+        BufferedImage result = new BufferedImage(
+                w,
+                h,
+                hasAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB
+        );
+
+        // -------- LUT gamma --------
+        double invGamma = 1.0 / gamma;
+        int[] gammaLUT = new int[256];
+        for (int i = 0; i < 256; i++) {
+            gammaLUT[i] = (int) (Math.pow(i / 255.0, invGamma) * 255.0 + 0.5);
+        }
+
+        float[] hsb = new float[3];
+
+        // -------- Loop principal --------
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+
+                int argb = src.getRGB(x, y);
+
+                int a = (argb >>> 24);
+
+                // 1️⃣ Gamma primero
+                int r = gammaLUT[(argb >> 16) & 0xff];
+                int g = gammaLUT[(argb >> 8) & 0xff];
+                int b = gammaLUT[argb & 0xff];
+
+                // 2️⃣ Contraste suave tipo HDR natural
+                r = clamp((int) ((r - 128) * 1.05 + 128));
+                g = clamp((int) ((g - 128) * 1.05 + 128));
+                b = clamp((int) ((b - 128) * 1.05 + 128));
+
+                // 3️⃣ Pasar a HSB
+                Color.RGBtoHSB(r, g, b, hsb);
+
+                float hue = hsb[0];
+                float sat = hsb[1];
+                float bri = hsb[2];
+
+                // 4️⃣ Saturación global suave
+                sat *= saturationFactor;
+
+                // 5️⃣ Mejora específica de verdes (árboles)
+                if (hue > 0.25f && hue < 0.45f && sat > 0.15f) {
+
+                    // más vida al verde
+                    sat *= 1.10f;
+                    if (sat > 1f) sat = 1f;
+
+                    // verde más claro natural
+                    bri += (1f - bri) * 0.08f;
+
+                    // pequeño shift para evitar verde oliva
+                    hue -= 0.01f;
+                    if (hue < 0f) hue += 1f;
+                }
+
+                if (sat > 1f) sat = 1f;
+                if (bri > 1f) bri = 1f;
+
+                int rgb = Color.HSBtoRGB(hue, sat, bri);
+
+                int newArgb = (a << 24) | (rgb & 0x00ffffff);
+                result.setRGB(x, y, newArgb);
+            }
+        }
+        return result;
+    }
+
+    private static int clamp(int v) {
+        return v < 0 ? 0 : (v > 255 ? 255 : v);
+    }
+
+    public static BufferedImage correctGammaSaturation_original(BufferedImage src, double gamma, float saturationFactor) {
+        int w = src.getWidth();
+        int h = src.getHeight();
+
+        boolean hasAlpha = src.getColorModel().hasAlpha();
+
+        BufferedImage result = new BufferedImage(
+                w,
+                h,
+                hasAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB
+        );
+
+        // Precompute gamma correction lookup table
+        double invGamma = 1.0 / gamma;
+        int[] gammaLUT = new int[256];
+        for (int i = 0; i < 256; i++) {
+            //gammaLUT[i] = (int) Math.min(255, Math.max(0, Math.pow(i / 255.0, gamma) * 255.0 + 0.5));
+            gammaLUT[i] = (int) (Math.pow(i / 255.0, invGamma) * 255.0 + 0.5);
+        }
+
+        float[] hsb = new float[3];
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+
+                int argb = src.getRGB(x, y);
+
+                int a = (argb >>> 24);
+                int r = gammaLUT[(argb >> 16) & 0xff];
+                int g = gammaLUT[(argb >> 8) & 0xff];
+                int b = gammaLUT[argb & 0xff];
+
+                // --- RGB → HSB ---
+                Color.RGBtoHSB(r, g, b, hsb);
+
+                // subir saturación
+                hsb[1] *= saturationFactor;
+                if (hsb[1] > 1f) hsb[1] = 1f;
+
+                int rgb = Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
+
+                int newArgb = (a << 24) | (rgb & 0x00ffffff);
+                result.setRGB(x, y, newArgb);
+            }
+        }
+        return result;
+    }
+
     public static BufferedImage expandWithBorderFast(BufferedImage src, int n, boolean bordeCopiado) {
         int w = src.getWidth();
         int h = src.getHeight();
