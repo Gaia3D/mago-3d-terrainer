@@ -14,7 +14,6 @@ import de.javagl.jgltf.model.GltfModels;
 import de.javagl.jgltf.model.io.GltfModelWriter;
 import de.javagl.jgltf.model.io.v2.GltfAssetV2;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4d;
@@ -164,8 +163,12 @@ public class GltfWriter {
 
             List<GaiaMesh> gaiaMeshes = gaiaNode.getMeshes();
             gaiaMeshes.forEach((gaiaMesh) -> {
-                GltfNodeBuffer nodeBuffer = convertGeometryInfo(gltf, gaiaMesh, node);
-                nodeBuffers.add(nodeBuffer);
+                if (gaiaMesh.getPrimitives().size() <= 0) {
+                    log.warn("[WARN] The mesh has no primitives. Skip the mesh.");
+                } else {
+                    GltfNodeBuffer nodeBuffer = convertGeometryInfo(gltf, gaiaMesh, node);
+                    nodeBuffers.add(nodeBuffer);
+                }
             });
         });
     }
@@ -379,7 +382,7 @@ public class GltfWriter {
         }
 
         List<Material> materials = gltf.getMaterials();
-        GaiaPrimitive gaiaPrimitive = gaiaMesh.getPrimitives().get(0);
+        GaiaPrimitive gaiaPrimitive = gaiaMesh.getPrimitives().getFirst();
         MeshPrimitive primitive = createPrimitive(nodeBuffer, gaiaPrimitive, materials);
         int meshId = createMesh(gltf, primitive);
         node.setMesh(meshId);
@@ -628,18 +631,18 @@ public class GltfWriter {
 
         Material material = new Material();
         material.setName(gaiaMaterial.getName());
-        //material.setDoubleSided(formatType != null && formatType.equals(FormatType.CITYGML));
         material.setDoubleSided(gltfOptions.isDoubleSided());
 
         // Set the alpha mode
         boolean isOpaque = gaiaMaterial.isOpaqueMaterial();
         if (!isOpaque) {
             boolean isBlend = gaiaMaterial.isBlend();
+            float alphaCutoff = gaiaMaterial.getAlphaCutoff();
             if (isBlend) {
                 material.setAlphaMode("BLEND");
             } else {
                 material.setAlphaMode("MASK");
-                material.setAlphaCutoff(0.5f);
+                material.setAlphaCutoff(alphaCutoff);
             }
         } else {
             material.setAlphaMode("OPAQUE");
@@ -757,6 +760,12 @@ public class GltfWriter {
     protected MeshPrimitive createPrimitive(GltfNodeBuffer nodeBuffer, GaiaPrimitive gaiaPrimitive, List<Material> materials) {
         MeshPrimitive primitive = new MeshPrimitive();
         primitive.setMode(GltfConstants.GL_TRIANGLES);
+        if (gaiaPrimitive.getMaterialIndex() >= 0) {
+            primitive.setMaterial(gaiaPrimitive.getMaterialIndex());
+        } else {
+            log.warn("[WARN] The material index of the primitive is out of range. Set the default material index (0).");
+            primitive.setMaterial(0);
+        }
         primitive.setMaterial(gaiaPrimitive.getMaterialIndex());
         primitive.setAttributes(new HashMap<>());
         primitive.setIndices(nodeBuffer.getIndicesAccessorId());
@@ -782,7 +791,6 @@ public class GltfWriter {
 
     protected int createMesh(GlTF gltf, MeshPrimitive primitive) {
         Mesh mesh = new Mesh();
-        //mesh.addWeights(1.0f);
         mesh.addPrimitives(primitive);
         gltf.addMeshes(mesh);
         return gltf.getMeshes().size() - 1;
@@ -795,13 +803,6 @@ public class GltfWriter {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             int width = bufferedImage.getWidth();
             int height = bufferedImage.getHeight();
-            /*if (!globalOptions.isPhotogrammetry()) {
-                int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
-                int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
-                if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                    bufferedImage = imageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
-                }
-            }*/
             int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
             int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
             if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
@@ -837,13 +838,6 @@ public class GltfWriter {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             int width = bufferedImage.getWidth();
             int height = bufferedImage.getHeight();
-            /*if (!globalOptions.isPhotogrammetry()) {
-                int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
-                int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
-                if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                    bufferedImage = imageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
-                }
-            }*/
             int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
             int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
             if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
@@ -853,11 +847,11 @@ public class GltfWriter {
 
             if (gltfOptions.isForceJpeg() || mimeType.equals("image/jpeg")) {
                 float quality = 0.75f;
-                imageString = writeJpegImageUrl(bufferedImage, quality);
+                imageString = convertBase64JpegText(bufferedImage, quality);
             } else {
                 ImageIO.write(bufferedImage, formatName, baos);
                 byte[] bytes = baos.toByteArray();
-                imageString = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+                imageString = convertBase64ImageText(bytes, mimeType);
                 bufferedImage.flush();
             }
         } catch (IOException e) {
@@ -921,8 +915,12 @@ public class GltfWriter {
         return null;
     }
 
-    private String writeJpegImageUrl(BufferedImage bufferedImage, float quality) {
+    private String convertBase64ImageText(byte[] bytes, String mimeType) {
+        return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+    }
+
+    private String convertBase64JpegText(BufferedImage bufferedImage, float quality) {
         byte[] bytes = writeJpeg(bufferedImage, quality);
-        return "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(bytes);
+        return convertBase64ImageText(bytes, "image/jpeg");
     }
 }
