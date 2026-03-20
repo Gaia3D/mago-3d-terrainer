@@ -8,7 +8,6 @@ import org.joml.Vector3d;
 @Slf4j
 @Getter
 @Setter
-
 public class GaiaPlane {
     private final double a;
     private final double b;
