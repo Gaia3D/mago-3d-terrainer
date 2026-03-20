@@ -105,6 +105,10 @@ public class Mago3DTerrainerMain {
         // In custom-tree mode, leaf nodes can have different depths.
         GlobalOptions globalOptions = GlobalOptions.getInstance();
 
+        // Check if the tile mesh generation is a continuation/modify from an existing tileSet
+        boolean isContinue = globalOptions.isContinue();
+        boolean isModify = globalOptions.isModify();
+
         TileWgs84Manager tileWgs84Manager = new TileWgs84Manager();
 
         log.info("[Pre][AvailableTileSet] Start calculating available tiles for each depth.");
@@ -129,15 +133,28 @@ public class Mago3DTerrainerMain {
         terrainElevationDataManager.makeTerrainQuadTree(depth);
         log.info("[Tile] Finished generate terrain elevation data.");
 
-        // Check if the tile mesh generation is a continuation from an existing tileSet
-        boolean isContinue = globalOptions.isContinue();
+        //*******************************************************************
+        //int processType = globalOptions.getProcessType(); // 20260312
+        int processType = 1; // 20260312
+        // processType : 1 - Normal, 2 - continue, 3 - modify
+        //*******************************************************************
         if (isContinue) {
+            processType = 2;
+        } else if(isModify){
+            processType = 3;
+        }
+
+        if (processType == 2) {
             log.info("[Tile] Continuing making tile meshes.");
             tileWgs84Manager.makeTileMeshesContinueCustom();
             log.info("[Tile] Finished making tile meshes.");
-        } else {
+        } else if (processType == 1){
             log.info("[Tile] Start making tile meshes.");
-            tileWgs84Manager.makeTileMeshesCustom();
+            tileWgs84Manager.makeTileMeshesCustom(); // New.****************
+            log.info("[Tile] Finished making tile meshes.");
+        } else if (processType == 3){
+            log.info("[Tile] Start making tile meshes.");
+            tileWgs84Manager.makeTileMeshesCustomModifyMode();
             log.info("[Tile] Finished making tile meshes.");
         }
 

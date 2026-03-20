@@ -490,14 +490,15 @@ public class TerrainMesh {
 
 
     public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
-                              List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
+                              List<TerrainHalfEdge> listHalfEdges, boolean isModify) throws TransformException, IOException {
         // A triangle is split by the longest edge, so
         // the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
 
+        byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
         listHalfEdges.clear();
-        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges);
+        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify);
         if (adjacentTriangle == null) {
             // the triangle is border triangle, so is splittable
             listHalfEdges.clear();
@@ -517,7 +518,17 @@ public class TerrainMesh {
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
-            midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                    midPosition.x, midPosition.y, intersectionType);
+
+            if(isModify){
+                if(intersectionType[0] != 1){
+                    // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                    z = beforeZ;
+                }
+            }
+
+            midPosition.z = z; // assign the z value.
             if (Double.isNaN(midPosition.z)) {
                 log.info("getElevationBilinear: resultElevation is NaN");
             }
@@ -675,11 +686,22 @@ public class TerrainMesh {
 
             // need know the midVertex
             Vector3d midPosition = longestHEdge.getMidPosition();
+            double beforeZ = midPosition.z;
             TerrainVertex midVertex = newVertex();
 
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
-            midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                    midPosition.x, midPosition.y, intersectionType);
+
+            if (isModify) {
+                if (intersectionType[0] != 1) {
+                    // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                    z = beforeZ;
+                }
+            }
+
+            midPosition.z = z; // assign the z value.
             if (Double.isNaN(midPosition.z)) {
                 log.info("getElevationBilinear: resultElevation is NaN");
             }
@@ -852,7 +874,9 @@ public class TerrainMesh {
         }
     }
 
-    public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
+    public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle,
+                                                         TerrainElevationDataManager terrainElevationDataManager,
+                                                         List<TerrainHalfEdge> listHalfEdges, boolean isModify) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
@@ -887,7 +911,7 @@ public class TerrainMesh {
             // first split the adjacentTriangle;
             terrainElevationDataManager.getTrianglesArray().clear();
             listHalfEdges.clear();
-            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges);
+            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges, isModify);
             listHalfEdges.clear();
 
             // now search the new adjacentTriangle for the targetTriangle

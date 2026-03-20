@@ -374,6 +374,45 @@ class MesherMainTest {
     }
 
     @Test
+    void multiResolutionKimJinHunModifyBIG() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note: the outputFolder must be different from the inputFolder
+        //*******************************************************************
+        // D:\disk_E\data\DEM\KimJinHun_multiKorea\dem_3_zones
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(11);
+        String refinementStrength = String.valueOf(3);
+        //"-interpolation", "nearest",
+        String originalGeoTiffFolderPath = "D:\\disk_E\\data\\DEM\\multiKorea_MODIFY_TEST\\dem_1_zone_big";
+        String outputDirectory = "D:\\disk_E\\data\\magoOutput\\dem_1_zone_big_L11_20260320";
+
+        String logPath = outputDirectory + "/log.txt";
+        // "-nv", "0", no data value set to 0
+        String[] args = new String[]{"-i", originalGeoTiffFolderPath, "-o", outputDirectory, "-log", logPath,
+                "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96", "-debug", "-leaveTemp", "-c"};
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void multiResolution_KimJinHun_modify_SMALL() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note: the outputFolder must be different from the inputFolder
+        //*******************************************************************
+        String refinementStrength = String.valueOf(3);
+        String originalGeoTiffFolderPath = "D:\\disk_E\\data\\DEM\\multiKorea_MODIFY_TEST\\dem_1_zone_small";
+        String outputDirectory = "D:\\disk_E\\data\\magoOutput\\dem_1_zone_big"; // here exists terrain data generated from the big tiff file,
+        // and we will modify some region of the terrain data using the small tiff file.
+
+        String maxTileDepth = String.valueOf(12);
+
+        String logPath = outputDirectory + "/log.txt";
+        // "-nv", "0", no data value set to 0
+        String[] args = new String[]{"-i", originalGeoTiffFolderPath, "-o", outputDirectory, "-log", logPath, "-max", maxTileDepth,
+                "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96", "-m", "-debug", "-leaveTemp"};
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
     void jinHo_error() throws FactoryException, TransformException, IOException {
         //*******************************************************************
         // Note: the outputFolder must be different from the inputFolder

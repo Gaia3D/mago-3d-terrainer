@@ -231,6 +231,89 @@ public class TileWgs84Manager {
         }
     }
 
+    public void makeTempFilesFromQuantizedMeshes(int depth, TileRange tileRange) {
+        // make temp folder
+        String tempPath = globalOptions.getTileTempPath();
+        String depthStr = "L" + depth;
+        String depthTempPath = tempPath + File.separator + depthStr;
+        File depthTempFolder = new File(depthTempPath);
+        if (!depthTempFolder.exists()) {
+            if (depthTempFolder.mkdirs()) {
+                log.debug("Created temp folder: {}", depthTempFolder.getAbsolutePath());
+            }
+        }
+
+        // find quantized mesh files
+        String quantizedMeshPath = globalOptions.getOutputPath() + File.separator + depth;
+        File quantizedMeshFolder = new File(quantizedMeshPath);
+        if (!quantizedMeshFolder.exists()) {
+            log.error("Quantized mesh folder does not exist: {}", quantizedMeshPath);
+            return;
+        }
+
+        // start to make temp files
+        int L = depth;
+        int X = 0;
+        int Y = 0;
+
+        TileIndices tileIndices = new TileIndices();
+        QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
+        List<String> quantizedMeshFolderNames = new ArrayList<>();
+        FileUtils.getFolderNames(quantizedMeshPath, quantizedMeshFolderNames);
+
+        int minTileX = tileRange.getMinTileX();
+        int maxTileX = tileRange.getMaxTileX();
+        int minTileY = tileRange.getMinTileY();
+        int maxTileY = tileRange.getMaxTileY();
+
+        for(int tileX = minTileX; tileX <= maxTileX; tileX++) {
+            for(int tileY = minTileY; tileY <= maxTileY; tileY++) {
+                String qMeshFolderNameY = String.valueOf(tileY);
+                String qMeshFileNameXYZ = String.valueOf(tileX) + ".terrain";
+                String qMeshFullPath = quantizedMeshPath + File.separator + qMeshFolderNameY + File.separator + qMeshFileNameXYZ;
+
+                // check if exists qMeshFullPath.
+                File qMeshFile = new File(qMeshFullPath);
+                if (!qMeshFile.exists()) {
+                    // in this case make it.
+                    log.info("Quantized mesh file does not exist: {}", qMeshFullPath);
+                    // TODO:
+                }
+
+                String tempXFolderName = "X" + tileX;
+                String tempFileName = "L" + depth + "_" + tempXFolderName + "_Y" + Y + ".til";
+
+                String tempFilePath = depthTempPath + File.separator + tempXFolderName + File.separator + tempFileName;
+
+                // check if exist temp file
+                File tempFile = new File(tempFilePath);
+                if (tempFile.exists()) {
+                    log.debug("Temp file already exists: {}", tempFilePath);
+                    continue;
+                }
+
+                try {
+                    LittleEndianDataInputStream inputStream = new LittleEndianDataInputStream(new BufferedInputStream(new FileInputStream(qMeshFullPath)));
+                    QuantizedMesh quantizedMesh = new QuantizedMesh();
+                    quantizedMesh.loadDataInputStream(inputStream);
+
+                    tileIndices.set(X, Y, L);
+                    TileWgs84 tileWgs84 = quantizedMeshManager.getTileWgs84FromQuantizedMesh(quantizedMesh, tileIndices, this);
+                    tileWgs84.saveFile(tileWgs84.getMesh(), tempFilePath);
+
+                    // save the TileWgs84 in the children temp folder
+                    TerrainMeshUtils.save4ChildrenMeshes(tileWgs84.getMesh(), this, globalOptions);
+
+                    tileWgs84.deleteObjects();
+                } catch (Exception e) {
+                    log.error("Error loading quantized mesh file: {}", qMeshFullPath, e);
+                }
+
+                int hola = 0;
+            }
+        }
+    }
+
     private void makeChildrenTempFiles(int depth) {
         int childrenDepth = depth + 1;
 
@@ -450,6 +533,138 @@ public class TileWgs84Manager {
             log.info("----------------------------------------");
         }
         terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
+    }
+
+    public void makeTileMeshesCustomModifyMode() throws IOException, TransformException, FactoryException {
+        String outputDirectory = globalOptions.getOutputPath();
+        int existentMaxDepth = determineExistentTileSetMaxDepth(outputDirectory);
+        log.info("existent max depth: {}", existentMaxDepth);
+
+        // in MODIFY_MODE process, 1rst load the layer.json file.************************************
+        String jsonFileName = "layer.json";
+        String jsonFullPath = outputDirectory + File.separator + jsonFileName;
+
+        // create the terrainLayer and load the existent layer.json file
+        terrainLayer = new TerrainLayer();
+        AvailableTileSet existentAvailableTileSet = new AvailableTileSet();
+        terrainLayer.loadJsonFileCustom(jsonFullPath, existentAvailableTileSet);
+        // End loading existent layer.json file.-----------------------------------------------------
+
+        GeographicExtension geographicExtension = this.terrainElevationDataManager.getRootGeographicExtension();
+
+        double minLon = geographicExtension.getMinLongitudeDeg();
+        double maxLon = geographicExtension.getMaxLongitudeDeg();
+        double minLat = geographicExtension.getMinLatitudeDeg();
+        double maxLat = geographicExtension.getMaxLatitudeDeg();
+
+
+        double[] bounds = terrainLayer.getBounds();
+        bounds[0] = minLon;
+        bounds[1] = minLat;
+        bounds[2] = maxLon;
+        bounds[3] = maxLat;
+
+        if (globalOptions.isCalculateNormalsExtension()) {
+            terrainLayer.addExtension("octvertexnormals");
+        }
+        if (globalOptions.isWaterMaskExtension()) {
+            terrainLayer.addExtension("watermask");
+        }
+        if (globalOptions.isMetaDataExtension()) {
+            terrainLayer.addExtension("metadata");
+        }
+
+        log.info("----------------------------------------");
+        int minTileDepth = 0;
+        int maxTileDepth = globalOptions.getMaximumTileDepth();
+
+        int availableMaxDepth = this.availableTileSet.getMaxAvailableDepth();
+        if(availableMaxDepth < maxTileDepth) {
+            maxTileDepth = availableMaxDepth;
+        }
+
+        // delete available tile ranges over maxTileDepth
+        this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
+
+//        // if the maxTileDepth is less than the existent max depth, set the maxTileDepth to the existent max depth
+//        minTileDepth = Math.max(minTileDepth, existentMaxDepth + 1);
+
+        for (int depth = 0; depth <= maxTileDepth; depth += 1) {
+            long startTime = System.currentTimeMillis();
+
+//            // check if the temp folder exists
+//            if (!existTempFiles(depth)) {
+//                log.info("making tempFiles from quantized meshes... depth: {}", depth - 1);
+//                makeTempFilesFromQuantizedMeshes(depth - 1);
+//                makeChildrenTempFiles(depth - 1);
+//            }
+
+            // Set terrainLayer.available of tileSet json
+            this.triangleRefinementMaxIterations = TileWgs84Utils.getRefinementIterations(depth);
+            this.terrainElevationDataManager.deleteObjects();
+            this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
+            this.terrainElevationDataManager.setTileWgs84Manager(this);
+            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+            this.terrainElevationDataManager.makeTerrainQuadTree(depth);
+            int mosaicSize = globalOptions.getMosaicSize();
+
+            //List<TileRange> subDividedTilesRanges = TileWgs84Utils.subDivideTileRange(tilesRange, mosaicSize, mosaicSize, null);
+            List<TileRange> availableTileRangesAtDepth = this.availableTileSet.getAvailableTileRangesAtDepth(depth);
+            List<TileRange> subDividedTilesRanges = new ArrayList<>();
+            // for each available tile range, subdivide it into mosaicSize x mosaicSize tiles, and put them into subDividedTilesRanges
+            for (TileRange availableTileRange : availableTileRangesAtDepth) {
+                TileWgs84Utils.subDivideTileRange(availableTileRange, mosaicSize, mosaicSize, subDividedTilesRanges);
+            }
+
+            log.info("[Tile][{}/{}] Start generating tile meshes - Divided Tiles Size: {}", depth, maxTileDepth, subDividedTilesRanges.size());
+            AtomicInteger counter = new AtomicInteger(0);
+
+            int total = subDividedTilesRanges.size();
+            for (TileRange subDividedTilesRange : subDividedTilesRanges) {
+                int progress = counter.incrementAndGet();
+                log.info("[Tile][{}/{}][{}/{}] generate wgs84 raster all tiles...", depth, maxTileDepth, progress, total);
+                TileRange expandedTilesRange = subDividedTilesRange.expand1();
+
+                // check if the temp folder exists
+                // For each expandedTilesRange make temp files if no exists.***************************
+                log.info("making tempFiles from quantized meshes... depth: {}", depth - 1);
+                makeTempFilesFromQuantizedMeshes(depth, expandedTilesRange); // here makes tempFiles for children too.
+                // End making tempFiles.---------------------------------------------------------------
+
+                this.terrainElevationDataManager.makeAllTileWgs84Raster(expandedTilesRange, this);
+
+                log.info("[Tile][{}/{}][{}/{}] process tiling...", depth, maxTileDepth, progress, total);
+                TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
+
+                boolean isFirstGeneration = (depth == 0);
+                tileMatrix.makeMatrixMeshModifyMode(isFirstGeneration);
+                tileMatrix.deleteObjects();
+            }
+
+            if(!GlobalOptions.getInstance().isLeaveTemp()) {
+                this.deleteTempFilesByDepth(depth);
+            }
+
+            this.terrainElevationDataManager.deleteGeoTiffManager();
+            this.terrainElevationDataManager.deleteTileRaster();
+            this.terrainElevationDataManager.deleteCoverage();
+
+            long endTime = System.currentTimeMillis();
+            log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));
+
+            String javaHeapSize = System.getProperty("java.vm.name") + " " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB";
+            // jvm heap size
+            String maxMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().maxMemory());
+            // jvm total memory
+            String totalMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory());
+            // jvm free memory
+            String freeMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory());
+            // jvm used memory
+            String usedMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+            log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
+            log.info("----------------------------------------");
+        }
+        terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
     }
 
     public void makeTileMeshesContinueCustom() throws IOException, TransformException, FactoryException {

@@ -59,6 +59,7 @@ public class GlobalOptions {
     private boolean debugMode = false;
     private boolean leaveTemp = false;
     private boolean isContinue = false;
+    private boolean isModify = false;
 
     // Tiling options
     private int minimumTileDepth;

@@ -116,6 +116,198 @@ public class TileMatrix {
         return true;
     }
 
+    public void makeMatrixMeshModifyMode(boolean isFirstGeneration) throws TransformException, IOException {
+        TileIndices tileIndices = new TileIndices();
+
+        boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
+
+        // First, load or create all the of the matrix
+        // Must load from min tile-1 to max tile+1
+        tilesMatrixRowCol.clear();
+        int minTileX = tilesRange.getMinTileX() - 1;
+        int maxTileX = tilesRange.getMaxTileX() + 1;
+        int minTileY = tilesRange.getMinTileY() - 1;
+        int maxTileY = tilesRange.getMaxTileY() + 1;
+        // Note : the minTileX, minTileY, maxTileX, maxTileY are no necessary to verify if the values are out of the limits
+        // It is verified in the TileWgs84Manager
+
+        int totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
+
+        int counter = 0;
+        int counterAux = 0;
+        for (int Y = minTileY; Y <= maxTileY; Y++) {
+            List<TileWgs84> tilesListRow = new ArrayList<>();
+            for (int X = minTileX; X <= maxTileX; X++) {
+                tileIndices.set(X, Y, tilesRange.getTileDepth());
+
+                // In MODIFY_MODE always load or create the tile file.
+                TileWgs84 tile = this.manager.loadOrCreateTileWgs84(tileIndices);
+//                if (isFirstGeneration) {
+//                    tile = this.manager.loadOrCreateTileWgs84(tileIndices);
+//                } else {
+//                    tile = this.manager.loadTileWgs84(tileIndices);
+//                    if(tile == null) {
+//                        int hola = 0;
+//                    }
+//                }
+                if (counter >= 100) {
+                    counter = 0;
+                    log.debug("Loading Tile Level : {}, i : {}/{}", tileIndices.getL(), counterAux, totalTiles);
+                }
+
+                tilesListRow.add(tile);
+
+                counter++;
+                counterAux++;
+            }
+            tilesMatrixRowCol.add(tilesListRow);
+        }
+
+        int rowsCount = tilesMatrixRowCol.size();
+        int colsCount = tilesMatrixRowCol.get(0).size();
+        log.debug("Making TileMatrix columns : {}, rows : {} ", colsCount, rowsCount);
+
+        List<TerrainMesh> rowMeshesList = new ArrayList<>();
+        for (int i = 0; i < rowsCount; i++) {
+            List<TileWgs84> rowTilesArray = tilesMatrixRowCol.get(i);
+            TerrainMesh rowMesh = null;
+
+            for (int j = 0; j < colsCount; j++) {
+                TileWgs84 tile = rowTilesArray.get(j);
+                if (tile != null) {
+                    TerrainMesh tileMesh = tile.getMesh();
+                    if (rowMesh == null) {
+                        rowMesh = tileMesh;
+                    } else {
+                        //  +----------+----------+
+                        //  |          |          |
+                        //  | RowMesh  | tileMesh |
+                        //  |          |          |
+                        //  +----------+----------+
+                        // merge the tileMesh with the rowMesh
+                        // set twins between the right HEdges of the rowMesh and the left HEdges of the tileMesh
+                        List<TerrainHalfEdge> rowMeshRightHalfEdges = rowMesh.getRightHalfEdgesSortedDownToUp();
+                        List<TerrainHalfEdge> tileMeshLeftHalfEdges = tileMesh.getLeftHalfEdgesSortedUpToDown();
+
+                        // the c_tile can be null
+                        if (!rowMeshRightHalfEdges.isEmpty()) {
+                            // private boolean refineAdjacentTilesHorizontally(TileWgs84 tileLeft, TileWgs84 tileRight)
+                            this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
+
+                            // now, merge the left tile mesh to the result mesh.
+                            rowMesh.removeDeletedObjects();
+                            rowMesh.mergeMesh(tileMesh);
+                        }
+                    }
+                }
+            }
+            rowMeshesList.add(rowMesh);
+        }
+
+        // now, join all the rowMeshes
+        TerrainMesh resultMesh = null;
+        for (TerrainMesh rowMesh : rowMeshesList) {
+            if (rowMesh == null) {
+                continue;
+            }
+
+            if (resultMesh == null) {
+                resultMesh = rowMesh;
+            } else {
+                if (originIsLeftUp) {
+                    //  +------------+
+                    //  |            |
+                    //  | resultMesh |
+                    //  |            |
+                    //  +------------+
+                    //  |            |
+                    //  | rowMesh    |
+                    //  |            |
+                    //  +------------+
+                    // merge the rowMesh with the resultMesh
+                    // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
+                    List<TerrainHalfEdge> resultMeshDownHalfEdges = resultMesh.getDownHalfEdgesSortedLeftToRight();
+                    List<TerrainHalfEdge> rowMeshUpHalfEdges = rowMesh.getUpHalfEdgesSortedRightToLeft();
+
+                    // the c_tile can be null
+                    if (!resultMeshDownHalfEdges.isEmpty()) {
+                        // now, set twins of halfEdges
+                        this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
+                        // now, merge the row mesh to the result mesh.
+                        resultMesh.removeDeletedObjects();
+                        resultMesh.mergeMesh(rowMesh);
+                    }
+                } else {
+                    //  +------------+
+                    //  |            |
+                    //  |  rowMesh   |
+                    //  |            |
+                    //  +------------+
+                    //  |            |
+                    //  | resultMesh |
+                    //  |            |
+                    //  +------------+
+                    // merge the rowMesh with the resultMesh
+                    // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
+                    List<TerrainHalfEdge> resultMeshUpHalfEdges = resultMesh.getUpHalfEdgesSortedRightToLeft();
+                    List<TerrainHalfEdge> rowMeshDownHalfEdges = rowMesh.getDownHalfEdgesSortedLeftToRight();
+
+                    // the c_tile can be null
+                    if (!resultMeshUpHalfEdges.isEmpty()) {
+                        // now, set twins of halfEdges
+                        this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshUpHalfEdges, rowMeshDownHalfEdges);
+                        // now, merge the row mesh to the result mesh.
+                        resultMesh.removeDeletedObjects();
+                        resultMesh.mergeMesh(rowMesh);
+                    }
+                }
+            }
+        }
+
+        log.debug("End making TileMatrix");
+
+        if (resultMesh != null) {
+            resultMesh.setObjectsIdInList();
+
+            boolean skipNoDataType = true; // true only in MODIFY_MODE.
+            // noDataType includes NO_INTERSECTION and INTERSECTION_BUT_NO_DATA.
+            this.recalculateElevation(resultMesh, tilesRange, skipNoDataType);
+            this.refineMesh(resultMesh, tilesRange);
+
+            // check if you must calculate normals
+            if (globalOptions.isCalculateNormalsExtension()) {
+                this.listVertices.clear();
+                this.listHalfEdges.clear();
+                resultMesh.calculateNormals(this.listVertices, this.listHalfEdges);
+            }
+
+            // now save the 9 tiles
+            List<TerrainMesh> separatedMeshes = new ArrayList<>();
+            TerrainMeshUtils.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
+
+            // save order:
+            // 1- saveSeparatedTiles()
+            // 2- saveQuantizedMeshes()
+            // 3- saveSeparatedChildrenTiles()
+            //------------------------------------------
+            log.debug("Saving Separated Tiles...");
+            saveSeparatedTiles(separatedMeshes);
+
+            // now save quantizedMeshes
+            log.debug("Saving Quantized Meshes...");
+            saveQuantizedMeshes(separatedMeshes);
+
+            // finally save the children tiles
+            // note : the children tiles must be the last saved
+            if (tilesRange.getTileDepth() < globalOptions.getMaximumTileDepth()) {
+                log.debug("Saving Separated children Tiles...");
+                saveSeparatedChildrenTiles(separatedMeshes);
+            }
+        } else {
+            log.error("ResultMesh is null.");
+        }
+    }
+
     public void makeMatrixMesh(boolean isFirstGeneration) throws TransformException, IOException {
         TileIndices tileIndices = new TileIndices();
 
@@ -263,7 +455,8 @@ public class TileMatrix {
         if (resultMesh != null) {
             resultMesh.setObjectsIdInList();
 
-            this.recalculateElevation(resultMesh, tilesRange);
+            boolean skipNoDataType = false; // only true in MODIFY_MODE, so, here is false.
+            this.recalculateElevation(resultMesh, tilesRange, skipNoDataType);
             this.refineMesh(resultMesh, tilesRange);
 
             // check if you must calculate normals
@@ -363,7 +556,7 @@ public class TileMatrix {
         }
     }
 
-    public void recalculateElevation(TerrainMesh terrainMesh, TileRange tilesRange) throws TransformException, IOException {
+    public void recalculateElevation(TerrainMesh terrainMesh, TileRange tilesRange, boolean skipNoDataType) throws TransformException, IOException {
         List<TerrainTriangle> triangles = new ArrayList<>();
         terrainMesh.getTrianglesByTilesRange(tilesRange, triangles, null);
 
@@ -386,10 +579,28 @@ public class TileMatrix {
         TileIndices tileIndicesAux = new TileIndices();
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         int currDepth = tilesRange.getTileDepth();
+        byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
+        // noDataType includes NO_INTERSECTION and INTERSECTION_BUT_NO_DATA.
         for (int i = 0; i < verticesCount; i++) {
             TerrainVertex vertex = verticesOfCurrentTile.get(i);
-            TileWgs84Utils.selectTileIndices(currDepth, vertex.getPosition().x, vertex.getPosition().y, tileIndicesAux, originIsLeftUp);
-            vertex.getPosition().z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, vertex.getPosition().x, vertex.getPosition().y);
+            Vector3d position = vertex.getPosition();
+            //********************************************************************************
+            // in ModifyMode, check if the position intersects with any of the geoTiff.
+            // In the case of NO intersection, then do nothing.
+            //********************************************************************************
+            TileWgs84Utils.selectTileIndices(currDepth, position.x, position.y, tileIndicesAux, originIsLeftUp);
+            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, position.x, position.y, intersectionType);
+            if(skipNoDataType){
+                //********************************************
+                // skipNoDataType is true only in MODIFY_MODE.
+                //********************************************
+                if(intersectionType[0] == 1){
+                    // only modify when there are pixel data.***
+                    position.z = z;
+                }
+            } else {
+                position.z = z;
+            }
         }
     }
 
@@ -616,6 +827,8 @@ public class TileMatrix {
         // Inside the mesh, there are triangles of 9 different tiles
         // Here refine only the triangles of the current tile
 
+        boolean isModify = globalOptions.isModify();
+
         // refine the mesh
         AtomicBoolean refined = new AtomicBoolean(false);
         AtomicInteger splitCount = new AtomicInteger();
@@ -634,7 +847,7 @@ public class TileMatrix {
             if (mustRefineTriangle(triangle)) {
                 this.manager.getTriangleList().clear();
                 this.listHalfEdges.clear();
-                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges);
+                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModify);
                 this.listHalfEdges.clear();
 
                 if (!this.manager.getTriangleList().isEmpty()) {

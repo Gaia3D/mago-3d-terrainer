@@ -183,7 +183,8 @@ public class TerrainElevationDataManager {
         terrainElevationDataArray.clear();
     }
 
-    public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager, double lonDeg, double latDeg) {
+    public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager,
+                                                 double lonDeg, double latDeg, byte[] intersectionType) {
         double resultElevation = 0.0;
         TileWgs84Raster tileWgs84Raster = null;
         tileWgs84Raster = this.getTileWgs84Raster(tileIndices, tileWgs84Manager);
