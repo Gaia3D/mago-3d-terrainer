@@ -1,4 +1,4 @@
-updated at 2026-01-09 by znkim
+updated at 2026-03-24 by znkim
 
 # 기본 변환 옵션
 
@@ -89,8 +89,71 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 ## 타일 모자이크 크기 설정
 타일링 과정에서 사용되는 레스터 버퍼(모자이크) 크기를 설정합니다.
 
-값을 크게 설정하면 변환 속도가 소폭 향상될 수 있으나,  
+값을 크게 설정하면 변환 속도가 소폭 향상될 수 있으나,
 메모리 사용량이 증가할 수 있습니다.
 ```
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --mosaicSize 32
 ```
+
+---
+
+# 행성 천체 지원
+
+## 개요
+
+mago-3d-terrainer는 지구 외의 행성 천체에 대한 지형 타일 생성을 지원합니다. `--body` (또는 `-b`) 옵션으로 대상 천체를 지정하면, 해당 천체의 타원체 반지름과 CRS 설정이 자동으로 적용됩니다. 옵션을 생략하면 기본값인 지구가 사용되며, 기존 워크플로우는 그대로 유지됩니다.
+
+지원 천체:
+- `earth` (기본값) — WGS84 타원체
+- `moon` — IAU 달 타원체 (평균 반지름 1,737,400 m, 구형)
+
+## 달 지형 타일 생성
+
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/lunar_dem" --output "/output_path/lunar_terrain" --body moon --max 8
+```
+
+## GDAL을 이용한 달 DEM 데이터 전처리
+
+달 DEM 데이터셋(예: NASA LOLA, JAXA Kaguya/SELENE)은 일반적으로 투영 좌표계(SimpleCylindrical, 단위: 미터)로 배포됩니다. mago-3d-terrainer는 지리 좌표계(경위도, 단위: 도)를 기대하므로, 변환 전에 GDAL로 재투영해야 합니다.
+
+**예시: NASA LRO LOLA 전구 DEM 118m**
+출처: https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m
+
+SimpleCylindrical에서 달 타원체 기반 경위도 좌표계로 재투영:
+```
+gdalwarp -t_srs "+proj=longlat +a=1737400 +b=1737400 +no_defs" -r bilinear input.tif output.tif
+```
+
+PROJ 설치 환경에 IAU 2015 데이터베이스가 포함된 경우 다음 방법도 사용 가능합니다:
+```
+gdalwarp -t_srs "IAU_2015:30100" input.tif output.tif
+```
+
+재투영 후 `gdalinfo`로 결과를 확인합니다. 원점이 (-180, 90)이고 픽셀 크기가 도(degree) 단위로 표시되어야 합니다:
+```
+Origin = (-180.000000000000000, 90.000000000000000)
+Pixel Size = (0.003906250000000, -0.003906249999888)
+```
+
+> **참고:** 재투영된 GeoTIFF의 좌표계가 공식 IAU 코드 대신 `GEOGCRS["unknown"]`으로 표시될 수 있습니다. mago-3d-terrainer는 타원체 반지름 수치를 직접 비교하여 처리하므로, 별도의 CRS 수정 작업은 필요하지 않습니다.
+
+## CesiumJS에서 렌더링
+
+생성된 `layer.json`의 `"projection"` 값은 천체와 관계없이 `"EPSG:4326"`으로 고정됩니다. CesiumJS의 `CesiumTerrainProvider`가 지구 기반 투영 코드만 인식하기 때문입니다. 타일 격자 구조는 모든 천체에서 동일한 경위도 체계를 사용하며, 차이는 타원체 반지름뿐입니다.
+
+달 지형을 로드할 때는 CesiumJS에서 올바른 타원체를 지정해야 합니다:
+
+```javascript
+const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrainProvider: await Cesium.CesiumTerrainProvider.fromUrl("/path/to/lunar_terrain", {
+        ellipsoid: Cesium.Ellipsoid.MOON
+    })
+});
+```
+
+`ellipsoid: Cesium.Ellipsoid.MOON`을 지정하지 않으면 Cesium은 기본값인 지구 타원체를 사용하여 지형이 잘못된 스케일로 표시됩니다.
+
+## 지리 타일링 체계
+
+mago-3d-terrainer는 모든 천체에 대해 표준 지리 타일링 체계(경도 -180~180, 위도 -90~90)를 사용합니다. 이는 CesiumJS의 `CesiumTerrainProvider`가 내부적으로 사용하는 `GeographicTilingScheme`과 동일하므로, 행성 데이터를 위한 별도의 타일링 체계 변경은 필요하지 않습니다. GIS용으로 제공되는 행성 GeoTIFF 데이터는 대부분 -180/180 경도 체계를 따르며, 행성과학 아카이브에서 0~360 경도 체계로 배포된 데이터는 사전에 재투영해야 합니다.
