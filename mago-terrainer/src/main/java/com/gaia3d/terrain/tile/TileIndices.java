@@ -31,7 +31,7 @@ public class TileIndices {
 
     private int X = 0;
     private int Y = 0;
-    private int L = 0; // tile depth.
+    private int L = 0;
 
     public void set(int x, int y, int l) {
         X = x;
@@ -39,9 +39,7 @@ public class TileIndices {
         L = l;
     }
 
-    //*************************************************
-    // note : the origin of the tile system is left-up.
-    //*************************************************
+    // The origin of the tile system is left-up.
 
     public void copyFrom(TileIndices tileIndices) {
         X = tileIndices.X;

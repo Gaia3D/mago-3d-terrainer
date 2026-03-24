@@ -12,14 +12,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.referencing.CRS;
-import org.joml.Vector2d;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.geotools.api.referencing.FactoryException;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.api.referencing.operation.TransformException;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.referencing.CRS;
+import org.joml.Vector2d;
+import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -183,7 +183,8 @@ public class TerrainElevationDataManager {
         terrainElevationDataArray.clear();
     }
 
-    public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager, double lonDeg, double latDeg) {
+    public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager,
+                                                 double lonDeg, double latDeg, byte[] intersectionType) {
         double resultElevation = 0.0;
         TileWgs84Raster tileWgs84Raster = null;
         tileWgs84Raster = this.getTileWgs84Raster(tileIndices, tileWgs84Manager);
@@ -223,7 +224,7 @@ public class TerrainElevationDataManager {
                 continue;
             }
 
-            /* check if the priority is resolution */
+            // Prioritize by resolution when configured.
             if (priorityType.equals(PriorityType.RESOLUTION)) {
                 double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFileName(), terrainElevationData.getGeotiffFilePath());
                 // smaller pixelArea is a higher resolution
@@ -256,7 +257,7 @@ public class TerrainElevationDataManager {
         }
 
         // now load all geotiff and make geotiff geoExtension data
-        GridCoverage2D gridCoverage2D = null;
+        //GridCoverage2D gridCoverage2D = null;
         String geoTiffFileName = null;
         String geoTiffFilePath = null;
 
@@ -283,8 +284,7 @@ public class TerrainElevationDataManager {
             }
 
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
-
-            gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
+            GridCoverage2D gridCoverage2D = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
             terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
             terrainElevationData.setGeotiffFileName(geoTiffFileName);
 
@@ -295,8 +295,7 @@ public class TerrainElevationDataManager {
             terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
-            //gridCoverage2D.dispose(true);
-
+            // Important: Do not dispose the gridCoverage2D here, because it can be stored in the myGaiaGeoTiffManager cache map.
         }
 
         // now check if exist folders inside the terrainElevationDataFolderPath
@@ -333,7 +332,7 @@ public class TerrainElevationDataManager {
 
     public void deleteGeoTiffManager() {
         if (myGaiaGeoTiffManager != null) {
-            myGaiaGeoTiffManager.deleteObjects();
+            myGaiaGeoTiffManager.clear();
             myGaiaGeoTiffManager = null;
         }
     }

@@ -14,8 +14,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.joml.Vector3d;
 import org.geotools.api.referencing.operation.TransformException;
+import org.joml.Vector3d;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -135,9 +135,7 @@ public class TerrainMesh {
     }
 
     public void determineHalfEdgesType() {
-        //***********************************************************************************
-        // Note : function used after loading quantized mesh & convert it to terrain mesh
-        //***********************************************************************************
+        // Used after loading a quantized mesh and converting it to a terrain mesh.
         GaiaRectangle boundingRectangle = getBoundingRectangle();
         double minX = boundingRectangle.getMinX();
         double minY = boundingRectangle.getMinY();
@@ -572,34 +570,15 @@ public class TerrainMesh {
 
 
     public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
-                              List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
-        java.util.Set<Integer> splittingTriangles = new java.util.HashSet<>();
-        splitTriangle(triangle, terrainElevationDataManager, resultNewTriangles, listHalfEdges, splittingTriangles, 0);
-    }
+                              List<TerrainHalfEdge> listHalfEdges, boolean isModify) throws TransformException, IOException {
+        // A triangle is split by the longest edge, so
+        // the longest edge of the triangle must be the longest edge of the adjacentTriangle
+        // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
+        // If the adjacentTriangle is null, then the triangle is splittable
 
-    private void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
-                              List<TerrainHalfEdge> listHalfEdges, java.util.Set<Integer> splittingTriangles, int recursionDepth) throws TransformException, IOException {
-        // Prevent stack overflow from excessive recursion (safety net)
-        final int MAX_RECURSION_DEPTH = 50;
-        if (recursionDepth > MAX_RECURSION_DEPTH) {
-            log.warn("Maximum recursion depth ({}) exceeded while splitting triangle {}. " +
-                     "Marking as deleted to prevent stack overflow.",
-                     MAX_RECURSION_DEPTH, triangle.getId());
-            triangle.setObjectStatus(TerrainObjectStatus.DELETED);
-            return;
-        }
-
-        // Add current triangle to the set of triangles being split
-        splittingTriangles.add(triangle.getId());
-
-        try {
-            // A triangle is split by the longest edge, so
-            // the longest edge of the triangle must be the longest edge of the adjacentTriangle
-            // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
-            // If the adjacentTriangle is null, then the triangle is splittable
-
-            listHalfEdges.clear();
-            TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, splittingTriangles, recursionDepth);
+        byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
+        listHalfEdges.clear();
+        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify);
         if (adjacentTriangle == null) {
             // the triangle is border triangle, so is splittable
             listHalfEdges.clear();
@@ -625,7 +604,17 @@ public class TerrainMesh {
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
-            midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                    midPosition.x, midPosition.y, intersectionType);
+
+            if(isModify){
+                if(intersectionType[0] != 1){
+                    // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                    z = beforeZ;
+                }
+            }
+
+            midPosition.z = z; // assign the z value.
             if (Double.isNaN(midPosition.z)) {
                 log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
                          triangle.getId());
@@ -798,11 +787,22 @@ public class TerrainMesh {
 
             // need know the midVertex
             Vector3d midPosition = longestHEdge.getMidPosition();
+            double beforeZ = midPosition.z;
             TerrainVertex midVertex = newVertex();
 
             // now determine the elevation of the midPoint
             TileIndices tileIndices = triangle.getOwnerTileIndices();
-            midPosition.z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(), midPosition.x, midPosition.y);
+            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                    midPosition.x, midPosition.y, intersectionType);
+
+            if (isModify) {
+                if (intersectionType[0] != 1) {
+                    // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                    z = beforeZ;
+                }
+            }
+
+            midPosition.z = z; // assign the z value.
             if (Double.isNaN(midPosition.z)) {
                 log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
                          triangle.getId());
@@ -984,12 +984,9 @@ public class TerrainMesh {
         }
     }
 
-    public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainHalfEdge> listHalfEdges) throws TransformException, IOException {
-        java.util.Set<Integer> splittingTriangles = new java.util.HashSet<>();
-        return getSplittableAdjacentTriangle(targetTriangle, terrainElevationDataManager, listHalfEdges, splittingTriangles, 0);
-    }
-
-    private TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainHalfEdge> listHalfEdges, java.util.Set<Integer> splittingTriangles, int recursionDepth) throws TransformException, IOException {
+    public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle,
+                                                         TerrainElevationDataManager terrainElevationDataManager,
+                                                         List<TerrainHalfEdge> listHalfEdges, boolean isModify) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
@@ -1025,13 +1022,6 @@ public class TerrainMesh {
             return null;
         }
 
-        // DEADLOCK DETECTION: Check if adjacent triangle is already being split in the call stack
-        if (splittingTriangles.contains(adjacentTriangle.getId())) {
-            log.debug("Deadlock detected: Triangle {} and adjacent triangle {} - splitting as border triangles.",
-                     targetTriangle.getId(), adjacentTriangle.getId());
-            return null; // Force both to be split as border triangles
-        }
-
         double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError
 
         listHalfEdges.clear();
@@ -1054,7 +1044,7 @@ public class TerrainMesh {
             // first split the adjacentTriangle;
             terrainElevationDataManager.getTrianglesArray().clear();
             listHalfEdges.clear();
-            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges, splittingTriangles, recursionDepth + 1);
+            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges, isModify);
             listHalfEdges.clear();
 
             // now search the new adjacentTriangle for the targetTriangle

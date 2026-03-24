@@ -114,7 +114,7 @@ public class GeographicExtension {
             return false;
         } else if (geographicExtension.minGeographicCoordDeg.y > this.maxGeographicCoordDeg.y) {
             return false;
-        } else return !(geographicExtension.maxGeographicCoordDeg.y < this.minGeographicCoordDeg.y);
+        } else {return !(geographicExtension.maxGeographicCoordDeg.y < this.minGeographicCoordDeg.y);}
 
     }
 

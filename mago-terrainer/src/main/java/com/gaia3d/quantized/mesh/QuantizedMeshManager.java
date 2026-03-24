@@ -28,7 +28,7 @@ public class QuantizedMeshManager {
     public TileWgs84 getTileWgs84FromQuantizedMesh(QuantizedMesh quantizedMesh, TileIndices tileIndices, TileWgs84Manager tileManager) {
         // First get the quantized mesh header
         QuantizedMeshHeader header = quantizedMesh.getHeader();
-        if (header == null) return null;
+        if (header == null) {return null;}
 
         // calculate the geographic extension by tileIndices
         String imaginaryType = tileManager.getImaginaryType();
@@ -52,7 +52,7 @@ public class QuantizedMeshManager {
         double minHeight = header.getMinimumHeight();
         double maxHeight = header.getMaximumHeight();
         double heightRange = maxHeight - minHeight;
-        if (heightRange == 0.0) heightRange = 1.0;
+        if (heightRange == 0.0) {heightRange = 1.0;}
         double minLonDeg = geoExtension.getMinLongitudeDeg();
         double maxLonDeg = geoExtension.getMaxLongitudeDeg();
         double minLatDeg = geoExtension.getMinLatitudeDeg();
@@ -190,11 +190,11 @@ public class QuantizedMeshManager {
         QuantizedMeshHeader header = new QuantizedMeshHeader();
         TerrainMesh mesh = tile.getMesh();
 
-        if (mesh == null) return null;
+        if (mesh == null) {return null;}
 
         List<TerrainVertex> vertices = mesh.vertices;
         int vertexCount = vertices.size();
-        if (vertexCount == 0) return null;
+        if (vertexCount == 0) {return null;}
 
         mesh.setObjectsIdInList();
 
@@ -206,8 +206,8 @@ public class QuantizedMeshManager {
         for (int i = 0; i < vertexCount; i++) {
             TerrainVertex vertex = vertices.get(i);
             double height = vertex.getPosition().z;
-            if (height < minimumHeight) minimumHeight = height;
-            if (height > maximumHeight) maximumHeight = height;
+            if (height < minimumHeight) {minimumHeight = height;}
+            if (height > maximumHeight) {maximumHeight = height;}
 
             // calculate the bbox in world coordinates
             double[] posWC = GlobeUtils.geographicToCartesian(vertex.getPosition().x, vertex.getPosition().y, height, body);
@@ -266,7 +266,7 @@ public class QuantizedMeshManager {
         double lonRange = maxLonDeg - minLonDeg;
         double latRange = maxLatDeg - minLatDeg;
         double heightRange = maximumHeight - minimumHeight;
-        if (heightRange == 0.0) heightRange = 1.0;
+        if (heightRange == 0.0) {heightRange = 1.0;}
 
         double lonScale = lonRange / 32767.0;
         double latScale = latRange / 32767.0;

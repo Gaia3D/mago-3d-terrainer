@@ -9,8 +9,8 @@ import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.joml.Vector3d;
 import org.geotools.api.referencing.operation.TransformException;
+import org.joml.Vector3d;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -100,10 +100,13 @@ public class TileWgs84 {
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
         double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
 
-        double elevMinLonMinLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, minLonDeg, minLatDeg);
-        double elevMaxLonMinLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, maxLonDeg, minLatDeg);
-        double elevMaxLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, maxLonDeg, maxLatDeg);
-        double elevMinLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, minLonDeg, maxLatDeg);
+        byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
+        // the "intersectionType" is not used in this function.
+
+        double elevMinLonMinLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, minLonDeg, minLatDeg, intersectionType);
+        double elevMaxLonMinLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, maxLonDeg, minLatDeg, intersectionType);
+        double elevMaxLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, maxLonDeg, maxLatDeg, intersectionType);
+        double elevMinLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, minLonDeg, maxLatDeg, intersectionType);
 
 //        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg, this.manager.getTerrainElevDataList());
 //        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg, this.manager.getTerrainElevDataList());
@@ -209,6 +212,7 @@ public class TileWgs84 {
         boolean refined = false;
         int trianglesCount = mesh.triangles.size();
         log.debug("[RefineMesh] Triangles Count : {}", trianglesCount);
+        boolean isModifyProcess = false;
         for (int i = 0; i < trianglesCount; i++) {
             TerrainTriangle triangle = mesh.triangles.get(i);
 
@@ -219,7 +223,7 @@ public class TileWgs84 {
             log.debug("[RefineMesh] FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH");
             this.manager.getTriangleList().clear();
             this.listHalfEdges.clear();
-            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges);
+            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModifyProcess);
             this.listHalfEdges.clear();
 
             if (!this.manager.getTriangleList().isEmpty()) {

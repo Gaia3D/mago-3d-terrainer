@@ -49,7 +49,7 @@ public class TerrainTriangle {
     public List<TerrainVertex> getVertices(List<TerrainVertex> resultVertices, List<TerrainHalfEdge> listHalfEdges) {
         listHalfEdges.clear();
         this.halfEdge.getHalfEdgesLoop(listHalfEdges);
-        if (resultVertices == null) resultVertices = new ArrayList<>();
+        if (resultVertices == null) {resultVertices = new ArrayList<>();}
         for (TerrainHalfEdge halfEdge : listHalfEdges) {
             resultVertices.add(halfEdge.getStartVertex());
         }

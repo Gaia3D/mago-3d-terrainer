@@ -52,7 +52,7 @@ public class QuantizedMesh {
         for (int i = 0; i < count; i++) {
             code = indices[i];
             decodedIndices[i] = highest - code;
-            if (code == 0) highest += 1;
+            if (code == 0) {highest += 1;}
         }
     }
 
@@ -63,7 +63,7 @@ public class QuantizedMesh {
             int idx = indices[i];
             code = highest - idx;
             encodedIndices[i] = code;
-            if (code == 0) highest += 1;
+            if (code == 0) {highest += 1;}
         }
     }
 
@@ -72,7 +72,7 @@ public class QuantizedMesh {
         for (int i = 0; i < count; i++) {
             int code = indices[i];
             decodedIndices[i] = (short) (highest - code);
-            if (code == 0) highest += 1;
+            if (code == 0) {highest += 1;}
         }
     }
 
@@ -80,11 +80,11 @@ public class QuantizedMesh {
         int highest = 0;
         for (int i = 0; i < count; i++) {
             int code = indices[i];
-            if (code < 0) code += 65536;
+            if (code < 0) {code += 65536;}
             int idx = highest - code;
             decodedIndices[i] = idx;
 
-            if (code == 0) highest += 1;
+            if (code == 0) {highest += 1;}
         }
     }
 
@@ -95,7 +95,7 @@ public class QuantizedMesh {
             int idx = indices[i];
             code = highest - idx;
             encodedIndices[i] = (short) code;
-            if (code == 0) highest += 1;
+            if (code == 0) {highest += 1;}
         }
     }
 
