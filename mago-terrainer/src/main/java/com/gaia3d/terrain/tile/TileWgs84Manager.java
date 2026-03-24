@@ -1419,7 +1419,7 @@ public class TileWgs84Manager {
             GeometryFactory gf = new GeometryFactory();
             crsTarget = originalGridCoverage2D.getCoordinateReferenceSystem2D();
             CoordinateReferenceSystem crsWgs84 = CRS.decode("EPSG:4326", true);
-            MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
+            MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84, true);
 
             GeographicExtension geographicExtension = new GeographicExtension();
             try {
