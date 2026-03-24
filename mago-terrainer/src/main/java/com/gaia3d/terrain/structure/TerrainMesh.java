@@ -34,6 +34,7 @@ public class TerrainMesh {
     public List<TerrainHalfEdge> halfEdges = new ArrayList<>();
 
     public int id = -1;
+    private final Set<Integer> splittingTriangles = new HashSet<>();
 
     public void deleteObjects() {
         for (TerrainVertex vertex : vertices) {
@@ -575,7 +576,8 @@ public class TerrainMesh {
         // the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
-
+        splittingTriangles.add(triangle.getId());
+        try {
         byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
         listHalfEdges.clear();
         TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify);

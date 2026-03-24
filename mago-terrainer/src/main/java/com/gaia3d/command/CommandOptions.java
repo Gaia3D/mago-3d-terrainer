@@ -41,8 +41,7 @@ public enum CommandOptions {
     EXT_WATER_MASK("waterMask", "wm", false, "[Experimental] Generate water mask for the terrain data."),
 
     /* Celestial Body Option */
-    BODY("body", "b", true, "Celestial body for terrain generation 
-(default : earth)(options: earth, moon)"),
+    BODY("body", "b", true, "Celestial body for terrain generation (default : earth)(options: earth, moon)"),
 
     /* Debug Options */
     DEBUG("debug", "d", false, "[DEBUG] Print more detailed logs.");
