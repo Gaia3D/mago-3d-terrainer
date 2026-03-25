@@ -7,7 +7,7 @@ plugins {
 }
 
 repositories {
-    maven { url "https://repo.osgeo.org/repository/release/"}
+    maven { url "https://repo.osgeo.org/repository/release/" }
     mavenCentral()
 }
 
@@ -87,7 +87,7 @@ javadoc {
 jar {
     finalizedBy shadowJar
     manifest {
-        attributes "Main-Class": "com.gaia3d.command.MagoTerrainerMain"
+        attributes "Main-Class": "com.gaia3d.command.Mago3DTerrainerMain"
         attributes 'Implementation-Version': project.version
         attributes 'Implementation-Title': 'mago-3d-terrainer'
         attributes 'Implementation-Vendor': 'Gaia3d, Inc.'
@@ -95,8 +95,6 @@ jar {
         attributes 'Implementation-URL': 'http://java.sun.com/products/java-media/jai/forDevelopers/jai-imageio/'
     }
 }
-
-import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
 
 shadowJar {
     mergeServiceFiles()
@@ -113,7 +111,7 @@ shadowJar {
 
     manifest {
         attributes(
-                'Main-Class': 'com.gaia3d.command.MagoTerrainerMain',
+                'Main-Class': 'com.gaia3d.command.Mago3DTerrainerMain',
                 'Implementation-Version': project.version,
                 'Implementation-Title': 'mago-3d-terrainer',
                 'Implementation-Vendor': 'Gaia3d, Inc.',

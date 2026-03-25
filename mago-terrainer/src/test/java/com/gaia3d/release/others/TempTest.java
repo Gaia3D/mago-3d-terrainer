@@ -1,6 +1,6 @@
 package com.gaia3d.release.others;
 
-import com.gaia3d.command.MagoTerrainerMain;
+import com.gaia3d.command.Mago3DTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +24,7 @@ public class TempTest {
                 "-max", "15",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -39,7 +39,7 @@ public class TempTest {
                 "-max", "14",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class TempTest {
                 "-intensity", "4",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -72,7 +72,7 @@ public class TempTest {
                 "-calculateNormals",
                 "-continue",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class TempTest {
                 "-calculateNormals",
                 "-leaveTemp",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -105,7 +105,7 @@ public class TempTest {
                 "-intensity", "2.0",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class TempTest {
                 "-intensity", "4.0",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class TempTest {
                 "-intensity", "8.0",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -152,7 +152,7 @@ public class TempTest {
                 "-intensity", "16.0",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -167,7 +167,7 @@ public class TempTest {
                 "-max", "14",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -183,7 +183,7 @@ public class TempTest {
                 "-intensity", "4.0",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -199,7 +199,7 @@ public class TempTest {
                 "-intensity", "4.0",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -216,7 +216,7 @@ public class TempTest {
                 "-mosaicSize", "64",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -233,7 +233,7 @@ public class TempTest {
                 "-mosaicSize", "64",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -249,7 +249,7 @@ public class TempTest {
                 "-interpolationType", "nearest",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -264,7 +264,7 @@ public class TempTest {
                 "-max", "15",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
 
@@ -280,7 +280,7 @@ public class TempTest {
                 "-max", "16",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -295,7 +295,7 @@ public class TempTest {
                 "-max", "14",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -310,7 +310,7 @@ public class TempTest {
                 "-max", "14",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -325,7 +325,7 @@ public class TempTest {
                 "-max", "14",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -341,7 +341,7 @@ public class TempTest {
                 "-leaveTemp",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -356,7 +356,7 @@ public class TempTest {
                 "-max", "14",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -371,7 +371,7 @@ public class TempTest {
                 "-max", "14",
                 "-json",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -387,7 +387,7 @@ public class TempTest {
                 "-leaveTemp",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -402,7 +402,7 @@ public class TempTest {
                 "-max", "14",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -417,7 +417,7 @@ public class TempTest {
                 "-max", "16",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -432,7 +432,7 @@ public class TempTest {
                 "-max", "16",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -447,6 +447,6 @@ public class TempTest {
                 "-max", "16",
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 }

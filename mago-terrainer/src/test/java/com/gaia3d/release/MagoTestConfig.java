@@ -1,7 +1,7 @@
 package com.gaia3d.release;
 
 import com.gaia3d.command.GlobalOptions;
-import com.gaia3d.command.MagoTerrainerMain;
+import com.gaia3d.command.Mago3DTerrainerMain;
 
 import java.io.File;
 
@@ -15,7 +15,7 @@ public class MagoTestConfig {
 
     public static void execute(String[] args) {
         GlobalOptions.recreateInstance();
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     public static File getTempPath(String path) {

@@ -1,6 +1,6 @@
 package com.gaia3d.release.others;
 
-import com.gaia3d.command.MagoTerrainerMain;
+import com.gaia3d.command.Mago3DTerrainerMain;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +24,7 @@ public class VariousTest {
                 "-max", MAX_LEVEL,
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -38,7 +38,7 @@ public class VariousTest {
                 "-max", MAX_LEVEL,
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -52,7 +52,7 @@ public class VariousTest {
                 "-max", MAX_LEVEL,
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
@@ -66,6 +66,6 @@ public class VariousTest {
                 "-max", MAX_LEVEL,
                 "-calculateNormals",
         };
-        MagoTerrainerMain.main(args);
+        Mago3DTerrainerMain.main(args);
     }
 }

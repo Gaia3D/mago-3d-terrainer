@@ -1,18 +1,16 @@
 package com.gaia3d.command;
 
-import com.gaia3d.basic.exception.Reporter;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.util.CelestialBody;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
 import org.geotools.referencing.CRS;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,16 +27,16 @@ import java.nio.file.StandardCopyOption;
 @Getter
 @Slf4j
 public class GlobalOptions {
-    /* singleton */
+    // Singleton
     private static GlobalOptions instance = new GlobalOptions();
-    private Reporter reporter;
+    private CommandLineConfiguration commandLineConfiguration = new DefaultCommandLineConfiguration();
 
-    /* Constants */
+    // Constants
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
-    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = 14;
+    private static final int DEFAULT_MAXIMUM_TILE_DEPTH = -1;
     private static final int DEFAULT_MOSAIC_SIZE = 16;
-    private static final int DEFAULT_MAX_RASTER_SIZE = 4000;
+    private static final int DEFAULT_MAX_RASTER_SIZE = 4096;
     private static final double DEFAULT_INTENSITY = 4.0;
     private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
     private static final CoordinateReferenceSystem DEFAULT_TARGET_CRS = DefaultGeographicCRS.WGS84;
@@ -46,14 +44,16 @@ public class GlobalOptions {
     private static final TilingSchema DEFAULT_TILING_SCHEMA = TilingSchema.GEODETIC;
     private static final String DEFAULT_TEMP_DIR = "temp";
 
-    /* Program Information */
+    // Program information
     private String version;
     private String javaVersionInfo;
     private String programInfo;
-    private long startTime = 0;
-    private long endTime = 0;
+    private long startTimeMillis = System.currentTimeMillis();
+    private long endTimeMillis = 0;
+    private long availableProcessors = Runtime.getRuntime().availableProcessors();
+    private long maxHeapMemory = Runtime.getRuntime().maxMemory();
 
-    /* Default Options */
+    // Default options
     private String inputPath;
     private String outputPath;
     private String geoidPath;
@@ -62,8 +62,9 @@ public class GlobalOptions {
     private boolean debugMode = false;
     private boolean leaveTemp = false;
     private boolean isContinue = false;
+    private boolean isModify = false;
 
-    /* Tiling options */
+    // Tiling options
     private int minimumTileDepth;
     private int maximumTileDepth;
     private InterpolationType interpolationType;
@@ -71,16 +72,16 @@ public class GlobalOptions {
     private double noDataValue;
     private double intensity;
 
-    /* Extensions */
+    // Extensions
     private boolean isCalculateNormalsExtension;
     private boolean isMetaDataExtension;
     private boolean isWaterMaskExtension;
 
-    /* Migration options */
+    // Migration options
     private int mosaicSize;
     private int maxRasterSize;
 
-    /* Temporary paths for processing */
+    // Temporary paths for processing
     private String rootTempPath;
     private String geoidTempPath;
     private String standardizeTempPath;
@@ -93,12 +94,13 @@ public class GlobalOptions {
     private CoordinateReferenceSystem outputCRS;
     private TilingSchema tilingSchema;
 
-    private GlobalOptions() {};
+    private GlobalOptions() {
+        // Private constructor for singleton
+    }
 
     public static GlobalOptions getInstance() {
         if (instance.javaVersionInfo == null) {
             initVersionInfo();
-            instance.reporter = new Reporter("mago-3d-terrainer", instance.getVersion());
         }
         return instance;
     }
@@ -109,6 +111,7 @@ public class GlobalOptions {
     }
 
     public static void init(CommandLine command) throws IOException {
+        checkHeapMemory();
         if (command.hasOption(CommandOptions.INPUT.getLongName())) {
             instance.setInputPath(command.getOptionValue(CommandOptions.INPUT.getLongName()));
             validateInputPath(new File(instance.getInputPath()).toPath());
@@ -216,9 +219,8 @@ public class GlobalOptions {
             }
         }
 
-        // TODO : Add support for input CRS and tiling schema options
+        // Reserved for future support of input CRS and tiling schema options.
         instance.setTilingSchema(DEFAULT_TILING_SCHEMA);
-
 
         if (command.hasOption(CommandOptions.MAXIMUM_TILE_DEPTH.getLongName())) {
             int maxDepth = Integer.parseInt(command.getOptionValue(CommandOptions.MAXIMUM_TILE_DEPTH.getLongName()));
@@ -250,7 +252,7 @@ public class GlobalOptions {
             instance.setLayerJsonGenerate(true);
         }
 
-        if (instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {
+        if (instance.getMaximumTileDepth() >= 0 && instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {
             throw new IllegalArgumentException("Minimum tile depth must be less than or equal to maximum tile depth.");
         }
 
@@ -321,7 +323,22 @@ public class GlobalOptions {
         printGlobalOptions();
     }
 
+    public long getProcessTimeMillis() {
+        long endTimeMillis = System.currentTimeMillis();
+        long processTimeMillis = endTimeMillis - startTimeMillis;
+        this.endTimeMillis = endTimeMillis;
+        return processTimeMillis;
+    }
+
     protected static void printGlobalOptions() {
+        log.info("Java Version Info: {}", instance.javaVersionInfo);
+        log.info("Program Info: {}", instance.programInfo);
+        log.info("Available Processors: {}", instance.availableProcessors);
+        log.info("Max Heap Memory: {} MB", instance.maxHeapMemory / (1024 * 1024));
+        checkHeapMemory();
+
+        Mago3DTerrainerMain.drawLine();
+
         log.info("Input Path: {}", instance.getInputPath());
         log.info("Output Path: {}", instance.getOutputPath());
         log.info("Temp Path: {}", instance.getTileTempPath());
@@ -329,16 +346,20 @@ public class GlobalOptions {
             log.info("Log Path: {}", instance.getLogPath());
         }
         if (instance.getGeoidPath() != null) {
-            log.info("Geoid: {}", instance.getGeoidPath());
+            log.info("Geoid Model(Height Reference): {}", instance.getGeoidPath());
         } else {
-            log.info("Geoid: Ellipsoid");
+            log.info("Geoid Model(Height Reference): Ellipsoid");
         }
-        MagoTerrainerMain.drawLine();
+        Mago3DTerrainerMain.drawLine();
         log.info("Celestial Body: {}", instance.getCelestialBody().getDisplayName());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Tiling Schema: {}", instance.getTilingSchema());
         log.info("Minimum Tile Depth: {}", instance.getMinimumTileDepth());
-        log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
+        if (instance.getMaximumTileDepth() == -1) {
+            log.info("Maximum Tile Depth: Unlimited");
+        } else {
+            log.info("Maximum Tile Depth: {}", instance.getMaximumTileDepth());
+        }
         log.info("Interpolation Type: {}", instance.getInterpolationType());
         log.info("Refine Intensity: {}", instance.getIntensity());
         log.info("Priority Type: {}", instance.getPriorityType());
@@ -346,12 +367,12 @@ public class GlobalOptions {
         log.info("Extension Calculate Normals: {}", instance.isCalculateNormalsExtension());
         log.info("Extension Meta Data: {}", instance.isMetaDataExtension());
         log.info("Extension Water Mask: {}", instance.isWaterMaskExtension());
-        MagoTerrainerMain.drawLine();
+        Mago3DTerrainerMain.drawLine();
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Debug Mode: {}", instance.isDebugMode());
-        MagoTerrainerMain.drawLine();
+        Mago3DTerrainerMain.drawLine();
     }
 
     protected static void validateInputPath(Path path) throws IOException {
@@ -379,20 +400,28 @@ public class GlobalOptions {
         }
     }
 
-    private static void initVersionInfo() {
+    protected static void initVersionInfo() {
         String javaVersion = System.getProperty("java.version");
         String javaVendor = System.getProperty("java.vendor");
         String javaVersionInfo = "JAVA Version : " + javaVersion + " (" + javaVendor + ") ";
-        String version = MagoTerrainerMain.class.getPackage().getImplementationVersion();
-        String title = MagoTerrainerMain.class.getPackage().getImplementationTitle();
-        String vendor = MagoTerrainerMain.class.getPackage().getImplementationVendor();
+        String version = Mago3DTerrainerMain.class.getPackage().getImplementationVersion();
+        String title = Mago3DTerrainerMain.class.getPackage().getImplementationTitle();
+        String vendor = Mago3DTerrainerMain.class.getPackage().getImplementationVendor();
         version = version == null ? "dev-version" : version;
         title = title == null ? "mago-3d-terrainer" : title;
         vendor = vendor == null ? "Gaia3D, Inc." : vendor;
         String programInfo = title + "(" + version + ") by " + vendor;
 
-        instance.setStartTime(System.currentTimeMillis());
+        instance.setStartTimeMillis(System.currentTimeMillis());
         instance.setProgramInfo(programInfo);
         instance.setJavaVersionInfo(javaVersionInfo);
+    }
+
+    protected static void checkHeapMemory() {
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        long recommendedMemory = 16L * 1024 * 1024 * 1024; // 16GB
+        if (maxMemory < recommendedMemory) {
+            log.warn("Maximum memory is less than the recommended 16GB. Current max memory: {} GB. Consider allocating more memory for better performance.", maxMemory / (1024 * 1024 * 1024));
+        }
     }
 }

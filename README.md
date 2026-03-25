@@ -21,6 +21,7 @@ See: https://github.com/CesiumGS/quantized-mesh
 - Multiple data conversion: Convert multiple GeoTIFF data at once.
 - Customizable options: Provides various customization options such as min/max tile depth, tile raster max size, tile mosaic size, tile generation strength, interpolation method, etc.
 - RTIN Based Terrain Simplification: utilizes the RTIN(Right-Triangulated Irregular Network) algorithm for efficient terrain simplification.
+- Planetary body support: Generate terrain tiles for the Moon and other bodies beyond Earth using the `--body` option.
 
 ## Usage
 You can download the released jar file or build the jar yourself via the mago-3d-terrainer project gradle script.   
@@ -69,6 +70,8 @@ Usage: command options
                                   (default : 16)
  -mr, --rasterMaxSize <arg>       Maximum raster size for split function.
                                   (default : 8192)
+ -b, --body <arg>                 Target celestial body for terrain generation
+                                  (default : earth)(options: earth, moon)
  -md, --metadata                  [Experimental] Generate metadata for the terrain data.
  -wm, --waterMask                 [Experimental] Generate water mask for the terrain data.
  -d, --debug                      [DEBUG] Print more detailed logs.
@@ -93,6 +96,37 @@ docker pull gaia3d/mago-3d-terrainer
 ```
 docker run --rm -v "/workspace:/workspace" gaia3d/mago-3d-terrainer -input /workspace/geotiff-sample -output /workspace/geotiff-terrain-output -maxDepth 14
 ```
+
+## Planetary Body Support (Moon and beyond)
+
+mago-3d-terrainer supports terrain generation for planetary bodies other than Earth. Use the `--body` option to specify the target body:
+
+```
+java -jar mago-3d-terrainer.jar --input /input/lunar_dem --output /output/lunar_terrain --body moon --max 8
+```
+
+The Moon's DEM data (e.g. [NASA LOLA](https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m)) is typically distributed in a projected CRS and must be reprojected to geographic coordinates before use. Use GDAL to preprocess:
+
+```
+gdalwarp -t_srs "+proj=longlat +a=1737400 +b=1737400 +no_defs" -r bilinear input.tif output.tif
+```
+
+Alternatively, if your PROJ installation includes the IAU 2015 database:
+```
+gdalwarp -t_srs "IAU_2015:30100" input.tif output.tif
+```
+
+The output tile structure uses the same geographic tiling scheme (-180 to 180 longitude) as Earth tiles. To render in CesiumJS, configure the terrain provider with the correct ellipsoid:
+
+```javascript
+const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrainProvider: await Cesium.CesiumTerrainProvider.fromUrl("/path/to/lunar_terrain", {
+        ellipsoid: Cesium.Ellipsoid.MOON
+    })
+});
+```
+
+See the [MANUAL.md](MANUAL.md) for the full planetary terrain workflow.
 
 ## Documentation
 For detailed documentation, including installation and usage instructions, please refer to the official documentation:
