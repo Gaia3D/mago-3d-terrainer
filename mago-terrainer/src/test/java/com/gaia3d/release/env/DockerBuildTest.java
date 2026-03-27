@@ -1,4 +1,4 @@
-package com.gaia3d.release;
+package com.gaia3d.release.env;
 
 import com.gaia3d.command.LoggingConfiguration;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-//@Tag("default")
 @Slf4j
 class DockerBuildTest {
 
