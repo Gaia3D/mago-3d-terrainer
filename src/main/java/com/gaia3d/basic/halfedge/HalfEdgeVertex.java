@@ -33,6 +33,7 @@ public class HalfEdgeVertex implements Serializable {
     private int id = -1;
     private int outingHalfEdgeId = -1;
     private int classifyId = -1; // auxiliary variable
+    private double roughness = 0.0; // auxiliary variable
 
     public HalfEdgeVertex(GaiaVertex vertex) {
         copyFromGaiaVertex(vertex);
