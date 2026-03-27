@@ -694,14 +694,14 @@ public class HalfEdgeUtils {
             resultWeldedFacesGroups = new ArrayList<>();
         }
 
-//        Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap = new HashMap<>();
-//        for (HalfEdgeFace face : facesList) {
-//            List<HalfEdgeVertex> vertices = face.getVertices(null);
-//            for (HalfEdgeVertex vertex : vertices) {
-//                List<HalfEdgeFace> facesOfVertex = vertexFacesMap.computeIfAbsent(vertex, k -> new ArrayList<>());
-//                facesOfVertex.add(face);
-//            }
-//        }
+        Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap = new HashMap<>();
+        for (HalfEdgeFace face : facesList) {
+            List<HalfEdgeVertex> vertices = face.getVertices(null);
+            for (HalfEdgeVertex vertex : vertices) {
+                List<HalfEdgeFace> facesOfVertex = vertexFacesMap.computeIfAbsent(vertex, k -> new ArrayList<>());
+                facesOfVertex.add(face);
+            }
+        }
 
         Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces = new HashMap<>();
         int facesCount = facesList.size();
@@ -716,7 +716,7 @@ public class HalfEdgeUtils {
             }
 
             List<HalfEdgeFace> weldedFaces = new ArrayList<>();
-            getWeldedFacesWithFace(face, weldedFaces, mapVisitedFaces);
+            getWeldedFacesWithFace(face, weldedFaces, mapVisitedFaces, vertexFacesMap);
 
             resultWeldedFacesGroups.add(weldedFaces);
         }
@@ -724,7 +724,8 @@ public class HalfEdgeUtils {
         return resultWeldedFacesGroups;
     }
 
-    public static void getWeldedFacesWithFace(HalfEdgeFace face, List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces) {
+    public static void getWeldedFacesWithFace(HalfEdgeFace face, List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces,
+                                              Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap) {
         List<HalfEdgeFace> weldedFacesAux = new ArrayList<>();
         List<HalfEdgeFace> faces = new ArrayList<>();
         faces.add(face);
@@ -745,7 +746,7 @@ public class HalfEdgeUtils {
                 resultWeldedFaces.add(currFace);
                 mapVisitedFaces.put(currFace, currFace);
                 weldedFacesAux.clear();
-                currFace.getWeldedFaces(weldedFacesAux, mapVisitedFaces);
+                currFace.getWeldedFaces(weldedFacesAux, mapVisitedFaces, vertexFacesMap);
                 newAddedfaces.addAll(weldedFacesAux);
             }
 
@@ -1256,6 +1257,18 @@ public class HalfEdgeUtils {
         double s = (dist1 + dist2 + dist3) / 2.0;
 
         return Math.sqrt(s * (s - dist1) * (s - dist2) * (s - dist3));
+    }
+
+    public static double getLongestEdgeLength(HalfEdgeVertex a, HalfEdgeVertex b, HalfEdgeVertex c) {
+        Vector3d posA = a.getPosition();
+        Vector3d posB = b.getPosition();
+        Vector3d posC = c.getPosition();
+
+        double dist1 = posA.distance(posB);
+        double dist2 = posB.distance(posC);
+        double dist3 = posC.distance(posA);
+
+        return Math.max(dist1, Math.max(dist2, dist3));
     }
 
     public static double calculateAspectRatioAsTriangle(HalfEdgeVertex a, HalfEdgeVertex b, HalfEdgeVertex c) {

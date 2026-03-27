@@ -214,7 +214,7 @@ public class GaiaWelder extends Modifier {
         Vector2d targetTexcoords = target.getTexcoords();
         if (weldOptions.isCheckTexCoord() && sourceTexcoords != null && targetTexcoords != null) {
             double texCoordDist = sourceTexcoords.distance(targetTexcoords);
-            if (texCoordDist > weldOptions.getError()) {
+            if (texCoordDist > weldOptions.getTexCoordError()) {
                 return false;
             }
         }
