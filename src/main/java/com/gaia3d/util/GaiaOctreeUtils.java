@@ -1,13 +1,12 @@
 package com.gaia3d.util;
 
 import com.gaia3d.basic.geometry.octree.GaiaFaceContent;
+import com.gaia3d.basic.geometry.octree.GaiaFaceData;
 import com.gaia3d.basic.model.*;
-import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
 import java.util.List;
 
-@Slf4j
 public class GaiaOctreeUtils {
 
     public static void getFaceDataListOfNode(GaiaScene sceneParent, GaiaNode node, List<GaiaFaceContent> resultFaceDataList) {
@@ -35,21 +34,9 @@ public class GaiaOctreeUtils {
                                             int index1 = indices[n * 3 + 1];
                                             int index2 = indices[n * 3 + 2];
 
-                                            GaiaFaceContent faceContent = new GaiaFaceContent();
+                                            GaiaFaceContent faceData = new GaiaFaceContent();
                                             GaiaFace face0 = new GaiaFace();
                                             face0.setIndices(new int[]{index0, index1, index2});
-
-                                            // check out of bound.
-                                            if (index0 < 0 || index0 >= primitiveVertices.size()) {
-                                                log.warn("Invalid index0: {}, primitive vertices size: {}", index0, primitiveVertices.size());
-                                                continue;
-                                            } else if (index1 < 0 || index1 >= primitiveVertices.size()) {
-                                                log.warn("Invalid index1: {}, primitive vertices size: {}", index1, primitiveVertices.size());
-                                                continue;
-                                            } else if (index2 < 0 || index2 >= primitiveVertices.size()) {
-                                                log.warn("Invalid index2: {}, primitive vertices size: {}", index2, primitiveVertices.size());
-                                                continue;
-                                            }
 
                                             GaiaVertex vertex0 = primitiveVertices.get(index0);
                                             GaiaVertex vertex1 = primitiveVertices.get(index1);
@@ -63,10 +50,10 @@ public class GaiaOctreeUtils {
                                                 continue;
                                             }
 
-                                            faceContent.setSceneParent(sceneParent);
-                                            faceContent.setPrimitiveParent(primitive);
-                                            faceContent.setFace(face0);
-                                            resultFaceDataList.add(faceContent);
+                                            faceData.setSceneParent(sceneParent);
+                                            faceData.setPrimitiveParent(primitive);
+                                            faceData.setFace(face0);
+                                            resultFaceDataList.add(faceData);
                                         }
                                     }
                                 }

@@ -48,6 +48,10 @@ public class HalfEdgePrimitive implements Serializable {
             surface.deleteObjects();
         }
         surfaces.clear();
+        // delete vertices.
+        for (HalfEdgeVertex vertex : vertices) {
+            vertex.deleteObjects();
+        }
         vertices.clear();
     }
 
@@ -260,12 +264,6 @@ public class HalfEdgePrimitive implements Serializable {
         }
     }
 
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgeSurface surface : surfaces) {
-            surface.decimate(decimateParameters);
-        }
-    }
-
     public void splitFacesByBestObliqueCameraDirectionToProject() {
         for (HalfEdgeSurface surface : surfaces) {
             surface.splitFacesByBestObliqueCameraDirectionToProject();
@@ -361,9 +359,12 @@ public class HalfEdgePrimitive implements Serializable {
         }
     }
 
-    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
+    public boolean TEST_checkTexCoords() {
         for (HalfEdgeSurface surface : surfaces) {
-            surface.decimateInteriorOfBox(decimateParameters, boundingBox);
+            if (!surface.TEST_checkTexCoords()) {
+                return false;
+            }
         }
+        return true;
     }
 }

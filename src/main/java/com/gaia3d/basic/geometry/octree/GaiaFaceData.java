@@ -15,6 +15,7 @@ import org.joml.Vector4d;
 @Slf4j
 @Getter
 @Setter
+@Deprecated
 public class GaiaFaceData {
     // This class is used by GaiaOctree to store the face data.
     private GaiaFace face = null; // main data

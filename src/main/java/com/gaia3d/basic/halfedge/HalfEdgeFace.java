@@ -283,7 +283,7 @@ public class HalfEdgeFace implements Serializable {
         return resultAdjacentFaces;
     }
 
-    public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces) {
+    public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces, Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap) {
         if (this.halfEdge == null) {
             return false;
         }
@@ -301,6 +301,21 @@ public class HalfEdgeFace implements Serializable {
                 // check if is visited
                 if (mapVisitedFaces.get(adjacentFace) == null) {
                     resultWeldedFaces.add(adjacentFace);
+                }
+            }
+        }
+
+        List<HalfEdgeVertex> vertices = this.getVertices(null);
+        for (HalfEdgeVertex vertex : vertices) {
+            List<HalfEdgeFace> facesSharingVertex = vertexFacesMap.get(vertex);
+            if (facesSharingVertex != null) {
+                for (HalfEdgeFace faceSharingVertex : facesSharingVertex) {
+                    if (faceSharingVertex != null) {
+                        // check if is visited
+                        if (mapVisitedFaces.get(faceSharingVertex) == null) {
+                            resultWeldedFaces.add(faceSharingVertex);
+                        }
+                    }
                 }
             }
         }
@@ -330,6 +345,20 @@ public class HalfEdgeFace implements Serializable {
             }
         }
 
+        return true;
+    }
+
+    public boolean TEST_checkTexCoords() {
+        // test.***
+        GaiaRectangle texCoordBRect = this.getTexCoordBoundingRectangle(null, false);
+        double texRectWidth = texCoordBRect.getWidth();
+        double texRectHeight = texCoordBRect.getHeight();
+        if (texRectWidth > 0.8 || texRectHeight > 0.8) {
+            int hola = 0;
+            texCoordBRect = this.getTexCoordBoundingRectangle(null, false);
+            return false;
+        }
+        // end test.***
         return true;
     }
 

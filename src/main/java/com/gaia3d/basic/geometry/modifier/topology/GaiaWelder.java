@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class GaiaWelder extends Modifier {
@@ -44,28 +45,30 @@ public class GaiaWelder extends Modifier {
         }
         GaiaBoundingBox cubeBoundingBox = boundingBox.createCubeFromMinPosition();
         GaiaOctreeVertices octreeVertices = new GaiaOctreeVertices(null, cubeBoundingBox);
-        List<GeometryContent> geometryContents = primitive.getVertices().stream().map(v -> (GeometryContent) v).toList();
-        octreeVertices.addContents(geometryContents);
+        List<GeometryContent> gaiaContents = primitive.getVertices().stream().map(v -> (GeometryContent) v).collect(Collectors.toList());
+        octreeVertices.addContents(gaiaContents);
         octreeVertices.setLimitDepth(10);
         octreeVertices.setLimitBoxSize(1.0);
         octreeVertices.makeTreeByMinVertexCount(50);
 
         List<GaiaOctree<GeometryContent>> octreesWithContents = octreeVertices.extractOctreesWithContents();
-        Map<GeometryContent, GeometryContent> mapVertexToVertexMaster = new HashMap<>();
+        Map<GaiaVertex, GaiaVertex> mapVertexToVertexMaster = new HashMap<>();
 
         for (GaiaOctree<GeometryContent> octree : octreesWithContents) {
-            List<GeometryContent> vertices = octree.getContents();
+            List<GaiaVertex> vertices = octree.getContents().stream()
+                    .map(c -> (GaiaVertex) c)
+                    .collect(Collectors.toList());
             getWeldableVertexMap(mapVertexToVertexMaster, vertices);
         }
 
-        Map<GeometryContent, GeometryContent> mapVertexMasters = new HashMap<>();
-        for (GeometryContent vertexMaster : mapVertexToVertexMaster.values()) {
+        Map<GaiaVertex, GaiaVertex> mapVertexMasters = new HashMap<>();
+        for (GaiaVertex vertexMaster : mapVertexToVertexMaster.values()) {
             mapVertexMasters.put(vertexMaster, vertexMaster);
         }
 
-        List<GeometryContent> newVerticesArray = new ArrayList<>(mapVertexMasters.values());
+        List<GaiaVertex> newVerticesArray = new ArrayList<>(mapVertexMasters.values());
 
-        Map<GeometryContent, Integer> vertexIdxMap = new HashMap<>();
+        Map<GaiaVertex, Integer> vertexIdxMap = new HashMap<>();
         int verticesCount = newVerticesArray.size();
         for (int i = 0; i < verticesCount; i++) {
             vertexIdxMap.put(newVerticesArray.get(i), i);
@@ -80,7 +83,7 @@ public class GaiaWelder extends Modifier {
                 int[] indices = face.getIndices();
                 for (int k = 0; k < indices.length; k++) {
                     GaiaVertex vertex = primitive.getVertices().get(indices[k]);
-                    GeometryContent vertexMaster = mapVertexToVertexMaster.get(vertex);
+                    GaiaVertex vertexMaster = mapVertexToVertexMaster.get(vertex);
                     int index = vertexIdxMap.get(vertexMaster);
                     indices[k] = index;
                 }
@@ -116,19 +119,14 @@ public class GaiaWelder extends Modifier {
             }
         }
         primitive.getVertices().clear();
-
-        List<GaiaVertex> newVerticesList = new ArrayList<>();
-        for (GeometryContent geometryContent : newVerticesArray) {
-            newVerticesList.add((GaiaVertex) geometryContent);
-        }
-        primitive.setVertices(newVerticesList);
+        primitive.setVertices(newVerticesArray);
     }
 
-    private void getWeldableVertexMap(Map<GeometryContent, GeometryContent> mapVertexToVertexMaster, List<GeometryContent> vertices) {
+    private void getWeldableVertexMap(Map<GaiaVertex, GaiaVertex> mapVertexToVertexMaster, List<GaiaVertex> vertices) {
         Map<GaiaVertex, GaiaVertex> visitedMap = new HashMap<>();
         int verticesCount = vertices.size();
         for (int i = 0; i < verticesCount; i++) {
-            GaiaVertex vertex = (GaiaVertex) vertices.get(i);
+            GaiaVertex vertex = vertices.get(i);
             if (visitedMap.containsKey(vertex)) {
                 continue;
             }
@@ -136,7 +134,7 @@ public class GaiaWelder extends Modifier {
             mapVertexToVertexMaster.put(vertex, vertex);
 
             for (int j = i + 1; j < verticesCount; j++) {
-                GaiaVertex vertex2 = (GaiaVertex) vertices.get(j);
+                GaiaVertex vertex2 = vertices.get(j);
                 if (visitedMap.containsKey(vertex2)) {
                     continue;
                 }
@@ -221,7 +219,7 @@ public class GaiaWelder extends Modifier {
         Vector2d targetTexcoords = target.getTexcoords();
         if (weldOptions.isCheckTexCoord() && sourceTexcoords != null && targetTexcoords != null) {
             double texCoordDist = sourceTexcoords.distance(targetTexcoords);
-            if (texCoordDist > weldOptions.getError()) {
+            if (texCoordDist > weldOptions.getTexCoordError()) {
                 return false;
             }
         }

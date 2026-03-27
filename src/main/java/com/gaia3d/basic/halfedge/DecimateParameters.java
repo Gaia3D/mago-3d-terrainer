@@ -17,13 +17,11 @@ public class DecimateParameters {
     private int iterationsCount = 1;
     private double smallHedgeSize = 1.0;
     private int lod = -1;
+    private WeldingParameters weldingParameters = new WeldingParameters();
 
-    private Map<Integer, Double> mapMaxDiffAngDegrees;
-    private Map<Integer, Double> mapHedgeMinLength;
-    private Map<Integer, Double> mapFrontierMaxDiffAngDeg;
-    private Map<Integer, Double> mapMaxAspectRatio;
-    private Map<Integer, Integer> mapMaxCollapsesCount;
-    private Map<Integer, Double> mapSmallHedgeSize;
+    // small triangle parameters
+    private double smallTriangleMinArea = 1.0;
+    private double smallTrianglesMinSize = 0.5;
 
     public void setBasicValues(double maxDiffAngDegrees, double hedgeMinLength, double frontierMaxDiffAngDeg, double maxAspectRatio, int maxCollapsesCount, int iterationsCount, double smallHedgeSize) {
         this.maxDiffAngDegrees = maxDiffAngDegrees;
@@ -35,61 +33,37 @@ public class DecimateParameters {
         this.smallHedgeSize = smallHedgeSize;
     }
 
-    public void setBasicValuesFromIteration(int iteration, double maxDiffAngDegrees, double hedgeMinLength, double frontierMaxDiffAngDeg, double maxAspectRatio, int maxCollapsesCount, double smallHedgeSize) {
-        if (mapMaxDiffAngDegrees == null) mapMaxDiffAngDegrees = new HashMap<>();
-        if (mapHedgeMinLength == null) mapHedgeMinLength = new HashMap<>();
-        if (mapFrontierMaxDiffAngDeg == null) mapFrontierMaxDiffAngDeg = new HashMap<>();
-        if (mapMaxAspectRatio == null) mapMaxAspectRatio = new HashMap<>();
-        if (mapMaxCollapsesCount == null) mapMaxCollapsesCount = new HashMap<>();
-        if (mapSmallHedgeSize == null) mapSmallHedgeSize = new HashMap<>();
+    public DecimateParameters clone() {
+        DecimateParameters clone = new DecimateParameters();
+        clone.setMaxDiffAngDegrees(this.maxDiffAngDegrees);
+        clone.setHedgeMinLength(this.hedgeMinLength);
+        clone.setFrontierMaxDiffAngDeg(this.frontierMaxDiffAngDeg);
+        clone.setMaxAspectRatio(this.maxAspectRatio);
+        clone.setMaxCollapsesCount(this.maxCollapsesCount);
+        clone.setIterationsCount(this.iterationsCount);
+        clone.setSmallHedgeSize(this.smallHedgeSize);
+        clone.setLod(this.lod);
 
-        mapMaxDiffAngDegrees.put(iteration, maxDiffAngDegrees);
-        mapHedgeMinLength.put(iteration, hedgeMinLength);
-        mapFrontierMaxDiffAngDeg.put(iteration, frontierMaxDiffAngDeg);
-        mapMaxAspectRatio.put(iteration, maxAspectRatio);
-        mapMaxCollapsesCount.put(iteration, maxCollapsesCount);
-        mapSmallHedgeSize.put(iteration, smallHedgeSize);
-    }
-
-    public double getMaxDiffAngDegreesByIteration(int iteration) {
-        if (mapMaxDiffAngDegrees != null && mapMaxDiffAngDegrees.containsKey(iteration)) {
-            return mapMaxDiffAngDegrees.get(lod);
+        if (this.weldingParameters != null) {
+            clone.setWeldingParameters(this.weldingParameters.clone());
         }
-        return -1.0;
+        return clone;
     }
 
-    public double getHedgeMinLengthByIteration(int iteration) {
-        if (mapHedgeMinLength != null && mapHedgeMinLength.containsKey(iteration)) {
-            return mapHedgeMinLength.get(lod);
-        }
-        return -1.0;
+    public void setAsDecimateLeaf() {
+        setBasicValues(5.0, 0.01, 0.0, 40.0, 1000000, 1, 1.0);
+        WeldingParameters weldingParameters = getWeldingParameters();
+        weldingParameters.setCheckTexCoords(true);
     }
 
-    public double getFrontierMaxDiffAngDegByIteration(int iteration) {
-        if (mapFrontierMaxDiffAngDeg != null && mapFrontierMaxDiffAngDeg.containsKey(iteration)) {
-            return mapFrontierMaxDiffAngDeg.get(lod);
+    public void setAsLod(int lod) {
+        if (lod == 0) {
+            setBasicValues(5.0, 0.01, 0.01, 40.0, 1000000, 5, 1.0);
+        } else if (lod == 1) {
+            setBasicValues(12.0, 0.01, 0.9, 40.0, 1000000, 5, 1.0);
+        } else if (lod == 2) {
+            setBasicValues(12.0, 0.01, 0.9, 40.0, 1000000, 5, 1.0);
         }
-        return -1.0;
     }
 
-    public double getMaxAspectRatioByIteration(int iteration) {
-        if (mapMaxAspectRatio != null && mapMaxAspectRatio.containsKey(iteration)) {
-            return mapMaxAspectRatio.get(lod);
-        }
-        return -1.0;
-    }
-
-    public int getMaxCollapsesCountByIteration(int iteration) {
-        if (mapMaxCollapsesCount != null && mapMaxCollapsesCount.containsKey(iteration)) {
-            return mapMaxCollapsesCount.get(lod);
-        }
-        return -1;
-    }
-
-    public double getSmallHedgeSizeByIteration(int iteration) {
-        if (mapSmallHedgeSize != null && mapSmallHedgeSize.containsKey(iteration)) {
-            return mapSmallHedgeSize.get(lod);
-        }
-        return -1.0;
-    }
 }

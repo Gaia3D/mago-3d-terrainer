@@ -81,4 +81,22 @@ public class FileUtils {
             }
         }
     }
+
+    public static void deleteDirectory(File depthTempFolder) {
+        if (depthTempFolder.isDirectory()) {
+            File[] children = depthTempFolder.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteDirectory(child);
+                }
+            }
+        } else if (depthTempFolder.isFile()) {
+            if (!depthTempFolder.delete()) {
+                log.warn("Failed to delete file: " + depthTempFolder.getAbsolutePath());
+            }
+        }
+        if (!depthTempFolder.delete()) {
+            log.warn("Failed to delete file or folder: " + depthTempFolder.getAbsolutePath());
+        }
+    }
 }
