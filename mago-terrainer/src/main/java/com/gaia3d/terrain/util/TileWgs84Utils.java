@@ -18,7 +18,7 @@ public class TileWgs84Utils {
     public static double getTileSizeInMetersByDepth(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
         double angRad = angDeg * Math.PI / 180.0;
-        return angRad * GlobeUtils.EQUATORIAL_RADIUS;
+        return angRad * globalOptions.getCelestialBody().getEquatorialRadius();
     }
 
     public static int getMaxTileDepthByPixelSizeMeters(double pixelSizeMeters) {
@@ -263,6 +263,14 @@ public class TileWgs84Utils {
         if (minY > yIndexMin) {
             minY = yIndexMin;
         }
+
+        // Clamp maxX/maxY to the last valid tile index at this depth.
+        // xIndexMax/yIndexMax are computed as exclusive boundary indices (tile count),
+        // so when the extent hits an exact tile boundary they are 1 too large.
+        int maxValidX = (int) Math.pow(2, depth + 1) - 1;
+        int maxValidY = (int) Math.pow(2, depth) - 1;
+        if (maxX > maxValidX) maxX = maxValidX;
+        if (maxY > maxValidY) maxY = maxValidY;
 
         // the "tilesRange" is optional
         if (tilesRange != null) {

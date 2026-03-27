@@ -1,6 +1,8 @@
 package com.gaia3d.terrain.util;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.GlobeUtils;
 import org.geotools.api.coverage.grid.GridEnvelope;
 import org.geotools.api.coverage.grid.GridGeometry;
@@ -32,27 +34,28 @@ public class GaiaGeoTiffUtils {
         return new Vector2d(coordinate.x, coordinate.y);
     }
 
-    public static boolean isGridCoverage2DWGS84(GridCoverage2D coverage) throws FactoryException {
-        // this function returns true if the coverage is wgs84
+    public static boolean isGridCoverageInTargetCRS(GridCoverage2D coverage) throws FactoryException {
         CoordinateReferenceSystem crsTarget = coverage.getCoordinateReferenceSystem2D();
-        CoordinateReferenceSystem crsWgs84 = DefaultGeographicCRS.WGS84;
-        MathTransform targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
-        // The original src is wgs84
-        // The original src is not wgs84
-        return targetToWgs.isIdentity();
+        CoordinateReferenceSystem crsOutput = GlobalOptions.getInstance().getOutputCRS();
+        MathTransform targetToOutput = CRS.findMathTransform(crsTarget, crsOutput, true);
+        return targetToOutput.isIdentity();
+    }
+
+    public static boolean isGridCoverage2DWGS84(GridCoverage2D coverage) throws FactoryException {
+        return isGridCoverageInTargetCRS(coverage);
     }
 
     public static void getEnvelopeSpanInMetersOfGridCoverage2D(GridCoverage2D coverage, double[] resultEnvelopeSpanMeters) throws FactoryException {
-        if (isGridCoverage2DWGS84(coverage)) {
+        CelestialBody body = GlobalOptions.getInstance().getCelestialBody();
+        if (isGridCoverageInTargetCRS(coverage)) {
             ReferencedEnvelope envelope = coverage.getEnvelope2D();
             double minLat = envelope.getMinimum(1);
             double maxLat = envelope.getMaximum(1);
             double midLat = (minLat + maxLat) / 2.0;
-            double radius = GlobeUtils.getRadiusAtLatitude(midLat);
+            double radius = GlobeUtils.getRadiusAtLatitude(midLat, body);
             double degToRadFactor = GlobeUtils.DEGREE_TO_RADIAN_FACTOR;
 
             ReferencedEnvelope envelopeOriginal = coverage.getEnvelope2D();
-            // int degrees
             double envelopeSpanX = envelopeOriginal.getSpan(0);
             double envelopeSpanY = envelopeOriginal.getSpan(1);
             resultEnvelopeSpanMeters[0] = (envelopeSpanX * degToRadFactor) * radius;

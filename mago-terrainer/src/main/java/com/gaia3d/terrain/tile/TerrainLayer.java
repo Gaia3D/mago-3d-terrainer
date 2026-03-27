@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.tile.custom.AvailableTileSet;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
@@ -59,7 +60,7 @@ public class TerrainLayer {
         this.scheme = "tms";
         this.tiles = new String[1];
         this.tiles[0] = "{z}/{x}/{y}.terrain?v={version}";
-        this.projection = "EPSG:4326";
+        this.projection = "EPSG:4326"; // CesiumJS TerrainProvider only recognizes EPSG:4326; tile grid is the same angular lon/lat for all bodies
         this.extensions = new ArrayList<>();
         this.bounds = new double[4];
         this.bounds[0] = 0.0;

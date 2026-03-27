@@ -6,7 +6,9 @@ import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.tile.TileWgs84;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
 import com.gaia3d.terrain.util.OctNormalFactory;
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.GlobeUtils;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -197,6 +199,7 @@ public class QuantizedMeshManager {
         mesh.setObjectsIdInList();
 
         // Calculate the minimum and maximum heights & bbox
+        CelestialBody body = GlobalOptions.getInstance().getCelestialBody();
         GaiaBoundingBox bboxWC = new GaiaBoundingBox();
         double minimumHeight = Double.MAX_VALUE;
         double maximumHeight = -Double.MAX_VALUE;
@@ -207,7 +210,7 @@ public class QuantizedMeshManager {
             if (height > maximumHeight) {maximumHeight = height;}
 
             // calculate the bbox in world coordinates
-            double[] posWC = GlobeUtils.geographicToCartesianWgs84(vertex.getPosition().x, vertex.getPosition().y, height);
+            double[] posWC = GlobeUtils.geographicToCartesian(vertex.getPosition().x, vertex.getPosition().y, height, body);
             bboxWC.addPoint(posWC[0], posWC[1], posWC[2]);
         }
         double midHeight = (minimumHeight + maximumHeight) / 2.0;
@@ -217,7 +220,7 @@ public class QuantizedMeshManager {
         double midLonDeg = geographicExtension.getMidLongitudeDeg();
         double midLatDeg = geographicExtension.getMidLatitudeDeg();
 
-        double[] cartesianWC = GlobeUtils.geographicToCartesianWgs84(midLonDeg, midLatDeg, midHeight);
+        double[] cartesianWC = GlobeUtils.geographicToCartesian(midLonDeg, midLatDeg, midHeight, body);
 
         header.setCenterX(cartesianWC[0]);
         header.setCenterY(cartesianWC[1]);
@@ -372,7 +375,8 @@ public class QuantizedMeshManager {
         centerCartesian[1] = centerWC.y;
         centerCartesian[2] = centerWC.z;
 
-        Vector3d centerCartographic = GlobeUtils.cartesianToGeographicWgs84(centerCartesian[0], centerCartesian[1], centerCartesian[2]);
+        CelestialBody body = GlobalOptions.getInstance().getCelestialBody();
+        Vector3d centerCartographic = GlobeUtils.cartesianToGeographic(centerCartesian[0], centerCartesian[1], centerCartesian[2], body);
         double centerLonDeg = centerCartographic.x;
         double centerLatDeg = centerCartographic.y;
         //double centerHeight = centerCartographic.z;

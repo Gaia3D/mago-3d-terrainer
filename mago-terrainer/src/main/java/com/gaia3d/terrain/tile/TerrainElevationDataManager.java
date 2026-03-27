@@ -262,9 +262,8 @@ public class TerrainElevationDataManager {
         String geoTiffFilePath = null;
 
         CoordinateReferenceSystem crsTarget = null;
-        CoordinateReferenceSystem crsWgs84 = null;
-        MathTransform targetToWgs = null;
-        crsWgs84 = CRS.decode("EPSG:4326", true);
+        CoordinateReferenceSystem crsOutput = globalOptions.getOutputCRS();
+        MathTransform targetToOutput = null;
 
         Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
 
@@ -290,9 +289,9 @@ public class TerrainElevationDataManager {
             terrainElevationData.setGeotiffFileName(geoTiffFileName);
 
             crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
-            targetToWgs = CRS.findMathTransform(crsTarget, crsWgs84);
+            targetToOutput = CRS.findMathTransform(crsTarget, crsOutput, true);
 
-            GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToWgs, terrainElevationData.getGeographicExtension());
+            GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToOutput, terrainElevationData.getGeographicExtension());
             terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);

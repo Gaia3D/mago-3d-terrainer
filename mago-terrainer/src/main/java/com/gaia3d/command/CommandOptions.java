@@ -40,7 +40,10 @@ public enum CommandOptions {
     EXT_META_DATA("metadata", "md", false, "[Experimental] Generate metadata for the terrain data."),
     EXT_WATER_MASK("waterMask", "wm", false, "[Experimental] Generate water mask for the terrain data."),
 
-    // Debug options
+    /* Celestial Body Option */
+    BODY("body", "b", true, "Celestial body for terrain generation (default : earth)(options: earth, moon)"),
+
+    /* Debug Options */
     DEBUG("debug", "d", false, "[DEBUG] Print more detailed logs.");
 
     private final String longName;

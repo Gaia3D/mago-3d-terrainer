@@ -88,7 +88,8 @@ public class Mago3DTerrainerMain {
         } catch (IOException e) {
             log.error("Failed to run process, Please check the arguments.", e);
             throw new RuntimeException(e);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            log.error("An unexpected error occurred.", e);
             throw new RuntimeException(e);
         }
         printEnd();

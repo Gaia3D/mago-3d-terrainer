@@ -2,11 +2,13 @@ package com.gaia3d.command;
 
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.types.PriorityType;
+import com.gaia3d.util.CelestialBody;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
+import org.geotools.referencing.CRS;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 
@@ -38,6 +40,7 @@ public class GlobalOptions {
     private static final double DEFAULT_INTENSITY = 4.0;
     private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
     private static final CoordinateReferenceSystem DEFAULT_TARGET_CRS = DefaultGeographicCRS.WGS84;
+    private static final CelestialBody DEFAULT_CELESTIAL_BODY = CelestialBody.EARTH;
     private static final TilingSchema DEFAULT_TILING_SCHEMA = TilingSchema.GEODETIC;
     private static final String DEFAULT_TEMP_DIR = "temp";
 
@@ -86,6 +89,7 @@ public class GlobalOptions {
     private String splitTiffTempPath;
     private String tileTempPath;
 
+    private CelestialBody celestialBody;
     private CoordinateReferenceSystem inputCRS = null;
     private CoordinateReferenceSystem outputCRS;
     private TilingSchema tilingSchema;
@@ -187,7 +191,33 @@ public class GlobalOptions {
         instance.setDebugMode(command.hasOption(CommandOptions.DEBUG.getLongName()));
         instance.setLeaveTemp(command.hasOption(CommandOptions.LEAVE_TEMP.getLongName()));
         instance.setContinue(command.hasOption(CommandOptions.CONTINUOUS.getLongName()));
-        instance.setOutputCRS(DEFAULT_TARGET_CRS);
+        // Parse celestial body option
+        if (command.hasOption(CommandOptions.BODY.getLongName())) {
+            String bodyValue = command.getOptionValue(CommandOptions.BODY.getLongName());
+            try {
+                instance.setCelestialBody(CelestialBody.fromString(bodyValue));
+            } catch (IllegalArgumentException e) {
+                log.warn("* Invalid celestial body: {}. Defaulting to Earth.", bodyValue);
+                instance.setCelestialBody(DEFAULT_CELESTIAL_BODY);
+            }
+        } else {
+            instance.setCelestialBody(DEFAULT_CELESTIAL_BODY);
+        }
+
+        // Set output CRS based on celestial body
+        if (instance.getCelestialBody() == CelestialBody.EARTH) {
+            instance.setOutputCRS(DEFAULT_TARGET_CRS);
+        } else {
+            try {
+                String crsCode = instance.getCelestialBody().getCrsCode();
+                instance.setOutputCRS(CRS.decode(crsCode, true));
+                log.info("Using CRS: {} for {}", crsCode, instance.getCelestialBody().getDisplayName());
+            } catch (Exception e) {
+                log.warn("* Failed to decode CRS for {}. Using WGS84 as carrier CRS.",
+                         instance.getCelestialBody().getDisplayName());
+                instance.setOutputCRS(DEFAULT_TARGET_CRS);
+            }
+        }
 
         // Reserved for future support of input CRS and tiling schema options.
         instance.setTilingSchema(DEFAULT_TILING_SCHEMA);
@@ -321,6 +351,7 @@ public class GlobalOptions {
             log.info("Geoid Model(Height Reference): Ellipsoid");
         }
         Mago3DTerrainerMain.drawLine();
+        log.info("Celestial Body: {}", instance.getCelestialBody().getDisplayName());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
         log.info("Tiling Schema: {}", instance.getTilingSchema());
         log.info("Minimum Tile Depth: {}", instance.getMinimumTileDepth());

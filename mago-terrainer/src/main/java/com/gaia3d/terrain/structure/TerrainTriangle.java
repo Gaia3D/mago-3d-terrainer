@@ -1,10 +1,12 @@
 package com.gaia3d.terrain.structure;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
+import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.GlobeUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -181,6 +183,15 @@ public class TerrainTriangle {
         }
         listHalfEdges.clear();
 
+        // Debug logging for degenerate triangles
+        if (longestHalfEdge == null) {
+            log.debug("Triangle {} has no half-edge with length > 0 (degenerate triangle). " +
+                      "HalfEdges count: {}, TileIndices: {}",
+                      this.id,
+                      listHalfEdges.size(),
+                      this.ownerTileIndices != null ? this.ownerTileIndices.getString() : "null");
+        }
+
         return longestHalfEdge;
     }
 
@@ -189,7 +200,7 @@ public class TerrainTriangle {
         GaiaBoundingBox bboxTriangle = this.getBoundingBox(listVertices, listHalfEdges);
         double triangleMaxLengthDeg = Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY());
         double triangleMaxLengthRad = Math.toRadians(triangleMaxLengthDeg);
-        return triangleMaxLengthRad * GlobeUtils.EQUATORIAL_RADIUS;
+        return triangleMaxLengthRad * GlobalOptions.getInstance().getCelestialBody().getEquatorialRadius();
     }
 
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
@@ -262,9 +273,10 @@ public class TerrainTriangle {
             Vector3d p1 = listVertices.get(1).getPosition();
             Vector3d p2 = listVertices.get(2).getPosition();
 
-            Vector3d p0WC = GlobeUtils.geographicToCartesianWgs84(p0);
-            Vector3d p1WC = GlobeUtils.geographicToCartesianWgs84(p1);
-            Vector3d p2WC = GlobeUtils.geographicToCartesianWgs84(p2);
+            CelestialBody body = GlobalOptions.getInstance().getCelestialBody();
+            Vector3d p0WC = GlobeUtils.geographicToCartesian(p0, body);
+            Vector3d p1WC = GlobeUtils.geographicToCartesian(p1, body);
+            Vector3d p2WC = GlobeUtils.geographicToCartesian(p2, body);
 
             Vector3d v1 = new Vector3d(p1WC).sub(p0WC);
             Vector3d v2 = new Vector3d(p2WC).sub(p0WC);
