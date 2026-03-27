@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -71,7 +72,8 @@ public class RasterStandardizer {
                     resampledGridCoverage2D = resample(gridCoverage2D, targetCRS);
                 }
                 tile.setGridCoverage2D(resampledGridCoverage2D);
-                File tileFile = new File(outputPath, tile.getName() + ".tif");
+                String uniqueTileName = tile.getName() + UUID.randomUUID();
+                File tileFile = new File(outputPath, uniqueTileName + ".tif");
                 writeGeotiff(tile.getGridCoverage2D(), tileFile);
 
                 resampledGridCoverage2D.dispose(true);
@@ -122,7 +124,8 @@ public class RasterStandardizer {
                     tile.setGridCoverage2D(ellipsoidalDem);
 
                     GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
-                    File tileFile = new File(outputPath, tile.getName() + ".tif");
+                    String uniqueTileName = tile.getName() + UUID.randomUUID();
+                    File tileFile = new File(outputPath, uniqueTileName + ".tif");
                     writeGeotiff(reprojectedTile, tileFile);
 
                     reprojectedTile.dispose(true);

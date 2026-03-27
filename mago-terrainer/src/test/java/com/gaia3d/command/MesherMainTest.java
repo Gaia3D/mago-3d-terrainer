@@ -344,17 +344,17 @@ class MesherMainTest {
     }
 
     @Test
-    void multi_resolution_KimJinHun() throws FactoryException, TransformException, IOException {
+    void multiResolutionKimJinHun() throws FactoryException, TransformException, IOException {
         //*******************************************************************
         // Note: the outputFolder must be different from the inputFolder
         //*******************************************************************
 
         String minTileDepth = String.valueOf(0);
-        String maxTileDepth = String.valueOf(10);
+        String maxTileDepth = String.valueOf(16);
         String refinementStrength = String.valueOf(3);
-        //"-interpolation", "nearest",
-        String originalGeoTiffFolderPath = "E:/data/DEM/KimJinHun_multiKorea/dem_4_zones_intersecting";
-        String outputDirectory = "C:/data/mago-server/output/KimJinHun_multiKorea_dem_4_zones_intersecting_L10";
+
+        String originalGeoTiffFolderPath = "E:\\data\\DEM\\KimJinHun_multiKorea\\dem_4_zones_intersecting";
+        String outputDirectory = "E:\\data\\magoOutput\\dem_4_zones_intersecting_L16_20260325";
         convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
@@ -384,12 +384,12 @@ class MesherMainTest {
         String refinementStrength = String.valueOf(3);
         //"-interpolation", "nearest",
         String originalGeoTiffFolderPath = "D:\\disk_E\\data\\DEM\\multiKorea_MODIFY_TEST\\dem_1_zone_big";
-        String outputDirectory = "D:\\disk_E\\data\\magoOutput\\dem_1_zone_big_L11_20260320";
+        String outputDirectory = "E:\\data\\magoOutput\\dem_1_zone_big_L11_20260325";
 
         String logPath = outputDirectory + "/log.txt";
         // "-nv", "0", no data value set to 0
         String[] args = new String[]{"-i", originalGeoTiffFolderPath, "-o", outputDirectory, "-log", logPath,
-                "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96", "-debug", "-leaveTemp", "-c"};
+                "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96", "-debug", "-leaveTemp"};
         Mago3DTerrainerMain.main(args);
     }
 
@@ -410,6 +410,21 @@ class MesherMainTest {
         String[] args = new String[]{"-i", originalGeoTiffFolderPath, "-o", outputDirectory, "-log", logPath, "-max", maxTileDepth,
                 "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96", "-m", "-debug", "-leaveTemp"};
         Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void multiResolutionKimDockHyon() throws FactoryException, TransformException, IOException {
+        //*******************************************************************
+        // Note: the outputFolder must be different from the inputFolder
+        //*******************************************************************
+
+        String minTileDepth = String.valueOf(0);
+        String maxTileDepth = String.valueOf(17);
+        String refinementStrength = String.valueOf(3);
+
+        String originalGeoTiffFolderPath = "E:\\data\\DEM\\Korea_KimDockHyon";
+        String outputDirectory = "E:\\data\\magoOutput\\Korea_KimDockHyon_L17_20260323";
+        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
     @Test
@@ -436,9 +451,8 @@ class MesherMainTest {
         String logPath = outputPath + "/log.txt";
         // "-nv", "0", no data value set to 0
         //String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-debug"};
-        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96"};
-//        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath, "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-debug",
-//        "-interpolation", "nearest"};
+        String[] args = new String[]{"-i", inputPath, "-o", outputPath, "-log", logPath,
+                "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96"};
         Mago3DTerrainerMain.main(args);
     }
 

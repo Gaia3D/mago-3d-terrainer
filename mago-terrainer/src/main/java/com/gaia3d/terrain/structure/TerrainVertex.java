@@ -11,7 +11,9 @@ import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -123,7 +125,9 @@ public class TerrainVertex {
 
         TerrainHalfEdge firstHalfEdge = this.outingHEdge;
         TerrainHalfEdge currHalfEdge = this.outingHEdge;
-        outingHalfEdges.add(this.outingHEdge); // put the first halfEdge
+
+        Map<TerrainHalfEdge, TerrainHalfEdge> mapUniqueHalfEdges = new HashMap<>();
+        mapUniqueHalfEdges.put(this.outingHEdge, this.outingHEdge);
         boolean finished = false;
         boolean isInteriorVertex = true;
         int counter = 0;
@@ -145,12 +149,20 @@ public class TerrainVertex {
                 break;
             }
 
-            outingHalfEdges.add(nextHalfEdge);
+            if(mapUniqueHalfEdges.containsKey(nextHalfEdge)) {
+                log.warn("This vertex has duplicated outing halfEdges. id : {}, halfEdge id : {}", this.id, nextHalfEdge.getId());
+//                finished = true;
+//                break;
+            } else {
+                mapUniqueHalfEdges.put(nextHalfEdge, nextHalfEdge);
+            }
+
             currHalfEdge = nextHalfEdge;
 
             counter++;
-            if (counter > 10) {
-                log.info("Info : This vertex has more than 10 outing halfEdges. id : {}", this.id);
+            if (counter > 20) {
+                log.info("Info : This vertex has more than 20 outing halfEdges. id : {}", this.id);
+                break;
             }
 
             // Safety check: prevent infinite loops in corrupted mesh topology
@@ -162,6 +174,8 @@ public class TerrainVertex {
                 break;
             }
         }
+
+        outingHalfEdges.addAll(mapUniqueHalfEdges.values());
 
         // if this vertex is NO interior vertex, then must check if there are more outing halfEdges
         if (!isInteriorVertex) {

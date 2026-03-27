@@ -1,6 +1,7 @@
 package com.gaia3d.terrain.structure;
 
 import com.gaia3d.basic.geometry.GaiaRectangle;
+import com.gaia3d.basic.geometry.entities.GaiaLine;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
@@ -165,7 +166,7 @@ public class TerrainHalfEdge {
         Vector3d startPos = this.getStartVertex().getPosition();
         Vector3d endPos = this.getEndVertex().getPosition();
         Vector3d dir = new Vector3d();
-        dir.sub(endPos, startPos);
+        endPos.sub(startPos, dir);
         dir.normalize();
         return dir;
     }
@@ -288,6 +289,82 @@ public class TerrainHalfEdge {
         } catch (Exception e) {
             log.error("Error:", e);
         }
+    }
+
+    public GaiaLine getLine(){
+        Vector3d startPos = this.getStartVertex().getPosition();
+        Vector3d direction = getDirection();
+        return new GaiaLine(startPos, direction);
+    }
+
+    public byte intersectsPoint(Vector3d point, double error) {
+        // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = COINCIDENT_WITH_START_VERTEX, 3 = COINCIDENT_WITH_END_VERTEX
+        byte intersectionType = 0;
+
+        // 1rst, check if intersects with the line.
+        GaiaLine line = this.getLine();
+        if(!line.intersectsPoint(point, error)) {
+            return 0;
+        }
+
+        // check if the point is coincident with start point or end point.
+        Vector3d startPoint = this.getStartVertex().getPosition();
+        double dist = point.distance(startPoint);
+        if(dist < error) {
+            return 2;
+        }
+
+        Vector3d endPoint = this.getEndVertex().getPosition();
+        double dist2 = endPoint.distance(startPoint);
+        if(dist2 < error) {
+            return 3;
+        }
+
+        // finally check if the point is inside the terrainHalfEdge.
+        double abx = endPoint.x - startPoint.x;
+        double aby = endPoint.y - startPoint.y;
+        double abz = endPoint.z - startPoint.z;
+
+        double apx = point.x - startPoint.x;
+        double apy = point.y - startPoint.y;
+        double apz = point.z - startPoint.z;
+
+        double abLenSq = abx * abx + aby * aby + abz * abz;
+
+        // Caso degenerado: A == B
+        if (abLenSq == 0.0) {
+            double dx = point.x - startPoint.x;
+            double dy = point.y - startPoint.y;
+            double dz = point.z - startPoint.z;
+            if((dx*dx + dy*dy + dz*dz) < error * error) {
+                return 2;
+            }
+        }
+
+        // t = proyección
+        double t = (apx * abx + apy * aby + apz * abz) / abLenSq;
+
+        // fuera del segmento
+        if (t < 0.0 || t > 1.0) {
+            return 0;
+        }
+
+        // punto proyectado en la recta
+        double projx = startPoint.x + t * abx;
+        double projy = startPoint.y + t * aby;
+        double projz = startPoint.z + t * abz;
+
+        // distancia al segmento
+        double dx = point.x - projx;
+        double dy = point.y - projy;
+        double dz = point.z - projz;
+
+        double distSq = dx * dx + dy * dy + dz * dz;
+        if(distSq < error * error) {
+            intersectionType = 1;
+        }
+
+        return intersectionType;
     }
 
 }

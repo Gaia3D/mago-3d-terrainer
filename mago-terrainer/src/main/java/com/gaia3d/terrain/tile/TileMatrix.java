@@ -62,13 +62,148 @@ public class TileMatrix {
         listHalfEdges.clear();
     }
 
+    private boolean refineAdjacentTilesVertically(TerrainMesh upMesh, TerrainMesh downMesh, boolean isModify) {
+        if(upMesh == null || downMesh == null) {
+            return false;
+        }
+
+        //  +------------+
+        //  |            |
+        //  |   tileUp   |
+        //  |            |
+        //  +------------+
+        //  |            |
+        //  |  tileDown  |
+        //  |            |
+        //  +------------+
+
+        // The downSide of tileUp must have the same vertices count than the upSide of tileDown, and must be coincident.
+
+        List<TerrainVertex> upTileDownVertices = upMesh.getDownVerticesSortedLeftToRight();
+        List<TerrainVertex> downTileUpVertices = downMesh.getUpVerticesSortedRightToLeft();
+
+        if(upTileDownVertices.size() != downTileUpVertices.size()) {
+            // For each vertex of the upTile, check if is coincident with a vertex or hedge of the downTile.
+            // If a vertex of upTile is coincident with a hedge of downTile, then must refine the triangle of the hedge of the downTile.
+            int splitCountUp = 0;
+            int splitCountDown = 0;
+
+            splitCountUp = refineTileOneSide(upMesh, downTileUpVertices, CardinalDirection.SOUTH, isModify);
+            splitCountDown = refineTileOneSide(downMesh, upTileDownVertices, CardinalDirection.NORTH, isModify);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean refineAdjacentTilesHorizontally(TerrainMesh leftMesh, TerrainMesh rightMesh, boolean isModify) {
+        if (leftMesh == null || rightMesh == null) {
+            return false;
+        }
+
+        //  +----------+----------+
+        //  |          |          |
+        //  | tileLeft | tileRight|
+        //  |          |          |
+        //  +----------+----------+
+
+        // The rightSide of the leftTile must twineable with the leftSide of the rightTile,
+        // so, must have same number of vertices and be coincident.
+
+        List<TerrainVertex> leftTileRightVertices = leftMesh.getRightVerticesSortedDownToUp();
+        List<TerrainVertex> rightTileLeftVertices = rightMesh.getLeftVerticesSortedUpToDown();
+
+        if(leftTileRightVertices.size() != rightTileLeftVertices.size()) {
+            // For each vertex of the leftTile, check if is coincident with a vertex or hedge of the rightTile.
+            // If a vertex of leftTile is coincident with a hedge of rightTile, then must refine the triangle of the hedge of the rightTile.
+            int splitCountLeft = 0;
+            int splitCountRight = 0;
+            splitCountLeft = refineTileOneSide(leftMesh, rightTileLeftVertices, CardinalDirection.EAST, isModify);
+            splitCountRight = refineTileOneSide(rightMesh, leftTileRightVertices, CardinalDirection.WEST, isModify);
+            return true;
+        }
+
+        return false;
+    }
+
+    private int refineTileOneSide(TerrainMesh meshToRefine, List<TerrainVertex> vertices,
+                                      CardinalDirection tileSide, boolean isModify){
+        double error = 1e-6;
+        int verticesCount = vertices.size();
+        boolean triangleSplit = false;
+        boolean finished = false;
+        int counter = 0;
+        int splitCount = 0;
+        List<TerrainHalfEdge> halfEdgesToRefine = null;
+        while(!finished) {
+            triangleSplit = false;
+            for (int i = 0; i < verticesCount; i++) {
+                TerrainVertex vertex = vertices.get(i);
+                if(vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                    continue;
+                }
+                if (tileSide == CardinalDirection.SOUTH) {
+                    halfEdgesToRefine = meshToRefine.getDownHalfEdgesSortedLeftToRight();
+                } else if (tileSide == CardinalDirection.NORTH) {
+                    halfEdgesToRefine = meshToRefine.getUpHalfEdgesSortedRightToLeft();
+                } else if (tileSide == CardinalDirection.EAST) {
+                    halfEdgesToRefine = meshToRefine.getRightHalfEdgesSortedDownToUp();
+                } else if (tileSide == CardinalDirection.WEST) {
+                    halfEdgesToRefine = meshToRefine.getLeftHalfEdgesSortedUpToDown();
+                }
+
+                int hedgesCount = halfEdgesToRefine.size();
+                for (int j = 0; j < hedgesCount; j++) {
+                    TerrainHalfEdge hEdge = halfEdgesToRefine.get(j);
+                    if(hEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                        continue;
+                    }
+                    // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = COINCIDENT_WITH_START_VERTEX, 3 = COINCIDENT_WITH_END_VERTEX
+                    if (hEdge.intersectsPoint(vertex.getPosition(), error) == 1) {
+                        // refine the triangle of the hedge of the rightTile
+                        TerrainTriangle triangle = hEdge.getTriangle();
+                        try {
+                            this.listHalfEdges.clear();
+                            meshToRefine.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(),
+                                    this.manager.getTriangleList(), this.listHalfEdges, isModify);
+                            this.listHalfEdges.clear();
+                            splitCount++;
+                        } catch (Exception e) {
+                            log.warn("Refine adjacent tiles horizontally, counter : {}", counter);
+                        }
+
+                        meshToRefine.removeDeletedObjects();
+                        meshToRefine.setObjectsIdInList();
+
+                        triangleSplit = true;
+                        break; // break for this vertex.
+                    }
+                }
+            }
+
+            meshToRefine.removeDeletedObjects();
+            meshToRefine.setObjectsIdInList();
+
+            if(!triangleSplit){
+                finished = true;
+                break;
+            }
+
+            counter++;
+            if(counter > 100) {
+                log.warn("Refine adjacent tiles horizontally, counter : {}", counter);
+                break;
+            }
+        }
+
+        return splitCount;
+    }
+
     private boolean setTwinsBetweenHalfEdgesInverseOrder(List<TerrainHalfEdge> listHEdges_A, List<TerrainHalfEdge> listHEdges_B) {
         if (listHEdges_A.size() != listHEdges_B.size()) {
-            log.warn("Tile boundary edge count mismatch: {} edges vs {} edges. " +
-                     "Will attempt to match edges by position. This may occur when degenerate triangles " +
-                     "are removed or deadlock resolution splits triangles as border triangles.",
-                     listHEdges_A.size(), listHEdges_B.size());
-            // Continue and try to match what we can by position
+            log.error("The size of the halfEdges lists are different." + "A_size: " + listHEdges_A.size() + ", B_size: " + listHEdges_B.size());
+            return false;
         }
 
         int countA = listHEdges_A.size();
@@ -281,7 +416,10 @@ public class TileMatrix {
 
                         // the c_tile can be null
                         if (!rowMeshRightHalfEdges.isEmpty()) {
-                            // private boolean refineAdjacentTilesHorizontally(TileWgs84 tileLeft, TileWgs84 tileRight)
+                            if(rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
+                                log.warn("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
+                                refineAdjacentTilesHorizontally(rowMesh, tileMesh, globalOptions.isModify());
+                            }
                             this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
 
                             // now, merge the left tile mesh to the result mesh.
@@ -322,6 +460,10 @@ public class TileMatrix {
                     // the c_tile can be null
                     if (!resultMeshDownHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
+                        if(resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
+                            log.warn("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
+                            refineAdjacentTilesVertically(resultMesh, rowMesh, globalOptions.isModify());
+                        }
                         this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
                         // now, merge the row mesh to the result mesh.
                         resultMesh.removeDeletedObjects();
@@ -468,6 +610,10 @@ public class TileMatrix {
 
                         // the c_tile can be null
                         if (!rowMeshRightHalfEdges.isEmpty()) {
+                            if(rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
+                                log.warn("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
+                                refineAdjacentTilesHorizontally(rowMesh, tileMesh, globalOptions.isModify());
+                            }
                             this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
 
                             // now, merge the left tile mesh to the result mesh.
@@ -537,6 +683,10 @@ public class TileMatrix {
                     // the c_tile can be null
                     if (!resultMeshDownHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
+                        if(resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
+                            log.warn("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
+                            refineAdjacentTilesVertically(resultMesh, rowMesh, globalOptions.isModify());
+                        }
                         this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
                         // now, merge the row mesh to the result mesh.
                         resultMesh.removeDeletedObjects();

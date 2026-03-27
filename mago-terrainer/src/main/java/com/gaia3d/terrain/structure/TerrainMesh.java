@@ -201,6 +201,9 @@ public class TerrainMesh {
         // This function returns the halfEdges that have the type and the twin is null
         List<TerrainHalfEdge> halfEdges = new ArrayList<>();
         for (TerrainHalfEdge halfEdge : this.halfEdges) {
+            if(halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED){
+                continue;
+            }
             if (halfEdge.getType() == type && halfEdge.getTwin() == null) {
                 halfEdges.add(halfEdge);
             }
@@ -570,7 +573,8 @@ public class TerrainMesh {
     }
 
 
-    public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager, List<TerrainTriangle> resultNewTriangles,
+    public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager,
+                              List<TerrainTriangle> resultNewTriangles,
                               List<TerrainHalfEdge> listHalfEdges, boolean isModify) throws TransformException, IOException {
         // A triangle is split by the longest edge, so
         // the longest edge of the triangle must be the longest edge of the adjacentTriangle
@@ -608,6 +612,12 @@ public class TerrainMesh {
 
             double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
                     midPosition.x, midPosition.y, intersectionType);
+
+            // check if z is valid value.
+            if (Double.isNaN(z)) {
+                log.info("getElevationBilinear: resultElevation is NaN");
+                z = beforeZ;
+            }
 
             if(isModify){
                 if(intersectionType[0] != 1){
@@ -796,6 +806,12 @@ public class TerrainMesh {
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
                     midPosition.x, midPosition.y, intersectionType);
+
+            // check if z is valid value.
+            if (Double.isNaN(z)) {
+                log.info("getElevationBilinear: resultElevation is NaN");
+                z = beforeZ;
+            }
 
             if (isModify) {
                 if (intersectionType[0] != 1) {
@@ -1006,19 +1022,15 @@ public class TerrainMesh {
         }
         TerrainHalfEdge twin = longestHEdge.getTwin();
 
-        if (twin == null) {
+        if (twin == null || twin.getObjectStatus() == TerrainObjectStatus.DELETED) {
             return null;
         }
 
         TerrainTriangle adjacentTriangle = twin.getTriangle();
-        if (adjacentTriangle == null) {
-            return null;
-        }
-
         // CRITICAL FIX: Check if adjacent triangle is DELETED before accessing its properties
         // When triangles are deleted, their halfEdge is set to null (line 416) and ID remains -1
         // This prevents thousands of "Deadlock detected: Triangle -1 and adjacent triangle -1" messages
-        if (adjacentTriangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
+        if (adjacentTriangle == null || adjacentTriangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
             log.debug("Adjacent triangle {} is already DELETED. Treating target triangle {} as border triangle.",
                       adjacentTriangle.getId(), targetTriangle.getId());
             return null;
@@ -1030,7 +1042,7 @@ public class TerrainMesh {
         TerrainHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
 
         // Defensive null check: Handle degenerate triangles
-        if (longestHEdgeOfAdjacentTriangle == null) {
+        if (longestHEdgeOfAdjacentTriangle == null  || longestHEdgeOfAdjacentTriangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
             log.warn("Adjacent triangle {} has no valid longest half-edge (degenerate triangle). " +
                      "Marking as deleted and treating target triangle as border triangle.",
                      adjacentTriangle.getId());
