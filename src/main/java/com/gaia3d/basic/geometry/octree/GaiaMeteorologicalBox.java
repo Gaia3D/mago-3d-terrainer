@@ -15,7 +15,7 @@ import org.joml.Vector4d;
 @Slf4j
 @Getter
 @Setter
-public class GaiaFaceContent implements GeometryContent {
+public class GaiaMeteorologicalBox implements GeometryContent {
     // This class is used by GaiaOctree to store the face data.
     private GaiaFace face = null; // main data
     private GaiaScene sceneParent = null;
