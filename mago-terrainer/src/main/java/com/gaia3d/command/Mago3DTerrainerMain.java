@@ -116,13 +116,16 @@ public class Mago3DTerrainerMain {
         tileWgs84Manager.calculateAvailableTilesForEachDepth();
         log.info("[Pre][AvailableTileSet] Finished calculating available tiles for each depth.");
 
-        log.info("[Pre][Standardization] Start GeoTiff Standardization files.");
-        tileWgs84Manager.processStandardizeRasters();
-        log.info("[Pre][Standardization] Finished GeoTiff Standardization files.");
+        boolean skipStandardizationAndResize = globalOptions.isSkipStandardizationAndResize();
+        if(!skipStandardizationAndResize) {
+            log.info("[Pre][Standardization] Start GeoTiff Standardization files.");
+            tileWgs84Manager.processStandardizeRasters();
+            log.info("[Pre][Standardization] Finished GeoTiff Standardization files.");
 
-        log.info("[Pre][Resize] Start GeoTiff Resizing files.");
-        tileWgs84Manager.processResizeRasters(globalOptions.getInputPath(), null);
-        log.info("[Pre][Resize] Finished GeoTiff Resizing files.");
+            log.info("[Pre][Resize] Start GeoTiff Resizing files.");
+            tileWgs84Manager.processResizeRasters(globalOptions.getInputPath(), null);
+            log.info("[Pre][Resize] Finished GeoTiff Resizing files.");
+        }
 
         log.info("[Tile] Start generate terrain elevation data.");
         TerrainElevationDataManager terrainElevationDataManager = new TerrainElevationDataManager();

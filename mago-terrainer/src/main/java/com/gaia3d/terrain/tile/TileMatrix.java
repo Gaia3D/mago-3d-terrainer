@@ -166,7 +166,7 @@ public class TileMatrix {
                         try {
                             this.listHalfEdges.clear();
                             meshToRefine.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(),
-                                    this.manager.getTriangleList(), this.listHalfEdges, isModify);
+                                    this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
                             this.listHalfEdges.clear();
                             splitCount++;
                         } catch (Exception e) {
@@ -610,44 +610,44 @@ public class TileMatrix {
 
                         // the c_tile can be null
                         if (!rowMeshRightHalfEdges.isEmpty()) {
-                            if(rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
-                                log.warn("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
-                                refineAdjacentTilesHorizontally(rowMesh, tileMesh, globalOptions.isModify());
-                            }
+//                            if(rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
+//                                log.warn("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
+//                                refineAdjacentTilesHorizontally(rowMesh, tileMesh, globalOptions.isModify());
+//                            }
                             this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
 
                             // now, merge the left tile mesh to the result mesh.
                             rowMesh.removeDeletedObjects();
                             rowMesh.mergeMesh(tileMesh);
 
-                            // POST-MERGE VALIDATION: Check and repair topology after horizontal consolidation
-                            int[] healthMetrics = checkTopologyHealth(rowMesh);
-                            int totalVertices = healthMetrics[0];
-                            int corruptedVertices = healthMetrics[1];
-                            int maxEdgeCount = healthMetrics[2];
-
-                            if (corruptedVertices > 0) {
-                                double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
-
-                                // Check for SEVERE corruption before attempting repair
-                                if (corruptionRate > 20.0 || maxEdgeCount > 50) {
-                                    log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
-                                            "({}/{}), max edges={}. Consolidation quality too poor.",
-                                            String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
-                                    // Continue anyway but log severe warning - mesh may still be usable
-                                }
-
-                                log.warn("[TileConsolidation] Horizontal merge: Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
-                                        corruptedVertices, String.format("%.1f", corruptionRate));
-                                int repairedCount = rowMesh.repairMeshTopology();
-                                if (repairedCount < corruptedVertices) {
-                                    log.warn("[TileConsolidation] Horizontal merge: Only repaired {}/{} vertices.",
-                                            repairedCount, corruptedVertices);
-                                } else {
-                                    log.info("[TileConsolidation] Horizontal merge: Successfully repaired all {} corrupted vertices.",
-                                            repairedCount);
-                                }
-                            }
+//                            // POST-MERGE VALIDATION: Check and repair topology after horizontal consolidation
+//                            int[] healthMetrics = checkTopologyHealth(rowMesh);
+//                            int totalVertices = healthMetrics[0];
+//                            int corruptedVertices = healthMetrics[1];
+//                            int maxEdgeCount = healthMetrics[2];
+//
+//                            if (corruptedVertices > 0) {
+//                                double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
+//
+//                                // Check for SEVERE corruption before attempting repair
+//                                if (corruptionRate > 20.0 || maxEdgeCount > 50) {
+//                                    log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
+//                                            "({}/{}), max edges={}. Consolidation quality too poor.",
+//                                            String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
+//                                    // Continue anyway but log severe warning - mesh may still be usable
+//                                }
+//
+//                                log.warn("[TileConsolidation] Horizontal merge: Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
+//                                        corruptedVertices, String.format("%.1f", corruptionRate));
+//                                int repairedCount = rowMesh.repairMeshTopology();
+//                                if (repairedCount < corruptedVertices) {
+//                                    log.warn("[TileConsolidation] Horizontal merge: Only repaired {}/{} vertices.",
+//                                            repairedCount, corruptedVertices);
+//                                } else {
+//                                    log.info("[TileConsolidation] Horizontal merge: Successfully repaired all {} corrupted vertices.",
+//                                            repairedCount);
+//                                }
+//                            }
                         }
                     }
                 }
@@ -683,43 +683,43 @@ public class TileMatrix {
                     // the c_tile can be null
                     if (!resultMeshDownHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
-                        if(resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
-                            log.warn("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
-                            refineAdjacentTilesVertically(resultMesh, rowMesh, globalOptions.isModify());
-                        }
+//                        if(resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
+//                            log.warn("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
+//                            refineAdjacentTilesVertically(resultMesh, rowMesh, globalOptions.isModify());
+//                        }
                         this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
                         // now, merge the row mesh to the result mesh.
                         resultMesh.removeDeletedObjects();
                         resultMesh.mergeMesh(rowMesh);
 
-                        // POST-MERGE VALIDATION: Check and repair topology after vertical consolidation
-                        int[] healthMetrics = checkTopologyHealth(resultMesh);
-                        int totalVertices = healthMetrics[0];
-                        int corruptedVertices = healthMetrics[1];
-                        int maxEdgeCount = healthMetrics[2];
-
-                        if (corruptedVertices > 0) {
-                            double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
-
-                            // Check for SEVERE corruption before attempting repair
-                            if (corruptionRate > 20.0 || maxEdgeCount > 50) {
-                                log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
-                                        "({}/{}), max edges={}. Consolidation quality too poor.",
-                                        String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
-                                // Continue anyway but log severe warning - mesh may still be usable
-                            }
-
-                            log.warn("[TileConsolidation] Vertical merge (down): Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
-                                    corruptedVertices, String.format("%.1f", corruptionRate));
-                            int repairedCount = resultMesh.repairMeshTopology();
-                            if (repairedCount < corruptedVertices) {
-                                log.warn("[TileConsolidation] Vertical merge (down): Only repaired {}/{} vertices.",
-                                        repairedCount, corruptedVertices);
-                            } else {
-                                log.info("[TileConsolidation] Vertical merge (down): Successfully repaired all {} corrupted vertices.",
-                                        repairedCount);
-                            }
-                        }
+//                        // POST-MERGE VALIDATION: Check and repair topology after vertical consolidation
+//                        int[] healthMetrics = checkTopologyHealth(resultMesh);
+//                        int totalVertices = healthMetrics[0];
+//                        int corruptedVertices = healthMetrics[1];
+//                        int maxEdgeCount = healthMetrics[2];
+//
+//                        if (corruptedVertices > 0) {
+//                            double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
+//
+//                            // Check for SEVERE corruption before attempting repair
+//                            if (corruptionRate > 20.0 || maxEdgeCount > 50) {
+//                                log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
+//                                        "({}/{}), max edges={}. Consolidation quality too poor.",
+//                                        String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
+//                                // Continue anyway but log severe warning - mesh may still be usable
+//                            }
+//
+//                            log.warn("[TileConsolidation] Vertical merge (down): Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
+//                                    corruptedVertices, String.format("%.1f", corruptionRate));
+//                            int repairedCount = resultMesh.repairMeshTopology();
+//                            if (repairedCount < corruptedVertices) {
+//                                log.warn("[TileConsolidation] Vertical merge (down): Only repaired {}/{} vertices.",
+//                                        repairedCount, corruptedVertices);
+//                            } else {
+//                                log.info("[TileConsolidation] Vertical merge (down): Successfully repaired all {} corrupted vertices.",
+//                                        repairedCount);
+//                            }
+//                        }
                     }
                 } else {
                     //  +------------+
@@ -744,34 +744,34 @@ public class TileMatrix {
                         resultMesh.removeDeletedObjects();
                         resultMesh.mergeMesh(rowMesh);
 
-                        // POST-MERGE VALIDATION: Check and repair topology after vertical consolidation
-                        int[] healthMetrics = checkTopologyHealth(resultMesh);
-                        int totalVertices = healthMetrics[0];
-                        int corruptedVertices = healthMetrics[1];
-                        int maxEdgeCount = healthMetrics[2];
-
-                        if (corruptedVertices > 0) {
-                            double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
-
-                            // Check for SEVERE corruption before attempting repair
-                            if (corruptionRate > 20.0 || maxEdgeCount > 50) {
-                                log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
-                                        "({}/{}), max edges={}. Consolidation quality too poor.",
-                                        String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
-                                // Continue anyway but log severe warning - mesh may still be usable
-                            }
-
-                            log.warn("[TileConsolidation] Vertical merge (up): Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
-                                    corruptedVertices, String.format("%.1f", corruptionRate));
-                            int repairedCount = resultMesh.repairMeshTopology();
-                            if (repairedCount < corruptedVertices) {
-                                log.warn("[TileConsolidation] Vertical merge (up): Only repaired {}/{} vertices.",
-                                        repairedCount, corruptedVertices);
-                            } else {
-                                log.info("[TileConsolidation] Vertical merge (up): Successfully repaired all {} corrupted vertices.",
-                                        repairedCount);
-                            }
-                        }
+//                        // POST-MERGE VALIDATION: Check and repair topology after vertical consolidation
+//                        int[] healthMetrics = checkTopologyHealth(resultMesh);
+//                        int totalVertices = healthMetrics[0];
+//                        int corruptedVertices = healthMetrics[1];
+//                        int maxEdgeCount = healthMetrics[2];
+//
+//                        if (corruptedVertices > 0) {
+//                            double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
+//
+//                            // Check for SEVERE corruption before attempting repair
+//                            if (corruptionRate > 20.0 || maxEdgeCount > 50) {
+//                                log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
+//                                        "({}/{}), max edges={}. Consolidation quality too poor.",
+//                                        String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
+//                                // Continue anyway but log severe warning - mesh may still be usable
+//                            }
+//
+//                            log.warn("[TileConsolidation] Vertical merge (up): Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
+//                                    corruptedVertices, String.format("%.1f", corruptionRate));
+//                            int repairedCount = resultMesh.repairMeshTopology();
+//                            if (repairedCount < corruptedVertices) {
+//                                log.warn("[TileConsolidation] Vertical merge (up): Only repaired {}/{} vertices.",
+//                                        repairedCount, corruptedVertices);
+//                            } else {
+//                                log.info("[TileConsolidation] Vertical merge (up): Successfully repaired all {} corrupted vertices.",
+//                                        repairedCount);
+//                            }
+//                        }
                     }
                 }
             }
@@ -1182,7 +1182,7 @@ public class TileMatrix {
             if (mustRefineTriangle(triangle)) {
                 this.manager.getTriangleList().clear();
                 this.listHalfEdges.clear();
-                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModify);
+                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
                 this.listHalfEdges.clear();
 
                 if (!this.manager.getTriangleList().isEmpty()) {
@@ -1251,6 +1251,30 @@ public class TileMatrix {
     }
 
     public void refineMesh(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
+        // Inside the mesh, there are triangles of n different tiles
+        // Here refine only the triangles of the tiles of TilesRange
+
+        double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(tilesRange.getTileDepth());
+        log.debug("[RefineMesh] Tile Level : {} # MaxDiff(m) : {}", tilesRange.getTileDepth(), maxDiff);
+
+        // refine the mesh
+        boolean finished = false;
+        int splitCount = 0;
+        int maxIterations = this.manager.getTriangleRefinementMaxIterations();
+        while (!finished) {
+            if (!this.refineMeshOneIteration(mesh, tilesRange)) {
+                finished = true;
+            }
+
+            splitCount++;
+
+            if (splitCount >= maxIterations) {
+                finished = true;
+            }
+        }
+    }
+
+    public void refineMesh_new(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of n different tiles
         // Here refine only the triangles of the tiles of TilesRange
 

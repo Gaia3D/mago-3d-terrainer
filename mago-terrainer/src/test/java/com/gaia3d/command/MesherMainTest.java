@@ -354,8 +354,12 @@ class MesherMainTest {
         String refinementStrength = String.valueOf(3);
 
         String originalGeoTiffFolderPath = "E:\\data\\DEM\\KimJinHun_multiKorea\\dem_4_zones_intersecting";
-        String outputDirectory = "E:\\data\\magoOutput\\dem_4_zones_intersecting_L16_20260325";
-        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+        String outputDirectory = "E:\\data\\magoOutput\\dem_4_zones_intersecting_L16_20260327";
+        String logPath = outputDirectory + "/log.txt";
+        String[] args = new String[]{"-i", originalGeoTiffFolderPath, "-o", outputDirectory, "-log", logPath,
+                "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0", "-g", "EGM96", "-debug", "-leaveTemp"};
+        Mago3DTerrainerMain.main(args);
+        //convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
     }
 
     @Test
@@ -422,9 +426,13 @@ class MesherMainTest {
         String maxTileDepth = String.valueOf(17);
         String refinementStrength = String.valueOf(3);
 
-        String originalGeoTiffFolderPath = "E:\\data\\DEM\\Korea_KimDockHyon";
-        String outputDirectory = "E:\\data\\magoOutput\\Korea_KimDockHyon_L17_20260323";
-        convert(originalGeoTiffFolderPath, outputDirectory, minTileDepth, maxTileDepth, refinementStrength);
+        String originalGeoTiffFolderPath = "E:\\data\\DEM\\Korea_KimDockHyon_reduit_2_B";
+        String outputDirectory = "E:\\data\\mago-server\\output\\Korea_KimDockHyon_reduit_2_B_L17_20260401";
+        String logPath = outputDirectory + "/log.txt";
+
+        String[] args = new String[]{"-i", originalGeoTiffFolderPath, "-o", outputDirectory, "-log", logPath,
+                "-min", minTileDepth, "-max", maxTileDepth, "-is", refinementStrength, "-cn", "-nv", "0"};
+        Mago3DTerrainerMain.main(args);
     }
 
     @Test
