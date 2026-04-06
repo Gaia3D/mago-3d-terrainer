@@ -49,7 +49,6 @@ public class DefaultTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-geoid", "EGM96",
-                "-min", "0",
                 "-max", "10",
         };
         Mago3DTerrainerMain.main(args);
@@ -65,7 +64,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
                 "-max", "10",
         };
         Mago3DTerrainerMain.main(args);
@@ -81,7 +79,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
                 "-max", "12",
         };
         Mago3DTerrainerMain.main(args);
@@ -97,7 +94,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
                 "-max", "10",
                 "-interpolationType", "nearest",
         };
@@ -114,7 +110,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
                 "-max", "12",
                 "-interpolationType", "nearest",
         };
@@ -131,7 +126,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
                 "-max", "12",
         };
         Mago3DTerrainerMain.main(args);
@@ -147,7 +141,6 @@ public class DefaultTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-min", "0",
                 "-max", "12",
         };
         Mago3DTerrainerMain.main(args);

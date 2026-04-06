@@ -1,4 +1,4 @@
-package com.gaia3d.release;
+package com.gaia3d.release.env;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.command.Mago3DTerrainerMain;

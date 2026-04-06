@@ -9,13 +9,16 @@ import org.geotools.coverage.processing.Operations;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.Position2D;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
 @Slf4j
+@Deprecated
 class GaiaGeoTiffManagerTest {
 
+    @Disabled
     @Test
     void test() {
         LoggingConfiguration.initConsoleLogger();

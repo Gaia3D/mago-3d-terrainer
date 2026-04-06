@@ -8,7 +8,6 @@ import org.joml.Vector3d;
 @Slf4j
 @Getter
 @Setter
-
 public class GaiaPlane {
     private final double a;
     private final double b;
@@ -34,6 +33,14 @@ public class GaiaPlane {
         this.b = normal.y;
         this.c = normal.z;
         this.d = -position.dot(normal);
+    }
+
+    public static GaiaPlane setPlaneFromPositionAndNormal(Vector3d position, Vector3d normal) {
+        double a = normal.x;
+        double b = normal.y;
+        double c = normal.z;
+        double d = -position.dot(normal);
+        return new GaiaPlane(a, b, c, d);
     }
 
     public double distanceToPoint(Vector3d point) {
