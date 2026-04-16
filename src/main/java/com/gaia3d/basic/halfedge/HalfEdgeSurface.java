@@ -39,145 +39,42 @@ public class HalfEdgeSurface implements Serializable {
     private boolean dirty = true;
 
     public void setTwins() {
-        Map<HalfEdgeVertex, List<HalfEdge>> mapVertexOutingHEdges = new HashMap<>();
-        Map<HalfEdgeVertex, List<HalfEdge>> mapVertexIncomingHEdges = new HashMap<>();
-
-        for (HalfEdge halfEdge : halfEdges) {
-            HalfEdgeVertex startVertex = halfEdge.getStartVertex();
-            HalfEdgeVertex endVertex = halfEdge.getEndVertex();
-
-            if (startVertex != null) {
-                List<HalfEdge> outingEdges = mapVertexOutingHEdges.computeIfAbsent(startVertex, k -> new ArrayList<>());
-                outingEdges.add(halfEdge);
-            }
-
-            if (endVertex != null) {
-                List<HalfEdge> incomingEdges = mapVertexIncomingHEdges.computeIfAbsent(endVertex, k -> new ArrayList<>());
-                incomingEdges.add(halfEdge);
-            }
-        }
-
-        // make twinables lists
-        Map<HalfEdge, List<HalfEdge>> mapHalfEdgeTwinables = new HashMap<>();
-        Map<HalfEdge, HalfEdge> mapRemovedHalfEdges = new HashMap<>();
-        int vertexCount = vertices.size();
-        for (int i = 0; i < vertexCount; i++) {
+        int verticesCount = vertices.size();
+        for (int i = 0; i < verticesCount; i++) {
             HalfEdgeVertex vertex = vertices.get(i);
-            List<HalfEdge> outingEdges = mapVertexOutingHEdges.get(vertex);
-            List<HalfEdge> incomingEdges = mapVertexIncomingHEdges.get(vertex);
+            vertex.setId(i);
+        }
 
-            if (outingEdges == null || incomingEdges == null) {
-                continue;
-            }
+        Map<Long, HalfEdge> map = new HashMap<>(halfEdges.size());
 
-            int outingEdgesCount = outingEdges.size();
-            int incomingEdgesCount = incomingEdges.size();
-            for (int j = 0; j < outingEdgesCount; j++) {
-                HalfEdge outingEdge = outingEdges.get(j);
+        for (HalfEdge he : halfEdges) {
+            HalfEdgeVertex strVertex = he.getStartVertex();
+            HalfEdgeVertex endVertex = he.getEndVertex();
 
-                if (outingEdge == null) {
-                    continue;
-                }
-                for (int k = 0; k < incomingEdgesCount; k++) {
-                    HalfEdge incomingEdge = incomingEdges.get(k);
-                    if (incomingEdge == null) {
-                        continue;
-                    }
-                    if (incomingEdge.isTwineableByPointers(outingEdge)) {
-                        List<HalfEdge> twinables = mapHalfEdgeTwinables.computeIfAbsent(outingEdge, k2 -> new ArrayList<>());
-//                        if (!twinables.isEmpty())
-//                        {
-//                            mapRemovedHalfEdges.put(incomingEdge, incomingEdge);
-//                        }
-//                        else
-                        {
-                            twinables.add(incomingEdge);
-                        }
+            int a = strVertex.getId();
+            int b = endVertex.getId();
 
-                    }
-                }
+            long key = (((long)a) << 32) | (b & 0xffffffffL);
+            long twinKey = (((long)b) << 32) | (a & 0xffffffffL);
+
+            HalfEdge twin = map.get(twinKey);
+
+            if (twin != null && !twin.hasTwin() && he.isTwineableByPointers(twin)) {
+                he.setTwin(twin);
+                map.remove(twinKey);
+            } else {
+                map.put(key, he);
             }
         }
 
-        // now set twins
-        Set<HalfEdge> halfEdgesSet2 = mapHalfEdgeTwinables.keySet();
-        for (HalfEdge halfEdge : halfEdgesSet2) {
-            if (halfEdge.hasTwin()) {
-                continue;
-            }
-            List<HalfEdge> twinables = mapHalfEdgeTwinables.get(halfEdge);
-            for (int i = 0; i < twinables.size(); i++) {
-                HalfEdge twinable = twinables.get(i);
-                if (twinable.hasTwin()) {
-                    continue;
-                }
-                if (halfEdge.setTwin(twinable)) {
-                    break;
-                }
-            }
-        }
-
-        // now collect hedges that has not twin
-        List<HalfEdge> singleHalfEdges = new ArrayList<>();
         int hedgesCount = halfEdges.size();
         for (int i = 0; i < hedgesCount; i++) {
             HalfEdge hedge = halfEdges.get(i);
-            if (!hedge.hasTwin()) {
-                singleHalfEdges.add(hedge);
-                singleHalfEdges.add(hedge.getNext());
-            } else {
+            if (hedge.hasTwin()) {
                 hedge.setItselfAsOutingHalfEdgeToTheStartVertex();
             }
         }
     }
-
-    public void setTwins_original() {
-        Map<HalfEdgeVertex, List<HalfEdge>> mapVertexOutingHEdges = new HashMap<>();
-        Map<HalfEdgeVertex, List<HalfEdge>> mapVertexIncomingHEdges = new HashMap<>();
-
-        for (HalfEdge halfEdge : halfEdges) {
-            HalfEdgeVertex startVertex = halfEdge.getStartVertex();
-            HalfEdgeVertex endVertex = halfEdge.getEndVertex();
-
-            List<HalfEdge> outingEdges = mapVertexOutingHEdges.computeIfAbsent(startVertex, k -> new ArrayList<>());
-            outingEdges.add(halfEdge);
-
-            List<HalfEdge> incomingEdges = mapVertexIncomingHEdges.computeIfAbsent(endVertex, k -> new ArrayList<>());
-            incomingEdges.add(halfEdge);
-        }
-
-        int vertexCount = vertices.size();
-        for (int i = 0; i < vertexCount; i++) {
-            HalfEdgeVertex vertex = vertices.get(i);
-            List<HalfEdge> outingEdges = mapVertexOutingHEdges.get(vertex);
-            List<HalfEdge> incomingEdges = mapVertexIncomingHEdges.get(vertex);
-
-            if (outingEdges == null || incomingEdges == null) {
-                continue;
-            }
-
-            int outingEdgesCount = outingEdges.size();
-            int incomingEdgesCount = incomingEdges.size();
-            for (int j = 0; j < outingEdgesCount; j++) {
-                HalfEdge outingEdge = outingEdges.get(j);
-
-                if (outingEdge.hasTwin()) {
-                    continue;
-                }
-                for (int k = 0; k < incomingEdgesCount; k++) {
-                    HalfEdge incomingEdge = incomingEdges.get(k);
-
-                    if (incomingEdge.hasTwin()) {
-                        continue;
-                    }
-                    if (outingEdge.setTwin(incomingEdge)) {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
 
     public void calculatePlaneNormals() {
         int facesCount = faces.size();
