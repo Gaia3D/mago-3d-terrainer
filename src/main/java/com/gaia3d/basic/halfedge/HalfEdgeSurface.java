@@ -716,7 +716,7 @@ public class HalfEdgeSurface implements Serializable {
         log.info("vertices % deleted = " + (verticesCountDiff * 100.0) / originalVerticesCount);
     }
 
-    private int deleteDegeneratedFaces(Map<HalfEdgeFace, List<HalfEdge>> mapFaceToHalfEdges) {
+    public int deleteDegeneratedFaces(Map<HalfEdgeFace, List<HalfEdge>> mapFaceToHalfEdges) {
         int facesCount = faces.size();
         int deletedCount = 0;
         for (int i = 0; i < facesCount; i++) {
@@ -749,7 +749,7 @@ public class HalfEdgeSurface implements Serializable {
         return deletedCount;
     }
 
-    private int deleteNoUsedVertices() {
+    public int deleteNoUsedVertices() {
         // Sometimes, there are no used vertices
         // The no used vertices must be deleted (vertex indices of the faces will be modified!)
         Map<HalfEdgeVertex, HalfEdgeVertex> mapUsedVertices = new HashMap<>();

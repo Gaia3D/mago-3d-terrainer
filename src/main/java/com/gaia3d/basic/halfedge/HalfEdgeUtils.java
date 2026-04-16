@@ -1258,6 +1258,18 @@ public class HalfEdgeUtils {
         return Math.sqrt(s * (s - dist1) * (s - dist2) * (s - dist3));
     }
 
+    public static double getLongestEdgeLength(HalfEdgeVertex a, HalfEdgeVertex b, HalfEdgeVertex c) {
+        Vector3d posA = a.getPosition();
+        Vector3d posB = b.getPosition();
+        Vector3d posC = c.getPosition();
+
+        double dist1 = posA.distance(posB);
+        double dist2 = posB.distance(posC);
+        double dist3 = posC.distance(posA);
+
+        return Math.max(dist1, Math.max(dist2, dist3));
+    }
+
     public static double calculateAspectRatioAsTriangle(HalfEdgeVertex a, HalfEdgeVertex b, HalfEdgeVertex c) {
         Vector3d posA = a.getPosition();
         Vector3d posB = b.getPosition();
