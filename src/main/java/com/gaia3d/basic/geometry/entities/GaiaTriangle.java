@@ -1,6 +1,7 @@
 package com.gaia3d.basic.geometry.entities;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.basic.model.GaiaVertex;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -79,5 +80,13 @@ public class GaiaTriangle {
                 (point1.y + point2.y + point3.y) / 3,
                 (point1.z + point2.z + point3.z) / 3
         );
+    }
+
+    public double area() {
+        Vector3d edge1 = new Vector3d(point2).sub(point1);
+        Vector3d edge2 = new Vector3d(point3).sub(point1);
+        Vector3d crossProduct = new Vector3d();
+        edge1.cross(edge2, crossProduct);
+        return 0.5 * crossProduct.length();
     }
 }

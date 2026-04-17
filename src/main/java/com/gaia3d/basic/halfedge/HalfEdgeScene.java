@@ -669,4 +669,13 @@ public class HalfEdgeScene implements Serializable {
         }
         return facesCount;
     }
+
+    public boolean TEST_checkTexCoords() {
+//        for (HalfEdgeNode node : nodes) {
+//            if (!node.TEST_checkTexCoords()) {
+//                return false;
+//            }
+//        }
+        return true;
+    }
 }

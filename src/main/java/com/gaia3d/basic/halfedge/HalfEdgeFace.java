@@ -282,46 +282,6 @@ public class HalfEdgeFace implements Serializable {
 
     public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces,
                                   Set<HalfEdgeFace> mapVisitedFaces,
-                                  Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap) {
-        if (this.halfEdge == null) {
-            return false;
-        }
-
-        mapVisitedFaces.add(this);
-        resultWeldedFaces.add(this);
-
-        List<HalfEdgeFace> adjacentFaces = this.getAdjacentFaces(null);
-        if (adjacentFaces != null) {
-            for (HalfEdgeFace adjacentFace : adjacentFaces) {
-                if (adjacentFace != null) {
-                    // check if is visited
-                    if (!mapVisitedFaces.contains(adjacentFace)) {
-                        resultWeldedFaces.add(adjacentFace);
-                    }
-                }
-            }
-        }
-
-        List<HalfEdgeVertex> vertices = this.getVertices(null);
-        for (HalfEdgeVertex vertex : vertices) {
-            List<HalfEdgeFace> facesSharingVertex = vertexFacesMap.get(vertex);
-            if (facesSharingVertex != null) {
-                for (HalfEdgeFace faceSharingVertex : facesSharingVertex) {
-                    if (faceSharingVertex != null) {
-                        // check if is visited
-                        if (!mapVisitedFaces.contains(faceSharingVertex)) {
-                            resultWeldedFaces.add(faceSharingVertex);
-                        }
-                    }
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces,
-                                  Set<HalfEdgeFace> mapVisitedFaces,
                                   MapVertexAllFacesIndices mapVertexAllFacesIndices,
                                   List<HalfEdgeFace> motherFaces) {
         if (this.halfEdge == null) {
@@ -362,6 +322,46 @@ public class HalfEdgeFace implements Serializable {
         return true;
     }
 
+    public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces,
+                                  Set<HalfEdgeFace> mapVisitedFaces,
+                                  Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap) {
+        if (this.halfEdge == null) {
+            return false;
+        }
+
+        mapVisitedFaces.add(this);
+        resultWeldedFaces.add(this);
+
+        List<HalfEdgeFace> adjacentFaces = this.getAdjacentFaces(null);
+        if (adjacentFaces != null) {
+            for (HalfEdgeFace adjacentFace : adjacentFaces) {
+                if (adjacentFace != null) {
+                    // check if is visited
+                    if (!mapVisitedFaces.contains(adjacentFace)) {
+                        resultWeldedFaces.add(adjacentFace);
+                    }
+                }
+            }
+        }
+
+        List<HalfEdgeVertex> vertices = this.getVertices(null);
+        for (HalfEdgeVertex vertex : vertices) {
+            List<HalfEdgeFace> facesSharingVertex = vertexFacesMap.get(vertex);
+            if (facesSharingVertex != null) {
+                for (HalfEdgeFace faceSharingVertex : facesSharingVertex) {
+                    if (faceSharingVertex != null) {
+                        // check if is visited
+                        if (!mapVisitedFaces.contains(faceSharingVertex)) {
+                            resultWeldedFaces.add(faceSharingVertex);
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     public boolean getWeldedFacesRecursive(List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces) {
         if (this.halfEdge == null) {
             return false;
@@ -384,6 +384,20 @@ public class HalfEdgeFace implements Serializable {
             }
         }
 
+        return true;
+    }
+
+    public boolean TEST_checkTexCoords() {
+        // test.***
+        GaiaRectangle texCoordBRect = this.getTexCoordBoundingRectangle(null, false);
+        double texRectWidth = texCoordBRect.getWidth();
+        double texRectHeight = texCoordBRect.getHeight();
+        if (texRectWidth > 0.8 || texRectHeight > 0.8) {
+            int hola = 0;
+            texCoordBRect = this.getTexCoordBoundingRectangle(null, false);
+            return false;
+        }
+        // end test.***
         return true;
     }
 

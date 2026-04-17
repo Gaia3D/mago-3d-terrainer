@@ -36,28 +36,24 @@ public class GaiaExtractor {
         return result;
     }
 
-    public List<GaiaNode> extractAllNodes(GaiaScene scene, boolean onlyLeafNodes) {
+    public List<GaiaNode> extractAllNodes(GaiaScene scene, boolean hasMesh) {
         List<GaiaNode> result = new ArrayList<>();
         List<GaiaNode> nodes = scene.getNodes();
         for (GaiaNode node : nodes) {
-            List<GaiaNode> childNodes = extractAllNodes(node, onlyLeafNodes);
+            List<GaiaNode> childNodes = extractAllNodes(node, hasMesh);
             result.addAll(childNodes);
         }
         return result;
     }
 
-    public List<GaiaNode> extractAllNodes(GaiaNode node, boolean onlyLeafNodes) {
+    public List<GaiaNode> extractAllNodes(GaiaNode node, boolean hasMesh) {
         List<GaiaNode> result = new ArrayList<>();
-        if (onlyLeafNodes && !node.getChildren().isEmpty()) {
-            for (GaiaNode childNode : node.getChildren()) {
-                List<GaiaNode> childNodes = extractAllNodes(childNode, onlyLeafNodes);
-                result.addAll(childNodes);
-            }
-            return result;
+        if (hasMesh && !node.getMeshes().isEmpty()) {
+            result.add(node);
         }
 
         for (GaiaNode childNode : node.getChildren()) {
-            List<GaiaNode> childNodes = extractAllNodes(childNode, onlyLeafNodes);
+            List<GaiaNode> childNodes = extractAllNodes(childNode, hasMesh);
             result.addAll(childNodes);
         }
         return result;
@@ -128,4 +124,17 @@ public class GaiaExtractor {
         }
         return result;
     }
+
+    public List<GaiaFace> extractAllFaces(GaiaPrimitive primitive) {
+        List<GaiaFace> result = new ArrayList<>();
+        List<GaiaSurface> surfaces = primitive.getSurfaces();
+        for (GaiaSurface surface : surfaces) {
+            List<GaiaFace> faces = surface.getFaces();
+            if (faces != null) {
+                result.addAll(faces);
+            }
+        }
+        return result;
+    }
+
 }

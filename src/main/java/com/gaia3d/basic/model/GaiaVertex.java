@@ -67,8 +67,9 @@ public class GaiaVertex extends VertexStructure implements Serializable {
 
         // 2nd, check texCoord.
         if (checkTexCoord && texcoords != null && vertex2.texcoords != null) {
+            double texError = 1e-8;
             double texCoordDist = texcoords.distance(vertex2.texcoords);
-            if (texCoordDist > error) {
+            if (texCoordDist > texError) {
                 return false;
             }
         }

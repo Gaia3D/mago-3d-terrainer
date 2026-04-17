@@ -50,5 +50,19 @@ public class DecimateParameters {
         return clone;
     }
 
+    public void setAsDecimateLeaf() {
+        setBasicValues(5.0, 0.01, 0.0, 40.0, 1000000, 1, 1.0);
+        WeldingParameters weldingParameters = getWeldingParameters();
+        weldingParameters.setCheckTexCoords(true);
+    }
 
+    public void setAsLod(int lod) {
+        if (lod == 0) {
+            setBasicValues(5.0, 0.01, 0.01, 40.0, 1000000, 5, 1.0);
+        } else if (lod == 1) {
+            setBasicValues(12.0, 0.01, 0.9, 40.0, 1000000, 5, 1.0);
+        } else if (lod == 2) {
+            setBasicValues(12.0, 0.01, 0.9, 40.0, 1000000, 5, 1.0);
+        }
+    }
 }

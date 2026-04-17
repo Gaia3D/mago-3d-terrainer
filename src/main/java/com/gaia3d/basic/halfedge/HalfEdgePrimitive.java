@@ -48,6 +48,10 @@ public class HalfEdgePrimitive implements Serializable {
             surface.deleteObjects();
         }
         surfaces.clear();
+        // delete vertices.
+        for (HalfEdgeVertex vertex : vertices) {
+            vertex.deleteObjects();
+        }
         vertices.clear();
     }
 

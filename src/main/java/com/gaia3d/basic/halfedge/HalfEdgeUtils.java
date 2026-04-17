@@ -696,8 +696,7 @@ public class HalfEdgeUtils {
         int numVertices = surface.getVertices().size();
         int[] counts = new int[numVertices];
 
-        List<HalfEdgeFace> faces = surface.getFaces();
-        for (HalfEdgeFace face : faces) {
+        for (HalfEdgeFace face : surface.getFaces()) {
             int fIdx = face.getId();
             List<HalfEdgeVertex> faceVertices = face.getVertices(null);
             for (HalfEdgeVertex v : faceVertices) {
@@ -714,7 +713,7 @@ public class HalfEdgeUtils {
         // 3 - fill.
         int[] vertexFaces = new int[vertexOffsets[numVertices]];
         int[] cursor = vertexOffsets.clone();
-        for (HalfEdgeFace face : faces) {
+        for (HalfEdgeFace face : surface.getFaces()) {
             int fIdx = face.getId();
 
             for (HalfEdgeVertex v : face.getVertices(null)) {
@@ -725,6 +724,66 @@ public class HalfEdgeUtils {
 
         MapVertexAllFacesIndices resultMapVertexAllFacesIndices = new MapVertexAllFacesIndices(vertexOffsets, vertexFaces);
         return resultMapVertexAllFacesIndices;
+    }
+
+    public boolean getWeldedFacesWithFace(HalfEdgeSurface surface, HalfEdgeFace face, List<HalfEdgeFace> resultWeldedFaces,
+                                          Set<HalfEdgeFace> mapVisitedFaces,
+                                          MapVertexAllFacesIndices mapVertexAllFacesIndices) {
+        List<HalfEdgeFace> weldedFacesAux = new ArrayList<>();
+        List<HalfEdgeFace> faces = new ArrayList<>();
+        faces.add(face);
+
+//        Map<HalfEdgeFace, HalfEdgeFace> weldedUniqueFacesMap = new HashMap<>();
+//        // get the faces connected with the face by vertex
+//        List<HalfEdgeVertex> faceVertices = face.getVertices(null);
+//        for (HalfEdgeVertex vertex : faceVertices) {
+//            List<HalfEdgeFace> vertexFaces = vertexFacesMap.get(vertex);
+//            if (vertexFaces != null) {
+//                for (HalfEdgeFace vertexFace : vertexFaces) {
+//                    if (vertexFace.getStatus() == ObjectStatus.DELETED) {
+//                        continue;
+//                    }
+//                    weldedUniqueFacesMap.put(vertexFace, vertexFace);
+//                }
+//            }
+//        }
+
+        boolean finished = false;
+        int counter = 0;
+        while (!finished)// && counter < 10000000)
+        {
+            List<HalfEdgeFace> newAddedfaces = new ArrayList<>();
+            int facesCount = faces.size();
+            for (int i = 0; i < facesCount; i++) {
+                HalfEdgeFace currFace = faces.get(i);
+                if (currFace.getStatus() == ObjectStatus.DELETED) {
+                    continue;
+                }
+
+                if (mapVisitedFaces.contains(currFace)) {
+                    continue;
+                }
+
+                resultWeldedFaces.add(currFace);
+                //weldedUniqueFacesMap.put(currFace, currFace);
+                mapVisitedFaces.add(currFace);
+                weldedFacesAux.clear();
+                currFace.getWeldedFaces(weldedFacesAux, mapVisitedFaces, mapVertexAllFacesIndices,
+                        surface.getFaces());
+                newAddedfaces.addAll(weldedFacesAux);
+            }
+
+            if (newAddedfaces.isEmpty()) {
+                finished = true;
+            } else {
+                faces.clear();
+                faces.addAll(newAddedfaces);
+            }
+
+            counter++;
+        }
+
+        return true;
     }
 
     public static List<HalfEdgeVertex> getVerticesOfFaces(List<HalfEdgeFace> faces, List<HalfEdgeVertex> resultVertices) {

@@ -28,12 +28,14 @@ import java.util.Map;
 @AllArgsConstructor
 public class GaiaMaterial extends MaterialStructure implements Serializable {
     private int id = -1;
-    private String name = "no_name";
+    private String name = "unknown";
 
     private Vector4d diffuseColor = new Vector4d(1.0, 1.0, 1.0, 1.0);
     private Vector4d ambientColor = new Vector4d(1.0, 1.0, 1.0, 1.0);
     private Vector4d specularColor = new Vector4d(1.0, 1.0, 1.0, 1.0);
     private float shininess = 0.0f;
+    private float roughness = 0.0f;
+    private float alphaCutoff = 0.22f;
     private boolean isRepeat = false;
     private boolean isBlend = false;
     private boolean isOpaque = true;
@@ -93,6 +95,9 @@ public class GaiaMaterial extends MaterialStructure implements Serializable {
         this.ambientColor = null;
         this.specularColor = null;
         this.textures = null;
+        this.isRepeat = false;
+        this.isBlend = false;
+        this.isOpaque = false;
     }
 
     public GaiaMaterial clone() {
@@ -101,6 +106,11 @@ public class GaiaMaterial extends MaterialStructure implements Serializable {
         newMaterial.setAmbientColor(new Vector4d(this.ambientColor));
         newMaterial.setSpecularColor(new Vector4d(this.specularColor));
         newMaterial.setShininess(this.shininess);
+        newMaterial.setRoughness(this.roughness);
+        newMaterial.setRepeat(isRepeat);
+        newMaterial.setBlend(isBlend);
+        newMaterial.setOpaque(isOpaque);
+        newMaterial.setAlphaCutoff(this.alphaCutoff);
         newMaterial.setId(this.id);
         newMaterial.setName(this.name);
         for (Map.Entry<TextureType, List<GaiaTexture>> entry : this.textures.entrySet()) {

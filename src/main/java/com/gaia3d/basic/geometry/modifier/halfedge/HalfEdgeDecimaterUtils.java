@@ -58,6 +58,7 @@ public class HalfEdgeDecimaterUtils {
 
     public static Map<HalfEdgeVertex, List<HalfEdge>> getMapVertexAllOutingEdges(
             Map<HalfEdgeVertex, List<HalfEdge>> resultVertexAllOutingEdgesMap, List<HalfEdge> halfEdges) {
+
         if (resultVertexAllOutingEdgesMap == null) {
             resultVertexAllOutingEdgesMap = new HashMap<>();
         }
@@ -382,8 +383,164 @@ public class HalfEdgeDecimaterUtils {
         return true;
     }
 
-    public static boolean decideIfCollapseCheckingFaces_original(HalfEdge halfEdge, Map<HalfEdgeVertex, List<HalfEdge>> vertexAllOutingEdgesMap,
+    public static boolean decideIfCollapseCheckingFaces(HalfEdge halfEdge, Map<HalfEdgeVertex, List<HalfEdge>> vertexAllOutingEdgesMap,
                                                         Map<HalfEdgeVertex, List<HalfEdgeVertex>> mapVertexToSamePosVertices, double maxDiffAngDeg, double maxAspectRatio, double smallHedgeSize) {
+
+        HalfEdgeVertex deletingVertex = halfEdge.getStartVertex();
+        HalfEdgeVertex endVertex = halfEdge.getEndVertex();
+        HalfEdge twin = halfEdge.getTwin();
+        Vector3d collapseHedgeDirection = halfEdge.getVector(null);
+        collapseHedgeDirection.normalize();
+
+        List<HalfEdgeVertex> samePosVertices = mapVertexToSamePosVertices.get(deletingVertex);
+        List<HalfEdge> outingEdgesOfSamePosVertices = new ArrayList<>();
+
+        int samePosVertexCount = samePosVertices.size();
+        for (int i = 0; i < samePosVertexCount; i++) {
+            HalfEdgeVertex vertex = samePosVertices.get(i);
+            List<HalfEdge> outingEdges = vertexAllOutingEdgesMap.get(vertex);
+            outingEdgesOfSamePosVertices.addAll(outingEdges);
+        }
+
+        //List<HalfEdge> outingEdgesOfDeletingVertex = vertexAllOutingEdgesMap.get(deletingVertex);
+
+        int outingEdgesOfDeletingVertexCount2 = outingEdgesOfSamePosVertices.size();
+        int normalNullsCount = 0;
+        for (int i = 0; i < outingEdgesOfDeletingVertexCount2; i++) {
+            HalfEdge outingEdge = outingEdgesOfSamePosVertices.get(i);
+            if (outingEdge.getStatus() == ObjectStatus.DELETED) {
+                continue;
+            }
+
+            if (twin != null) {
+                if (outingEdge == twin.getNext()) {
+                    continue;
+                }
+            }
+
+            if (outingEdge == halfEdge) {
+                continue;
+            }
+
+            if (outingEdge.isDegeneratedByPointers()) {
+                continue;
+            }
+
+//            double dotButterFly = getButterFlyDotProdForHalfEdge(outingEdge);
+//            if (dotButterFly < -0.7) {
+//                // acos(0.7) = 45.57 deg
+//
+//                // calculate the angle between collapseHedgeDirection and the outingEdge.
+//                Vector3d outingVector = outingEdge.getVector(null);
+//                outingVector.normalize();
+//                double dotBetweenHEdges = collapseHedgeDirection.dot(outingVector);
+//                if (Math.abs(dotBetweenHEdges) < 0.95) { // acos(0.9) = 25.84 deg
+//                    //dotButterFly = getButterFlyDotProdForHalfEdge(outingEdge);
+//                    return false;
+//                }
+//            }
+
+            HalfEdgeFace faceA = outingEdge.getFace();
+//            if (faceA.isDegenerated())
+//            {
+//                continue;
+//            }
+
+            List<HalfEdgeVertex> verticesA = faceA.getVertices(null);
+
+            // TODO
+            double areaA = HalfEdgeUtils.calculateArea(verticesA.get(0), verticesA.get(1), verticesA.get(2));
+//            if (areaA < 0.01) {
+//                // is a small triangle, so continue
+//                continue;
+//            }
+
+            Vector3d normalA = faceA.getNormal();
+            if (normalA == null) {
+                normalA = HalfEdgeUtils.calculateNormalAsConvex(verticesA, null);
+                if (normalA == null) {
+                    continue;
+                }
+
+                faceA.setNormal(normalA);
+            }
+
+            // if the abs(dotProd) between collapseHedgeDirection and normalA is near to 1.0, then continue
+            double dotProd = Math.abs(collapseHedgeDirection.dot(normalA));
+            double limitDotProd = 0.8; // 0.75 is ok, 0.9 is more restrict
+            // arccos(0.9) = 25.84 deg
+            // arcos(0.8) = 36.87 deg
+            // arccos(0.75) = 41.41 deg
+            if (dotProd > limitDotProd) {
+                return false;
+            }
+
+            List<HalfEdgeVertex> verticesB = new ArrayList<>();
+
+            int verticesACount = verticesA.size();
+            for (int j = 0; j < verticesACount; j++) {
+                HalfEdgeVertex vertexA = verticesA.get(j);
+                if (vertexA == deletingVertex) {
+                    verticesB.add(endVertex);
+                } else {
+                    verticesB.add(vertexA);
+                }
+            }
+
+            double areaB = HalfEdgeUtils.calculateArea(verticesB.get(0), verticesB.get(1), verticesB.get(2));
+//            if (areaB < 0.01) {
+//                // is a small triangle, so continue
+//                continue;
+//            }
+
+            Vector3d normalB = HalfEdgeUtils.calculateNormalAsConvex(verticesB, null);
+
+            if (normalB == null) {
+                normalNullsCount++;
+                continue;
+            }
+
+//            // Test**********************************************************
+//            double dot = normalA.dot(normalB);
+//            if (Math.abs(dot) < 0.342) {
+//                return false;
+//            }
+//            // End test******************************************************
+
+            double aspectRatio = HalfEdgeUtils.calculateAspectRatioAsTriangle(verticesB.get(0), verticesB.get(1), verticesB.get(2));
+            if (aspectRatio > maxAspectRatio) {
+                return false;
+            }
+
+            // for hedges with length less than 1.5m, apply a factor to the angle
+            double hedgeLength = halfEdge.getLength();
+            double angFactor = 1.0;
+            if (hedgeLength < smallHedgeSize) {
+                angFactor = Math.min(hedgeLength, smallHedgeSize);
+                angFactor /= smallHedgeSize;
+                angFactor *= angFactor;
+            }
+
+            FaceType faceAType = faceA.getFaceType();
+            double angDeg = Math.toDegrees(HalfEdgeUtils.calculateAngleBetweenNormals(normalA, normalB));
+            if (faceAType == FaceType.SKIRT) {
+                // if the face is a skirt, then the angle must be less than 90 degrees
+                if (angDeg * angFactor > maxDiffAngDeg * 0.3) {
+                    return false;
+                }
+            } else {
+                // if the face is not a skirt, then the angle must be less than maxDiffAngDeg
+                if (angDeg * angFactor > maxDiffAngDeg) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean decideIfCollapseCheckingFaces_original(HalfEdge halfEdge, Map<HalfEdgeVertex, List<HalfEdge>> vertexAllOutingEdgesMap,
+                                                                 Map<HalfEdgeVertex, List<HalfEdgeVertex>> mapVertexToSamePosVertices, double maxDiffAngDeg, double maxAspectRatio, double smallHedgeSize) {
 
         HalfEdgeVertex deletingVertex = halfEdge.getStartVertex();
         HalfEdgeVertex endVertex = halfEdge.getEndVertex();

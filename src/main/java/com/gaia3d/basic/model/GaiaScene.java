@@ -30,8 +30,6 @@ public class GaiaScene extends SceneStructure implements Serializable {
     private Path originalPath;
     private GaiaBoundingBox gaiaBoundingBox;
     private GaiaAttribute attribute;
-
-    // TODO: degree translation
     private Vector3d translation = new Vector3d(0, 0, 0);
 
     public GaiaScene(GaiaSet gaiaSet) {
@@ -114,6 +112,7 @@ public class GaiaScene extends SceneStructure implements Serializable {
         return triangleCount;
     }
 
+    @Deprecated
     public List<GaiaFace> extractGaiaFaces(List<GaiaFace> resultFaces) {
         if (resultFaces == null) {
             resultFaces = new ArrayList<>();
@@ -159,12 +158,14 @@ public class GaiaScene extends SceneStructure implements Serializable {
         }
     }
 
+    @Deprecated
     public void deleteNormals() {
         for (GaiaNode node : this.nodes) {
             node.deleteNormals();
         }
     }
 
+    @Deprecated
     public int getFacesCount() {
         int facesCount = 0;
         for (GaiaNode node : this.nodes) {
