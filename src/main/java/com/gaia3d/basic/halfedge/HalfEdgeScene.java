@@ -497,18 +497,6 @@ public class HalfEdgeScene implements Serializable {
         }
     }
 
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgeNode node : nodes) {
-            node.decimate(decimateParameters);
-        }
-    }
-
-    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
-        for (HalfEdgeNode node : nodes) {
-            node.decimateInteriorOfBox(decimateParameters, boundingBox);
-        }
-    }
-
     public void updateVerticesList() {
         for (HalfEdgeNode node : nodes) {
             node.updateVerticesList();

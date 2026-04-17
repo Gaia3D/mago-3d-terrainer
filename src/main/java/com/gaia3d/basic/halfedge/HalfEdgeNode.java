@@ -337,15 +337,6 @@ public class HalfEdgeNode implements Serializable {
         }
     }
 
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgeMesh mesh : meshes) {
-            mesh.decimate(decimateParameters);
-        }
-        for (HalfEdgeNode child : children) {
-            child.decimate(decimateParameters);
-        }
-    }
-
     public void splitFacesByBestObliqueCameraDirectionToProject() {
         for (HalfEdgeMesh mesh : meshes) {
             mesh.splitFacesByBestObliqueCameraDirectionToProject();
@@ -445,15 +436,6 @@ public class HalfEdgeNode implements Serializable {
         }
         for (HalfEdgeNode child : children) {
             child.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
-        }
-    }
-
-    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
-        for (HalfEdgeMesh mesh : meshes) {
-            mesh.decimateInteriorOfBox(decimateParameters, boundingBox);
-        }
-        for (HalfEdgeNode child : children) {
-            child.decimateInteriorOfBox(decimateParameters, boundingBox);
         }
     }
 }

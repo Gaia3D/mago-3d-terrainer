@@ -260,12 +260,6 @@ public class HalfEdgePrimitive implements Serializable {
         }
     }
 
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgeSurface surface : surfaces) {
-            surface.decimate(decimateParameters);
-        }
-    }
-
     public void splitFacesByBestObliqueCameraDirectionToProject() {
         for (HalfEdgeSurface surface : surfaces) {
             surface.splitFacesByBestObliqueCameraDirectionToProject();
@@ -358,12 +352,6 @@ public class HalfEdgePrimitive implements Serializable {
     public void getIntersectedFacesByPlane(PlaneType planeType, Vector3d planePosition, List<HalfEdgeFace> resultFaces, double error) {
         for (HalfEdgeSurface surface : surfaces) {
             surface.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
-        }
-    }
-
-    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
-        for (HalfEdgeSurface surface : surfaces) {
-            surface.decimateInteriorOfBox(decimateParameters, boundingBox);
         }
     }
 }

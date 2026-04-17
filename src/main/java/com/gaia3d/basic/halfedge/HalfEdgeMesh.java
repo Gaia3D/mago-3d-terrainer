@@ -198,18 +198,6 @@ public class HalfEdgeMesh implements Serializable {
         }
     }
 
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgePrimitive primitive : primitives) {
-            primitive.decimate(decimateParameters);
-        }
-    }
-
-    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
-        for (HalfEdgePrimitive primitive : primitives) {
-            primitive.decimateInteriorOfBox(decimateParameters, boundingBox);
-        }
-    }
-
     public void splitFacesByBestObliqueCameraDirectionToProject() {
         for (HalfEdgePrimitive primitive : primitives) {
             primitive.splitFacesByBestObliqueCameraDirectionToProject();
