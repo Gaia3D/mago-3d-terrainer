@@ -12,10 +12,7 @@ import org.joml.Vector3d;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Setter
 @Getter
@@ -283,24 +280,81 @@ public class HalfEdgeFace implements Serializable {
         return resultAdjacentFaces;
     }
 
-    public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces) {
+    public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces,
+                                  Set<HalfEdgeFace> mapVisitedFaces,
+                                  Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap) {
         if (this.halfEdge == null) {
             return false;
         }
 
-        mapVisitedFaces.put(this, this);
+        mapVisitedFaces.add(this);
         resultWeldedFaces.add(this);
 
         List<HalfEdgeFace> adjacentFaces = this.getAdjacentFaces(null);
-        if (adjacentFaces == null) {
+        if (adjacentFaces != null) {
+            for (HalfEdgeFace adjacentFace : adjacentFaces) {
+                if (adjacentFace != null) {
+                    // check if is visited
+                    if (!mapVisitedFaces.contains(adjacentFace)) {
+                        resultWeldedFaces.add(adjacentFace);
+                    }
+                }
+            }
+        }
+
+        List<HalfEdgeVertex> vertices = this.getVertices(null);
+        for (HalfEdgeVertex vertex : vertices) {
+            List<HalfEdgeFace> facesSharingVertex = vertexFacesMap.get(vertex);
+            if (facesSharingVertex != null) {
+                for (HalfEdgeFace faceSharingVertex : facesSharingVertex) {
+                    if (faceSharingVertex != null) {
+                        // check if is visited
+                        if (!mapVisitedFaces.contains(faceSharingVertex)) {
+                            resultWeldedFaces.add(faceSharingVertex);
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public boolean getWeldedFaces(List<HalfEdgeFace> resultWeldedFaces,
+                                  Set<HalfEdgeFace> mapVisitedFaces,
+                                  MapVertexAllFacesIndices mapVertexAllFacesIndices,
+                                  List<HalfEdgeFace> motherFaces) {
+        if (this.halfEdge == null) {
             return false;
         }
 
-        for (HalfEdgeFace adjacentFace : adjacentFaces) {
-            if (adjacentFace != null) {
-                // check if is visited
-                if (mapVisitedFaces.get(adjacentFace) == null) {
-                    resultWeldedFaces.add(adjacentFace);
+        mapVisitedFaces.add(this);
+        resultWeldedFaces.add(this);
+
+        List<HalfEdgeFace> adjacentFaces = this.getAdjacentFaces(null);
+        if (adjacentFaces != null) {
+            for (HalfEdgeFace adjacentFace : adjacentFaces) {
+                if (adjacentFace != null) {
+                    // check if is visited
+                    if (!mapVisitedFaces.contains(adjacentFace)) {
+                        resultWeldedFaces.add(adjacentFace);
+                    }
+                }
+            }
+        }
+
+        List<HalfEdgeVertex> vertices = this.getVertices(null);
+        for (HalfEdgeVertex vertex : vertices) {
+            int vertexIdx = vertex.getId();
+            int facesCount = mapVertexAllFacesIndices.getFaceCountOfVertex(vertexIdx);
+            for (int i = 0; i < facesCount; i++) {
+                int faceIdx = mapVertexAllFacesIndices.getFaceIndexOfVertex(vertexIdx, i);
+                HalfEdgeFace faceSharingVertex = motherFaces.get(faceIdx);
+                if (faceSharingVertex != null) {
+                    // check if is visited
+                    if (!mapVisitedFaces.contains(faceSharingVertex)) {
+                        resultWeldedFaces.add(faceSharingVertex);
+                    }
                 }
             }
         }

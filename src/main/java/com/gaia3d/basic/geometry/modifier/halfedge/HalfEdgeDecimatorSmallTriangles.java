@@ -60,7 +60,7 @@ public class HalfEdgeDecimatorSmallTriangles extends HalfEdgeModifier {
 
         // classify vertices and faces.
         double minArea = decimateParameters.getSmallTriangleMinArea();
-        weldedFacesGroups = surface.getWeldedFacesGroups(weldedFacesGroups);
+        weldedFacesGroups = WeldedFacesFinder.getWeldedFacesGroups(surface, weldedFacesGroups);
         int weldedFacesGroupsCount = weldedFacesGroups.size();
         for (int i = 0; i < weldedFacesGroupsCount; i++) {
             List<HalfEdgeFace> weldedFacesGroup = weldedFacesGroups.get(i);

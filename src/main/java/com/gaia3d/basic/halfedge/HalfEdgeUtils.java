@@ -689,73 +689,42 @@ public class HalfEdgeUtils {
         return Math.acos(dotProduct);
     }
 
-    public static List<List<HalfEdgeFace>> getWeldedFacesGroups(List<HalfEdgeFace> facesList, List<List<HalfEdgeFace>> resultWeldedFacesGroups) {
-        if (resultWeldedFacesGroups == null) {
-            resultWeldedFacesGroups = new ArrayList<>();
-        }
+    public static MapVertexAllFacesIndices getMapVertexAllFacesIndices(HalfEdgeSurface surface) {
+        surface.setObjectIdsInList();
 
-//        Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap = new HashMap<>();
-//        for (HalfEdgeFace face : facesList) {
-//            List<HalfEdgeVertex> vertices = face.getVertices(null);
-//            for (HalfEdgeVertex vertex : vertices) {
-//                List<HalfEdgeFace> facesOfVertex = vertexFacesMap.computeIfAbsent(vertex, k -> new ArrayList<>());
-//                facesOfVertex.add(face);
-//            }
-//        }
+        // 1- count incidents.
+        int numVertices = surface.getVertices().size();
+        int[] counts = new int[numVertices];
 
-        Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces = new HashMap<>();
-        int facesCount = facesList.size();
-        for (int i = 0; i < facesCount; i++) {
-            HalfEdgeFace face = facesList.get(i);
-            if (face.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-
-            if (mapVisitedFaces.containsKey(face)) {
-                continue;
-            }
-
-            List<HalfEdgeFace> weldedFaces = new ArrayList<>();
-            getWeldedFacesWithFace(face, weldedFaces, mapVisitedFaces);
-
-            resultWeldedFacesGroups.add(weldedFaces);
-        }
-
-        return resultWeldedFacesGroups;
-    }
-
-    public static void getWeldedFacesWithFace(HalfEdgeFace face, List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces) {
-        List<HalfEdgeFace> weldedFacesAux = new ArrayList<>();
-        List<HalfEdgeFace> faces = new ArrayList<>();
-        faces.add(face);
-        boolean finished = false;
-        while (!finished) {
-            List<HalfEdgeFace> newAddedfaces = new ArrayList<>();
-            int facesCount = faces.size();
-            for (int i = 0; i < facesCount; i++) {
-                HalfEdgeFace currFace = faces.get(i);
-                if (currFace.getStatus() == ObjectStatus.DELETED) {
-                    continue;
-                }
-
-                if (mapVisitedFaces.containsKey(currFace)) {
-                    continue;
-                }
-
-                resultWeldedFaces.add(currFace);
-                mapVisitedFaces.put(currFace, currFace);
-                weldedFacesAux.clear();
-                currFace.getWeldedFaces(weldedFacesAux, mapVisitedFaces);
-                newAddedfaces.addAll(weldedFacesAux);
-            }
-
-            if (newAddedfaces.isEmpty()) {
-                finished = true;
-            } else {
-                faces.clear();
-                faces.addAll(newAddedfaces);
+        List<HalfEdgeFace> faces = surface.getFaces();
+        for (HalfEdgeFace face : faces) {
+            int fIdx = face.getId();
+            List<HalfEdgeVertex> faceVertices = face.getVertices(null);
+            for (HalfEdgeVertex v : faceVertices) {
+                counts[v.getId()]++;
             }
         }
+
+        // 2 - calculate offsets.
+        int[] vertexOffsets = new int[numVertices + 1];
+        for (int i = 0; i < numVertices; i++) {
+            vertexOffsets[i + 1] = vertexOffsets[i] + counts[i];
+        }
+
+        // 3 - fill.
+        int[] vertexFaces = new int[vertexOffsets[numVertices]];
+        int[] cursor = vertexOffsets.clone();
+        for (HalfEdgeFace face : faces) {
+            int fIdx = face.getId();
+
+            for (HalfEdgeVertex v : face.getVertices(null)) {
+                int vIdx = v.getId();
+                vertexFaces[cursor[vIdx]++] = fIdx;
+            }
+        }
+
+        MapVertexAllFacesIndices resultMapVertexAllFacesIndices = new MapVertexAllFacesIndices(vertexOffsets, vertexFaces);
+        return resultMapVertexAllFacesIndices;
     }
 
     public static List<HalfEdgeVertex> getVerticesOfFaces(List<HalfEdgeFace> faces, List<HalfEdgeVertex> resultVertices) {
@@ -1447,93 +1416,6 @@ public class HalfEdgeUtils {
         return boundingBox;
     }
 
-    public static void deformHalfEdgeSurfaceByVerticesConvexConcave(HalfEdgeScene scene, double factor) {
-        List<HalfEdgeSurface> surfaces = scene.extractSurfaces(null);
-        for (HalfEdgeSurface surface : surfaces) {
-            deformHalfEdgeSurfaceByVerticesConvexConcave(surface, factor);
-        }
-    }
-
-    public static void deformHalfEdgeSurfaceByVerticesConvexConcave(HalfEdgeSurface surface, double factor) {
-        // 1rst, must determine if a vertex is convex or concave
-        surface.calculateNormals();
-        Map<HalfEdgeVertex, List<HalfEdgeFace>> mapVertexToFaces = new HashMap<>();
-        surface.getMapVertexAllFaces(mapVertexToFaces);
-
-        List<HalfEdgeVertex> convexVertices = new ArrayList<>();
-        List<HalfEdgeVertex> concaveVertices = new ArrayList<>();
-        List<HalfEdgeVertex> planeVertices = new ArrayList<>();
-        List<HalfEdgeVertex> faceVertices = new ArrayList<>();
-
-        List<HalfEdgeVertex> vertices = surface.getVertices();
-        for (HalfEdgeVertex vertex : vertices) {
-            Vector3d position = vertex.getPosition();
-            Vector3d normal = vertex.getNormal();
-            GaiaPlane plane = new GaiaPlane(position, normal);
-
-            List<HalfEdgeFace> faces = mapVertexToFaces.get(vertex);
-            if (faces == null) {
-                continue;
-            }
-
-            boolean isConvex = true;
-            boolean isPlane = true;
-            double error = 0.01; // 1cm
-            for (HalfEdgeFace face : faces) {
-                faceVertices.clear();
-                faceVertices = face.getVertices(faceVertices);
-                for (HalfEdgeVertex faceVertex : faceVertices) {
-                    if (faceVertex == vertex) {
-                        continue;
-                    }
-
-                    Vector3d faceVertexPos = faceVertex.getPosition();
-                    double dist = plane.distanceToPoint(faceVertexPos);
-                    if (Math.abs(dist) > error) {
-                        if (dist < 0) {
-                            isConvex = false;
-                            isPlane = false;
-                            break;
-                        } else if (dist > 0) {
-                            isPlane = false;
-                        }
-                    }
-                }
-            }
-
-            if (isConvex) {
-                convexVertices.add(vertex);
-            } else if (isPlane) {
-                planeVertices.add(vertex);
-            } else {
-                concaveVertices.add(vertex);
-            }
-        }
-
-        // now, move the vertex in the normal direction using factor
-        for (HalfEdgeVertex vertex : convexVertices) {
-            // convex vertices move reverse to normal
-            Vector3d position = vertex.getPosition();
-            Vector3d normal = vertex.getNormal();
-            Vector3d newPos = new Vector3d(position);
-            newPos.x -= normal.x * factor;
-            newPos.y -= normal.y * factor;
-            newPos.z -= normal.z * factor;
-            vertex.setPosition(newPos);
-        }
-
-        for (HalfEdgeVertex vertex : concaveVertices) {
-            // concave vertices move in the normal direction
-            Vector3d position = vertex.getPosition();
-            Vector3d normal = vertex.getNormal();
-            Vector3d newPos = new Vector3d(position);
-            newPos.x += normal.x * factor;
-            newPos.y += normal.y * factor;
-            newPos.z += normal.z * factor;
-            vertex.setPosition(newPos);
-        }
-    }
-
     public List<GaiaFace> getGaiaTriangleFacesFromGaiaFace(GaiaFace gaiaFace) {
         List<GaiaFace> gaiaFaces = new ArrayList<>();
         int[] indices = gaiaFace.getIndices();
@@ -1556,5 +1438,12 @@ public class HalfEdgeUtils {
         return gaiaFaces;
     }
 
+    public static void setHalfEdgeFacesIdsInList(List<HalfEdgeFace> faces) {
+        int facesCount = faces.size();
+        for (int i = 0; i < facesCount; i++) {
+            HalfEdgeFace face = faces.get(i);
+            face.setId(i);
+        }
+    }
 
 }

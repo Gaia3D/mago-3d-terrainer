@@ -2136,7 +2136,7 @@ public class HalfEdgeSurface implements Serializable {
 
         // must find welded face-groups (faces group that are not connected with other faces)
         List<List<HalfEdgeFace>> weldedFacesGroups_ = new ArrayList<>();
-        getWeldedFacesGroups(weldedFacesGroups_);
+        WeldedFacesFinder.getWeldedFacesGroups(this, weldedFacesGroups_);
         List<List<HalfEdgeFace>> mergedWeldedFacesGroups = new ArrayList<>();
         mergeWeldedFacesGroupsByTexCoords(weldedFacesGroups_, mergedWeldedFacesGroups);
 
@@ -2530,7 +2530,7 @@ public class HalfEdgeSurface implements Serializable {
 
         // must find welded face-groups (faces group that are not connected with other faces)
         List<List<HalfEdgeFace>> weldedFacesGroups_ = new ArrayList<>();
-        getWeldedFacesGroups(weldedFacesGroups_);
+        WeldedFacesFinder.getWeldedFacesGroups(this, weldedFacesGroups_);
         List<List<HalfEdgeFace>> mergedWeldedFacesGroups = new ArrayList<>();
         mergeWeldedFacesGroupsByTexCoords(weldedFacesGroups_, mergedWeldedFacesGroups);
 
@@ -2968,75 +2968,6 @@ public class HalfEdgeSurface implements Serializable {
         return compareImages.stream().mapToInt(textureScissorData -> (int) textureScissorData.getBatchedBoundary().getMaxY()).max().orElse(0);
     }
 
-    public boolean getWeldedFacesWithFace(HalfEdgeFace face, List<HalfEdgeFace> resultWeldedFaces, Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces) {
-        List<HalfEdgeFace> weldedFacesAux = new ArrayList<>();
-        List<HalfEdgeFace> faces = new ArrayList<>();
-        faces.add(face);
-        //mapVisitedFaces.put(face, face);
-        boolean finished = false;
-        int counter = 0;
-        while (!finished)// && counter < 10000000)
-        {
-            List<HalfEdgeFace> newAddedfaces = new ArrayList<>();
-            int facesCount = faces.size();
-            for (int i = 0; i < facesCount; i++) {
-                HalfEdgeFace currFace = faces.get(i);
-                if (currFace.getStatus() == ObjectStatus.DELETED) {
-                    continue;
-                }
-
-                if (mapVisitedFaces.containsKey(currFace)) {
-                    continue;
-                }
-
-                resultWeldedFaces.add(currFace);
-                mapVisitedFaces.put(currFace, currFace);
-                weldedFacesAux.clear();
-                currFace.getWeldedFaces(weldedFacesAux, mapVisitedFaces);
-                newAddedfaces.addAll(weldedFacesAux);
-            }
-
-            if (newAddedfaces.isEmpty()) {
-                finished = true;
-            } else {
-                faces.clear();
-                faces.addAll(newAddedfaces);
-            }
-
-            counter++;
-        }
-
-
-        return true;
-    }
-
-    public List<List<HalfEdgeFace>> getWeldedFacesGroups(List<List<HalfEdgeFace>> resultWeldedFacesGroups) {
-        if (resultWeldedFacesGroups == null) {
-            resultWeldedFacesGroups = new ArrayList<>();
-        }
-
-        Map<HalfEdgeVertex, List<HalfEdgeFace>> vertexFacesMap = getMapVertexAllFaces(null);
-        Map<HalfEdgeFace, HalfEdgeFace> mapVisitedFaces = new HashMap<>();
-        int facesCount = faces.size();
-        List<GaiaTextureScissorData> textureScissorDatas = new ArrayList<>();
-        for (int i = 0; i < facesCount; i++) {
-            HalfEdgeFace face = faces.get(i);
-            if (face.getStatus() == ObjectStatus.DELETED) {
-                continue;
-            }
-
-            if (mapVisitedFaces.containsKey(face)) {
-                continue;
-            }
-
-            List<HalfEdgeFace> weldedFaces = new ArrayList<>();
-            this.getWeldedFacesWithFace(face, weldedFaces, mapVisitedFaces);
-            resultWeldedFacesGroups.add(weldedFaces);
-        }
-
-        return resultWeldedFacesGroups;
-    }
-
     public List<List<HalfEdgeFace>> mergeWeldedFacesGroupsByTexCoords(List<List<HalfEdgeFace>> weldedFacesGroups, List<List<HalfEdgeFace>> resultWeldedFacesGroups) {
         if (resultWeldedFacesGroups == null) {
             resultWeldedFacesGroups = new ArrayList<>();
@@ -3437,7 +3368,7 @@ public class HalfEdgeSurface implements Serializable {
             for (List<HalfEdgeFace> faceGroup : mapFaceGroupByPlaneType.values()) {
                 HalfEdgeSurface newSurface = HalfEdgeCutter.createHalfEdgeSurfaceByFacesCopy(faceGroup, checkClassifyId, checkBestPlaneToProject);
                 // for each faceGroup, find welded faceGroups
-                List<List<HalfEdgeFace>> resultWeldedFacesGroups = HalfEdgeUtils.getWeldedFacesGroups(newSurface.getFaces(), null);
+                List<List<HalfEdgeFace>> resultWeldedFacesGroups = WeldedFacesFinder.getWeldedFacesGroups(newSurface, null);
                 for (List<HalfEdgeFace> weldedFaceGroup : resultWeldedFacesGroups) {
                     HalfEdgeSurface newSurface2 = HalfEdgeCutter.createHalfEdgeSurfaceByFacesCopy(weldedFaceGroup, checkClassifyId, checkBestPlaneToProject);
                     newSurfaceMaster.joinSurface(newSurface2);
