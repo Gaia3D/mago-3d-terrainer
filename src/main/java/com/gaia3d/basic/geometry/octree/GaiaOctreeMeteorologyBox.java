@@ -12,6 +12,7 @@ import java.util.List;
 @Slf4j
 @Setter
 @Getter
+@Deprecated
 public class GaiaOctreeMeteorologyBox extends GaiaOctree<GeometryContent> {
     private int limitDepth = 5;
     private double limitSize = 1.0; // Minimum size of the bounding box to stop subdividing
