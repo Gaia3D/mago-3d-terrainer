@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:mago_terrainer.db
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false # 关闭 SQL 语句打印
+    properties:
+      hibernate:
+        format_sql: false
+        highlight_sql: false
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    org.hibernate: WARN        # 只显示警告和错误
+    org.hibernate.SQL: WARN   # 确保 SQL 打印彻底关闭
+    org.springframework: WARN  # 减少 Spring 启动和框架日志
+    com.gaia3d.api: INFO

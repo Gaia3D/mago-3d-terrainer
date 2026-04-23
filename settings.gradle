@@ -7,3 +7,6 @@ project(':mago-common').projectDir = new File(settingsDir, './mago-common')
 
 include ':mago-io'
 project(':mago-io').projectDir = new File(settingsDir, './mago-io')
+
+include ':mago-api'
+project(':mago-api').projectDir = new File(settingsDir, './mago-api')

@@ -1,0 +1,52 @@
+plugins {
+    id 'org.springframework.boot' version '3.2.0'
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.osgeo.org/repository/release/" }
+}
+
+configurations {
+    // 全局排除 Spring Boot 默认日志和 Log4j-to-SLF4J 桥接器
+    all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-to-slf4j'
+    }
+}
+
+dependencies {
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.2.0')
+
+    implementation project(':mago-terrainer')
+    implementation project(':mago-io')
+    implementation project(':mago-common')
+
+    // Web & JPA
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    
+    // 强制使用真实的 Log4j2 实现
+    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
+
+    // 数据库与工具
+    implementation 'org.xerial:sqlite-jdbc:3.44.1.0'
+    implementation 'org.hibernate.orm:hibernate-community-dialects:6.4.0.Final'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+    
+    // JAXB 兼容性
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
+    runtimeOnly 'com.sun.xml.bind:jaxb-impl:4.0.2'
+    implementation 'jakarta.activation:jakarta.activation-api:2.1.2'
+    runtimeOnly 'org.eclipse.angus:angus-activation:2.0.1'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+bootJar {
+    mainClass = 'com.gaia3d.api.MagoApiApplication'
+}

@@ -3,6 +3,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+!**/node_modules/
 
 ### AI ###
 .claude/
@@ -50,3 +51,4 @@ bin/
 .DS_Store
 Cigolle2014Vector.pdf
 terrainer/gradle.properties
+/mago-ui/node_modules
