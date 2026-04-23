@@ -6,84 +6,41 @@ const isLoading = ref(false)
 const message = ref('')
 const messageType = ref('')
 
-// 初始状态与默认值
 const defaultForm = {
-  input: '',
-  output: '',
-  log: '',
-  temp: '',
-  geoid: 'Ellipsoid',
-  minDepth: 0,
-  maxDepth: 14,
-  intensity: 4.0,
-  interpolationType: 'bilinear',
-  priorityType: 'resolution',
-  nodataValue: -9999,
-  calculateNormals: false,
-  mosaicSize: 16,
-  rasterMaxSize: 8192,
-  body: 'earth',
-  metadata: false,
-  waterMask: false,
-  json: true,
-  continueProcess: false,
-  debug: false,
-  leaveTemp: false
+  input: '', output: '', minDepth: 0, maxDepth: 14, intensity: 4.0,
+  interpolationType: 'bilinear', body: 'earth', calculateNormals: false,
+  json: true, debug: false, waterMask: false
 }
-
 const form = reactive({ ...defaultForm })
 
 onMounted(() => {
   const saved = localStorage.getItem('mago_params')
-  if (saved) {
-    try {
-      Object.assign(form, JSON.parse(saved))
-    } catch (e) {}
-  }
+  if (saved) Object.assign(form, JSON.parse(saved))
 })
 
-watch(form, (newVal) => {
-  localStorage.setItem('mago_params', JSON.stringify(newVal))
-}, { deep: true })
+watch(form, (val) => localStorage.setItem('mago_params', JSON.stringify(val)), { deep: true })
 
 const browseFolder = async (field: 'input' | 'output') => {
-  try {
-    const response = await fetch('http://localhost:8080/api/v1/utils/select-folder')
-    const result = await response.json()
-    if (result.path) form[field] = result.path
-  } catch (e) {
-    alert('无法打开文件夹选择器')
-  }
+  const res = await fetch('http://localhost:8080/api/v1/utils/select-folder')
+  const data = await res.json()
+  if (data.path) form[field] = data.path
 }
 
 const submit = async () => {
   if (!form.input || !form.output) {
-    message.value = '请输入输入和输出目录。'
-    messageType.value = 'error'
-    return
+    message.value = '请填写路径'; messageType.value = 'error'; return
   }
-
   isLoading.value = true
-  message.value = '任务提交中...'
-  messageType.value = 'info'
-
+  message.value = '任务执行中...'; messageType.value = 'info'
   try {
-    const response = await fetch('http://localhost:8080/api/v1/terrain/process', {
+    const res = await fetch('http://localhost:8080/api/v1/terrain/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
     })
-
-    if (response.ok) {
-      message.value = '任务已提交，正在后台处理。'
-      messageType.value = 'success'
-      setTimeout(() => emit('submitted'), 1000)
-    } else {
-      throw new Error('提交失败')
-    }
-  } catch (error) {
-    message.value = '提交出错: ' + (error as Error).message
-    messageType.value = 'error'
+    if (res.ok) { emit('submitted') }
+  } catch (e) {
+    message.value = '提交失败'; messageType.value = 'error'
   } finally {
     isLoading.value = false
   }
@@ -91,334 +48,134 @@ const submit = async () => {
 </script>
 
 <template>
-  <div class="form-scroll-container">
-    <div class="form-content">
-      <!-- 卡片 1: 目录 -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="step-num">1</span>
-          <h3>工作空间目录</h3>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>输入 GeoTIFF 路径 <small>(包含原始 DEM 文件的文件夹)</small></label>
-            <div class="input-with-btn">
-              <input v-model="form.input" type="text" placeholder="例如：E:\Data\Source_DEM" />
-              <button class="btn-browse" @click="browseFolder('input')">浏览...</button>
-            </div>
+  <div class="submit-page">
+    <div class="compact-grid">
+      <!-- 路径配置 -->
+      <div class="card full-width">
+        <div class="card-header">1. 路径配置</div>
+        <div class="field">
+          <label>输入 (GeoTIFF) <small>Source DEM Directory</small></label>
+          <div class="input-with-btn">
+            <input v-model="form.input" placeholder="请选择或输入输入路径" />
+            <button class="btn-browse" @click="browseFolder('input')">浏览</button>
           </div>
         </div>
-        <div class="form-row">
-          <div class="field">
-            <label>输出 Terrain 路径 <small>(切片数据的存储位置)</small></label>
-            <div class="input-with-btn">
-              <input v-model="form.output" type="text" placeholder="例如：E:\Data\Cesium_Terrain" />
-              <button class="btn-browse" @click="browseFolder('output')">浏览...</button>
-            </div>
+        <div class="field mt-05">
+          <label>输出 (Terrain) <small>Output Tiles Directory</small></label>
+          <div class="input-with-btn">
+            <input v-model="form.output" placeholder="请选择或输入输出路径" />
+            <button class="btn-browse" @click="browseFolder('output')">浏览</button>
           </div>
         </div>
       </div>
 
-      <!-- 卡片 2: 参数 -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="step-num">2</span>
-          <h3>切片与简化参数</h3>
-        </div>
-        <div class="grid-3">
+      <!-- 参数配置 -->
+      <div class="card">
+        <div class="card-header">2. 核心参数</div>
+        <div class="grid-2">
           <div class="field">
-            <label>最小层级</label>
-            <input v-model.number="form.minDepth" type="number" min="0" max="22" />
-            <p class="help">通常为 0</p>
+            <label>最小 / 最大层级</label>
+            <div class="range-group">
+              <input v-model.number="form.minDepth" type="number" />
+              <span class="sep">至</span>
+              <input v-model.number="form.maxDepth" type="number" />
+            </div>
           </div>
           <div class="field">
-            <label>最大层级</label>
-            <input v-model.number="form.maxDepth" type="number" min="0" max="22" />
-            <p class="help">建议：14-18</p>
-          </div>
-          <div class="field">
-            <label>简化强度 (Intensity)</label>
+            <label>简化强度</label>
             <input v-model.number="form.intensity" type="number" step="0.1" />
-            <p class="help">默认 4.0 (RTIN 因子)</p>
           </div>
-        </div>
-        <div class="grid-2 mt-1">
           <div class="field">
-            <label>插值算法</label>
+            <label>插值方式</label>
             <select v-model="form.interpolationType">
-              <option value="bilinear">双线性插值 (推荐)</option>
-              <option value="nearest">最近邻插值 (快速)</option>
+              <option value="bilinear">双线性 (Bilinear)</option>
+              <option value="nearest">最近邻 (Nearest)</option>
             </select>
           </div>
           <div class="field">
             <label>目标天体</label>
             <select v-model="form.body">
-              <option value="earth">地球 (WGS84)</option>
-              <option value="moon">月球</option>
+              <option value="earth">地球 (Earth)</option>
+              <option value="moon">月球 (Moon)</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- 卡片 3: 选项 -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="step-num">3</span>
-          <h3>扩展功能与质量</h3>
-        </div>
-        <div class="toggle-list">
-          <label class="toggle-item">
-            <input type="checkbox" v-model="form.calculateNormals" />
-            <div class="toggle-content">
-              <span class="title">生成顶点法线</span>
-              <span class="desc">在 Cesium 中开启光照效果</span>
-            </div>
-          </label>
-          <label class="toggle-item">
-            <input type="checkbox" v-model="form.json" />
-            <div class="toggle-content">
-              <span class="title">生成 layer.json</span>
-              <span class="desc">Cesium 自动加载所需元数据</span>
-            </div>
-          </label>
-          <label class="toggle-item">
-            <input type="checkbox" v-model="form.waterMask" />
-            <div class="toggle-content">
-              <span class="title">水体掩膜</span>
-              <span class="desc">识别水面效果 (实验性)</span>
-            </div>
-          </label>
-          <label class="toggle-item">
-            <input type="checkbox" v-model="form.debug" />
-            <div class="toggle-content">
-              <span class="title">调试模式</span>
-              <span class="desc">记录详细的处理日志</span>
-            </div>
-          </label>
+      <!-- 选项配置 (2x2 网格) -->
+      <div class="card">
+        <div class="card-header">3. 质量与扩展</div>
+        <div class="options-grid">
+          <label class="opt-box"><input type="checkbox" v-model="form.calculateNormals" /> <span>计算顶点法线</span></label>
+          <label class="opt-box"><input type="checkbox" v-model="form.json" /> <span>生成 layer.json</span></label>
+          <label class="opt-box"><input type="checkbox" v-model="form.waterMask" /> <span>水体掩膜</span></label>
+          <label class="opt-box"><input type="checkbox" v-model="form.debug" /> <span>调试日志</span></label>
         </div>
       </div>
+    </div>
 
-      <!-- 提交栏 -->
-      <div class="action-footer-inline">
-        <div v-if="message" :class="['status-message', messageType]">
-          {{ message }}
-        </div>
-        <button class="btn-primary" :disabled="isLoading" @click="submit">
-          <span v-if="isLoading" class="spinner"></span>
-          {{ isLoading ? '正在提交...' : '提交切片任务' }}
-        </button>
-      </div>
+    <div class="footer-action">
+      <div v-if="message" :class="['msg', messageType]">{{ message }}</div>
+      <button class="btn-primary" :disabled="isLoading" @click="submit">
+        <span v-if="isLoading" class="spinner"></span> 启动地形切片
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.form-scroll-container {
-  height: 100%;
-  overflow-y: auto;
-  padding: 2rem;
-}
+.submit-page { padding: 1.25rem; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; background: #0f172a; }
+.compact-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 0.75rem; }
+.full-width { grid-column: span 2; }
 
-.form-content {
-  max-width: 900px;
-  margin: 0 auto;
-}
+.card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.25rem; }
+.card-header { font-size: 0.8rem; font-weight: 800; color: #3b82f6; margin-bottom: 1rem; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
 
-.section-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
+.field label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem; font-weight: 600; }
+.field label small { font-weight: 400; opacity: 0.5; margin-left: 4px; }
 
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 1.2rem;
+input, select { 
+  background: #0f172a; border: 1px solid #475569; color: #f8fafc; 
+  padding: 0.6rem 0.8rem; border-radius: 6px; width: 100%; 
+  box-sizing: border-box; font-size: 0.85rem; transition: border-color 0.2s;
 }
+input:focus { border-color: #3b82f6; outline: none; }
 
-.step-num {
-  width: 24px;
-  height: 24px;
-  background: #dbeafe;
-  color: #2563eb;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 0.8rem;
-}
-
-.section-card h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  color: #334155;
-}
-
-.field label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #475569;
-}
-
-.field label small {
-  font-weight: 400;
-  color: #64748b;
-  margin-left: 4px;
-}
-
-.input-with-btn {
-  display: flex;
-  gap: 8px;
-}
-
-.input-with-btn input {
-  flex: 1;
-}
-
-input, select {
-  padding: 0.65rem 0.8rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.btn-browse {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  padding: 0 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  font-size: 0.85rem;
+.input-with-btn { display: flex; gap: 8px; }
+.btn-browse { 
+  background: #3b82f6; border: none; color: white; padding: 0 1.25rem; 
+  border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700;
   transition: background 0.2s;
 }
+.btn-browse:hover { background: #2563eb; }
 
-.btn-browse:hover {
-  background: #e2e8f0;
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.range-group { display: flex; align-items: center; gap: 8px; }
+.range-group input { text-align: center; }
+.sep { color: #475569; font-size: 0.75rem; }
+
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.opt-box { 
+  display: flex; align-items: center; gap: 10px; font-size: 0.8rem; 
+  cursor: pointer; color: #f8fafc; background: #0f172a; 
+  padding: 0.8rem; border-radius: 8px; border: 1px solid #334155;
+  transition: all 0.2s;
 }
+.opt-box:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+.opt-box input { width: 16px; height: 16px; accent-color: #3b82f6; }
 
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.2rem;
+.footer-action { display: flex; justify-content: flex-end; align-items: center; gap: 2rem; margin-top: auto; }
+.btn-primary { 
+  background: #3b82f6; color: white; border: none; padding: 0.8rem 3rem; 
+  border-radius: 8px; font-weight: 800; cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
 }
+.btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
 
-.grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.2rem;
-}
-
-.help {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 4px;
-}
-
-.toggle-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.toggle-item {
-  display: flex;
-  gap: 12px;
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.toggle-item:hover {
-  background: #f8fafc;
-}
-
-.toggle-item input {
-  width: 18px;
-  height: 18px;
-  accent-color: #2563eb;
-  margin: 0;
-}
-
-.toggle-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.toggle-content .title {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.toggle-content .desc {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.action-footer-inline {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  background: white;
-  border: 1px dashed #2563eb;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-}
-
-.btn-primary {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.8rem 2rem;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.2s;
-}
-
-.btn-primary:hover {
-  background: #1d4ed8;
-}
-
-.status-message {
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.status-message.info { color: #2563eb; }
-.status-message.success { color: #16a34a; }
-.status-message.error { color: #dc2626; }
-
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
+.msg { font-size: 0.85rem; font-weight: 600; }
+.msg.info { color: #3b82f6; }
+.msg.error { color: #f87171; }
+.spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.mt-1 { margin-top: 1rem; }
+.mt-05 { margin-top: 0.5rem; }
 </style>

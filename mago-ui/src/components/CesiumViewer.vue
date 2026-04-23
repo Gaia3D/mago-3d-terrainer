@@ -23,7 +23,8 @@ const initCesium = async () => {
     animation: false,
     timeline: false,
     skyAtmosphere: false,
-    infoBox: false,
+    infoBox: true,
+    fullscreenButton: false,
     selectionIndicator: false
   })
 
