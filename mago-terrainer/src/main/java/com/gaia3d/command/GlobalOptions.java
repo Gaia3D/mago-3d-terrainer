@@ -130,32 +130,34 @@ public class GlobalOptions {
             throw new IllegalArgumentException("Please enter the value of the output argument.");
         }
 
+        String sufix = java.util.UUID.randomUUID().toString();
+        File inputDir = new File(instance.getInputPath());
+        File parentDir = inputDir.getParentFile();
+        if (parentDir == null) {
+            parentDir = new File(".");
+        }
+        File tempDir = new File(parentDir, "mago_temp_" + sufix);
+
         if (command.hasOption(CommandOptions.TEMP_PATH.getLongName())) {
             String tempPath = command.getOptionValue(CommandOptions.TEMP_PATH.getLongName());
-            String sufix = java.util.UUID.randomUUID().toString();
             File tempFullPath = new File(tempPath, sufix);
-            File resizedDir = new File(tempFullPath, "resized");
-            File splitDir = new File(tempFullPath, "split");
-            File standardizeDir = new File(tempFullPath, "standardization");
-            File geoidDir = new File(tempFullPath, "geoid");
             instance.setRootTempPath(tempFullPath.getAbsolutePath());
             instance.setTileTempPath(tempFullPath.getAbsolutePath());
-            instance.setResizedTiffTempPath(resizedDir.getAbsolutePath());
-            instance.setSplitTiffTempPath(splitDir.getAbsolutePath());
-            instance.setStandardizeTempPath(standardizeDir.getAbsolutePath());
-            instance.setGeoidTempPath(geoidDir.getAbsolutePath());
         } else {
-            File tempDir = new File(instance.getOutputPath(), DEFAULT_TEMP_DIR);
-            File resizedDir = new File(tempDir, "resized");
-            File splitDir = new File(tempDir, "split");
-            File standardizeDir = new File(tempDir, "standardization");
             instance.setRootTempPath(tempDir.getAbsolutePath());
             instance.setTileTempPath(tempDir.getAbsolutePath());
-            instance.setResizedTiffTempPath(resizedDir.getAbsolutePath());
-            instance.setSplitTiffTempPath(splitDir.getAbsolutePath());
-            instance.setStandardizeTempPath(standardizeDir.getAbsolutePath());
-            instance.setGeoidTempPath(new File(tempDir, "geoid").getAbsolutePath());
         }
+
+        File rootTempDir = new File(instance.getRootTempPath());
+        File resizedDir = new File(rootTempDir, "resized");
+        File splitDir = new File(rootTempDir, "split");
+        File standardizeDir = new File(rootTempDir, "standardization");
+        File geoidDir = new File(rootTempDir, "geoid");
+
+        instance.setResizedTiffTempPath(resizedDir.getAbsolutePath());
+        instance.setSplitTiffTempPath(splitDir.getAbsolutePath());
+        instance.setStandardizeTempPath(standardizeDir.getAbsolutePath());
+        instance.setGeoidTempPath(geoidDir.getAbsolutePath());
 
         if (command.hasOption(CommandOptions.GEOID_PATH.getLongName())) {
             instance.setGeoidPath(command.getOptionValue(CommandOptions.GEOID_PATH.getLongName()));

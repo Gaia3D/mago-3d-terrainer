@@ -29,7 +29,8 @@ import java.util.Optional;
 public class TerrainDataController {
 
     private final TerrainService terrainService;
-    private static final int PARTITION_SIZE = 16;
+    private static final int PARTITION_SIZE = 256;
+    private static final int ROOT_BLOCK_MAX_LEVEL = 10;
 
     @Operation(summary = "Get terrain data from Flat or Compact storage")
     @GetMapping("/{taskId}/**")

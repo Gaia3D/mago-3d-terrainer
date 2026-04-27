@@ -126,6 +126,17 @@ public class LoggingConfiguration {
         ctx.updateLoggers();
     }
 
+    public static void addCustomAppender(Appender appender) {
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        if (!appender.isStarted()) {
+            appender.start();
+        }
+        loggerConfig.addAppender(appender, null, null);
+        ctx.updateLoggers();
+    }
+
     private static PatternLayout createPatternLayout(String pattern) {
         return PatternLayout.newBuilder().withPattern(pattern).withCharset(StandardCharsets.UTF_8).build();
     }

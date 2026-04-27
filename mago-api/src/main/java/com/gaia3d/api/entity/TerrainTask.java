@@ -38,7 +38,7 @@ public class TerrainTask {
     private LocalDateTime endTime;
     private Long durationSeconds;
     
-    // 日志路径 (可选，指向特定的任务日志文件)
-    @Column(length = 2000)
+    // 日志
+    @Column(columnDefinition = "TEXT")
     private String logs;
 }

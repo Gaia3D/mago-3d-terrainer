@@ -17,7 +17,7 @@ public enum CommandOptions {
     INPUT("input", "i", true, "[Required] Input directory path"),
     OUTPUT("output", "o", true, "[Required] Output directory path"),
     LOG("log", "l", true, "Log file path"),
-    TEMP_PATH("temp", "t", true, "Temporary directory path (default: {OUTPUT}/temp)"),
+    TEMP_PATH("temp", "t", true, "Temporary directory path (default: same level as input path)"),
     GEOID_PATH("geoid", "g", true, "Set reference height option for terrain data. \n"
             + "Geoid file path for height correction, \n (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)"),
 

@@ -57,9 +57,27 @@ const deleteTask = async (id: number) => {
   fetchTasks(pagination.page)
 }
 
-const openLogs = (id: number) => {
-  currentLogTaskId.value = id
-  if (!taskLogs[id]) taskLogs[id] = ["等待日志流转..."]
+const openLogs = async (taskId: number) => {
+  currentLogTaskId.value = taskId
+  const task = tasks.value.find(t => t.id === taskId)
+  
+  if (task && (task.status === 'COMPLETED' || task.status === 'FAILED')) {
+    // 历史任务：从数据库获取完整日志
+    if (!task.logs) {
+       // 如果列表里没 logs，重新拉取单个任务详情
+       try {
+         const res = await fetch(`http://localhost:8080/api/v1/terrain/tasks/${taskId}`)
+         const detail = await res.json()
+         task.logs = detail.logs
+       } catch (e) { console.error("获取历史日志失败", e) }
+    }
+    taskLogs[taskId] = task.logs ? task.logs.split('\n') : ["暂无日志记录"]
+  } else {
+    // 进行中任务：显示实时流（如果还未开始流转，给个提示）
+    if (!taskLogs[taskId] || taskLogs[taskId].length === 0) {
+      taskLogs[taskId] = ["正在等待实时日志流转..."]
+    }
+  }
   showLogModal.value = true
 }
 
@@ -147,7 +165,7 @@ const getPreviewUrl = (task: any) => `http://localhost:8080/api/v1/terrain/data/
       </div>
     </div>
 
-    <!-- 日志弹窗保持原样 -->
+    <!-- 日志弹窗 -->
     <div v-if="showLogModal" class="modal-mask" @click.self="showLogModal = false">
       <div class="log-modal">
         <div class="modal-header"><h3>任务 #{{ currentLogTaskId }} 实时日志</h3><button class="close-btn" @click="showLogModal = false">×</button></div>
@@ -197,4 +215,5 @@ const getPreviewUrl = (task: any) => `http://localhost:8080/api/v1/terrain/data/
 .log-modal { width: 900px; height: 70vh; background: #1e293b; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
 .modal-header { padding: 1.2rem; display: flex; justify-content: space-between; align-items: center; background: #0f172a; }
 .log-body { flex: 1; overflow-y: auto; padding: 1.5rem; background: #050505; color: #34d399; font-family: monospace; font-size: 0.7rem; }
+.close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
 </style>

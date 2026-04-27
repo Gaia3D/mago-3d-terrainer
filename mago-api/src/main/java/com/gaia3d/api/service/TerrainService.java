@@ -64,49 +64,53 @@ public class TerrainService {
         taskRepository.save(task);
         webSocketHandler.broadcast("STATUS:" + taskId + ":PROCESSING");
 
-        // 注册动态日志监听
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration logConfig = ctx.getConfiguration();
-        
+        // 用于累积完整日志
+        StringBuilder fullLog = new StringBuilder();
+
+        // 定义 Appender
         TaskLogAppender appender = new TaskLogAppender("TaskAppender-" + taskId, null, 
-                PatternLayout.newBuilder().withPattern("%d{HH:mm:ss} %-5p %c{1} - %m%n").build(), 
-                true, webSocketHandler) {
+                PatternLayout.newBuilder().withPattern("%d{HH:mm:ss.SSS} [%t] %-5p - %m%n").build(), 
+                true, webSocketHandler, taskId) {
             
             private final Pattern progressPattern = Pattern.compile("\\[Tile\\]\\[(\\d+)/(\\d+)\\]\\[(\\d+)/(\\d+)\\]");
 
             @Override
             public void append(org.apache.logging.log4j.core.LogEvent event) {
-                String msg = new String(getLayout().toByteArray(event)).trim();
-                webSocketHandler.broadcast("LOG:" + taskId + ":" + msg);
-                
-                Matcher m = progressPattern.matcher(msg);
-                if (m.find()) {
-                    try {
-                        int curD = Integer.parseInt(m.group(1));
-                        int maxD = Integer.parseInt(m.group(2));
-                        int curP = Integer.parseInt(m.group(3));
-                        int totP = Integer.parseInt(m.group(4));
-
-                        int totalSteps = (maxD - task.getMinDepth() + 1);
-                        double stepWeight = 100.0 / totalSteps;
-                        double currentStepProgress = (curD - task.getMinDepth()) * stepWeight;
-                        double inStepProgress = (curP / (double)totP) * stepWeight;
-                        
-                        int finalProgress = Math.min(99, (int)(currentStepProgress + inStepProgress));
-                        if (finalProgress > task.getProgress()) {
-                            task.setProgress(finalProgress);
-                            taskRepository.save(task);
-                            webSocketHandler.broadcast("PROGRESS:" + taskId + ":" + finalProgress);
-                        }
-                    } catch (Exception ignored) {}
+                String threadName = event.getThreadName();
+                // 核心：只捕获 task- 执行器线程产生的日志
+                if (threadName != null && threadName.contains("task-")) {
+                    String msg = new String(getLayout().toByteArray(event)).trim();
+                    
+                    // 1. 发送到 WebSocket
+                    webSocketHandler.broadcast("LOG:" + taskId + ":" + msg);
+                    
+                    // 2. 累积到完整日志
+                    fullLog.append(msg).append("\n");
+                    
+                    // 3. 进度解析
+                    Matcher m = progressPattern.matcher(msg);
+                    if (m.find()) {
+                        try {
+                            int curD = Integer.parseInt(m.group(1));
+                            int maxD = Integer.parseInt(m.group(2));
+                            int curP = Integer.parseInt(m.group(3));
+                            int totP = Integer.parseInt(m.group(4));
+                            int totalSteps = (maxD - task.getMinDepth() + 1);
+                            double stepWeight = 100.0 / totalSteps;
+                            double currentStepProgress = (curD - task.getMinDepth()) * stepWeight;
+                            double inStepProgress = (curP / (double)totP) * stepWeight;
+                            int finalProgress = Math.min(99, (int)(currentStepProgress + inStepProgress));
+                            if (finalProgress > task.getProgress()) {
+                                task.setProgress(finalProgress);
+                                taskRepository.save(task);
+                                webSocketHandler.broadcast("PROGRESS:" + taskId + ":" + finalProgress);
+                            }
+                        } catch (Exception ignored) {}
+                    }
                 }
             }
         };
-        appender.start();
-        logConfig.addAppender(appender);
-        logConfig.getRootLogger().addAppender(appender, null, null);
-        ctx.updateLoggers();
-        
+
         try {
             GlobalOptions.recreateInstance();
             String[] args = convertToArgs(request);
@@ -115,18 +119,16 @@ public class TerrainService {
             Options options = commandLineConfig.createOptions();
             CommandLine command = commandLineConfig.createCommandLine(options, args);
             
-            // 重要：原生初始化后可能会覆盖 Appender
+            // 1. 初始化切片引擎配置
             LoggingConfiguration.initConsoleLogger();
-            
-            // 重新强制挂载
-            logConfig.addAppender(appender);
-            logConfig.getRootLogger().addAppender(appender, null, null);
-            ctx.updateLoggers();
-
             LoggingConfiguration.setLevel(org.apache.logging.log4j.Level.INFO);
             LoggingConfiguration.setEpsg();
             GlobalOptions.init(command);
             
+            // 2. 关键：在所有重置操作后，强制挂载自定义 Appender
+            LoggingConfiguration.addCustomAppender(appender);
+            
+            // 3. 执行任务
             if (globalOptions.isLayerJsonGenerate()) {
                 invokePrivateMethod("executeLayerJsonGenerate");
             } else {
@@ -142,24 +144,26 @@ public class TerrainService {
             log.error("任务 ID " + taskId + " 严重失败: ", cause);
             task.setStatus("FAILED");
             task.setMessage(cause.getMessage());
+            fullLog.append("ERROR: ").append(cause.getMessage()).append("\n");
         } finally {
             task.setEndTime(LocalDateTime.now());
             task.setDurationSeconds(Duration.between(task.getStartTime(), task.getEndTime()).getSeconds());
+            
+            // 彻底保存完整日志到数据库
+            task.setLogs(fullLog.toString());
             taskRepository.save(task);
             
-            // 彻底清理日志 Appender
-            if (appender != null) {
-                appender.stop();
-                logConfig.getRootLogger().removeAppender(appender.getName());
-                ctx.updateLoggers();
-            }
+            // 停止并移除 Appender
+            appender.stop();
+            LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+            ctx.getConfiguration().getRootLogger().removeAppender(appender.getName());
+            ctx.updateLoggers();
             
-            // 发送最终状态广播，此时数据库文件锁已经由 TileWgs84Manager 在逻辑末尾释放
             webSocketHandler.broadcast("PROGRESS:" + taskId + ":100");
             webSocketHandler.broadcast("STATUS:" + taskId + ":" + task.getStatus());
             
             System.gc(); 
-            log.info("任务 ID {} 执行路径清理完毕。", taskId);
+            log.info("任务 ID {} 执行完毕，日志已持久化。", taskId);
         }
     }
 

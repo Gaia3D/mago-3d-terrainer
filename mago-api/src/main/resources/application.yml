@@ -1,4 +1,8 @@
 spring:
+  data:
+    web:
+      pageable:
+        serialization-mode: via-dto
   datasource:
     url: jdbc:sqlite:mago_terrainer.db
     driver-class-name: org.sqlite.JDBC

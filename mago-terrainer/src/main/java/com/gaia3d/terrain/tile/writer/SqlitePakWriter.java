@@ -14,7 +14,7 @@ public class SqlitePakWriter implements TerrainWriter {
     private final Set<String> createdTables = new HashSet<>();
     private int batchCount = 0;
     private static final int BATCH_SIZE = 200; 
-    private static final int PARTITION_SIZE = 16; // 核心：调整为 16x16 规模
+    private static final int PARTITION_SIZE = 256; // 核心：调整为 256x256 规模，约 6.5万槽位，实际存储约 3万条
 
     public SqlitePakWriter(String pakFilePath) {
         this.pakFilePath = pakFilePath.toLowerCase().endsWith(".pak") ? pakFilePath : pakFilePath + ".pak";
@@ -72,12 +72,10 @@ public class SqlitePakWriter implements TerrainWriter {
         // 0-9 级归入 blocks 表 (z < 10)
         if (z < 10) return "blocks";
         
-        // 10 级及以上按 32x32 分区
-        long pX = x >> (z - 10);
-        long pY = y >> (z - 10);
-        long gridX = (pX / PARTITION_SIZE) * PARTITION_SIZE;
-        long gridY = (pY / PARTITION_SIZE) * PARTITION_SIZE;
-        return "blocks_10_" + gridX + "_" + gridY;
+        // 10 级及以上按 PARTITION_SIZE x PARTITION_SIZE 分区，且按当前层级 z 分表
+        long gridX = (x / PARTITION_SIZE) * PARTITION_SIZE;
+        long gridY = (y / PARTITION_SIZE) * PARTITION_SIZE;
+        return "blocks_" + z + "_" + gridX + "_" + gridY;
     }
 
     private void ensureTable(String tableName) throws SQLException {
