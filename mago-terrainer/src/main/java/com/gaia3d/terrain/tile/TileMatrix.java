@@ -836,15 +836,17 @@ public class TileMatrix {
 
             QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
             QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile, calculateNormals);
-            String tileFullPath = this.manager.getQuantizedMeshTilePath(tileIndices);
-            String tileFolderPath = this.manager.getQuantizedMeshTileFolderPath(tileIndices);
-            FileUtils.createAllFoldersIfNoExist(tileFolderPath);
+            
+            // Use ByteArrayOutputStream to capture the data for the writer
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            com.gaia3d.io.LittleEndianDataOutputStream dataOutputStream = new com.gaia3d.io.LittleEndianDataOutputStream(new java.io.BufferedOutputStream(baos));
 
-            LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(new FileOutputStream(tileFullPath)));
-
-            // save the tile
+            // save the tile to stream
             quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);
             dataOutputStream.close();
+            
+            // Write via the abstracted terrainWriter
+            this.manager.getTerrainWriter().writeTile(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), baos.toByteArray());
         }
     }
 

@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,14 @@ public class AvailableTileSet {
 
     public AvailableTileSet() {
         mapDepthAvailableTileRanges = new HashMap<>();
+    }
+
+    public List<TileRange> getAvailableTileRanges() {
+        List<TileRange> allRanges = new ArrayList<>();
+        for (List<TileRange> ranges : mapDepthAvailableTileRanges.values()) {
+            allRanges.addAll(ranges);
+        }
+        return allRanges;
     }
 
     public List<TileRange> getAvailableTileRangesAtDepth(int depth) {

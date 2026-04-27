@@ -22,6 +22,7 @@ public class TerrainTask {
     private Double intensity;
     private String body;
     private String interpolationType;
+    private String outputFormat; // flat or compact
     
     // 布尔选项 (存储为字符或整型，SQLite 支持)
     private Boolean calculateNormals;
@@ -30,6 +31,7 @@ public class TerrainTask {
     // 任务状态
     private String status; // PENDING, PROCESSING, COMPLETED, FAILED
     private String message;
+    private Integer progress = 0; // 0-100
     
     // 时间戳
     private LocalDateTime startTime;

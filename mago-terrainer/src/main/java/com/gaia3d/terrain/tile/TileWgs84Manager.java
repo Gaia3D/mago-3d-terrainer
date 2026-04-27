@@ -9,6 +9,9 @@ import com.gaia3d.terrain.structure.TerrainTriangle;
 import com.gaia3d.terrain.tile.custom.AvailableTileSet;
 import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.tile.geotiff.RasterStandardizer;
+import com.gaia3d.terrain.tile.writer.FileSystemWriter;
+import com.gaia3d.terrain.tile.writer.SqlitePakWriter;
+import com.gaia3d.terrain.tile.writer.TerrainWriter;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.terrain.util.TerrainMeshUtils;
 import com.gaia3d.terrain.util.TileWgs84Utils;
@@ -76,9 +79,34 @@ public class TileWgs84Manager {
     // Available tileset
     private AvailableTileSet availableTileSet = new AvailableTileSet();
 
+    private TerrainWriter terrainWriter;
+
+    public TerrainWriter getTerrainWriter() {
+        return terrainWriter;
+    }
+
     // constructor
     public TileWgs84Manager() {
         double intensity = globalOptions.getIntensity();
+
+        // Initialize terrain writer based on format
+        String outputPath = globalOptions.getOutputPath();
+        if ("compact".equalsIgnoreCase(globalOptions.getOutputFormat())) {
+            // 核心修复：统一路径。如果结尾没 .pak 则补上，不再创建子文件夹 terrain.pak
+            if (!outputPath.toLowerCase().endsWith(".pak")) {
+                outputPath += ".pak";
+            }
+            this.terrainWriter = new SqlitePakWriter(outputPath);
+        } else {
+            this.terrainWriter = new FileSystemWriter(outputPath);
+        }
+        
+        try {
+            this.terrainWriter.init();
+        } catch (IOException e) {
+            log.error("Failed to initialize terrain writer: {}", e.getMessage());
+            throw new RuntimeException("存储系统初始化失败，无法继续切片任务。", e);
+        }
 
         // Init default values
         // init the maxTriangleSizeForTileDepthMap
@@ -472,6 +500,7 @@ public class TileWgs84Manager {
             } else {
                 TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
             }
+            tilesRange.setTileDepth(depth);
 
             // Set terrainLayer.available of tileSet JSON
             terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
@@ -533,7 +562,21 @@ public class TileWgs84Manager {
             log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
-        terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
+        try {
+            // 核心修复：更新 available 瓦片范围并同步到 layer.json
+            this.availableTileSet.recombineTileRanges();
+            this.terrainLayer.getAvailable().clear();
+            this.terrainLayer.getAvailable().addAll(this.availableTileSet.getAvailableTileRanges());
+
+            terrainWriter.writeMetadata(
+                    terrainLayer.getBounds()[0], terrainLayer.getBounds()[1], 
+                    terrainLayer.getBounds()[2], terrainLayer.getBounds()[3],
+                    globalOptions.getMinimumTileDepth(), globalOptions.getMaximumTileDepth(),
+                    globalOptions.getOriginalInputPath(), terrainLayer.getJsonString()
+            );
+        } finally {
+            terrainWriter.close();
+        }
     }
 
     public void makeTileMeshesCustomModifyMode() throws IOException, TransformException, FactoryException {
@@ -665,7 +708,21 @@ public class TileWgs84Manager {
             log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
-        terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
+        try {
+            // 核心修复：更新 available 瓦片范围并同步到 layer.json
+            this.availableTileSet.recombineTileRanges();
+            this.terrainLayer.getAvailable().clear();
+            this.terrainLayer.getAvailable().addAll(this.availableTileSet.getAvailableTileRanges());
+
+            terrainWriter.writeMetadata(
+                    terrainLayer.getBounds()[0], terrainLayer.getBounds()[1], 
+                    terrainLayer.getBounds()[2], terrainLayer.getBounds()[3],
+                    globalOptions.getMinimumTileDepth(), globalOptions.getMaximumTileDepth(),
+                    globalOptions.getOriginalInputPath(), terrainLayer.getJsonString()
+            );
+        } finally {
+            terrainWriter.close();
+        }
     }
 
     public void makeTileMeshesContinueCustom() throws IOException, TransformException, FactoryException {
@@ -782,7 +839,21 @@ public class TileWgs84Manager {
             log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
-        terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
+        try {
+            // 核心修复：更新 available 瓦片范围并同步到 layer.json
+            this.availableTileSet.recombineTileRanges();
+            this.terrainLayer.getAvailable().clear();
+            this.terrainLayer.getAvailable().addAll(this.availableTileSet.getAvailableTileRanges());
+
+            terrainWriter.writeMetadata(
+                    terrainLayer.getBounds()[0], terrainLayer.getBounds()[1], 
+                    terrainLayer.getBounds()[2], terrainLayer.getBounds()[3],
+                    globalOptions.getMinimumTileDepth(), globalOptions.getMaximumTileDepth(),
+                    globalOptions.getOriginalInputPath(), terrainLayer.getJsonString()
+            );
+        } finally {
+            terrainWriter.close();
+        }
     }
 
     public void makeTileMeshesCustom() throws IOException, TransformException, FactoryException {
@@ -896,7 +967,21 @@ public class TileWgs84Manager {
             log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
-        terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
+        try {
+            // 核心修复：更新 available 瓦片范围并同步到 layer.json
+            this.availableTileSet.recombineTileRanges();
+            this.terrainLayer.getAvailable().clear();
+            this.terrainLayer.getAvailable().addAll(this.availableTileSet.getAvailableTileRanges());
+
+            terrainWriter.writeMetadata(
+                    terrainLayer.getBounds()[0], terrainLayer.getBounds()[1], 
+                    terrainLayer.getBounds()[2], terrainLayer.getBounds()[3],
+                    globalOptions.getMinimumTileDepth(), globalOptions.getMaximumTileDepth(),
+                    globalOptions.getOriginalInputPath(), terrainLayer.getJsonString()
+            );
+        } finally {
+            terrainWriter.close();
+        }
     }
 
     private void deleteTempFilesByDepth(int depth) {
@@ -1007,6 +1092,7 @@ public class TileWgs84Manager {
             } else {
                 TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
             }
+            tilesRange.setTileDepth(depth);
 
             // Set terrainLayer.available of tileSet json
             terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
@@ -1034,6 +1120,7 @@ public class TileWgs84Manager {
                 makeTempFilesFromQuantizedMeshes(depth - 1);
                 makeChildrenTempFiles(depth - 1);
             }
+            tilesRange.setTileDepth(depth);
 
             // Set terrainLayer.available of tileSet json
             terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
@@ -1084,7 +1171,21 @@ public class TileWgs84Manager {
             log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
-        terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
+        try {
+            // 核心修复：更新 available 瓦片范围并同步到 layer.json
+            this.availableTileSet.recombineTileRanges();
+            this.terrainLayer.getAvailable().clear();
+            this.terrainLayer.getAvailable().addAll(this.availableTileSet.getAvailableTileRanges());
+
+            terrainWriter.writeMetadata(
+                    terrainLayer.getBounds()[0], terrainLayer.getBounds()[1], 
+                    terrainLayer.getBounds()[2], terrainLayer.getBounds()[3],
+                    globalOptions.getMinimumTileDepth(), globalOptions.getMaximumTileDepth(),
+                    globalOptions.getOriginalInputPath(), terrainLayer.getJsonString()
+            );
+        } finally {
+            terrainWriter.close();
+        }
     }
 
     public String timeFormat(long time) {
@@ -1368,16 +1469,21 @@ public class TileWgs84Manager {
         String terrainElevationDataFolderPath = globalOptions.getInputPath();
         File inputFolder = new File(terrainElevationDataFolderPath);
 
+        // 如果路径不存在，且是一个临时生成的标准化路径，则尝试创建它，而不是报错
+        if (!inputFolder.exists() && terrainElevationDataFolderPath.contains("standardization")) {
+            inputFolder.mkdirs();
+        }
+
         List<String> rasterFileNames = new ArrayList<>();
         if (inputFolder.exists() && inputFolder.isDirectory()) {
             FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, ".tif", rasterFileNames, true);
         } else if (inputFolder.exists() && inputFolder.isFile()) {
-            if (terrainElevationDataFolderPath.endsWith(".tif")) {
+            if (terrainElevationDataFolderPath.toLowerCase().endsWith(".tif") || terrainElevationDataFolderPath.toLowerCase().endsWith(".tiff")) {
                 rasterFileNames.add(terrainElevationDataFolderPath);
             }
         } else {
-            log.error("Input path is not exist or not a directory: {}", terrainElevationDataFolderPath);
-            throw new RuntimeException("Error: Input path is not exist or not a directory: " + terrainElevationDataFolderPath);
+            log.error("Input path does not exist: {}", terrainElevationDataFolderPath);
+            throw new RuntimeException("Error: Input path does not exist: " + terrainElevationDataFolderPath);
         }
 
         if (rasterFileNames.isEmpty()) {
@@ -1391,6 +1497,7 @@ public class TileWgs84Manager {
 
         // for depth = 0, set the available tile range to the whole world
         TileRange tilesRange = new TileRange();
+        tilesRange.setTileDepth(0);
         tilesRange.setMinTileX(0);
         tilesRange.setMaxTileX(1);
         tilesRange.setMinTileY(0);

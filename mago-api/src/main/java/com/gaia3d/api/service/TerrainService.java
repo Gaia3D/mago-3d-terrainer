@@ -2,12 +2,20 @@ package com.gaia3d.api.service;
 
 import com.gaia3d.api.dto.TerrainRequestDTO;
 import com.gaia3d.api.entity.TerrainTask;
+import com.gaia3d.api.handler.TaskWebSocketHandler;
+import com.gaia3d.api.logging.TaskLogAppender;
 import com.gaia3d.api.repository.TerrainTaskRepository;
 import com.gaia3d.command.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +25,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -24,6 +34,7 @@ import java.util.Optional;
 public class TerrainService {
 
     private final TerrainTaskRepository taskRepository;
+    private final TaskWebSocketHandler webSocketHandler;
 
     public TerrainTask createTask(TerrainRequestDTO request) {
         TerrainTask task = new TerrainTask();
@@ -34,9 +45,11 @@ public class TerrainService {
         task.setIntensity(request.getIntensity());
         task.setBody(request.getBody());
         task.setInterpolationType(request.getInterpolationType());
+        task.setOutputFormat(request.getOutputFormat());
         task.setCalculateNormals(request.getCalculateNormals());
         task.setGenerateJson(request.getJson());
         task.setStatus("PENDING");
+        task.setProgress(0);
         task.setStartTime(LocalDateTime.now());
         return taskRepository.save(task);
     }
@@ -49,91 +62,113 @@ public class TerrainService {
         TerrainTask task = taskOpt.get();
         task.setStatus("PROCESSING");
         taskRepository.save(task);
+        webSocketHandler.broadcast("STATUS:" + taskId + ":PROCESSING");
+
+        // 注册动态日志监听
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration logConfig = ctx.getConfiguration();
+        
+        TaskLogAppender appender = new TaskLogAppender("TaskAppender-" + taskId, null, 
+                PatternLayout.newBuilder().withPattern("%d{HH:mm:ss} %-5p %c{1} - %m%n").build(), 
+                true, webSocketHandler) {
+            
+            private final Pattern progressPattern = Pattern.compile("\\[Tile\\]\\[(\\d+)/(\\d+)\\]\\[(\\d+)/(\\d+)\\]");
+
+            @Override
+            public void append(org.apache.logging.log4j.core.LogEvent event) {
+                String msg = new String(getLayout().toByteArray(event)).trim();
+                webSocketHandler.broadcast("LOG:" + taskId + ":" + msg);
+                
+                Matcher m = progressPattern.matcher(msg);
+                if (m.find()) {
+                    try {
+                        int curD = Integer.parseInt(m.group(1));
+                        int maxD = Integer.parseInt(m.group(2));
+                        int curP = Integer.parseInt(m.group(3));
+                        int totP = Integer.parseInt(m.group(4));
+
+                        int totalSteps = (maxD - task.getMinDepth() + 1);
+                        double stepWeight = 100.0 / totalSteps;
+                        double currentStepProgress = (curD - task.getMinDepth()) * stepWeight;
+                        double inStepProgress = (curP / (double)totP) * stepWeight;
+                        
+                        int finalProgress = Math.min(99, (int)(currentStepProgress + inStepProgress));
+                        if (finalProgress > task.getProgress()) {
+                            task.setProgress(finalProgress);
+                            taskRepository.save(task);
+                            webSocketHandler.broadcast("PROGRESS:" + taskId + ":" + finalProgress);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        };
+        appender.start();
+        logConfig.addAppender(appender);
+        logConfig.getRootLogger().addAppender(appender, null, null);
+        ctx.updateLoggers();
         
         try {
-            // 0. Pre-check: Ensure input directory exists and is not empty
-            java.io.File inputDir = new java.io.File(request.getInput());
-            if (!inputDir.exists() || !inputDir.isDirectory()) {
-                throw new java.io.IOException("输入目录不存在或不是文件夹: " + request.getInput());
-            }
-            java.io.File[] tiffFiles = inputDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".tif") || name.toLowerCase().endsWith(".tiff"));
-            if (tiffFiles == null || tiffFiles.length == 0) {
-                throw new java.io.IOException("输入目录中未找到任何 .tif 文件，请检查路径。");
-            }
-
-            // 1. Recreate GlobalOptions instance to avoid pollution
             GlobalOptions.recreateInstance();
-            
-            // 2. Prepare arguments
             String[] args = convertToArgs(request);
-            
-            // 3. Initialize GlobalOptions
             GlobalOptions globalOptions = GlobalOptions.getInstance();
             CommandLineConfiguration commandLineConfig = globalOptions.getCommandLineConfiguration();
             Options options = commandLineConfig.createOptions();
             CommandLine command = commandLineConfig.createCommandLine(options, args);
             
-            // 4. Initialize native logging and EPSG
+            // 重要：原生初始化后可能会覆盖 Appender
             LoggingConfiguration.initConsoleLogger();
+            
+            // 重新强制挂载
+            logConfig.addAppender(appender);
+            logConfig.getRootLogger().addAppender(appender, null, null);
+            ctx.updateLoggers();
+
             LoggingConfiguration.setLevel(org.apache.logging.log4j.Level.INFO);
             LoggingConfiguration.setEpsg();
-            
             GlobalOptions.init(command);
             
-            // 5. Execute core logic using reflection
             if (globalOptions.isLayerJsonGenerate()) {
-                log.info("任务 ID {}: 开始生成 layer.json", taskId);
-                
-                // 防御性检查：生成 layer.json 模式需要输入目录已经存在切片数据（0, 1, 2... 文件夹）
-                java.io.File inputDirFile = new java.io.File(request.getInput());
-                java.io.File[] subDirs = inputDirFile.listFiles(java.io.File::isDirectory);
-                boolean hasTiles = false;
-                if (subDirs != null) {
-                    for (java.io.File dir : subDirs) {
-                        if (dir.getName().matches("\\d+")) { // 检查是否存在数字命名的目录
-                            hasTiles = true;
-                            break;
-                        }
-                    }
-                }
-                if (!hasTiles) {
-                    throw new java.io.IOException("生成 layer.json 失败：输入目录中未找到已生成的切片数据(0, 1, 2...目录)。请先进行正常的切片处理。");
-                }
-                
                 invokePrivateMethod("executeLayerJsonGenerate");
             } else {
-                log.info("任务 ID {}: 开始切片处理流程", taskId);
                 invokePrivateMethod("executeCustomTree");
-                if (!globalOptions.isLeaveTemp()) {
-                    invokePrivateMethod("cleanTemp");
-                }
+                if (!globalOptions.isLeaveTemp()) invokePrivateMethod("cleanTemp");
             }
             
             task.setStatus("COMPLETED");
+            task.setProgress(100);
             task.setMessage("处理成功");
-        } catch (Exception e) {
-            Throwable cause = e;
-            if (e instanceof java.lang.reflect.InvocationTargetException) {
-                cause = ((java.lang.reflect.InvocationTargetException) e).getTargetException();
-            }
-            log.error("================ 任务执行异常 (ID: " + taskId + ") ================");
-            log.error("异常类型: " + cause.getClass().getName());
-            log.error("错误消息: " + cause.getMessage());
-            log.error("详细堆栈:", cause); // 打印完整堆栈到控制台
-            log.error("===============================================================");
-            
+        } catch (Throwable e) {
+            Throwable cause = (e instanceof java.lang.reflect.InvocationTargetException) ? e.getCause() : e;
+            log.error("任务 ID " + taskId + " 严重失败: ", cause);
             task.setStatus("FAILED");
-            task.setMessage(cause.getMessage() != null ? cause.getMessage() : cause.toString());
+            task.setMessage(cause.getMessage());
         } finally {
             task.setEndTime(LocalDateTime.now());
             task.setDurationSeconds(Duration.between(task.getStartTime(), task.getEndTime()).getSeconds());
             taskRepository.save(task);
+            
+            // 彻底清理日志 Appender
+            if (appender != null) {
+                appender.stop();
+                logConfig.getRootLogger().removeAppender(appender.getName());
+                ctx.updateLoggers();
+            }
+            
+            // 发送最终状态广播，此时数据库文件锁已经由 TileWgs84Manager 在逻辑末尾释放
+            webSocketHandler.broadcast("PROGRESS:" + taskId + ":100");
+            webSocketHandler.broadcast("STATUS:" + taskId + ":" + task.getStatus());
+            
             System.gc(); 
+            log.info("任务 ID {} 执行路径清理完毕。", taskId);
         }
     }
 
-    public List<TerrainTask> getAllTasks() {
-        return taskRepository.findAll();
+    public Page<TerrainTask> getTasksPage(Pageable pageable) {
+        return taskRepository.findAll(pageable);
+    }
+
+    public void deleteTask(Long id) {
+        taskRepository.deleteById(id);
     }
 
     public Optional<TerrainTask> getTask(Long id) {
@@ -148,30 +183,26 @@ public class TerrainService {
 
     private String[] convertToArgs(TerrainRequestDTO request) {
         List<String> argsList = new ArrayList<>();
-        if (request.getInput() != null) { argsList.add("-i"); argsList.add(request.getInput()); }
-        if (request.getOutput() != null) { argsList.add("-o"); argsList.add(request.getOutput()); }
-        if (request.getLog() != null) { argsList.add("-l"); argsList.add(request.getLog()); }
-        if (request.getTemp() != null) { argsList.add("-t"); argsList.add(request.getTemp()); }
-        if (request.getGeoid() != null) { argsList.add("-g"); argsList.add(request.getGeoid()); }
+        if (request.getInput() != null) { argsList.add("--input"); argsList.add(request.getInput()); }
+        if (request.getOutput() != null) { argsList.add("--output"); argsList.add(request.getOutput()); }
+        if (request.getLog() != null) { argsList.add("--log"); argsList.add(request.getLog()); }
+        if (request.getTemp() != null) { argsList.add("--temp"); argsList.add(request.getTemp()); }
+        if (request.getGeoid() != null) { argsList.add("--geoid"); argsList.add(request.getGeoid()); }
+        argsList.add("--minDepth"); argsList.add(String.valueOf(request.getMinDepth()));
+        argsList.add("--maxDepth"); argsList.add(String.valueOf(request.getMaxDepth()));
+        argsList.add("--intensity"); argsList.add(String.valueOf(request.getIntensity()));
+        argsList.add("--interpolationType"); argsList.add(request.getInterpolationType());
+        argsList.add("--priorityType"); argsList.add(request.getPriorityType());
+        argsList.add("--nodataValue"); argsList.add(String.valueOf(request.getNodataValue()));
+        if (Boolean.TRUE.equals(request.getCalculateNormals())) argsList.add("--calculateNormals");
+        if (Boolean.TRUE.equals(request.getJson())) argsList.add("--json");
+        if (Boolean.TRUE.equals(request.getDebug())) argsList.add("--debug");
         
-        argsList.add("-min"); argsList.add(String.valueOf(request.getMinDepth()));
-        argsList.add("-max"); argsList.add(String.valueOf(request.getMaxDepth()));
-        argsList.add("-is"); argsList.add(String.valueOf(request.getIntensity()));
-        argsList.add("-it"); argsList.add(request.getInterpolationType());
-        argsList.add("-pt"); argsList.add(request.getPriorityType());
-        argsList.add("-nv"); argsList.add(String.valueOf(request.getNodataValue()));
-        
-        if (Boolean.TRUE.equals(request.getCalculateNormals())) argsList.add("-cn");
-        argsList.add("-ms"); argsList.add(String.valueOf(request.getMosaicSize()));
-        argsList.add("-mr"); argsList.add(String.valueOf(request.getRasterMaxSize()));
-        argsList.add("-b"); argsList.add(request.getBody());
-        
-        if (Boolean.TRUE.equals(request.getMetadata())) argsList.add("-md");
-        if (Boolean.TRUE.equals(request.getWaterMask())) argsList.add("-wm");
-        if (Boolean.TRUE.equals(request.getJson())) argsList.add("-j");
-        if (Boolean.TRUE.equals(request.getContinueProcess())) argsList.add("-c");
-        if (Boolean.TRUE.equals(request.getDebug())) argsList.add("-d");
-        if (Boolean.TRUE.equals(request.getLeaveTemp())) argsList.add("-lt");
+        // 核心修复：传递输出格式参数
+        if (request.getOutputFormat() != null) {
+            argsList.add("--outputFormat");
+            argsList.add(request.getOutputFormat());
+        }
         
         return argsList.toArray(new String[0]);
     }

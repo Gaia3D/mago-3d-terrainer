@@ -42,6 +42,9 @@ public enum CommandOptions {
 
     /* Celestial Body Option */
     BODY("body", "b", true, "Celestial body for terrain generation (default : earth)(options: earth, moon)"),
+    
+    /* Output Format Option */
+    OUTPUT_FORMAT("outputFormat", "of", true, "Output terrain format (default: flat)(options: flat, compact)"),
 
     /* Debug Options */
     DEBUG("debug", "d", false, "[DEBUG] Print more detailed logs.");

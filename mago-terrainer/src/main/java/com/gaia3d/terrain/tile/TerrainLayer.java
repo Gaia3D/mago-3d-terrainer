@@ -38,14 +38,66 @@ public class TerrainLayer {
         this.setDefault();
     }
 
-    public HashMap<Integer, TileRange> getTilesRangeMap() {
-        HashMap<Integer, TileRange> tilesRangeMap = new HashMap<>();
+    public Map<Integer, TileRange> getTilesRangeMap() {
+        Map<Integer, TileRange> tilesRangeMap = new TreeMap<>();
 
         for (TileRange tilesRange : this.available) {
             tilesRangeMap.put(tilesRange.getTileDepth(), tilesRange);
         }
 
         return tilesRangeMap;
+    }
+
+    private ArrayNode buildAvailableArray(ObjectMapper objectMapper) {
+        ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
+        Map<Integer, TileRange> tilesRangeMap = this.getTilesRangeMap();
+        if (tilesRangeMap.isEmpty()) {
+            return objectNodeAvailable;
+        }
+
+        int maxDepth = Collections.max(tilesRangeMap.keySet());
+        for (int tileDepth = 0; tileDepth <= maxDepth; tileDepth++) {
+            ArrayNode objectNodeTileDepthArray = objectMapper.createArrayNode();
+            TileRange tilesRange = tilesRangeMap.get(tileDepth);
+            if (tilesRange != null) {
+                ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
+                objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
+                objectNodeTileDepth.put("endX", tilesRange.getMaxTileX());
+                objectNodeTileDepth.put("startY", tilesRange.getMinTileY());
+                objectNodeTileDepth.put("endY", tilesRange.getMaxTileY());
+                objectNodeTileDepthArray.add(objectNodeTileDepth);
+            }
+            objectNodeAvailable.add(objectNodeTileDepthArray);
+        }
+
+        return objectNodeAvailable;
+    }
+
+    private ArrayNode buildAvailableArrayCustom(ObjectMapper objectMapper, AvailableTileSet availableTileSet) {
+        ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
+        Map<Integer, List<TileRange>> mapDepthAvailableTileRanges = new TreeMap<>(availableTileSet.getMapDepthAvailableTileRanges());
+        if (mapDepthAvailableTileRanges.isEmpty()) {
+            return objectNodeAvailable;
+        }
+
+        int maxDepth = Collections.max(mapDepthAvailableTileRanges.keySet());
+        for (int tileDepth = 0; tileDepth <= maxDepth; tileDepth++) {
+            ArrayNode objectNodeTileDepthArray = objectMapper.createArrayNode();
+            List<TileRange> tileRanges = mapDepthAvailableTileRanges.get(tileDepth);
+            if (tileRanges != null) {
+                for (TileRange tilesRange : tileRanges) {
+                    ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
+                    objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
+                    objectNodeTileDepth.put("endX", tilesRange.getMaxTileX());
+                    objectNodeTileDepth.put("startY", tilesRange.getMinTileY());
+                    objectNodeTileDepth.put("endY", tilesRange.getMaxTileY());
+                    objectNodeTileDepthArray.add(objectNodeTileDepth);
+                }
+            }
+            objectNodeAvailable.add(objectNodeTileDepthArray);
+        }
+
+        return objectNodeAvailable;
     }
 
     public void setDefault() {
@@ -94,6 +146,9 @@ public class TerrainLayer {
 
         Set<Integer> depthZ = new LinkedHashSet<>();
         File[] depthFiles = inputDirectory.listFiles();
+        if (depthFiles == null) {
+            return;
+        }
         Arrays.sort(depthFiles);
         for (File depthFile : depthFiles) {
             if (depthFile.isDirectory()) {
@@ -137,6 +192,12 @@ public class TerrainLayer {
         }
         log.info("Available tiles: {}", available);
         log.info("DepthZ: {}", depthZ);
+
+        if (available.isEmpty()) {
+            log.warn("No tiles were found. Skipping bounds calculation for layer.json.");
+            return;
+        }
+
         available.sort(Comparator.comparingInt(TileRange::getTileDepth));
 
         // calc bounds
@@ -175,6 +236,38 @@ public class TerrainLayer {
         this.bounds[3] = maxLat;
     }
 
+    public String getJsonString() {
+        return buildJsonObject().toString();
+    }
+
+    private JsonNode buildJsonObject() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode objectNodeRoot = objectMapper.createObjectNode();
+        objectNodeRoot.put("tilejson", this.tilejson);
+        objectNodeRoot.put("name", this.name);
+        objectNodeRoot.put("description", this.description);
+        objectNodeRoot.put("version", this.version);
+        objectNodeRoot.put("format", this.format);
+        objectNodeRoot.put("attribution", this.attribution);
+        objectNodeRoot.put("template", this.template);
+        objectNodeRoot.put("legend", this.legend);
+        objectNodeRoot.put("scheme", this.scheme);
+        objectNodeRoot.put("projection", this.projection);
+        objectNodeRoot.putArray("tiles").add(this.tiles[0]);
+        objectNodeRoot.putArray("bounds").add(this.bounds[0]).add(this.bounds[1]).add(this.bounds[2]).add(this.bounds[3]);
+
+        if (this.extensions != null && this.extensions.size() > 0) {
+            ArrayNode objectNodeExtensions = objectMapper.createArrayNode();
+            for (String extension : this.extensions) {
+                objectNodeExtensions.add(extension);
+            }
+            objectNodeRoot.set("extensions", objectNodeExtensions);
+        }
+
+        objectNodeRoot.set("available", buildAvailableArray(objectMapper));
+        return objectNodeRoot;
+    }
+
     public void saveJsonFile(String outputDirectory, String layerJsonName) {
         String fullFileName = outputDirectory + File.separator + layerJsonName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
@@ -202,22 +295,7 @@ public class TerrainLayer {
             objectNodeRoot.set("extensions", objectNodeExtensions);
         }
 
-        ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
-        HashMap<Integer, TileRange> tilesRangeMap = this.getTilesRangeMap();
-        for (Integer tileDepth : tilesRangeMap.keySet()) {
-            TileRange tilesRange = tilesRangeMap.get(tileDepth);
-            ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
-            ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
-            objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
-            objectNodeTileDepth.put("endX", tilesRange.getMaxTileX());
-            objectNodeTileDepth.put("startY", tilesRange.getMinTileY());
-            objectNodeTileDepth.put("endY", tilesRange.getMaxTileY());
-
-            objectNodeTileDepth_array.add(objectNodeTileDepth);
-            objectNodeAvailable.add(objectNodeTileDepth_array);
-        }
-
-        objectNodeRoot.set("available", objectNodeAvailable);
+        objectNodeRoot.set("available", buildAvailableArray(objectMapper));
 
         // Save the json index file
         try {
@@ -283,6 +361,7 @@ public class TerrainLayer {
                             int startY = tileDepthNode.get("startY").asInt();
                             int endY = tileDepthNode.get("endY").asInt();
                             TileRange tileRange = new TileRange();
+                            tileRange.setTileDepth(i);
                             tileRange.setMinTileX(startX);
                             tileRange.setMaxTileX(endX);
                             tileRange.setMinTileY(startY);
@@ -326,23 +405,7 @@ public class TerrainLayer {
             objectNodeRoot.set("extensions", objectNodeExtensions);
         }
 
-        ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
-        Map<Integer, List<TileRange>> mapDepthAvailableTileRanges = availableTileSet.getMapDepthAvailableTileRanges();
-        for (Integer tileDepth : mapDepthAvailableTileRanges.keySet()) {
-            List<TileRange> tileRanges = mapDepthAvailableTileRanges.get(tileDepth);
-            ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
-            for (TileRange tilesRange : tileRanges) {
-                ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
-                objectNodeTileDepth.put("startX", tilesRange.getMinTileX());
-                objectNodeTileDepth.put("endX", tilesRange.getMaxTileX());
-                objectNodeTileDepth.put("startY", tilesRange.getMinTileY());
-                objectNodeTileDepth.put("endY", tilesRange.getMaxTileY());
-                objectNodeTileDepth_array.add(objectNodeTileDepth);
-            }
-            objectNodeAvailable.add(objectNodeTileDepth_array);
-        }
-
-        objectNodeRoot.set("available", objectNodeAvailable);
+        objectNodeRoot.set("available", buildAvailableArrayCustom(objectMapper, availableTileSet));
 
         // Save the json index file
         try {

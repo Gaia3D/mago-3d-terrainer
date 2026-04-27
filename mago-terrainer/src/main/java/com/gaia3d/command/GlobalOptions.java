@@ -55,9 +55,11 @@ public class GlobalOptions {
 
     // Default options
     private String inputPath;
+    private String originalInputPath; // 用于记录原始输入路径
     private String outputPath;
-    private String geoidPath;
     private String logPath;
+    private String geoidPath;
+    private String outputFormat = "flat";
     private boolean layerJsonGenerate = false;
     private boolean debugMode = false;
     private boolean leaveTemp = false;
@@ -114,6 +116,7 @@ public class GlobalOptions {
         checkHeapMemory();
         if (command.hasOption(CommandOptions.INPUT.getLongName())) {
             instance.setInputPath(command.getOptionValue(CommandOptions.INPUT.getLongName()));
+            instance.setOriginalInputPath(instance.getInputPath()); // 核心修复：锁定原始路径
             validateInputPath(new File(instance.getInputPath()).toPath());
         } else {
             throw new IllegalArgumentException("Please enter the value of the input argument.");
@@ -250,6 +253,10 @@ public class GlobalOptions {
 
         if (command.hasOption(CommandOptions.JSON.getLongName())) {
             instance.setLayerJsonGenerate(true);
+        }
+
+        if (command.hasOption(CommandOptions.OUTPUT_FORMAT.getLongName())) {
+            instance.setOutputFormat(command.getOptionValue(CommandOptions.OUTPUT_FORMAT.getLongName()));
         }
 
         if (instance.getMaximumTileDepth() >= 0 && instance.getMinimumTileDepth() > instance.getMaximumTileDepth()) {

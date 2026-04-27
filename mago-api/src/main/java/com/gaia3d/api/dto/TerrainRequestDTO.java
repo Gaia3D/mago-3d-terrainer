@@ -19,6 +19,7 @@ public class TerrainRequestDTO {
     private Integer mosaicSize = 16;               // -ms, --mosaicSize
     private Integer rasterMaxSize = 8192;          // -mr, --rasterMaxSize
     private String body = "earth";                 // -b, --body
+    private String outputFormat = "flat";          // flat (default) or compact (sqlite pak)
     private Boolean metadata = false;              // -md, --metadata
     private Boolean waterMask = false;             // -wm, --waterMask
     private Boolean json = false;                  // -j, --json

@@ -17,12 +17,17 @@ public class FileUtils {
 
     public static void createAllFoldersIfNoExist(String filePath) {
         File file = new File(filePath);
-        if (file.exists() && file.isDirectory()) {
-            return;
-        } else {
-            if (!file.mkdirs()) {
-                throw new RuntimeException("Failed to create folder: " + filePath);
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                return;
+            } else {
+                // 如果路径已存在且是文件，直接返回，不尝试创建同名目录
+                return;
             }
+        }
+        
+        if (!file.mkdirs()) {
+            throw new RuntimeException("Failed to create folder: " + filePath);
         }
     }
 
@@ -32,18 +37,28 @@ public class FileUtils {
     }
 
     public static void getFileNames(String folderPath, String extension, List<String> fileNames) {
-        File folder = new File(folderPath);
-        File[] listOfFiles = folder.listFiles();
+        File file = new File(folderPath);
+        if (!file.exists()) {
+            return;
+        }
+        
+        if (file.isFile()) {
+            if (file.getName().toLowerCase().endsWith(extension.toLowerCase())) {
+                fileNames.add(file.getName()); // 仅返回文件名，保持兼容性
+            }
+            return;
+        }
 
+        File[] listOfFiles = file.listFiles();
         if (listOfFiles == null) {
             log.warn("[WARN] No files in the folder: " + folderPath);
             return;
         }
-        for (File file : listOfFiles) {
-            if (file.isFile()) {
-                String fileName = file.getName();
-                if (fileName.endsWith(extension)) {
-                    fileNames.add(fileName);
+        for (File f : listOfFiles) {
+            if (f.isFile()) {
+                String fileName = f.getName();
+                if (fileName.toLowerCase().endsWith(extension.toLowerCase())) {
+                    fileNames.add(fileName); // 仅返回文件名
                 }
             }
         }
@@ -66,17 +81,27 @@ public class FileUtils {
     }
 
     public static void getFilePathsByExtension(String folderPath, String extension, List<String> fileNames, boolean isRecursive) {
+        File baseFile = new File(folderPath);
+        if (!baseFile.exists()) return;
+
+        if (baseFile.isFile()) {
+            if (baseFile.getName().toLowerCase().endsWith(extension.toLowerCase())) {
+                fileNames.add(baseFile.getAbsolutePath());
+            }
+            return;
+        }
+
         List<String> currfileNames = new ArrayList<>();
         FileUtils.getFileNames(folderPath, extension, currfileNames);
         for (String fileName : currfileNames) {
-            fileNames.add(folderPath + File.separator + fileName);
+            fileNames.add(new File(baseFile, fileName).getAbsolutePath());
         }
 
         if (isRecursive) {
             List<String> folderNames = new ArrayList<>();
             FileUtils.getFolderNames(folderPath, folderNames);
             for (String folderName : folderNames) {
-                String subFolderPath = folderPath + File.separator + folderName;
+                String subFolderPath = new File(baseFile, folderName).getAbsolutePath();
                 FileUtils.getFilePathsByExtension(subFolderPath, extension, fileNames, isRecursive);
             }
         }
