@@ -7,8 +7,10 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.api.coverage.grid.GridGeometry;
 import org.geotools.api.referencing.FactoryException;
+import org.geotools.util.factory.Hints;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
+import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -89,6 +91,21 @@ public class GaiaGeoTiffManager {
 
         log.debug("Loaded the geoTiff file ok");
         return coverage;
+    }
+
+    public void addGridCoverage2D(String key, GridCoverage2D coverage) {
+        mapPathGridCoverage2d.put(key, coverage);
+        pathList.add(key);
+
+        org.geotools.api.coverage.grid.GridGeometry gridGeometry = coverage.getGridGeometry();
+        int width = gridGeometry.getGridRange().getSpan(0);
+        int height = gridGeometry.getGridRange().getSpan(1);
+        Vector2i size = new Vector2i(width, height);
+        mapPathGridCoverage2dSize.put(key, size);
+    }
+
+    public GridCoverage2D getGridCoverage2D(String key) {
+        return mapPathGridCoverage2d.get(key);
     }
 
     public Vector2i getGridCoverage2DSize(String geoTiffFilePath) {

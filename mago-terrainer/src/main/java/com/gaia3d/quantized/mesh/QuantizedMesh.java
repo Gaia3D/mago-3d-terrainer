@@ -221,6 +221,13 @@ public class QuantizedMesh {
         }
     }
 
+    public byte[] saveData() throws IOException {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        LittleEndianDataOutputStream leos = new LittleEndianDataOutputStream(baos);
+        saveDataOutputStream(leos, false);
+        return baos.toByteArray();
+    }
+
     public void saveDataOutputStream(LittleEndianDataOutputStream dataOutputStream, boolean saveNormals) throws IOException {
         // First save the header
         header.saveDataOutputStream(dataOutputStream);

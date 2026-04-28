@@ -13,6 +13,7 @@ import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.processing.Operations;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
@@ -24,6 +25,38 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 public class GaiaGeoTiffUtils {
+    public static Vector2d getPixelSizeDegrees(GridCoverage2D coverage) {
+        GridGeometry gridGeometry = coverage.getGridGeometry();
+        ReferencedEnvelope envelope = coverage.getEnvelope2D();
+        int gridSpanX = gridGeometry.getGridRange().getSpan(0);
+        int gridSpanY = gridGeometry.getGridRange().getSpan(1);
+        double resX = envelope.getSpan(0) / gridSpanX;
+        double resY = envelope.getSpan(1) / gridSpanY;
+        return new Vector2d(resX, resY);
+    }
+
+    public static GridCoverage2D getResampledGridCoverage2D(GridCoverage2D sourceCov, double targetResDeg) throws FactoryException {
+        GridGeometry gridGeometry = sourceCov.getGridGeometry();
+        ReferencedEnvelope envelope = sourceCov.getEnvelope2D();
+
+        int targetWidth = (int) Math.round(envelope.getSpan(0) / targetResDeg);
+        int targetHeight = (int) Math.round(envelope.getSpan(1) / targetResDeg);
+
+        // Safety check
+        targetWidth = Math.max(16, targetWidth);
+        targetHeight = Math.max(16, targetHeight);
+
+        double scaleX = (double) targetWidth / gridGeometry.getGridRange().getSpan(0);
+        double scaleY = (double) targetHeight / gridGeometry.getGridRange().getSpan(1);
+
+        // 核心修复：显式关闭 JAIExt 以避免在某些重采样操作中出现的 "Input not set" 错误。
+        org.geotools.util.factory.Hints hints = new org.geotools.util.factory.Hints(org.geotools.util.factory.Hints.LENIENT_DATUM_SHIFT, Boolean.TRUE);
+        hints.put(org.geotools.util.factory.Hints.RESAMPLE_TOLERANCE, 0.5);
+        
+        Operations ops = new Operations(hints);
+        return (GridCoverage2D) ops.scale(sourceCov, scaleX, scaleY, 0, 0);
+    }
+
     public static Vector2d getLongitudeLatitudeDegree(GridCoverage2D coverage, int coordX, int coordY, GeometryFactory gf, MathTransform targetToWgs) throws TransformException {
         GridCoordinates2D coord = new GridCoordinates2D(coordX, coordY);
         Position p = coverage.getGridGeometry().gridToWorld(coord);
@@ -98,20 +131,22 @@ public class GaiaGeoTiffUtils {
         } else {
             GridGeometry originalGridGeometry = coverage.getGridGeometry();
 
-            int gridSpanX = originalGridGeometry.getGridRange().getSpan(0);
-            int gridSpanY = originalGridGeometry.getGridRange().getSpan(1);
-
-            // gridLow0, gridLow1
-            Vector2d lonLatLeftUp = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, 0, gridSpanY - 1, gf, targetToWgs);
-
-            // gridHigh0, gridHigh1
-            Vector2d lonLatRightDown = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridSpanX - 1, 0, gf, targetToWgs);
+            int gridLow0 = originalGridGeometry.getGridRange().getLow(0);
+            int gridLow1 = originalGridGeometry.getGridRange().getLow(1);
+            int gridHigh0 = originalGridGeometry.getGridRange().getHigh(0);
+            int gridHigh1 = originalGridGeometry.getGridRange().getHigh(1);
 
             // gridLow0, gridHigh1
-            Vector2d lonLatLeftDown = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, 0, 0, gf, targetToWgs);
+            Vector2d lonLatLeftUp = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridLow0, gridHigh1, gf, targetToWgs);
 
             // gridHigh0, gridLow1
-            Vector2d lonLatRightUp = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridSpanX - 1, gridSpanY - 1, gf, targetToWgs);
+            Vector2d lonLatRightDown = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridHigh0, gridLow1, gf, targetToWgs);
+
+            // gridLow0, gridLow1
+            Vector2d lonLatLeftDown = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridLow0, gridLow1, gf, targetToWgs);
+
+            // gridHigh0, gridHigh1
+            Vector2d lonLatRightUp = GaiaGeoTiffUtils.getLongitudeLatitudeDegree(coverage, gridHigh0, gridHigh1, gf, targetToWgs);
 
             minLon = Math.min(lonLatLeftUp.x, lonLatRightDown.x);
             minLon = Math.min(minLon, lonLatLeftDown.x);

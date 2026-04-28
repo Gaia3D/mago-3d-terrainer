@@ -1,9 +1,8 @@
 package com.gaia3d.command;
-
-
 import com.gaia3d.terrain.tile.TerrainElevationDataManager;
 import com.gaia3d.terrain.tile.TerrainLayer;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
+import com.gaia3d.terrain.tile.BigFileTileWgs84Manager;
 import com.gaia3d.util.DecimalUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
@@ -11,6 +10,12 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.logging.log4j.Level;
 import org.geotools.api.referencing.FactoryException;
 import org.geotools.api.referencing.operation.TransformException;
@@ -22,6 +27,12 @@ import java.io.IOException;
 public class Mago3DTerrainerMain {
 
     public static void main(String[] args) {
+        // Globally disable PAM reading to avoid JAXB NPE in Java 11+
+        System.setProperty("org.geotools.coverage.io.pam.read", "false");
+        // Globally disable JAIExt to avoid "Input not set" errors in complex rendering chains
+        System.setProperty("org.geotools.referencing.forceXY", "true");
+        org.geotools.util.factory.GeoTools.fireConfigurationChanged();
+        
         try {
             GlobalOptions globalOptions = GlobalOptions.getInstance();
             CommandLineConfiguration commandLine = globalOptions.getCommandLineConfiguration();
@@ -105,6 +116,26 @@ public class Mago3DTerrainerMain {
     private static void executeCustomTree() throws Exception {
         // In custom-tree mode, leaf nodes can have different depths.
         GlobalOptions globalOptions = GlobalOptions.getInstance();
+
+        if (globalOptions.isBigFileMode()) {
+            log.info("[Tile][BigFile] Entering High-Performance BigFile Mode.");
+            BigFileTileWgs84Manager bigFileManager = new BigFileTileWgs84Manager();
+            
+            // Collect active GeoTIFF files
+            List<File> inputFiles = new ArrayList<>();
+            File input = new File(globalOptions.getInputPath());
+            if (input.isFile()) {
+                inputFiles.add(input);
+            } else {
+                List<String> fileNames = new ArrayList<>();
+                com.gaia3d.util.FileUtils.getFileNames(input.getAbsolutePath(), ".tif", fileNames);
+                fileNames.forEach(name -> inputFiles.add(new File(input, name)));
+            }
+            
+            bigFileManager.process(inputFiles);
+            log.info("[Tile][BigFile] Finished processing large files.");
+            return;
+        }
 
         // Check if the tile mesh generation is a continuation/modify from an existing tileSet
         boolean isContinue = globalOptions.isContinue();

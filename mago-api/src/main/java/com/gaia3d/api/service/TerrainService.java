@@ -73,6 +73,7 @@ public class TerrainService {
                 true, webSocketHandler, taskId) {
             
             private final Pattern progressPattern = Pattern.compile("\\[Tile\\]\\[(\\d+)/(\\d+)\\]\\[(\\d+)/(\\d+)\\]");
+            private final Pattern trunkPattern = Pattern.compile("\\[Trunk\\]\\[(\\d+)/(\\d+)\\]");
 
             @Override
             public void append(org.apache.logging.log4j.core.LogEvent event) {
@@ -87,7 +88,7 @@ public class TerrainService {
                     // 2. 累积到完整日志
                     fullLog.append(msg).append("\n");
                     
-                    // 3. 进度解析
+                    // 3. 进度解析 (传统模式)
                     Matcher m = progressPattern.matcher(msg);
                     if (m.find()) {
                         try {
@@ -100,19 +101,37 @@ public class TerrainService {
                             double currentStepProgress = (curD - task.getMinDepth()) * stepWeight;
                             double inStepProgress = (curP / (double)totP) * stepWeight;
                             int finalProgress = Math.min(99, (int)(currentStepProgress + inStepProgress));
-                            if (finalProgress > task.getProgress()) {
-                                task.setProgress(finalProgress);
-                                taskRepository.save(task);
-                                webSocketHandler.broadcast("PROGRESS:" + taskId + ":" + finalProgress);
-                            }
+                            updateProgress(taskId, task, finalProgress);
                         } catch (Exception ignored) {}
                     }
+
+                    // 4. 进度解析 (大文件 Trunk 模式)
+                    Matcher mt = trunkPattern.matcher(msg);
+                    if (mt.find()) {
+                        try {
+                            int curT = Integer.parseInt(mt.group(1));
+                            int totT = Integer.parseInt(mt.group(2));
+                            int finalProgress = Math.min(99, (int)((curT / (double)totT) * 100));
+                            updateProgress(taskId, task, finalProgress);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+
+            private void updateProgress(Long taskId, TerrainTask task, int finalProgress) {
+                if (finalProgress > task.getProgress()) {
+                    task.setProgress(finalProgress);
+                    taskRepository.save(task);
+                    webSocketHandler.broadcast("PROGRESS:" + taskId + ":" + finalProgress);
                 }
             }
         };
 
         try {
             GlobalOptions.recreateInstance();
+            // 设定临时存放目录
+            request.setTemp(request.getInput());
+
             String[] args = convertToArgs(request);
             GlobalOptions globalOptions = GlobalOptions.getInstance();
             CommandLineConfiguration commandLineConfig = globalOptions.getCommandLineConfiguration();

@@ -65,6 +65,7 @@ public class GlobalOptions {
     private boolean leaveTemp = false;
     private boolean isContinue = false;
     private boolean isModify = false;
+    private boolean bigFileMode = false;
 
     // Tiling options
     private int minimumTileDepth;
@@ -326,9 +327,34 @@ public class GlobalOptions {
             instance.setNoDataValue(DEFAULT_NO_DATA_VALUE);
         }
 
-        instance.setCalculateNormalsExtension(command.hasOption(CommandOptions.EXT_CALCULATE_NORMALS.getLongName()));
-        instance.setMetaDataExtension(command.hasOption(CommandOptions.EXT_META_DATA.getLongName()));
         instance.setWaterMaskExtension(command.hasOption(CommandOptions.EXT_WATER_MASK.getLongName()));
+
+        // Big File Mode Detection
+        if (command.hasOption(CommandOptions.BIG_FILE_MODE.getLongName())) {
+            instance.setBigFileMode(true);
+        } else {
+            // Auto-detect big files (any single file > 2GB)
+            File input = new File(instance.getInputPath());
+            long bigFileThreshold = 2L * 1024 * 1024 * 1024; // 2GB
+            if (input.isFile()) {
+                if (input.length() > bigFileThreshold) {
+                    log.info("[Auto-Detection] Input file is larger than 2GB. Automatically enabling BigFile Mode.");
+                    instance.setBigFileMode(true);
+                }
+            } else if (input.isDirectory()) {
+                File[] files = input.listFiles((dir, name) -> name.toLowerCase().endsWith(".tif"));
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.length() > bigFileThreshold) {
+                            log.info("[Auto-Detection] Detected a TIFF file ({}) larger than 2GB. Automatically enabling BigFile Mode.", f.getName());
+                            instance.setBigFileMode(true);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
         printGlobalOptions();
     }
 

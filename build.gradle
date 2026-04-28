@@ -5,6 +5,11 @@ subprojects {
     project.ext.lwjglVersion = "3.3.6"
 
     dependencies {
+        /* JAXB for Java 11+ support */
+        implementation 'javax.xml.bind:jaxb-api:2.3.1'
+        implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
+        implementation 'javax.activation:javax.activation-api:1.2.0'
+
         /* Lombok */
         compileOnly "org.projectlombok:lombok:1.18.30"
         annotationProcessor "org.projectlombok:lombok:1.18.30"
@@ -18,6 +23,10 @@ subprojects {
         /* Jackson for JSON and XML processing */
         implementation "com.fasterxml.jackson.core:jackson-core:2.15.2"
         implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.2"
+        implementation "com.fasterxml.jackson.core:jackson-databind:2.15.2"
+
+        /* SQLite */
+        implementation 'org.xerial:sqlite-jdbc:3.44.1.0'
 
         /* Math library */
         implementation "org.joml:joml:1.10.8"
@@ -95,6 +104,11 @@ project(':mago-terrainer') {
 tasks.register('publish') {
     dependsOn(':mago-terrainer:javadoc')
     dependsOn(':mago-terrainer:jib')
+}
+
+// 快速运行主项目
+tasks.register('runApi') {
+    dependsOn(':mago-api:bootRun')
 }
 
 

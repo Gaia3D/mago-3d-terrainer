@@ -122,7 +122,7 @@ shadowJar {
 
     // relocate는 정말 필요할 때만 (일단은 빼고 테스트 추천)
     // relocate 'org.slf4j', 'shadow.slf4j'
-    archiveFileName = "mago-3d-terrainer-${project.version}.jar"
+    archiveFileName = "mago-3d-terrainer-new.jar"
     destinationDirectory.set(file("${projectDir}/dist"))
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 

@@ -10,10 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.imagen.media.range.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.util.CoverageUtilities;
-import org.geotools.geometry.Position2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 
+import java.awt.geom.Point2D;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 
@@ -34,7 +34,6 @@ public class TerrainElevationData {
     private double maxAltitude = Double.MIN_VALUE;
     private double[] altitude = new double[1];
     private NoDataContainer noDataContainer = null;
-    private Position2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
     private int geoTiffHeight = -1;
     private Vector2i gridCoverage2DSize = null;
@@ -48,7 +47,6 @@ public class TerrainElevationData {
             this.coverage.dispose(true);
             this.coverage = null;
         }
-
         if (this.noDataContainer != null) {
             this.noDataContainer = null;
         }
@@ -65,162 +63,146 @@ public class TerrainElevationData {
         }
         altitude = null;
         noDataContainer = null;
-        worldPosition = null;
     }
 
     public double getPixelArea() {
         return this.pixelSizeMeters.x * this.pixelSizeMeters.y;
     }
 
-    public void getPixelSizeDegree(Vector2d resultPixelSize) {
-        double imageWidth = this.coverage.getRenderedImage().getWidth();
-        double imageHeight = this.coverage.getRenderedImage().getHeight();
-        double longitudeRange = this.geographicExtension.getLongitudeRangeDegree();
-        double latitudeRange = this.geographicExtension.getLatitudeRangeDegree();
-        double pixelSizeX = longitudeRange / imageWidth;
-        double pixelSizeY = latitudeRange / imageHeight;
-        resultPixelSize.set(pixelSizeX, pixelSizeY);
-    }
-
     public double getGridValue(int x, int y) {
-        double value = 0.0;
         if (raster == null) {
             if (this.coverage == null) {
                 GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
                 this.coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(this.geotiffFilePath);
             }
-
-            if (this.noDataContainer == null) {
-                this.noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-            }
-
-            // determine the grid coordinates of the point
-            if (this.raster == null) {
+            try {
                 RenderedImage ri = coverage.getRenderedImage();
-                if (ri == null) {
-                    log.error("RenderedImage is null");
-                    return globalOptions.getNoDataValue();
+                if (ri.getWidth() * ri.getHeight() < 1024 * 1024) {
+                    this.raster = ri.getData();
+                } else {
+                    float[] result = new float[1];
+                    coverage.evaluate(new Point2D.Double(getLonDeg(x), getLatDeg(y)), result);
+                    return result[0];
                 }
-                this.raster = ri.getData();
-                //this.coverage.dispose(true);
-                this.coverage = null;
+            } catch (Exception e) {
+                return globalOptions.getNoDataValue();
             }
         }
 
         if (raster != null) {
             try {
-                value = raster.getSampleDouble(x, y, 0);
-                // check if the value is NaN
-                if (Double.isNaN(value)) {
+                double value = raster.getSampleDouble(x, y, 0);
+                if (Double.isNaN(value)) return globalOptions.getNoDataValue();
+                
+                if (this.noDataContainer == null && coverage != null) {
+                    this.noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+                }
+                if (noDataContainer != null && value == noDataContainer.getAsSingleValue()) {
                     return globalOptions.getNoDataValue();
                 }
-            } catch (ArrayIndexOutOfBoundsException e) {
-                log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
+                return value;
             } catch (Exception e) {
-                log.error("[getGridValue : Exception] Error in getGridValue", e);
-                log.error("Error:", e);
-            }
-
-            if (this.noDataContainer == null && coverage != null) {
-                this.noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-            }
-
-            if (noDataContainer != null) {
-                double nodata = noDataContainer.getAsSingleValue();
-                if (value == nodata) {
-                    return globalOptions.getNoDataValue();
-                }
+                return globalOptions.getNoDataValue();
             }
         }
-        return value;
+        return globalOptions.getNoDataValue();
+    }
+    
+    private double getLonDeg(int col) {
+        if (gridCoverage2DSize == null) updateSizeInfo();
+        double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
+        double resX = this.geographicExtension.getLongitudeRangeDegree() / gridCoverage2DSize.x;
+        return minLonDeg + col * resX;
+    }
+
+    private double getLatDeg(int row) {
+        if (gridCoverage2DSize == null) updateSizeInfo();
+        double maxLatDeg = this.geographicExtension.getMaxLatitudeDeg();
+        double resY = this.geographicExtension.getLatitudeRangeDegree() / gridCoverage2DSize.y;
+        return maxLatDeg - row * resY;
+    }
+
+    private void updateSizeInfo() {
+        gridCoverage2DSize = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
     }
 
     public double getElevation(double lonDeg, double latDeg, boolean[] intersects) {
-        double resultAltitude = 0.0;
-
-        // First check if lon, lat intersects with geoExtension
         if (!this.geographicExtension.intersects(lonDeg, latDeg)) {
             intersects[0] = false;
-            return resultAltitude;
+            return 0.0;
         }
 
-        if (gridCoverage2DSize == null) {
-            gridCoverage2DSize = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
-        }
-        Vector2i size = gridCoverage2DSize;
+        if (this.coverage != null) {
+            try {
+                float[] result = new float[1];
+                this.coverage.evaluate(new Point2D.Double(lonDeg, latDeg), result);
+                
+                double val = result[0];
+                if (Double.isNaN(val)) {
+                    intersects[0] = false;
+                    return globalOptions.getNoDataValue();
+                }
+                
+                if (this.noDataContainer == null) {
+                    this.noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+                }
+                if (noDataContainer != null && val == noDataContainer.getAsSingleValue()) {
+                    intersects[0] = false;
+                    return globalOptions.getNoDataValue();
+                }
 
+                intersects[0] = true;
+                minAltitude = Math.min(minAltitude, val);
+                maxAltitude = Math.max(maxAltitude, val);
+                return val;
+            } catch (Exception e) {
+            }
+        }
+
+        if (gridCoverage2DSize == null) updateSizeInfo();
+        
         double unitaryX = (lonDeg - this.geographicExtension.getMinLongitudeDeg()) / this.geographicExtension.getLongitudeRangeDegree();
         double unitaryY = 1.0 - (latDeg - this.geographicExtension.getMinLatitudeDeg()) / this.geographicExtension.getLatitudeRangeDegree();
 
-        int geoTiffRasterHeight = size.y;
-        int geoTiffRasterWidth = size.x;
-
-        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        intersects[0] = true;
+        double resultAltitude;
         if (globalOptions.getInterpolationType().equals(InterpolationType.BILINEAR)) {
-            intersects[0] = true;
-            resultAltitude = calcBilinearInterpolation(unitaryX, unitaryY, geoTiffRasterWidth, geoTiffRasterHeight);
+            resultAltitude = calcBilinearInterpolation(unitaryX, unitaryY, gridCoverage2DSize.x, gridCoverage2DSize.y);
         } else {
-            intersects[0] = true;
-            int column = (int) Math.floor(unitaryX * geoTiffRasterWidth);
-            int row = (int) Math.floor(unitaryY * geoTiffRasterHeight);
-            resultAltitude = calcNearestInterpolation(column, row);
+            int column = (int) Math.floor(unitaryX * gridCoverage2DSize.x);
+            int row = (int) Math.floor(unitaryY * gridCoverage2DSize.y);
+            resultAltitude = getGridValue(column, row);
         }
 
-        double noDataValue = globalOptions.getNoDataValue();
-        if (resultAltitude == noDataValue) {
+        if (resultAltitude == globalOptions.getNoDataValue()) {
             intersects[0] = false;
-            return resultAltitude;
+        } else {
+            minAltitude = Math.min(minAltitude, resultAltitude);
+            maxAltitude = Math.max(maxAltitude, resultAltitude);
         }
-
-        // update min, max altitude
-        minAltitude = Math.min(minAltitude, resultAltitude);
-        maxAltitude = Math.max(maxAltitude, resultAltitude);
 
         return resultAltitude;
-    }
-
-    private double calcNearestInterpolation(int column, int row) {
-        return this.getGridValue(column, row);
     }
 
     private double calcBilinearInterpolation(double x, double y, int geoTiffWidth, int geoTiffHeight) {
         int column = (int) Math.floor(x * geoTiffWidth);
         int row = (int) Math.floor(y * geoTiffHeight);
-
         double factorX = x * geoTiffWidth - column;
         double factorY = y * geoTiffHeight - row;
 
-        int columnNext = column + 1;
-        int rowNext = row + 1;
+        int c1 = Math.min(column + 1, geoTiffWidth - 1);
+        int r1 = Math.min(row + 1, geoTiffHeight - 1);
 
-        if (columnNext >= geoTiffWidth) {
-            columnNext = geoTiffWidth - 1;
-        }
+        double v00 = getGridValue(column, row);
+        double v01 = getGridValue(column, r1);
+        double v10 = getGridValue(c1, row);
+        double v11 = getGridValue(c1, r1);
 
-        if (rowNext >= geoTiffHeight) {
-            rowNext = geoTiffHeight - 1;
-        }
+        double noData = globalOptions.getNoDataValue();
+        if (v00 == noData || v01 == noData || v10 == noData || v11 == noData) return v00;
 
-        // interpolation bilinear
-        double value00 = this.getGridValue(column, row);
-        double value01 = this.getGridValue(column, rowNext);
-        double value10 = this.getGridValue(columnNext, row);
-        double value11 = this.getGridValue(columnNext, rowNext);
-
-        // Ignore noDataValue samples.
-        double noDataValue = globalOptions.getNoDataValue();
-        boolean hasNoData = (value00 == noDataValue) || (value01 == noDataValue) || (value10 == noDataValue) || (value11 == noDataValue);
-        if (hasNoData) {
-            if (value00 == noDataValue) {
-                return noDataValue;
-            } else {
-                return value00;
-            }
-        }
-
-        double value0 = value00 * (1.0 - factorY) + value01 * factorY;
-        double value1 = value10 * (1.0 - factorY) + value11 * factorY;
-
-        return value0 + factorX * (value1 - value0);
+        double v0 = v00 * (1.0 - factorY) + v01 * factorY;
+        double v1 = v10 * (1.0 - factorY) + v11 * factorY;
+        return v0 + factorX * (v1 - v0);
     }
 }

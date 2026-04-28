@@ -12,8 +12,19 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.geometry.jts.ReferencedEnvelope;
+
 public class TileWgs84Utils {
     private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
+
+    public static ReferencedEnvelope getReferencedEnvelopeOfTileLXY(int l, int x, int y, CoordinateReferenceSystem crs, String imageryType, boolean originIsLeftUp) {
+        GeographicExtension extent = getGeographicExtentOfTileLXY(l, x, y, null, imageryType, originIsLeftUp);
+        return new ReferencedEnvelope(
+            extent.getMinLongitudeDeg(), extent.getMaxLongitudeDeg(),
+            extent.getMinLatitudeDeg(), extent.getMaxLatitudeDeg(), crs
+        );
+    }
 
     public static double getTileSizeInMetersByDepth(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);

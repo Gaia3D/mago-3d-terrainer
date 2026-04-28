@@ -39,6 +39,7 @@ public enum CommandOptions {
     //TILING_SCHEMA("tilingSchema", "ts", true, "[Experimental] Schema for the terrain data. [geodetic, mercator][default : geodetic]"),
     EXT_META_DATA("metadata", "md", false, "[Experimental] Generate metadata for the terrain data."),
     EXT_WATER_MASK("waterMask", "wm", false, "[Experimental] Generate water mask for the terrain data."),
+    BIG_FILE_MODE("bigfile", "bf", false, "Enable high-performance mode for large GeoTIFF files (Trunk-based processing)"),
 
     /* Celestial Body Option */
     BODY("body", "b", true, "Celestial body for terrain generation (default : earth)(options: earth, moon)"),

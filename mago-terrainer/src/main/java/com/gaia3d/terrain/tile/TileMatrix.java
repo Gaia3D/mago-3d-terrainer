@@ -847,6 +847,8 @@ public class TileMatrix {
             
             // Write via the abstracted terrainWriter
             this.manager.getTerrainWriter().writeTile(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), baos.toByteArray());
+            
+//            log.info("[Tile][BigFile] Generated quantized mesh tile for L: {}, X: {}, Y: {}", tileIndices.getL(), tileIndices.getX(), tileIndices.getY());
         }
     }
 

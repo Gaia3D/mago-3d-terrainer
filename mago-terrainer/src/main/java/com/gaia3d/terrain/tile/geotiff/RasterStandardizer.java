@@ -14,6 +14,7 @@ import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.api.referencing.crs.GeographicCRS;
 import org.geotools.api.referencing.datum.Ellipsoid;
 import org.geotools.api.referencing.operation.TransformException;
+import org.geotools.util.factory.Hints;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;

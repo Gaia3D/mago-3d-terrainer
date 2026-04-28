@@ -53,11 +53,15 @@ public class TerrainElevationDataManager {
     private List<String> geoTiffFileNames = new ArrayList<>();
 
     public void makeTerrainQuadTree(int depth) throws FactoryException, TransformException, IOException {
-        List<File> standardizedGeoTiffFiles = tileWgs84Manager.getStandardizedGeoTiffFiles();
+        if (terrainElevationDataFolderPath != null) {
+            List<File> standardizedGeoTiffFiles = tileWgs84Manager.getStandardizedGeoTiffFiles();
+            // load all geoTiffFiles & make a quadTree
+            loadAllGeoTiff(terrainElevationDataFolderPath, standardizedGeoTiffFiles);
+        }
 
-        // load all geoTiffFiles & make a quadTree
-        loadAllGeoTiff(terrainElevationDataFolderPath, standardizedGeoTiffFiles);
-        rootTerrainElevationDataQuadTree.makeQuadTree(quadtreeMaxDepth);
+        if (rootTerrainElevationDataQuadTree != null) {
+            rootTerrainElevationDataQuadTree.makeQuadTree(quadtreeMaxDepth);
+        }
     }
 
     public GaiaGeoTiffManager getGaiaGeoTiffManager() {
@@ -242,6 +246,33 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
+    public void loadGridCoverage(GridCoverage2D gridCoverage2D, String virtualFilePath, double pixelSizeMeters) throws FactoryException, TransformException {
+        if (myGaiaGeoTiffManager == null) {
+            myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
+        }
+
+        if (rootTerrainElevationDataQuadTree == null) {
+            rootTerrainElevationDataQuadTree = new TerrainElevationDataQuadTree(null);
+        }
+
+        myGaiaGeoTiffManager.addGridCoverage2D(virtualFilePath, gridCoverage2D);
+
+        TerrainElevationData terrainElevationData = new TerrainElevationData(this);
+        terrainElevationData.setGeotiffFilePath(virtualFilePath);
+        String fileName = new File(virtualFilePath).getName();
+        terrainElevationData.setGeotiffFileName(fileName);
+
+        CoordinateReferenceSystem crsTarget = gridCoverage2D.getCoordinateReferenceSystem2D();
+        CoordinateReferenceSystem crsOutput = globalOptions.getOutputCRS();
+        MathTransform targetToOutput = CRS.findMathTransform(crsTarget, crsOutput, true);
+
+        GeometryFactory gf = new GeometryFactory();
+        GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToOutput, terrainElevationData.getGeographicExtension());
+        terrainElevationData.setPixelSizeMeters(new org.joml.Vector2d(pixelSizeMeters, pixelSizeMeters));
+
+        rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
+    }
+
     private void loadAllGeoTiff(String terrainElevationDataFolderPath, List<File> standardizedGeoTiffFiles) throws FactoryException, TransformException {
         // recursively load all geoTiff files
         geoTiffFileNames.clear();
@@ -307,6 +338,10 @@ public class TerrainElevationDataManager {
         }
     }
 
+    public void addPixelArea(String fileName, double pixelArea) {
+        gridAreaMap.put(fileName, pixelArea);
+    }
+
     public Double putAndGetGridAreaMap(String fileName, String path) {
         if (gridAreaMap.containsKey(fileName)) {
             return gridAreaMap.get(fileName);
@@ -322,8 +357,21 @@ public class TerrainElevationDataManager {
                 GridCoverage2D coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
                 Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
                 pixelArea = originalArea.x * originalArea.y;
+                coverage.dispose(true);
             } catch (FactoryException e) {
                 log.error("[getPixelArea : FactoryException] Error in getPixelArea", e);
+            }
+        } else {
+            if (myGaiaGeoTiffManager != null) {
+                GridCoverage2D coverage = myGaiaGeoTiffManager.getGridCoverage2D(path);
+                if (coverage != null) {
+                    try {
+                        Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
+                        pixelArea = originalArea.x * originalArea.y;
+                    } catch (FactoryException e) {
+                        log.error("[getPixelArea : FactoryException] Error in getPixelArea from memory", e);
+                    }
+                }
             }
         }
         gridAreaMap.put(fileName, pixelArea);
