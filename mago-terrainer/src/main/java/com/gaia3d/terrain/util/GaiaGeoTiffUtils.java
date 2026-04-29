@@ -12,6 +12,7 @@ import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.coverage.grid.GridCoordinates2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.geometry.jts.JTS;
@@ -24,7 +25,12 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
+import java.awt.image.WritableRaster;
+
 public class GaiaGeoTiffUtils {
+    private static final int MATERIALIZE_MAX_WIDTH = 20000;
+    private static final int MATERIALIZE_MAX_HEIGHT = 20000;
+    private static final long MATERIALIZE_MAX_PIXELS = 120_000_000L;
     public static Vector2d getPixelSizeDegrees(GridCoverage2D coverage) {
         GridGeometry gridGeometry = coverage.getGridGeometry();
         ReferencedEnvelope envelope = coverage.getEnvelope2D();
@@ -55,6 +61,33 @@ public class GaiaGeoTiffUtils {
         
         Operations ops = new Operations(hints);
         return (GridCoverage2D) ops.scale(sourceCov, scaleX, scaleY, 0, 0);
+    }
+
+    public static GridCoverage2D materializeGridCoverage2D(GridCoverage2D sourceCov) {
+        if (sourceCov == null || sourceCov.getRenderedImage() == null) {
+            return sourceCov;
+        }
+
+        int width = sourceCov.getRenderedImage().getWidth();
+        int height = sourceCov.getRenderedImage().getHeight();
+        long pixels = (long) width * (long) height;
+
+        if (width > MATERIALIZE_MAX_WIDTH || height > MATERIALIZE_MAX_HEIGHT || pixels > MATERIALIZE_MAX_PIXELS) {
+            // Oversized coverage is kept as-is to avoid huge in-memory raster allocation.
+            return sourceCov;
+        }
+
+        try {
+            WritableRaster rasterCopy = sourceCov.getRenderedImage().copyData(null);
+            GridCoverageFactory coverageFactory = new GridCoverageFactory();
+            return coverageFactory.create(
+                    sourceCov.getName(),
+                    rasterCopy,
+                    sourceCov.getEnvelope2D()
+            );
+        } catch (Exception e) {
+            return sourceCov;
+        }
     }
 
     public static Vector2d getLongitudeLatitudeDegree(GridCoverage2D coverage, int coordX, int coordY, GeometryFactory gf, MathTransform targetToWgs) throws TransformException {

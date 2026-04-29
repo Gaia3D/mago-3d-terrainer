@@ -59,6 +59,7 @@ public class GlobalOptions {
     private String outputPath;
     private String logPath;
     private String geoidPath;
+    private String globeTiffPath;
     private String outputFormat = "flat";
     private boolean layerJsonGenerate = false;
     private boolean debugMode = false;
@@ -105,6 +106,8 @@ public class GlobalOptions {
         if (instance.javaVersionInfo == null) {
             initVersionInfo();
         }
+        // TODO  临时设置
+        instance.setGlobeTiffPath("D:/PER/PROJ/Java/mago-3d-terrainer/globe.tif");
         return instance;
     }
 
@@ -162,6 +165,12 @@ public class GlobalOptions {
 
         if (command.hasOption(CommandOptions.GEOID_PATH.getLongName())) {
             instance.setGeoidPath(command.getOptionValue(CommandOptions.GEOID_PATH.getLongName()));
+        }
+
+        if (command.hasOption(CommandOptions.GLOBE_TIFF_PATH.getLongName())) {
+            instance.setGlobeTiffPath(command.getOptionValue(CommandOptions.GLOBE_TIFF_PATH.getLongName()));
+        } else {
+            instance.setGlobeTiffPath(null);
         }
 
         if (command.hasOption(CommandOptions.GEOID_PATH.getLongName())) {
@@ -384,6 +393,9 @@ public class GlobalOptions {
             log.info("Geoid Model(Height Reference): {}", instance.getGeoidPath());
         } else {
             log.info("Geoid Model(Height Reference): Ellipsoid");
+        }
+        if (instance.getGlobeTiffPath() != null) {
+            log.info("Globe TIFF Path: {}", instance.getGlobeTiffPath());
         }
         Mago3DTerrainerMain.drawLine();
         log.info("Celestial Body: {}", instance.getCelestialBody().getDisplayName());

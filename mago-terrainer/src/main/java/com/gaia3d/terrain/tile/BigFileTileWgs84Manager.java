@@ -23,6 +23,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 public class BigFileTileWgs84Manager {
+    private static final int MACRO_LEVEL_THRESHOLD = 4;
+    private static final int MEMORY_SAFE_PIXEL_LIMIT = 10_000;
+    private static final int SOURCE_IO_PIXEL_LIMIT = 50_000;
+    private static final int TARGET_TRUNK_TILES_PER_AXIS = 40;
+    private static final int MAX_TRUNK_COUNT = 256;
+    private static final long LARGE_TIFF_BYTES_THRESHOLD = 8L * 1024L * 1024L * 1024L; // 8GB
+    private static final double[] LEVEL_RESOLUTION_DEGREES = {
+            2.8125,
+            1.40625,
+            0.703125,
+            0.351562,
+            0.175781,
+            0.0878906,
+            0.0439453,
+            0.0219727,
+            0.0109863,
+            0.00549316,
+            0.00274658,
+            0.00137329,
+            0.000686646,
+            0.000343323,
+            0.000171661,
+            8.58307e-05,
+            4.29153e-05,
+            2.14577e-05,
+            1.07288e-05
+    };
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TileWgs84Manager tileManager = new TileWgs84Manager();
     private final AvailableTileSet availableTileSet = new AvailableTileSet();
@@ -52,10 +79,8 @@ public class BigFileTileWgs84Manager {
             int availableMaxDepth = availableTileSet.getMaxAvailableDepth();
             if (maxTileDepth < 0) {
                 maxTileDepth = availableMaxDepth;
-            } else if (availableMaxDepth < maxTileDepth) {
-                maxTileDepth = availableMaxDepth;
             }
-            availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
+            extendAvailableTileRangesToDepth(sources, maxTileDepth);
             globalOptions.setMaximumTileDepth(maxTileDepth);
 
             // 步骤 3: 逐 Trunk 处理（模仿 CesiumLab 的流水线）
@@ -65,7 +90,7 @@ public class BigFileTileWgs84Manager {
             //   3. 生成金字塔和瓷砖
             //   4. 输出到磁盘
             //   5. 立即释放此 Trunk 的内存
-            processSpatialTrunks(sources, minTileDepth, maxTileDepth);
+            processTwoTierPipeline(sources, minTileDepth, maxTileDepth);
 
             tileManager.getTerrainWriter().writeMetadata(
                     terrainLayer.getBounds()[0], terrainLayer.getBounds()[1],
@@ -121,6 +146,26 @@ public class BigFileTileWgs84Manager {
         return sources;
     }
 
+    private void extendAvailableTileRangesToDepth(List<BigFileSource> sources, int maxDepth) {
+        if (maxDepth < 0) {
+            return;
+        }
+
+        for (BigFileSource source : sources) {
+            addAvailableRangesForDepths(source.geographicExtension, 0, maxDepth);
+        }
+        availableTileSet.recombineTileRanges();
+    }
+
+    private void addAvailableRangesForDepths(GeographicExtension extension, int minDepth, int maxDepth) {
+        for (int depth = minDepth; depth <= maxDepth; depth++) {
+            List<TileRange> tileRanges = availableTileSet.getMapDepthAvailableTileRanges()
+                    .computeIfAbsent(depth, key -> new ArrayList<>());
+            TileRange range = getTileRangeForGeographicExtension(extension, depth).expand(1);
+            tileRanges.add(range);
+        }
+    }
+
     private void initializeTileManagerState() {
         copyAvailableTileSet();
         tileManager.getMapNoUsableGeotiffPaths().clear();
@@ -148,77 +193,66 @@ public class BigFileTileWgs84Manager {
         }
     }
 
-    private void processSpatialTrunks(List<BigFileSource> sources, int minTileDepth, int maxTileDepth) throws Exception {
+    private void processTwoTierPipeline(List<BigFileSource> sources, int minTileDepth, int maxTileDepth) throws Exception {
         long startTime = System.currentTimeMillis();
 
-        // 1. 获取全区边界和最佳分辨率
-        double minPixelSizeDeg = Double.MAX_VALUE;
-        for (BigFileSource source : sources) {
-            double maxRes = Math.max(source.pixelSizeDegX, source.pixelSizeDegY);
-            if (maxRes > 0 && maxRes < minPixelSizeDeg) {
-                minPixelSizeDeg = maxRes;
-            }
-        }
-        if (minPixelSizeDeg == Double.MAX_VALUE) minPixelSizeDeg = 0.00001;
-
-        double[] bounds = terrainLayer.getBounds();
-        double minLon = bounds[0];
-        double minLat = bounds[1];
-        double maxLon = bounds[2];
-        double maxLat = bounds[3];
-        
-        double totalSpanLon = maxLon - minLon;
-        double totalSpanLat = maxLat - minLat;
-
-        // 2. 借鉴 CesiumLab：将全区划分为固定数量的 Trunk (约 200-300 个)
-        // 假设目标是 15x15 或 20x10 的网格
-        int xDivisions = (int) Math.ceil(Math.sqrt(250.0 * (totalSpanLon / totalSpanLat)));
-        int yDivisions = (int) Math.ceil(250.0 / xDivisions);
-        
-        double trunkSpanLon = totalSpanLon / xDivisions;
-        double trunkSpanLat = totalSpanLat / yDivisions;
-
-        List<GeographicExtension> trunks = new ArrayList<>();
-        for (int i = 0; i < yDivisions; i++) {
-            for (int j = 0; j < xDivisions; j++) {
-                double lonStart = minLon + j * trunkSpanLon;
-                double latStart = minLat + i * trunkSpanLat;
-                double lonEnd = (j == xDivisions - 1) ? maxLon : lonStart + trunkSpanLon;
-                double latEnd = (i == yDivisions - 1) ? maxLat : latStart + trunkSpanLat;
-
-                GeographicExtension ext = new GeographicExtension();
-                ext.setDegrees(lonStart, latStart, 0, lonEnd, latEnd, 0);
-                trunks.add(ext);
-            }
+        int macroMinDepth = Math.min(minTileDepth, MACRO_LEVEL_THRESHOLD);
+        int macroMaxDepth = Math.min(maxTileDepth, MACRO_LEVEL_THRESHOLD);
+        if (macroMinDepth <= macroMaxDepth) {
+            processMacroLevels(sources, macroMinDepth, macroMaxDepth);
         }
 
-        log.info("[Tile][BigFile] Optimized Trunking (CesiumLab Style). Grid: {}x{}, Total Trunks: {}", xDivisions, yDivisions, trunks.size());
-        AtomicInteger counter = new AtomicInteger(0);
-        int total = trunks.size();
-
-        for (GeographicExtension trunkExt : trunks) {
-            int progress = counter.incrementAndGet();
-            
-            boolean intersects = false;
-            for (BigFileSource source : sources) {
-                if (source.geographicExtension.intersects(trunkExt)) {
-                    intersects = true;
-                    break;
-                }
-            }
-            if (!intersects) continue;
-
-            log.info("----------------------------------------");
-            log.info("[Tile][BigFile][Trunk {}/{}] Processing... Lon[{}:{}], Lat[{}:{}]", 
-                progress, total, 
-                String.format("%.4f", trunkExt.getMinLongitudeDeg()), String.format("%.4f", trunkExt.getMaxLongitudeDeg()), 
-                String.format("%.4f", trunkExt.getMinLatitudeDeg()), String.format("%.4f", trunkExt.getMinLatitudeDeg()));
-
-            processTrunk(sources, trunkExt, maxTileDepth, minTileDepth, progress, total);
+        int microMinDepth = Math.max(minTileDepth, MACRO_LEVEL_THRESHOLD + 1);
+        if (microMinDepth <= maxTileDepth) {
+            processMicroLevels(sources, microMinDepth, maxTileDepth);
         }
 
         long endTime = System.currentTimeMillis();
         log.info("[Tile][BigFile] End processing all Trunks. Duration: {}", DecimalUtils.millisecondToDisplayTime(endTime - startTime));
+    }
+
+    private void processMacroLevels(List<BigFileSource> sources, int minTileDepth, int maxTileDepth) throws Exception {
+        BigFileSource macroSource = resolveRequiredMacroSource();
+        List<BigFileSource> macroSources = Collections.singletonList(macroSource);
+
+        GeographicExtension worldExtension = new GeographicExtension();
+        worldExtension.copyFrom(macroSource.geographicExtension);
+        log.info("[Tile][Macro] Use globe raster directly for depths {}-{}: {}", minTileDepth, maxTileDepth, macroSource.file.getAbsolutePath());
+
+        try {
+            processTrunk(macroSources, worldExtension, maxTileDepth, minTileDepth, 1, 1);
+        } finally {
+            macroSource.close();
+        }
+    }
+
+    private void processMicroLevels(List<BigFileSource> sources, int minTileDepth, int maxTileDepth) throws Exception {
+        List<AlignedTrunk> trunks = calculateAlignedTrunks(maxDepthForTrunking(maxTileDepth), sources);
+        log.info("[Tile][BigFile] Aligned trunking for depth {}. Total trunks: {}", maxTileDepth, trunks.size());
+
+        AtomicInteger counter = new AtomicInteger(0);
+        AtomicInteger processedCounter = new AtomicInteger(0);
+        int total = trunks.size();
+        for (AlignedTrunk trunk : trunks) {
+            int progress = counter.incrementAndGet();
+            log.info("----------------------------------------");
+            log.info("[Tile][BigFile][Trunk {}/{}] Processing... Lon[{}:{}], Lat[{}:{}], TileRange={}",
+                    progress, total,
+                    String.format("%.4f", trunk.geographicExtension.getMinLongitudeDeg()),
+                    String.format("%.4f", trunk.geographicExtension.getMaxLongitudeDeg()),
+                    String.format("%.4f", trunk.geographicExtension.getMinLatitudeDeg()),
+                    String.format("%.4f", trunk.geographicExtension.getMaxLatitudeDeg()),
+                    trunk.tileRange);
+
+            processTrunk(sources, trunk.geographicExtension, maxTileDepth, minTileDepth, progress, total);
+            processedCounter.incrementAndGet();
+        }
+
+        log.info("[Tile][BigFile] Micro phase finished. Processed trunks: {} / {}", processedCounter.get(), total);
+    }
+
+    private int maxDepthForTrunking(int maxTileDepth) {
+        return Math.min(LEVEL_RESOLUTION_DEGREES.length - 1, Math.max(0, maxTileDepth));
     }
 
     private void processTrunk(List<BigFileSource> sources, GeographicExtension trunkExt, int maxDepth, int minDepth, int progress, int total) throws Exception {
@@ -298,11 +332,10 @@ public class BigFileTileWgs84Manager {
                 elevationDataManager.setTileWgs84Manager(tileManager);
                 
                 // 计算当前深度的目标分辨率
-                double tileAngleRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
-                double targetResDeg = tileAngleRange / tileManager.getRasterTileSize();
+                double targetResDeg = getLevelResolutionDegrees(depth);
                 
-                // 用于跟踪在此深度创建的重采样覆盖层（以便后续释放）
-                List<GridCoverage2D> resampledCoveragesForThisDepth = new ArrayList<>();
+                // 用于跟踪当前深度创建的临时内存 coverage（重采样/物化）以便及时释放
+                List<GridCoverage2D> transientCoveragesForThisDepth = new ArrayList<>();
                 
                 try {
                     // --------- 步骤 3.1: 针对每个源覆盖层进行内存重采样 ---------
@@ -319,7 +352,14 @@ public class BigFileTileWgs84Manager {
                             log.debug("[BigFile][Trunk] Resampling coverage {} for depth {} from {} to {}", 
                                 name, depth, sourceResX, targetResDeg);
                             currentCov = GaiaGeoTiffUtils.getResampledGridCoverage2D(sourceCov, targetResDeg);
-                            resampledCoveragesForThisDepth.add(currentCov);
+                            transientCoveragesForThisDepth.add(currentCov);
+                        }
+
+                        // 将 coverage 预先物化为稳定的内存 raster，避免后续采样阶段触发 JAI 懒执行链异常。
+                        GridCoverage2D materializedCov = GaiaGeoTiffUtils.materializeGridCoverage2D(currentCov);
+                        if (materializedCov != currentCov) {
+                            transientCoveragesForThisDepth.add(materializedCov);
+                            currentCov = materializedCov;
                         }
                         
                         // 计算像素大小（米）并将内存覆盖层传给管理器
@@ -351,15 +391,15 @@ public class BigFileTileWgs84Manager {
                     
                     // 销毁并移除 GaiaGeoTiffManager 中属于该深度的 coverage
                     if (elevationDataManager.getMyGaiaGeoTiffManager() != null) {
-                        // 我们只 dispose 那些新生成的（resampled）
-                        for (GridCoverage2D cov : resampledCoveragesForThisDepth) {
+                        // 我们只 dispose 当前深度新生成的内存 coverage，原始 trunk coverage 留到 trunk 结束后统一释放。
+                        for (GridCoverage2D cov : transientCoveragesForThisDepth) {
                             cov.dispose(true);
                         }
                         // 然后清空 map 引用即可，不要对 originalCoverages 调用 dispose
                         elevationDataManager.getMyGaiaGeoTiffManager().getMapPathGridCoverage2d().clear();
                         elevationDataManager.getMyGaiaGeoTiffManager().getPathList().clear();
                     }
-                    resampledCoveragesForThisDepth.clear();
+                    transientCoveragesForThisDepth.clear();
                 }
             }
         } finally {
@@ -381,6 +421,177 @@ public class BigFileTileWgs84Manager {
         TileRange range = new TileRange();
         TileWgs84Utils.selectTileIndicesArray(depth, ext.getMinLongitudeDeg(), ext.getMaxLongitudeDeg(), ext.getMinLatitudeDeg(), ext.getMaxLatitudeDeg(), range, originIsLeftUp);
         return range;
+    }
+
+    public List<AlignedTrunk> calculateAlignedTrunks(int maxDepth, List<BigFileSource> sources) {
+        double[] bounds = terrainLayer.getBounds();
+        GeographicExtension fullExtension = new GeographicExtension();
+        fullExtension.setDegrees(bounds[0], bounds[1], 0.0, bounds[2], bounds[3], 0.0);
+
+        TileRange fullRange = getTileRangeForGeographicExtension(fullExtension, maxDepth);
+        double resolution = getLevelResolutionDegrees(maxDepth);
+        double totalPixelWidth = Math.max(1.0, Math.ceil((bounds[2] - bounds[0]) / resolution));
+        double totalPixelHeight = Math.max(1.0, Math.ceil((bounds[3] - bounds[1]) / resolution));
+
+        int xTileCount = fullRange.getMaxTileX() - fullRange.getMinTileX() + 1;
+        int yTileCount = fullRange.getMaxTileY() - fullRange.getMinTileY() + 1;
+        int xDivisionsByPixels = Math.max(1, (int) Math.ceil(totalPixelWidth / MEMORY_SAFE_PIXEL_LIMIT));
+        int yDivisionsByPixels = Math.max(1, (int) Math.ceil(totalPixelHeight / MEMORY_SAFE_PIXEL_LIMIT));
+        int xDivisionsByTiles = Math.max(1, (int) Math.ceil((double) xTileCount / TARGET_TRUNK_TILES_PER_AXIS));
+        int yDivisionsByTiles = Math.max(1, (int) Math.ceil((double) yTileCount / TARGET_TRUNK_TILES_PER_AXIS));
+        SourceGridConstraint sourceGridConstraint = calculateSourceGridConstraint(bounds, sources);
+        int xDivisions = Math.max(Math.max(xDivisionsByPixels, xDivisionsByTiles), sourceGridConstraint.xDivisions);
+        int yDivisions = Math.max(Math.max(yDivisionsByPixels, yDivisionsByTiles), sourceGridConstraint.yDivisions);
+        FileSizeConstraint fileSizeConstraint = calculateFileSizeConstraint(sources, xDivisions, yDivisions);
+        xDivisions = Math.max(xDivisions, fileSizeConstraint.xDivisions);
+        yDivisions = Math.max(yDivisions, fileSizeConstraint.yDivisions);
+        TrunkGrid cappedGrid = applyTrunkCountCap(xDivisions, yDivisions);
+        xDivisions = cappedGrid.xDivisions;
+        yDivisions = cappedGrid.yDivisions;
+
+        log.info("[Tile][BigFile] calculateAlignedTrunks depth={}, resolution={}, totalPixels={}x{}, tiles={}x{}, memoryLimit={}, targetTilesPerAxis={}, grid={}x{} (pixelGrid={}x{}, tileGrid={}x{}, sourceGrid={}x{}, fileGrid={}x{}, capped={})",
+                maxDepth,
+                resolution,
+                (long) totalPixelWidth, (long) totalPixelHeight,
+                xTileCount, yTileCount,
+                MEMORY_SAFE_PIXEL_LIMIT,
+                TARGET_TRUNK_TILES_PER_AXIS,
+                xDivisions, yDivisions,
+                xDivisionsByPixels, yDivisionsByPixels,
+                xDivisionsByTiles, yDivisionsByTiles,
+                sourceGridConstraint.xDivisions, sourceGridConstraint.yDivisions,
+                fileSizeConstraint.xDivisions, fileSizeConstraint.yDivisions,
+                cappedGrid.capped);
+
+        List<AlignedTrunk> trunks = new ArrayList<>();
+        for (int yIndex = 0; yIndex < yDivisions; yIndex++) {
+            int yStartOffset = (int) Math.floor((double) yIndex * yTileCount / yDivisions);
+            int yEndOffset = (int) Math.floor((double) (yIndex + 1) * yTileCount / yDivisions) - 1;
+            int minTileY = fullRange.getMinTileY() + yStartOffset;
+            int maxTileY = fullRange.getMinTileY() + Math.max(yStartOffset, yEndOffset);
+
+            for (int xIndex = 0; xIndex < xDivisions; xIndex++) {
+                int xStartOffset = (int) Math.floor((double) xIndex * xTileCount / xDivisions);
+                int xEndOffset = (int) Math.floor((double) (xIndex + 1) * xTileCount / xDivisions) - 1;
+                int minTileX = fullRange.getMinTileX() + xStartOffset;
+                int maxTileX = fullRange.getMinTileX() + Math.max(xStartOffset, xEndOffset);
+
+                TileRange tileRange = new TileRange();
+                tileRange.set(maxDepth, minTileX, maxTileX, minTileY, maxTileY);
+                GeographicExtension trunkExtension = getGeographicExtensionFromTileRange(tileRange);
+                trunks.add(new AlignedTrunk(tileRange, trunkExtension));
+            }
+        }
+
+        return trunks;
+    }
+
+    private SourceGridConstraint calculateSourceGridConstraint(double[] bounds, List<BigFileSource> sources) {
+        double minSourcePixelDeg = Double.MAX_VALUE;
+        for (BigFileSource source : sources) {
+            double sourceDeg = Math.max(source.pixelSizeDegX, source.pixelSizeDegY);
+            if (sourceDeg > 0 && sourceDeg < minSourcePixelDeg) {
+                minSourcePixelDeg = sourceDeg;
+            }
+        }
+
+        if (minSourcePixelDeg == Double.MAX_VALUE) {
+            return new SourceGridConstraint(1, 1);
+        }
+
+        double sourcePixelWidth = Math.max(1.0, Math.ceil((bounds[2] - bounds[0]) / minSourcePixelDeg));
+        double sourcePixelHeight = Math.max(1.0, Math.ceil((bounds[3] - bounds[1]) / minSourcePixelDeg));
+        int xDivisions = Math.max(1, (int) Math.ceil(sourcePixelWidth / SOURCE_IO_PIXEL_LIMIT));
+        int yDivisions = Math.max(1, (int) Math.ceil(sourcePixelHeight / SOURCE_IO_PIXEL_LIMIT));
+        // Avoid source-resolution-only over-splitting for low target levels.
+        xDivisions = Math.min(xDivisions, 16);
+        yDivisions = Math.min(yDivisions, 16);
+        return new SourceGridConstraint(xDivisions, yDivisions);
+    }
+
+    private FileSizeConstraint calculateFileSizeConstraint(List<BigFileSource> sources, int currentXDivisions, int currentYDivisions) {
+        long totalBytes = 0L;
+        for (BigFileSource source : sources) {
+            totalBytes += Math.max(0L, source.file.length());
+        }
+
+        if (totalBytes < LARGE_TIFF_BYTES_THRESHOLD || currentXDivisions * currentYDivisions > 1) {
+            return new FileSizeConstraint(1, 1);
+        }
+
+        // For large compressed TIFF where one trunk causes huge decode latency, force at least 2x2 windows.
+        return new FileSizeConstraint(2, 2);
+    }
+
+    private TrunkGrid applyTrunkCountCap(int xDivisions, int yDivisions) {
+        long total = (long) xDivisions * (long) yDivisions;
+        if (total <= MAX_TRUNK_COUNT) {
+            return new TrunkGrid(xDivisions, yDivisions, false);
+        }
+
+        double scale = Math.sqrt((double) total / MAX_TRUNK_COUNT);
+        int reducedX = Math.max(1, (int) Math.ceil(xDivisions / scale));
+        int reducedY = Math.max(1, (int) Math.ceil(yDivisions / scale));
+
+        while ((long) reducedX * (long) reducedY > MAX_TRUNK_COUNT) {
+            if (reducedX >= reducedY && reducedX > 1) {
+                reducedX--;
+            } else if (reducedY > 1) {
+                reducedY--;
+            } else {
+                break;
+            }
+        }
+
+        return new TrunkGrid(reducedX, reducedY, true);
+    }
+
+    private double getLevelResolutionDegrees(int depth) {
+        if (depth >= 0 && depth < LEVEL_RESOLUTION_DEGREES.length) {
+            return LEVEL_RESOLUTION_DEGREES[depth];
+        }
+
+        if (depth < 0) {
+            throw new IllegalArgumentException("Depth must be >= 0");
+        }
+
+        double baseResolution = LEVEL_RESOLUTION_DEGREES[LEVEL_RESOLUTION_DEGREES.length - 1];
+        int extraLevels = depth - (LEVEL_RESOLUTION_DEGREES.length - 1);
+        return baseResolution / Math.pow(2.0, extraLevels);
+    }
+
+    private GeographicExtension getGeographicExtensionFromTileRange(TileRange tileRange) {
+        boolean originIsLeftUp = tileManager.isOriginIsLeftUp();
+        String imageryType = tileManager.getImaginaryType();
+        GeographicExtension minTileExtent = TileWgs84Utils.getGeographicExtentOfTileLXY(
+                tileRange.getTileDepth(), tileRange.getMinTileX(), tileRange.getMinTileY(), null, imageryType, originIsLeftUp);
+        GeographicExtension maxTileExtent = TileWgs84Utils.getGeographicExtentOfTileLXY(
+                tileRange.getTileDepth(), tileRange.getMaxTileX(), tileRange.getMaxTileY(), null, imageryType, originIsLeftUp);
+
+        GeographicExtension extension = new GeographicExtension();
+        extension.setDegrees(
+                minTileExtent.getMinLongitudeDeg(),
+                Math.min(minTileExtent.getMinLatitudeDeg(), maxTileExtent.getMinLatitudeDeg()),
+                0.0,
+                maxTileExtent.getMaxLongitudeDeg(),
+                Math.max(minTileExtent.getMaxLatitudeDeg(), maxTileExtent.getMaxLatitudeDeg()),
+                0.0
+        );
+        return extension;
+    }
+
+    private BigFileSource resolveRequiredMacroSource() throws Exception {
+        String globeTiffPath = globalOptions.getGlobeTiffPath();
+        if (globeTiffPath == null || globeTiffPath.isBlank()) {
+            throw new IllegalStateException("Macro phase requires --globeTiffPath during testing.");
+        }
+
+        File globeTiffFile = new File(globeTiffPath);
+        if (!globeTiffFile.exists() || !globeTiffFile.isFile()) {
+            throw new IllegalStateException("Configured globe.tif path does not exist: " + globeTiffPath);
+        }
+
+        return new BigFileSource(globeTiffFile, new BigFileElevationProvider(globeTiffFile));
     }
 
     private boolean hasIntersection(TileRange range, List<TileRange> available) {
@@ -482,5 +693,24 @@ public class BigFileTileWgs84Manager {
         private void close() {
             provider.close();
         }
+    }
+
+    public static class AlignedTrunk {
+        private final TileRange tileRange;
+        private final GeographicExtension geographicExtension;
+
+        public AlignedTrunk(TileRange tileRange, GeographicExtension geographicExtension) {
+            this.tileRange = tileRange;
+            this.geographicExtension = geographicExtension;
+        }
+    }
+
+    private record SourceGridConstraint(int xDivisions, int yDivisions) {
+    }
+
+    private record FileSizeConstraint(int xDivisions, int yDivisions) {
+    }
+
+    private record TrunkGrid(int xDivisions, int yDivisions, boolean capped) {
     }
 }

@@ -4,8 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.LinkedHashMap;
 
 @Slf4j
 public class SqlitePakWriter implements TerrainWriter {
@@ -65,6 +69,47 @@ public class SqlitePakWriter implements TerrainWriter {
             }
         } catch (SQLException e) {
             throw new IOException("Failed to write tile data", e);
+        }
+    }
+
+    @Override
+    public void writeBatch(List<TerrainWriteRequest> requests) throws IOException {
+        if (requests == null || requests.isEmpty()) {
+            return;
+        }
+
+        Map<String, List<TerrainWriteRequest>> groupedByTable = new LinkedHashMap<>();
+        for (TerrainWriteRequest request : requests) {
+            String tableName = getTableName(request.getZ(), request.getX(), request.getY());
+            groupedByTable.computeIfAbsent(tableName, key -> new ArrayList<>()).add(request);
+        }
+
+        try {
+            for (Map.Entry<String, List<TerrainWriteRequest>> entry : groupedByTable.entrySet()) {
+                String tableName = entry.getKey();
+                ensureTable(tableName);
+                String sql = "INSERT OR REPLACE INTO \"" + tableName + "\" (z, x, y, tile, hm) VALUES (?, ?, ?, ?, ?)";
+                try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                    for (TerrainWriteRequest request : entry.getValue()) {
+                        pstmt.setInt(1, request.getZ());
+                        pstmt.setLong(2, request.getX());
+                        pstmt.setLong(3, request.getY());
+                        pstmt.setBytes(4, request.getData());
+                        pstmt.setBytes(5, null);
+                        pstmt.addBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+            }
+            connection.commit();
+            batchCount = 0;
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackException) {
+                log.error("Batch rollback failed", rollbackException);
+            }
+            throw new IOException("Failed to batch write tile data", e);
         }
     }
 

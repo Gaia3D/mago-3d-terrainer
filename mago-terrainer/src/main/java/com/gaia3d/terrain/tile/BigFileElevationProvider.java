@@ -76,6 +76,7 @@ public class BigFileElevationProvider implements AutoCloseable {
     public void loadTrunk(ReferencedEnvelope envelope, int targetWidth, int targetHeight) throws Exception {
         if (currentTrunkCoverage != null) {
             currentTrunkCoverage.dispose(true);
+            currentTrunkCoverage = null;
         }
         
         log.info("[BigFile] Loading area: {} at resolution {}x{}", envelope.toString(), targetWidth, targetHeight);
@@ -128,8 +129,12 @@ public class BigFileElevationProvider implements AutoCloseable {
         
         GeneralParameterValue[] params = new GeneralParameterValue[]{readGridGeometry};
         GridCoverage2D tempCoverage = reader.read(params);
+        GridCoverage2D materializedCoverage = GaiaGeoTiffUtils.materializeGridCoverage2D(tempCoverage);
+        if (materializedCoverage != tempCoverage && tempCoverage != null) {
+            tempCoverage.dispose(true);
+        }
 
-        this.currentTrunkCoverage = tempCoverage;
+        this.currentTrunkCoverage = materializedCoverage;
         this.currentTrunkEnvelope = envelope;
     }
 

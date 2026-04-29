@@ -20,6 +20,7 @@ public enum CommandOptions {
     TEMP_PATH("temp", "t", true, "Temporary directory path (default: same level as input path)"),
     GEOID_PATH("geoid", "g", true, "Set reference height option for terrain data. \n"
             + "Geoid file path for height correction, \n (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)"),
+    GLOBE_TIFF_PATH("globeTiffPath", "gtp", true, "[Testing] Standalone Globe.tif path for macro phase"),
 
     // Terrain generation options
     MINIMUM_TILE_DEPTH("minDepth", "min", true, "Set minimum terrain tile depth \n(default : 0)(options: 0 - 22)"),

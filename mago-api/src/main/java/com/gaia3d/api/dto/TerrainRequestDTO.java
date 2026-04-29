@@ -26,4 +26,5 @@ public class TerrainRequestDTO {
     private Boolean continueProcess = false;       // -c, --continue
     private Boolean debug = false;                 // -d, --debug
     private Boolean leaveTemp = false;             // -lt, --leaveTemp
+    private String globeTiffPath;
 }

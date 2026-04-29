@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class FileSystemWriter implements TerrainWriter {
     private final String outputBaseDir;
@@ -30,6 +31,16 @@ public class FileSystemWriter implements TerrainWriter {
         File tileFile = new File(dir, y + ".terrain");
         try (FileOutputStream fos = new FileOutputStream(tileFile)) {
             fos.write(data);
+        }
+    }
+
+    @Override
+    public void writeBatch(List<TerrainWriteRequest> requests) throws IOException {
+        if (requests == null) {
+            return;
+        }
+        for (TerrainWriteRequest request : requests) {
+            writeTile(request.getZ(), request.getX(), request.getY(), request.getData());
         }
     }
 

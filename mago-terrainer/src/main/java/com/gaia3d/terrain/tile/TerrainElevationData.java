@@ -78,14 +78,17 @@ public class TerrainElevationData {
             try {
                 RenderedImage ri = coverage.getRenderedImage();
                 if (ri.getWidth() * ri.getHeight() < 1024 * 1024) {
-                    this.raster = ri.getData();
+                    try {
+                        this.raster = ri.getData();
+                    } catch (Exception rasterException) {
+                        log.debug("Failed to materialize raster for {}, fallback to coverage.evaluate: {}",
+                                geotiffFilePath, rasterException.getMessage());
+                    }
                 } else {
-                    float[] result = new float[1];
-                    coverage.evaluate(new Point2D.Double(getLonDeg(x), getLatDeg(y)), result);
-                    return result[0];
+                    return evaluateCoverageValue(x, y);
                 }
             } catch (Exception e) {
-                return globalOptions.getNoDataValue();
+                return evaluateCoverageValue(x, y);
             }
         }
 
@@ -105,7 +108,34 @@ public class TerrainElevationData {
                 return globalOptions.getNoDataValue();
             }
         }
-        return globalOptions.getNoDataValue();
+        return evaluateCoverageValue(x, y);
+    }
+
+    private double evaluateCoverageValue(int x, int y) {
+        if (coverage == null) {
+            return globalOptions.getNoDataValue();
+        }
+
+        try {
+            float[] result = new float[1];
+            coverage.evaluate(new Point2D.Double(getLonDeg(x), getLatDeg(y)), result);
+            double value = result[0];
+            if (Double.isNaN(value)) {
+                return globalOptions.getNoDataValue();
+            }
+
+            if (this.noDataContainer == null) {
+                this.noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+            }
+            if (noDataContainer != null && value == noDataContainer.getAsSingleValue()) {
+                return globalOptions.getNoDataValue();
+            }
+            return value;
+        } catch (Exception evaluateException) {
+            log.debug("Coverage evaluate failed for {} at ({}, {}): {}",
+                    geotiffFilePath, x, y, evaluateException.getMessage());
+            return globalOptions.getNoDataValue();
+        }
     }
     
     private double getLonDeg(int col) {

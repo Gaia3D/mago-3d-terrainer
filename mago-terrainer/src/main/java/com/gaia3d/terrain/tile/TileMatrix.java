@@ -7,6 +7,7 @@ import com.gaia3d.io.LittleEndianDataOutputStream;
 import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.tile.writer.TerrainWriteRequest;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.terrain.util.MemoryMonitor;
 import com.gaia3d.terrain.util.TerrainMeshUtils;
@@ -28,6 +29,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -821,35 +826,71 @@ public class TileMatrix {
     }
 
     public void saveQuantizedMeshes(List<TerrainMesh> separatedMeshes) throws IOException {
+        List<TerrainWriteRequest> requests = collectQuantizedMeshRequests(separatedMeshes);
+        this.manager.getTerrainWriter().writeBatch(requests);
+    }
+
+    public List<TerrainWriteRequest> collectQuantizedMeshRequests(List<TerrainMesh> separatedMeshes) throws IOException {
+        if (separatedMeshes == null || separatedMeshes.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        int threadCount = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        try {
+            List<CompletableFuture<TerrainWriteRequest>> futures = new ArrayList<>();
+            for (TerrainMesh mesh : separatedMeshes) {
+                futures.add(CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return createQuantizedMeshRequest(mesh);
+                    } catch (IOException e) {
+                        throw new CompletionException(e);
+                    }
+                }, executorService));
+            }
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+            List<TerrainWriteRequest> requests = new ArrayList<>(futures.size());
+            for (CompletableFuture<TerrainWriteRequest> future : futures) {
+                requests.add(future.join());
+            }
+            return requests;
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException ioException) {
+                throw ioException;
+            }
+            throw new IOException("Failed to encode quantized mesh batch", cause);
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    private TerrainWriteRequest createQuantizedMeshRequest(TerrainMesh mesh) throws IOException {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         boolean calculateNormals = globalOptions.isCalculateNormalsExtension();
 
-        for (TerrainMesh mesh : separatedMeshes) {
-            TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle
-            TileIndices tileIndices = triangle.getOwnerTileIndices();
+        TerrainTriangle triangle = mesh.triangles.get(0);
+        TileIndices tileIndices = triangle.getOwnerTileIndices();
 
-            TileWgs84 tile = new TileWgs84(null, this.manager);
-            tile.setTileIndices(tileIndices);
-            String imageryType = this.manager.getImaginaryType();
-            tile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
-            tile.setMesh(mesh);
+        TileWgs84 tile = new TileWgs84(null, this.manager);
+        tile.setTileIndices(tileIndices);
+        String imageryType = this.manager.getImaginaryType();
+        tile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(
+                tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
+        tile.setMesh(mesh);
 
-            QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
-            QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile, calculateNormals);
-            
-            // Use ByteArrayOutputStream to capture the data for the writer
-            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-            com.gaia3d.io.LittleEndianDataOutputStream dataOutputStream = new com.gaia3d.io.LittleEndianDataOutputStream(new java.io.BufferedOutputStream(baos));
+        QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
+        QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile, calculateNormals);
 
-            // save the tile to stream
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        try (com.gaia3d.io.LittleEndianDataOutputStream dataOutputStream =
+                     new com.gaia3d.io.LittleEndianDataOutputStream(new java.io.BufferedOutputStream(baos))) {
             quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);
-            dataOutputStream.close();
-            
-            // Write via the abstracted terrainWriter
-            this.manager.getTerrainWriter().writeTile(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), baos.toByteArray());
-            
-//            log.info("[Tile][BigFile] Generated quantized mesh tile for L: {}, X: {}, Y: {}", tileIndices.getL(), tileIndices.getX(), tileIndices.getY());
         }
+
+        return new TerrainWriteRequest(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), baos.toByteArray());
     }
 
     public boolean saveSeparatedTiles(List<TerrainMesh> separatedMeshes) {
