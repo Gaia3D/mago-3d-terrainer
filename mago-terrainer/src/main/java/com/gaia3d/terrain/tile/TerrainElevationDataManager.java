@@ -173,14 +173,16 @@ public class TerrainElevationDataManager {
             myGaiaGeoTiffManager = null;
         }
 
-        if (rootTerrainElevationDataQuadTree == null) {
-            return;
+        if (rootTerrainElevationDataQuadTree != null) {
+            rootTerrainElevationDataQuadTree.deleteObjects();
+            rootTerrainElevationDataQuadTree = null;
         }
 
-        rootTerrainElevationDataQuadTree.deleteObjects();
-        rootTerrainElevationDataQuadTree = null;
-
         terrainElevationDataArray.clear();
+        trianglesArray.clear();
+        gridAreaMap.clear();
+        geoTiffFileNames.clear();
+        tileWgs84Manager = null;
     }
 
     public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager,
@@ -247,6 +249,18 @@ public class TerrainElevationDataManager {
         geoTiffFileNames.clear();
         FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
 
+        Map<String, File> standardizedGeoTiffByName = new HashMap<>();
+        for (File standardizedGeoTiffFile : standardizedGeoTiffFiles) {
+            standardizedGeoTiffByName.putIfAbsent(standardizedGeoTiffFile.getName(), standardizedGeoTiffFile);
+        }
+
+        loadAllGeoTiff(terrainElevationDataFolderPath, standardizedGeoTiffByName);
+    }
+
+    private void loadAllGeoTiff(String terrainElevationDataFolderPath, Map<String, File> standardizedGeoTiffByName) throws FactoryException, TransformException {
+        List<String> currentFolderGeoTiffFileNames = new ArrayList<>();
+        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", currentFolderGeoTiffFileNames);
+
         if (myGaiaGeoTiffManager == null) {
             myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
         }
@@ -267,13 +281,11 @@ public class TerrainElevationDataManager {
 
         Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
 
-        for (File geoTiffFile : standardizedGeoTiffFiles) {
-            geoTiffFileName = geoTiffFile.getName();
-
-            // check if "geoTiffFileName" exist in the "geoTiffFileNames" list
-            if (!geoTiffFileNames.contains(geoTiffFileName)) {
-                // if no exist, use the standardize file
-                geoTiffFilePath = geoTiffFile.getAbsolutePath();
+        for (String currentFolderGeoTiffFileName : currentFolderGeoTiffFileNames) {
+            geoTiffFileName = currentFolderGeoTiffFileName;
+            File standardizedGeoTiffFile = standardizedGeoTiffByName.get(geoTiffFileName);
+            if (standardizedGeoTiffFile != null) {
+                geoTiffFilePath = standardizedGeoTiffFile.getAbsolutePath();
             } else {
                 geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
             }
@@ -303,7 +315,7 @@ public class TerrainElevationDataManager {
         FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
         for (String folderName : folderNames) {
             String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
-            loadAllGeoTiff(folderPath, standardizedGeoTiffFiles);
+            loadAllGeoTiff(folderPath, standardizedGeoTiffByName);
         }
     }
 

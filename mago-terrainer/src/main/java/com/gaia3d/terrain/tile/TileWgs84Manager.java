@@ -137,6 +137,8 @@ public class TileWgs84Manager {
             this.triangleList.clear();
         }
 
+        this.tileWgs84List.clear();
+        this.standardizedGeoTiffFiles.clear();
         this.gaiaGeoTiffManager.clear();
 
         this.depthGeoTiffFolderPathMap.clear();
@@ -145,6 +147,7 @@ public class TileWgs84Manager {
         this.maxTriangleSizeForTileDepthList.clear();
         this.minTriangleSizeForTileDepthList.clear();
         this.mapNoUsableGeotiffPaths.clear();
+        this.availableTileSet.getMapDepthAvailableTileRanges().clear();
     }
 
     public void makeTempFilesFromQuantizedMeshes(int depth) {

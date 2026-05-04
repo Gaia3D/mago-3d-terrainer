@@ -36,9 +36,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,36 +48,40 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RasterStandardizer {
 
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
+    @FunctionalInterface
+    interface TileProcessor {
+        void process(String tileName, ReferencedEnvelope tileEnvelope) throws TransformException, IOException;
+    }
 
     public void standardize(GridCoverage2D source, File outputPath) {
         CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
         try {
             log.info("[Pre][Standardization] Splitting source raster into tiles... {}", outputPath.getName());
-            List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());
-            log.info("[Pre][Standardization] Splitting completed. Total tiles: {}", splitTiles.size());
-
-            int total = splitTiles.size();
+            int total = countTiles(source, globalOptions.getMaxRasterSize());
+            log.info("[Pre][Standardization] Splitting completed. Total tiles: {}", total);
             AtomicInteger count = new AtomicInteger(0);
-            splitTiles.forEach(tile -> {
-                log.info("[Pre][Standardization][{}/{}] Resampling tile {}", count.incrementAndGet(), total, tile.getName());
+            processTiles(source, globalOptions.getMaxRasterSize(), (tileName, tileEnvelope) -> {
+                int current = count.incrementAndGet();
+                log.info("[Pre][Standardization][{}/{}] Resampling tile {}", current, total, tileName);
 
-                GridCoverage2D gridCoverage2D = tile.getGridCoverage2D();
-                CoordinateReferenceSystem sourceCRS = gridCoverage2D.getCoordinateReferenceSystem();
-                GridCoverage2D resampledGridCoverage2D;
-                if (isSameCRS(sourceCRS, targetCRS)) {
-                    resampledGridCoverage2D = gridCoverage2D;
-                } else {
-                    resampledGridCoverage2D = resample(gridCoverage2D, targetCRS);
+                GridCoverage2D croppedTile = crop(source, tileEnvelope);
+                GridCoverage2D outputTile = croppedTile;
+                try {
+                    CoordinateReferenceSystem sourceCRS = croppedTile.getCoordinateReferenceSystem();
+                    if (!isSameCRS(sourceCRS, targetCRS)) {
+                        outputTile = resample(croppedTile, targetCRS);
+                    }
+
+                    String uniqueTileName = tileName + UUID.randomUUID();
+                    File tileFile = new File(outputPath, uniqueTileName + ".tif");
+                    writeGeotiff(outputTile, tileFile);
+                } finally {
+                    disposeCoverage(outputTile);
+                    if (outputTile != croppedTile) {
+                        disposeCoverage(croppedTile);
+                    }
                 }
-                tile.setGridCoverage2D(resampledGridCoverage2D);
-                String uniqueTileName = tile.getName() + UUID.randomUUID();
-                File tileFile = new File(outputPath, uniqueTileName + ".tif");
-                writeGeotiff(tile.getGridCoverage2D(), tileFile);
-
-                resampledGridCoverage2D.dispose(true);
-                tile.getGridCoverage2D().dispose(true);
-                tile.setGridCoverage2D(null);
-                log.info("[Pre][Standardization][{}/{}] Completed tile {}", count.get(), total, tile.getName());
+                log.info("[Pre][Standardization][{}/{}] Completed tile {}", current, total, tileName);
             });
         } catch (TransformException | IOException e) {
             log.error("Failed to standardization.", e);
@@ -91,50 +93,50 @@ public class RasterStandardizer {
         // load geoid data
 
         GeoTiffReader reader = null;
+        GridCoverage2D geoidCoverage = null;
         try {
             reader = new GeoTiffReader(geoidFile);
-            GridCoverage2D geoidCoverage = reader.read(null);
+            geoidCoverage = reader.read(null);
 
             //GridCoverage2D geoidCoverage = readGeoTiff(geoidFile);
             CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
             try {
+                final GridCoverage2D geoidCoverageRef = geoidCoverage;
                 log.info("[Pre][Standardization][with Geoid] Splitting source raster into tiles... {}", outputPath.getName());
-                List<RasterInfo> splitTiles = split(source, globalOptions.getMaxRasterSize());
-                log.info("[Pre][Standardization][with Geoid] Splitting completed. Total tiles: {}", splitTiles.size());
-
-                int total = splitTiles.size();
+                int total = countTiles(source, globalOptions.getMaxRasterSize());
+                log.info("[Pre][Standardization][with Geoid] Splitting completed. Total tiles: {}", total);
                 AtomicInteger count = new AtomicInteger(0);
 
-                splitTiles.forEach(tile -> {
-                    log.info("[Pre][Standardization][with Geoid][{}/{}] Resampling tile {}", count.incrementAndGet(), total, tile.getName());
+                processTiles(source, globalOptions.getMaxRasterSize(), (tileName, tileEnvelope) -> {
+                    int current = count.incrementAndGet();
+                    log.info("[Pre][Standardization][with Geoid][{}/{}] Resampling tile {}", current, total, tileName);
 
-                    GridCoverage2D gridCoverage = tile.getGridCoverage2D();
-                    CoordinateReferenceSystem sourceCRS = gridCoverage.getCoordinateReferenceSystem();
-                    GridCoverage2D resampledGridCoverage2D;
-                    if (isSameCRS(sourceCRS, targetCRS)) {
-                        resampledGridCoverage2D = gridCoverage;
-                    } else {
-                        resampledGridCoverage2D = resample(gridCoverage, targetCRS);
+                    GridCoverage2D croppedTile = crop(source, tileEnvelope);
+                    GridCoverage2D resampledTile = croppedTile;
+                    GridCoverage2D geoidAligned = null;
+                    GridCoverage2D ellipsoidalDem = null;
+                    try {
+                        CoordinateReferenceSystem sourceCRS = croppedTile.getCoordinateReferenceSystem();
+                        if (!isSameCRS(sourceCRS, targetCRS)) {
+                            resampledTile = resample(croppedTile, targetCRS);
+                        }
+
+                        GridGeometry2D demGrid = resampledTile.getGridGeometry();
+                        geoidAligned = resampleGeoid(geoidCoverageRef, demGrid, demGrid.getCoordinateReferenceSystem());
+                        ellipsoidalDem = addGeoidPreserveDemNoData(resampledTile, geoidAligned);
+
+                        String uniqueTileName = tileName + UUID.randomUUID();
+                        File tileFile = new File(outputPath, uniqueTileName + ".tif");
+                        writeGeotiff(ellipsoidalDem, tileFile);
+                    } finally {
+                        disposeCoverage(ellipsoidalDem);
+                        disposeCoverage(geoidAligned);
+                        disposeCoverage(resampledTile);
+                        if (resampledTile != croppedTile) {
+                            disposeCoverage(croppedTile);
+                        }
                     }
-                    tile.setGridCoverage2D(resampledGridCoverage2D);
-
-                    GridGeometry2D demGrid = resampledGridCoverage2D.getGridGeometry();
-                    GridCoverage2D geoidAligned = resampleGeoid(geoidCoverage, demGrid, demGrid.getCoordinateReferenceSystem());
-                    GridCoverage2D ellipsoidalDem = addGeoidPreserveDemNoData(resampledGridCoverage2D, geoidAligned);
-                    tile.setGridCoverage2D(ellipsoidalDem);
-
-                    GridCoverage2D reprojectedTile = tile.getGridCoverage2D();
-                    String uniqueTileName = tile.getName() + UUID.randomUUID();
-                    File tileFile = new File(outputPath, uniqueTileName + ".tif");
-                    writeGeotiff(reprojectedTile, tileFile);
-
-                    reprojectedTile.dispose(true);
-                    geoidAligned.dispose(true);
-                    ellipsoidalDem.dispose(true);
-                    gridCoverage.dispose(true);
-                    tile.getGridCoverage2D().dispose(true);
-                    tile.setGridCoverage2D(null);
-                    log.info("[Pre][Standardization][with Geoid][{}/{}] Completed tile {}", count.get(), total, tile.getName());
+                    log.info("[Pre][Standardization][with Geoid][{}/{}] Completed tile {}", current, total, tileName);
                 });
             } catch (TransformException | IOException e) {
                 throw new RuntimeException(e);
@@ -143,6 +145,7 @@ public class RasterStandardizer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
+            disposeCoverage(geoidCoverage);
             if (reader != null) {
                 try {
                     reader.dispose();
@@ -159,13 +162,16 @@ public class RasterStandardizer {
                 log.info("[Raster][I/O] File already exists and not Empty : {}", outputFile.getAbsolutePath());
                 return;
             }
-            FileOutputStream outputStream = new FileOutputStream(outputFile);
-            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
-            GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
-            writer.write(coverage, null);
-            outputStream.flush();
-            outputStream.close();
-            writer.dispose();
+            try (FileOutputStream outputStream = new FileOutputStream(outputFile);
+                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream)) {
+                GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
+                try {
+                    writer.write(coverage, null);
+                    outputStream.flush();
+                } finally {
+                    writer.dispose();
+                }
+            }
         } catch (IllegalArgumentException e) {
             if (e.getMessage() != null && e.getMessage().contains("Unable to map projection")) {
                 log.warn("[Raster][I/O] IAU CRS cannot be encoded in GeoTIFF. Writing with WGS84 carrier CRS: {}",
@@ -197,14 +203,18 @@ public class RasterStandardizer {
                 carrierEnvelope
             );
 
-            FileOutputStream outputStream = new FileOutputStream(outputFile);
-            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
-            GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
-            writer.write(carrierCoverage, null);
-            outputStream.flush();
-            outputStream.close();
-            writer.dispose();
-            carrierCoverage.dispose(true);
+            try (FileOutputStream outputStream = new FileOutputStream(outputFile);
+                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream)) {
+                GeoTiffWriter writer = new GeoTiffWriter(bufferedOutputStream);
+                try {
+                    writer.write(carrierCoverage, null);
+                    outputStream.flush();
+                } finally {
+                    writer.dispose();
+                }
+            } finally {
+                carrierCoverage.dispose(true);
+            }
         } catch (Exception e) {
             log.error("Failed to write GeoTiff with carrier CRS: {}", outputFile.getAbsolutePath(), e);
         }
@@ -228,15 +238,18 @@ public class RasterStandardizer {
         return new RasterInfo(tileName, gridCoverage2D);
     }
 
+    public int countTiles(GridCoverage2D coverage, int tileSize) throws TransformException, IOException {
+        AtomicInteger count = new AtomicInteger(0);
+        processTiles(coverage, tileSize, (tileName, tileEnvelope) -> count.incrementAndGet());
+        return count.get();
+    }
+
     /**
      * Split GridCoverage2D into tiles with tileSize
      * @param coverage source GridCoverage2D
      * @param tileSize tile size
-     * @return tiles
      */
-    public List<RasterInfo> split(GridCoverage2D coverage, int tileSize) throws TransformException, IOException {
-        List<RasterInfo> tiles = new ArrayList<>();
-
+    public void processTiles(GridCoverage2D coverage, int tileSize, TileProcessor processor) throws TransformException, IOException {
         GridGeometry2D gridGeometry = coverage.getGridGeometry();
         GridEnvelope gridRange = gridGeometry.getGridRange();
         int width = gridRange.getSpan(0);
@@ -252,10 +265,10 @@ public class RasterStandardizer {
 
                 // when the tile is not at the edge, add margin
                 if ((x + tileSize) < width) {
-                    xMax += marginX;
+                    xMax = Math.min(xMax + marginX, width);
                 }
                 if ((y + tileSize) < height) {
-                    yMax += marginY;
+                    yMax = Math.min(yMax + marginY, height);
                 }
 
                 int xAux = x;
@@ -268,14 +281,14 @@ public class RasterStandardizer {
                     yAux -= marginY;
                 }
 
-                ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(gridGeometry.gridToWorld(new GridEnvelope2D(xAux, yAux, xMax - x, yMax - y)), coverage.getCoordinateReferenceSystem());
-                GridCoverage2D gridCoverage2D = crop(coverage, tileEnvelope);
-                String tileName = gridCoverage2D.getName() + "-" + x / tileSize + "-" + y / tileSize;
-                RasterInfo tile = new RasterInfo(tileName, gridCoverage2D);
-                tiles.add(tile);
+                ReferencedEnvelope tileEnvelope = new ReferencedEnvelope(
+                        gridGeometry.gridToWorld(new GridEnvelope2D(xAux, yAux, xMax - xAux, yMax - yAux)),
+                        coverage.getCoordinateReferenceSystem()
+                );
+                String tileName = coverage.getName() + "-" + x / tileSize + "-" + y / tileSize;
+                processor.process(tileName, tileEnvelope);
             }
         }
-        return tiles;
     }
 
     /**
@@ -433,6 +446,12 @@ public class RasterStandardizer {
         geoRaster = null;
 
         return new GridCoverageFactory().create(dem.getName(), outRaster, dem.getEnvelope());
+    }
+
+    private void disposeCoverage(GridCoverage2D coverage) {
+        if (coverage != null) {
+            coverage.dispose(true);
+        }
     }
 
     /**
