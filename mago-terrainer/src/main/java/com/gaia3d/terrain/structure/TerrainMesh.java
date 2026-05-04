@@ -575,16 +575,20 @@ public class TerrainMesh {
 
     public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager,
                               List<TerrainTriangle> resultNewTriangles,
-                              List<TerrainHalfEdge> listHalfEdges, boolean isModify) throws TransformException, IOException {
+                              List<TerrainHalfEdge> listHalfEdges, boolean isModify, int[] stack) throws TransformException, IOException {
         // A triangle is split by the longest edge, so
         // the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
+        if(stack == null){
+            stack = new int[1];
+            stack[0] = 0;
+        }
         splittingTriangles.add(triangle.getId());
         try {
         byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
         listHalfEdges.clear();
-        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify);
+        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify, stack);
         if (adjacentTriangle == null) {
             // the triangle is border triangle, so is splittable
             listHalfEdges.clear();
@@ -1004,11 +1008,18 @@ public class TerrainMesh {
 
     public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle,
                                                          TerrainElevationDataManager terrainElevationDataManager,
-                                                         List<TerrainHalfEdge> listHalfEdges, boolean isModify) throws TransformException, IOException {
+                                                         List<TerrainHalfEdge> listHalfEdges, boolean isModify, int[] stack) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
+
+        if(stack == null){
+            stack = new int[1];
+            stack[0] = 0;
+        }
+
+        stack[0] += 1;
 
         listHalfEdges.clear();
         TerrainHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge(listHalfEdges);
@@ -1050,15 +1061,29 @@ public class TerrainMesh {
             return null;
         }
 
+        if(longestHEdgeOfAdjacentTriangle.getSquaredLength() <= vertexCoincidentError * vertexCoincidentError){
+            log.warn("Adjacent triangle {} has a longest half-edge with length <= vertexCoincidentError. " +
+                     "Marking as deleted and treating target triangle as border triangle.",
+                     adjacentTriangle.getId());
+            adjacentTriangle.setObjectStatus(TerrainObjectStatus.DELETED);
+            return null;
+        }
+
         if (longestHEdgeOfAdjacentTriangle.getTwin() == longestHEdge) {
             return adjacentTriangle;
         } else if (longestHEdgeOfAdjacentTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError)) {
             // here is error
         } else {
+            if(stack[0] > 40){
+                log.error("Stack overflow risk: excessive recursion depth when searching for splittable adjacent triangle. " +
+                          "Current stack depth: {}. Aborting search to prevent crash.",
+                          stack[0]);
+                return null;
+            }
             // first split the adjacentTriangle;
             terrainElevationDataManager.getTrianglesArray().clear();
             listHalfEdges.clear();
-            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges, isModify);
+            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges, isModify, stack);
             listHalfEdges.clear();
 
             // now search the new adjacentTriangle for the targetTriangle

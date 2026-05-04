@@ -200,12 +200,21 @@ public class TerrainHalfEdge {
     }
 
     public boolean isHalfEdgePossibleTwin(TerrainHalfEdge halfEdge, double error) {
+        if(halfEdge == null || halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+            return false;
+        }
+
         // 2 halfEdges is possible to be twins if : startPoint_A is coincident with endPoint_B & startPoint_B is coincident with endPoint_A
         TerrainVertex startPoint_A = this.getStartVertex();
         TerrainVertex endPoint_A = this.getEndVertex();
 
         TerrainVertex startPoint_B = halfEdge.getStartVertex();
         TerrainVertex endPoint_B = halfEdge.getEndVertex();
+
+        if(startPoint_A == null || endPoint_A == null || startPoint_B == null || endPoint_B == null) {
+            log.error("Error: startPoint_A, endPoint_A, startPoint_B or endPoint_B is null");
+            return false;
+        }
 
         // First do a bounding box check
         GaiaRectangle boundingRect_A = this.getBoundingRectangle();

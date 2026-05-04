@@ -12,7 +12,8 @@ public enum CommandOptions {
     LEAVE_TEMP("leaveTemp", "lt", false, "Leave temporary files for debugging"),
     JSON("json", "j", false, "Generate layer.json from terrain data"),
     CONTINUOUS("continue", "c", false, "Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails."),
-
+    MODIFY("modify", "m", false, "Modify terrain. This option can be used when need modify some terrain region."),
+    SKIP_STANDARDIZATION_RESIZE("skipStandardizationResize", "ssr", false, "Skip standardization and resizing process. This option can be used when the input data is already standardized and resized."),
     // Path options
     INPUT("input", "i", true, "[Required] Input directory path"),
     OUTPUT("output", "o", true, "[Required] Output directory path"),

@@ -223,7 +223,7 @@ public class TileWgs84 {
             log.debug("[RefineMesh] FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH");
             this.manager.getTriangleList().clear();
             this.listHalfEdges.clear();
-            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModifyProcess);
+            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModifyProcess, null);
             this.listHalfEdges.clear();
 
             if (!this.manager.getTriangleList().isEmpty()) {

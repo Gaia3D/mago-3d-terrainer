@@ -171,6 +171,11 @@ public class TerrainTriangle {
     public TerrainHalfEdge getLongestHalfEdge(List<TerrainHalfEdge> listHalfEdges) {
         // Note : the length of the halfEdges meaning only the length of the XY plane
         listHalfEdges.clear();
+        if(this.halfEdge == null) {
+            log.warn("Triangle {} has no half-edge assigned. This may indicate a data inconsistency or an issue in the terrain generation process. " +
+                     "TileIndices: {}", this.id, this.ownerTileIndices != null ? this.ownerTileIndices.getString() : "null");
+            return null;
+        }
         this.halfEdge.getHalfEdgesLoop(listHalfEdges);
         TerrainHalfEdge longestHalfEdge = null;
         double maxLength = 0.0;

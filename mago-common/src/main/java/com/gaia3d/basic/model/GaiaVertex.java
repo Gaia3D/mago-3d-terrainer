@@ -1,5 +1,7 @@
 package com.gaia3d.basic.model;
 
+import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.basic.geometry.octree.GeometryContent;
 import com.gaia3d.basic.model.structure.VertexStructure;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,7 +20,7 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class GaiaVertex extends VertexStructure implements Serializable {
+public class GaiaVertex extends VertexStructure implements Serializable, GeometryContent {
     private Vector3d position;
     private Vector3d normal;
     private Vector2d texcoords;
@@ -67,8 +69,9 @@ public class GaiaVertex extends VertexStructure implements Serializable {
 
         // 2nd, check texCoord.
         if (checkTexCoord && texcoords != null && vertex2.texcoords != null) {
+            double texError = 1e-8;
             double texCoordDist = texcoords.distance(vertex2.texcoords);
-            if (texCoordDist > error) {
+            if (texCoordDist > texError) {
                 return false;
             }
         }
@@ -95,5 +98,17 @@ public class GaiaVertex extends VertexStructure implements Serializable {
             return batchId == vertex2.batchId;
         }
         return true;
+    }
+
+    @Override
+    public GaiaBoundingBox getBoundingBox() {
+        GaiaBoundingBox bbox = new GaiaBoundingBox();
+        bbox.addPoint(position);
+        return bbox;
+    }
+
+    @Override
+    public Vector3d getCenterPoint() {
+        return position;
     }
 }

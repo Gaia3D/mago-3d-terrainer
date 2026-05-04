@@ -198,18 +198,6 @@ public class HalfEdgeMesh implements Serializable {
         }
     }
 
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgePrimitive primitive : primitives) {
-            primitive.decimate(decimateParameters);
-        }
-    }
-
-    public void decimateInteriorOfBox(DecimateParameters decimateParameters, GaiaBoundingBox boundingBox) {
-        for (HalfEdgePrimitive primitive : primitives) {
-            primitive.decimateInteriorOfBox(decimateParameters, boundingBox);
-        }
-    }
-
     public void splitFacesByBestObliqueCameraDirectionToProject() {
         for (HalfEdgePrimitive primitive : primitives) {
             primitive.splitFacesByBestObliqueCameraDirectionToProject();
@@ -277,5 +265,14 @@ public class HalfEdgeMesh implements Serializable {
         for (HalfEdgePrimitive primitive : primitives) {
             primitive.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
         }
+    }
+
+    public boolean TEST_checkTexCoords() {
+        for (HalfEdgePrimitive primitive : primitives) {
+            if (!primitive.TEST_checkTexCoords()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

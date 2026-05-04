@@ -1,6 +1,5 @@
 package com.gaia3d.basic.geometry.modifier.topology;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +9,7 @@ import lombok.Setter;
 @Builder
 public class GaiaWeldOptions {
     @Builder.Default
-    private double error = 0.0001;
+    private double error = 1e-4;
     @Builder.Default
     private boolean checkTexCoord = true;
     @Builder.Default
@@ -19,6 +18,8 @@ public class GaiaWeldOptions {
     private boolean checkColor = true;
     @Builder.Default
     private boolean checkBatchId = false;
+    @Builder.Default
+    private double texCoordError = 1e-8;
 
     /*public GaiaWeldOptions(double error, boolean checkTexCoord, boolean checkNormal, boolean checkColor, boolean checkBatchId) {
         this.error = error;
