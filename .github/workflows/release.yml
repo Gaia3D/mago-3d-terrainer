@@ -26,8 +26,8 @@ jobs:
       - name: Build
         run: ./gradlew clean build
 
-      - name: Publish
-        run: ./gradlew publish
+      - name: ReleaseDocker
+        run: ./gradlew releaseDocker
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIB_TO_AUTH_USERNAME: ${{ secrets.DOCKER_USERNAME }}

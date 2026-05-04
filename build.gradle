@@ -92,7 +92,7 @@ project(':mago-terrainer') {
     }
 }
 
-tasks.register('publish') {
+tasks.register('releaseDocker') {
     dependsOn(':mago-terrainer:javadoc')
     dependsOn(':mago-terrainer:jib')
 }
