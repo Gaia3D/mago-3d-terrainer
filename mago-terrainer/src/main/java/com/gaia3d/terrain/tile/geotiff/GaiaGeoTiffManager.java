@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,12 +50,25 @@ import javax.imageio.stream.ImageInputStream;
 public class GaiaGeoTiffManager {
     private final String PROJECTION_CRS = "EPSG:3857";
     private final double defaultNoDataValue = GlobalOptions.getInstance().getNoDataValue();
+    private static final long MIN_RASTER_CACHE_BYTES = 1024L * 1024L * 1024L;
+    private static final long MAX_RASTER_CACHE_BYTES = 6L * 1024L * 1024L * 1024L;
+    private static final double RASTER_CACHE_HEAP_RATIO = 0.5d;
     private int[] pixel = new int[1];
     private double[] originalUpperLeftCorner = new double[2];
     private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
     private Map<String, Vector2i> mapPathGridCoverage2dSize = new HashMap<>();
     private Map<String, String> mapGeoTiffToGeoTiff4326 = new HashMap<>();
     private List<String> pathList = new ArrayList<>(); // used to delete the oldest coverage
+    private Map<String, RasterCacheEntry> mapPathRasterCache = new LinkedHashMap<>(16, 0.75f, true);
+    private long maxRasterCacheBytes = computeRasterCacheBudgetBytes();
+    private long currentRasterCacheBytes = 0L;
+
+    {
+        log.info("[Raster][LRU] Raster cache budget set to {} MB (maxHeap={} MB, ratio={})",
+            maxRasterCacheBytes / (1024 * 1024),
+            Runtime.getRuntime().maxMemory() / (1024 * 1024),
+            RASTER_CACHE_HEAP_RATIO);
+    }
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
         if (mapPathGridCoverage2d.containsKey(geoTiffFilePath)) {
@@ -119,11 +133,28 @@ public class GaiaGeoTiffManager {
         return mapPathGridCoverage2dSize.get(geoTiffFilePath);
     }
 
+    public boolean hasCachedRaster(String geoTiffFilePath) {
+        return mapPathRasterCache.containsKey(geoTiffFilePath);
+    }
+
+    public Raster loadGeoTiffRaster(String geoTiffFilePath) {
+        RasterCacheEntry cacheEntry = mapPathRasterCache.get(geoTiffFilePath);
+        if (cacheEntry != null) {
+            return cacheEntry.raster();
+        }
+
+        GridCoverage2D coverage = loadGeoTiffGridCoverage2D(geoTiffFilePath);
+        Raster raster = coverage.getRenderedImage().getData();
+        cacheRaster(geoTiffFilePath, raster);
+        return raster;
+    }
+
     public void deleteObjects() {
         for (GridCoverage2D coverage : mapPathGridCoverage2d.values()) {
             coverage.dispose(true);
         }
         mapPathGridCoverage2d.clear();
+        clearRasterCache();
 
     }
 
@@ -134,6 +165,7 @@ public class GaiaGeoTiffManager {
         mapPathGridCoverage2d.clear();
         mapPathGridCoverage2dSize.clear();
         pathList.clear();
+        clearRasterCache();
     }
 
     public GridCoverage2D getResizedCoverage2D(String geoTiffFilePath, GridCoverage2D originalCoverage, double desiredPixelSizeXinMeters, double desiredPixelSizeYinMeters) throws FactoryException {
@@ -216,15 +248,12 @@ public class GaiaGeoTiffManager {
         }
 
         Raster sourceRaster = renderedImage.getData();
-        WritableRaster materializedRaster = sourceRaster.createCompatibleWritableRaster();
-        materializedRaster.setRect(sourceRaster);
+        WritableRaster materializedRaster = createZeroBasedWritableRaster(sourceRaster);
         return new GridCoverageFactory().create(coverage.getName(), materializedRaster, coverage.getEnvelope());
     }
 
     private GeneralParameterValue[] createWriteParameters(GridCoverage2D coverage) {
         GeoTiffWriteParams writeParams = new GeoTiffWriteParams();
-        writeParams.setCompressionMode(GeoTiffWriteParams.MODE_EXPLICIT);
-        writeParams.setCompressionType("Deflate");
         writeParams.setTilingMode(GeoTiffWriteParams.MODE_EXPLICIT);
 
         RenderedImage renderedImage = coverage.getRenderedImage();
@@ -293,4 +322,62 @@ public class GaiaGeoTiffManager {
         }
         return true;
     }
+
+    private WritableRaster createZeroBasedWritableRaster(Raster sourceRaster) {
+        Raster translatedRaster = sourceRaster.createTranslatedChild(0, 0);
+        WritableRaster materializedRaster = translatedRaster.createCompatibleWritableRaster(translatedRaster.getWidth(), translatedRaster.getHeight());
+        materializedRaster.setRect(translatedRaster);
+        return materializedRaster;
+    }
+
+    private void cacheRaster(String geoTiffFilePath, Raster raster) {
+        long rasterBytes = estimateRasterBytes(raster);
+        if (rasterBytes <= 0L) {
+            return;
+        }
+
+        while (!mapPathRasterCache.isEmpty() && currentRasterCacheBytes + rasterBytes > maxRasterCacheBytes) {
+            String eldestPath = mapPathRasterCache.keySet().iterator().next();
+            RasterCacheEntry removed = mapPathRasterCache.remove(eldestPath);
+            if (removed != null) {
+                currentRasterCacheBytes -= removed.bytes();
+                log.debug("[Raster][LRU] Evicted cached raster: {}", eldestPath);
+            }
+        }
+
+        mapPathRasterCache.put(geoTiffFilePath, new RasterCacheEntry(raster, rasterBytes));
+        currentRasterCacheBytes += rasterBytes;
+        log.debug("[Raster][LRU] Cached raster: {} (~{} MB, cache usage {} MB)",
+            geoTiffFilePath,
+            rasterBytes / (1024 * 1024),
+            currentRasterCacheBytes / (1024 * 1024));
+    }
+
+    private long estimateRasterBytes(Raster raster) {
+        if (raster == null) {
+            return 0L;
+        }
+        int dataType = raster.getSampleModel().getDataType();
+        int bytesPerSample = switch (dataType) {
+            case java.awt.image.DataBuffer.TYPE_BYTE -> 1;
+            case java.awt.image.DataBuffer.TYPE_SHORT, java.awt.image.DataBuffer.TYPE_USHORT -> 2;
+            case java.awt.image.DataBuffer.TYPE_INT, java.awt.image.DataBuffer.TYPE_FLOAT -> 4;
+            case java.awt.image.DataBuffer.TYPE_DOUBLE -> 8;
+            default -> 4;
+        };
+        return (long) raster.getWidth() * raster.getHeight() * raster.getNumBands() * bytesPerSample;
+    }
+
+    private void clearRasterCache() {
+        mapPathRasterCache.clear();
+        currentRasterCacheBytes = 0L;
+    }
+
+    private long computeRasterCacheBudgetBytes() {
+        long maxHeapBytes = Runtime.getRuntime().maxMemory();
+        long desiredBytes = (long) (maxHeapBytes * RASTER_CACHE_HEAP_RATIO);
+        return Math.min(MAX_RASTER_CACHE_BYTES, Math.max(MIN_RASTER_CACHE_BYTES, desiredBytes));
+    }
+
+    private record RasterCacheEntry(Raster raster, long bytes) {}
 }

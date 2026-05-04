@@ -519,8 +519,7 @@ public class RasterStandardizer {
         }
 
         Raster sourceRaster = renderedImage.getData();
-        WritableRaster materializedRaster = sourceRaster.createCompatibleWritableRaster();
-        materializedRaster.setRect(sourceRaster);
+        WritableRaster materializedRaster = createZeroBasedWritableRaster(sourceRaster);
         return new GridCoverageFactory().create(coverage.getName(), materializedRaster, coverage.getEnvelope());
     }
 
@@ -543,9 +542,15 @@ public class RasterStandardizer {
 
     private GridCoverage2D extractTileCoverage(GridCoverage2D sourceCoverage, GridEnvelope2D gridEnvelope, ReferencedEnvelope tileEnvelope) {
         Raster sourceRaster = sourceCoverage.getRenderedImage().getData(gridEnvelope);
-        WritableRaster materializedRaster = sourceRaster.createCompatibleWritableRaster();
-        materializedRaster.setRect(sourceRaster);
+        WritableRaster materializedRaster = createZeroBasedWritableRaster(sourceRaster);
         return new GridCoverageFactory().create(sourceCoverage.getName(), materializedRaster, tileEnvelope);
+    }
+
+    private WritableRaster createZeroBasedWritableRaster(Raster sourceRaster) {
+        Raster translatedRaster = sourceRaster.createTranslatedChild(0, 0);
+        WritableRaster materializedRaster = translatedRaster.createCompatibleWritableRaster(translatedRaster.getWidth(), translatedRaster.getHeight());
+        materializedRaster.setRect(translatedRaster);
+        return materializedRaster;
     }
 
     private File createOutputTileFile(File sourceOutputDirectory, String tileName, int tileIndex) {

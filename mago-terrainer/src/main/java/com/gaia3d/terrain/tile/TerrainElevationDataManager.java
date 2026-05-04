@@ -65,6 +65,9 @@ public class TerrainElevationDataManager {
     }
 
     public GaiaGeoTiffManager getGaiaGeoTiffManager() {
+        if (tileWgs84Manager != null) {
+            return tileWgs84Manager.getGaiaGeoTiffManager();
+        }
         if (myGaiaGeoTiffManager == null) {
             myGaiaGeoTiffManager = new GaiaGeoTiffManager();
         }
@@ -172,10 +175,10 @@ public class TerrainElevationDataManager {
     public void deleteObjects() {
         this.deleteTileRaster();
         this.deleteCoverage();
-        if (myGaiaGeoTiffManager != null) {
+        if (myGaiaGeoTiffManager != null && tileWgs84Manager == null) {
             myGaiaGeoTiffManager.deleteObjects();
-            myGaiaGeoTiffManager = null;
         }
+        myGaiaGeoTiffManager = null;
 
         if (rootTerrainElevationDataQuadTree != null) {
             rootTerrainElevationDataQuadTree.deleteObjects();
@@ -344,10 +347,10 @@ public class TerrainElevationDataManager {
     }
 
     public void deleteGeoTiffManager() {
-        if (myGaiaGeoTiffManager != null) {
+        if (myGaiaGeoTiffManager != null && tileWgs84Manager == null) {
             myGaiaGeoTiffManager.clear();
-            myGaiaGeoTiffManager = null;
         }
+        myGaiaGeoTiffManager = null;
     }
 
     public void preloadTerrainElevationRasters(List<TerrainElevationData> terrainElevDataArray) {

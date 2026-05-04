@@ -301,13 +301,20 @@ public class TerrainElevationData {
         }
 
         long startNs = System.nanoTime();
-        this.raster = renderedImage.getData();
+        boolean wasCached = false;
+        if (this.terrainElevDataManager != null && this.geotiffFilePath != null && !this.geotiffFilePath.isBlank()) {
+            GaiaGeoTiffManager gaiaGeoTiffManager = this.terrainElevDataManager.getGaiaGeoTiffManager();
+            wasCached = gaiaGeoTiffManager.hasCachedRaster(this.geotiffFilePath);
+            this.raster = gaiaGeoTiffManager.loadGeoTiffRaster(this.geotiffFilePath);
+        } else {
+            this.raster = renderedImage.getData();
+        }
         long elapsedMs = (System.nanoTime() - startNs) / 1_000_000L;
         initializeRasterAccessor();
         if (!rasterInitializationLogged) {
             rasterInitializationLogged = true;
-            log.info("[Raster][SampleInit] Loaded raster for {} in {} ms ({}x{})",
-                geotiffFilePath, elapsedMs, rasterWidth, rasterHeight);
+            log.info("[Raster][SampleInit] Loaded raster for {} in {} ms ({}x{}, cached={})",
+                geotiffFilePath, elapsedMs, rasterWidth, rasterHeight, wasCached);
         }
         this.coverage = null;
         return true;
