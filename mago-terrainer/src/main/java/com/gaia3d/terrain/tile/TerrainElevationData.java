@@ -54,6 +54,8 @@ public class TerrainElevationData {
     private int rasterHeight = -1;
     private boolean hasCoverageNoData = false;
     private double coverageNoDataValue = Double.NaN;
+    private double inverseLongitudeRange = Double.NaN;
+    private double inverseLatitudeRange = Double.NaN;
     private boolean rasterInitializationLogged = false;
     private boolean useDirectRasterAccess = false;
     private int rasterDataKind = 0;
@@ -96,6 +98,8 @@ public class TerrainElevationData {
         this.rasterSampleModelTranslateY = 0;
         this.hasCoverageNoData = false;
         this.coverageNoDataValue = Double.NaN;
+        this.inverseLongitudeRange = Double.NaN;
+        this.inverseLatitudeRange = Double.NaN;
         this.rasterInitializationLogged = false;
         this.useDirectRasterAccess = false;
         this.rasterDataKind = RASTER_KIND_GENERIC;
@@ -189,8 +193,9 @@ public class TerrainElevationData {
         }
         Vector2i size = gridCoverage2DSize;
 
-        double unitaryX = (lonDeg - this.geographicExtension.getMinLongitudeDeg()) / this.geographicExtension.getLongitudeRangeDegree();
-        double unitaryY = 1.0 - (latDeg - this.geographicExtension.getMinLatitudeDeg()) / this.geographicExtension.getLatitudeRangeDegree();
+        ensureGeographicScaleInitialized();
+        double unitaryX = (lonDeg - this.geographicExtension.getMinLongitudeDeg()) * this.inverseLongitudeRange;
+        double unitaryY = 1.0 - (latDeg - this.geographicExtension.getMinLatitudeDeg()) * this.inverseLatitudeRange;
 
         int geoTiffRasterHeight = size.y;
         int geoTiffRasterWidth = size.x;
@@ -251,10 +256,10 @@ public class TerrainElevationData {
             rowNext = geoTiffHeight - 1;
         }
 
-        double value00 = readGridValueDirect(column, row);
-        double value01 = readGridValueDirect(column, rowNext);
-        double value10 = readGridValueDirect(columnNext, row);
-        double value11 = readGridValueDirect(columnNext, rowNext);
+        double value00 = readGridValueFast(column, row);
+        double value01 = readGridValueFast(column, rowNext);
+        double value10 = readGridValueFast(columnNext, row);
+        double value11 = readGridValueFast(columnNext, rowNext);
 
         // Ignore noDataValue samples.
         double noDataValue = globalOptions.getNoDataValue();
@@ -271,6 +276,17 @@ public class TerrainElevationData {
         double value1 = value10 * (1.0 - factorY) + value11 * factorY;
 
         return value0 + factorX * (value1 - value0);
+    }
+
+    private void ensureGeographicScaleInitialized() {
+        if (!Double.isNaN(this.inverseLongitudeRange) && !Double.isNaN(this.inverseLatitudeRange)) {
+            return;
+        }
+
+        double longitudeRange = this.geographicExtension.getLongitudeRangeDegree();
+        double latitudeRange = this.geographicExtension.getLatitudeRangeDegree();
+        this.inverseLongitudeRange = longitudeRange != 0.0 ? 1.0 / longitudeRange : 0.0;
+        this.inverseLatitudeRange = latitudeRange != 0.0 ? 1.0 / latitudeRange : 0.0;
     }
 
     private boolean ensureRasterInitialized() {
@@ -395,6 +411,17 @@ public class TerrainElevationData {
         }
 
         double value = readSample(x, y);
+        if (Double.isNaN(value)) {
+            return globalOptions.getNoDataValue();
+        }
+        if (hasCoverageNoData && value == coverageNoDataValue) {
+            return globalOptions.getNoDataValue();
+        }
+        return value;
+    }
+
+    private double readGridValueFast(int x, int y) {
+        double value = useDirectRasterAccess ? readSampleUnchecked(x, y) : raster.getSampleDouble(x, y, 0);
         if (Double.isNaN(value)) {
             return globalOptions.getNoDataValue();
         }

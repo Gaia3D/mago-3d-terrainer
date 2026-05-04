@@ -947,7 +947,7 @@ public class TileMatrix {
         double equatorialRadius = GlobalOptions.getInstance().getCelestialBody().getEquatorialRadius();
         double bboxMaxLengthInMeters = Math.toRadians(bboxMaxLength) * equatorialRadius;
 
-        int currL = triangle.getOwnerTileIndices().getL();
+        int currL = tileIndices.getL();
 
         double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(currL);
         double scale = bboxMaxLengthInMeters / tileSize;
@@ -962,10 +962,8 @@ public class TileMatrix {
 
         // if the triangle size is very small, then do not refine**********************
         // Calculate the maxLength of the triangle in meters
-        this.listVertices.clear();
-        this.listHalfEdges.clear();
-        double triangleMaxLengthMeters = triangle.getTriangleMaxSizeInMeters(this.listVertices, this.listHalfEdges);
-        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
+        double triangleMaxLengthMeters = Math.toRadians(Math.max(bboxTriangle.getLengthX(), bboxTriangle.getLengthY())) * equatorialRadius;
+        double minTriangleSizeForDepth = this.manager.getMinTriangleSizeForTileDepth(currL);
 
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.setRefineChecked(true);
@@ -973,7 +971,7 @@ public class TileMatrix {
             return false;
         }
 
-        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(triangle.getOwnerTileIndices().getL());
+        double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(currL);
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
             log.debug("Filtered by Max Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # maxTriangleSizeForDepth : " + maxTriangleSizeForDepth);
             return true;
@@ -1070,6 +1068,11 @@ public class TileMatrix {
         int deltaXAC = rasterTriangleP1.x - rasterTriangleP3.x;
 
         double denominator = deltaYBC * deltaXAC + deltaXCB * deltaYAC;
+        if (denominator == 0.0) {
+            triangle.setRefineChecked(true);
+            return false;
+        }
+        double inverseDenominator = 1.0 / denominator;
 
         double startLonDeg = tileRaster.getLonDeg(startCol); // here contains the semiDeltaLonDeg, for the pixel center
         double startLatDeg = tileRaster.getLatDeg(startRow); // here contains the semiDeltaLatDeg, for the pixel center
@@ -1087,6 +1090,7 @@ public class TileMatrix {
         for (int col = startCol; col <= endCol; col++) {
             rowAux = 0;
             posX = startLonDeg + colAux * deltaLonDeg;
+            int colOffsetFromP3 = col - rasterTriangleP3.x;
             for (int row = startRow; row <= endRow; row++) {
 
                 // skip the 4 corners of the triangle's bounding rectangle
@@ -1106,12 +1110,13 @@ public class TileMatrix {
 
                 // check if the pixel (col, row) intersects the rasterTriangle
                 intersects = false;
-                double alpha = (deltaYBC * (col - rasterTriangleP3.x) + deltaXCB * (row - rasterTriangleP3.y)) / denominator;
+                int rowOffsetFromP3 = row - rasterTriangleP3.y;
+                double alpha = (deltaYBC * colOffsetFromP3 + deltaXCB * rowOffsetFromP3) * inverseDenominator;
                 if (alpha < 0 || alpha > 1) {
                     rowAux++;
                     continue;
                 }
-                double beta = (deltaYCA * (col - rasterTriangleP3.x) + deltaXAC * (row - rasterTriangleP3.y)) / denominator;
+                double beta = (deltaYCA * colOffsetFromP3 + deltaXAC * rowOffsetFromP3) * inverseDenominator;
                 if (beta < 0 || beta > 1) {
                     rowAux++;
                     continue;
