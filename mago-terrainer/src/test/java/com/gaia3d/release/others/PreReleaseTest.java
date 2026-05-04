@@ -229,10 +229,24 @@ public class PreReleaseTest {
     }
 
     @Test
+    void resolutionTest5MFast() {
+        String name = "test_jeju.tif";
+        File inputPath = MagoTestConfig.getInputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name.substring(0, name.lastIndexOf(".")) + "_fast");
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-max", "12",
+                "-calculateNormals",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
     void resolutionTest5M() {
         String name = "test_jeju.tif";
         File inputPath = MagoTestConfig.getInputPath(name);
-        File outputPath = MagoTestConfig.getOutputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name.substring(0, name.lastIndexOf(".")));
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
@@ -245,7 +259,7 @@ public class PreReleaseTest {
     void resolutionTest1M() {
         String name = "test_jeju_1m.tif";
         File inputPath = MagoTestConfig.getInputPath(name);
-        File outputPath = MagoTestConfig.getOutputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name.substring(0, name.lastIndexOf(".")));
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
@@ -258,7 +272,7 @@ public class PreReleaseTest {
     void resolutionTest10CM() {
         String name = "test_jeju_10cm.tif";
         File inputPath = MagoTestConfig.getInputPath(name);
-        File outputPath = MagoTestConfig.getOutputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name.substring(0, name.lastIndexOf(".")));
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),

@@ -1215,19 +1215,15 @@ public class TileWgs84Manager {
 
         // now make the list of standardized geotiff files (20250311 jinho seongdo)
         File tempFolder = new File(globalOptions.getStandardizeTempPath());
-        File[] children = tempFolder.listFiles();
-        if (children == null || children.length == 0) {
+        List<String> standardizedGeoTiffPaths = new ArrayList<>();
+        FileUtils.getFilePathsByExtension(tempFolder.getAbsolutePath(), ".tif", standardizedGeoTiffPaths, true);
+        if (standardizedGeoTiffPaths.isEmpty()) {
             log.error("No standardized GeoTiff files found in the standardization temp path: {}", tempFolder.getAbsolutePath());
             throw new RuntimeException("Error: No standardized GeoTiff files found in the standardization temp path: " + tempFolder.getAbsolutePath());
         }
         this.getStandardizedGeoTiffFiles().clear();
-        if (children != null) {
-            for (File child : children) {
-                // Only add .tif files, skip WorldFile sidecars (.prj, .tfw, etc.)
-                if (child.isFile() && child.getName().toLowerCase().endsWith(".tif")) {
-                    this.getStandardizedGeoTiffFiles().add(child);
-                }
-            }
+        for (String standardizedGeoTiffPath : standardizedGeoTiffPaths) {
+            this.getStandardizedGeoTiffFiles().add(new File(standardizedGeoTiffPath));
         }
     }
 
@@ -1238,6 +1234,7 @@ public class TileWgs84Manager {
             log.debug("Created standardization folder: {}", tempFolder.getAbsolutePath());
         }
         globalOptions.setInputPath(tempFolder.getAbsolutePath());
+        double maxUsefulPixelSizeMeters = getMaxUsefulPixelSizeMeters();
 
         // Apply geoid correction only when geoid data is configured.
         String geoidPath = globalOptions.getGeoidPath();
@@ -1247,15 +1244,31 @@ public class TileWgs84Manager {
             File geoidFile = new File(geoidPath);
             geoTiffFileNames.forEach(geoTiffFileName -> {
                 GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
+                GridCoverage2D standardizeSource = prepareCoverageForStandardization(geoTiffFileName, originalGridCoverage2D, maxUsefulPixelSizeMeters);
                 RasterStandardizer rasterStandardizer = new RasterStandardizer();
-                rasterStandardizer.standardizeWithGeoid(originalGridCoverage2D, tempFolder, geoidFile);
-                originalGridCoverage2D.dispose(true);
+                File sourceOutputDirectory = resolveStandardizedSourceDirectory(tempFolder, geoTiffFileName);
+                try {
+                    rasterStandardizer.standardizeWithGeoid(standardizeSource, sourceOutputDirectory, geoidFile);
+                } finally {
+                    if (standardizeSource != originalGridCoverage2D) {
+                        standardizeSource.dispose(true);
+                    }
+                    originalGridCoverage2D.dispose(true);
+                }
             });
         } else {
             geoTiffFileNames.forEach(geoTiffFileName -> {
                 GridCoverage2D originalGridCoverage2D = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFileName);
+                GridCoverage2D standardizeSource = prepareCoverageForStandardization(geoTiffFileName, originalGridCoverage2D, maxUsefulPixelSizeMeters);
                 RasterStandardizer rasterStandardizer = new RasterStandardizer();
-                rasterStandardizer.standardize(originalGridCoverage2D, tempFolder);
+                File sourceOutputDirectory = resolveStandardizedSourceDirectory(tempFolder, geoTiffFileName);
+                try {
+                    rasterStandardizer.standardize(standardizeSource, sourceOutputDirectory);
+                } finally {
+                    if (standardizeSource != originalGridCoverage2D) {
+                        standardizeSource.dispose(true);
+                    }
+                }
             });
         }
     }
@@ -1326,7 +1339,7 @@ public class TileWgs84Manager {
                 }
 
                 String depthStr = String.valueOf(depth);
-                String resizedGeoTiffFolderPath = globalOptions.getResizedTiffTempPath() + File.separator + depthStr + File.separator + currentFolderPath;
+                String resizedGeoTiffFolderPath = resolveResizedGeoTiffFolderPath(depthStr, currentFolderPath, geoTiffFilePath);
                 String resizedGeoTiffFilePath = resizedGeoTiffFolderPath + File.separator + geoTiffFileName;
 
                 // check if exist the file
@@ -1338,7 +1351,7 @@ public class TileWgs84Manager {
                 }
 
                 // in this case, resize the geotiff
-                GridCoverage2D resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
+                GridCoverage2D resizedGridCoverage2D = gaiaGeoTiffManager.getResizedCoverage2D(geoTiffFilePath, originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
                 FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
                 gaiaGeoTiffManager.saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
 
@@ -1365,6 +1378,78 @@ public class TileWgs84Manager {
 
     public boolean originIsLeftUp() {
         return this.originIsLeftUp;
+    }
+
+    private File resolveStandardizedSourceDirectory(File standardizeRoot, String sourceGeoTiffPath) {
+        File sourceDirectory = new File(standardizeRoot, RasterStandardizer.sourceDirectoryName(sourceGeoTiffPath));
+        if (!sourceDirectory.exists() && !sourceDirectory.mkdirs()) {
+            throw new RuntimeException("Failed to create standardize source directory: " + sourceDirectory.getAbsolutePath());
+        }
+        return sourceDirectory;
+    }
+
+    private String resolveResizedGeoTiffFolderPath(String depth, String currentFolderPath, String sourceGeoTiffPath) {
+        StringBuilder relativePath = new StringBuilder();
+        if (currentFolderPath != null && !currentFolderPath.isBlank()) {
+            relativePath.append(currentFolderPath);
+            if (!currentFolderPath.endsWith(File.separator)) {
+                relativePath.append(File.separator);
+            }
+        }
+        relativePath.append(RasterStandardizer.sourceDirectoryName(sourceGeoTiffPath));
+        return globalOptions.getResizedTiffTempPath() + File.separator + depth + File.separator + relativePath;
+    }
+
+    private GridCoverage2D prepareCoverageForStandardization(String geoTiffFilePath, GridCoverage2D originalCoverage, double maxUsefulPixelSizeMeters) {
+        if (maxUsefulPixelSizeMeters <= 0.0) {
+            return originalCoverage;
+        }
+
+        try {
+            Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(originalCoverage);
+            if (pixelSizeMeters.x <= 0.0 || pixelSizeMeters.y <= 0.0) {
+                return originalCoverage;
+            }
+
+            if (pixelSizeMeters.x >= maxUsefulPixelSizeMeters && pixelSizeMeters.y >= maxUsefulPixelSizeMeters) {
+                return originalCoverage;
+            }
+
+            log.info("[Pre][Standardization] Downsampling {} before split. pixelSize={}m -> {}m",
+                geoTiffFilePath, pixelSizeMeters.x, maxUsefulPixelSizeMeters);
+            return gaiaGeoTiffManager.getResizedCoverage2D(
+                geoTiffFilePath,
+                originalCoverage,
+                maxUsefulPixelSizeMeters,
+                maxUsefulPixelSizeMeters
+            );
+        } catch (Exception e) {
+            log.warn("[Pre][Standardization] Failed to pre-downsample {}. Using original coverage.", geoTiffFilePath, e);
+            return originalCoverage;
+        }
+    }
+
+    private double getMaxUsefulPixelSizeMeters() {
+        int maxDepth = globalOptions.getMaximumTileDepth();
+        if (maxDepth < 0) {
+            maxDepth = this.availableTileSet.getMaxAvailableDepth();
+        } else {
+            int availableMaxDepth = this.availableTileSet.getMaxAvailableDepth();
+            if (availableMaxDepth >= 0) {
+                maxDepth = Math.min(maxDepth, availableMaxDepth);
+            }
+        }
+
+        if (maxDepth < 0) {
+            return 0.0;
+        }
+
+        double desiredPixelSize = this.depthDesiredPixelSizeXinMetersMap.getOrDefault(maxDepth, 0.0);
+        if (desiredPixelSize <= 0.0) {
+            return 0.0;
+        }
+
+        return desiredPixelSize * 0.5;
     }
 
     public void calculateAvailableTilesForEachDepth() throws IOException, FactoryException {

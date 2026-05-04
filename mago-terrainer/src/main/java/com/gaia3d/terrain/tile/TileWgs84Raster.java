@@ -1,6 +1,8 @@
 package com.gaia3d.terrain.tile;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +11,7 @@ import org.joml.Vector2i;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,13 +159,23 @@ public class TileWgs84Raster {
         Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap = new HashMap<>();
         terrainElevationDataManager.getTerrainElevationDataArray(geoExtension, terrainElevDataMap);
         resultTerrainElevDataArray = new ArrayList<>(terrainElevDataMap.keySet());
+        if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
+            resultTerrainElevDataArray.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
+        }
+        terrainElevationDataManager.preloadTerrainElevationRasters(resultTerrainElevDataArray);
 
+        double[] longitudes = new double[rasterWidth];
         for (int col = 0; col < rasterWidth; col++) {
-            double lonDeg = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;
-            for (int row = 0; row < rasterHeight; row++) {
-                double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
+            longitudes[col] = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;
+        }
+
+        for (int row = 0; row < rasterHeight; row++) {
+            double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
+            int rowOffset = row * rasterWidth;
+            for (int col = 0; col < rasterWidth; col++) {
+                double lonDeg = longitudes[col];
                 int idx = row * rasterWidth + col;
-                elevations[idx] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, resultTerrainElevDataArray);
+                elevations[rowOffset + col] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, resultTerrainElevDataArray);
             }
         }
     }

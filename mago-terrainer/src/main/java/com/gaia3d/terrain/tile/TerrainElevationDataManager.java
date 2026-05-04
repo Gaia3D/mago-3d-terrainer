@@ -33,6 +33,10 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationDataManager {
+    private static final long MIN_PRELOAD_BUDGET_BYTES = 512L * 1024L * 1024L;
+    private static final long MAX_PRELOAD_BUDGET_BYTES = 4L * 1024L * 1024L * 1024L;
+    private static final long HEAP_RESERVE_BYTES = 1024L * 1024L * 1024L;
+
     private static GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     private TileWgs84Manager tileWgs84Manager = null;
@@ -218,26 +222,23 @@ public class TerrainElevationDataManager {
         PriorityType priorityType = globalOptions.getPriorityType();
 
         intersects[0] = false;
-        double pixelAreaAux = Double.MAX_VALUE;
+        if (priorityType.equals(PriorityType.RESOLUTION)) {
+            for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+                double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
+                if (intersects[0]) {
+                    return elevation;
+                }
+            }
+            return 0.0;
+        }
+
         double candidateElevation = 0.0;
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (!intersects[0]) {
                 continue;
             }
-
-            // Prioritize by resolution when configured.
-            if (priorityType.equals(PriorityType.RESOLUTION)) {
-                double pixelArea = putAndGetGridAreaMap(terrainElevationData.getGeotiffFileName(), terrainElevationData.getGeotiffFilePath());
-                // smaller pixelArea is a higher resolution
-                boolean isHigherResolution = pixelAreaAux > pixelArea;
-                if (isHigherResolution) {
-                    candidateElevation = elevation;
-                    pixelAreaAux = pixelArea;
-                }
-            } else {
-                candidateElevation = Math.max(candidateElevation, elevation);
-            }
+            candidateElevation = Math.max(candidateElevation, elevation);
         }
 
         resultElevation = candidateElevation;
@@ -347,5 +348,52 @@ public class TerrainElevationDataManager {
             myGaiaGeoTiffManager.clear();
             myGaiaGeoTiffManager = null;
         }
+    }
+
+    public void preloadTerrainElevationRasters(List<TerrainElevationData> terrainElevDataArray) {
+        if (terrainElevDataArray == null || terrainElevDataArray.isEmpty()) {
+            return;
+        }
+
+        long preloadBudgetBytes = computePreloadBudgetBytes();
+        if (preloadBudgetBytes <= 0L) {
+            return;
+        }
+
+        long loadedBytes = 0L;
+        int loadedCount = 0;
+        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+            if (terrainElevationData.isRasterLoaded()) {
+                continue;
+            }
+
+            long estimatedBytes = terrainElevationData.estimateRasterBytes();
+            if (loadedCount > 0 && loadedBytes + estimatedBytes > preloadBudgetBytes) {
+                break;
+            }
+
+            if (terrainElevationData.preloadRaster()) {
+                loadedBytes += estimatedBytes;
+                loadedCount++;
+            }
+        }
+
+        if (loadedCount > 0) {
+            log.info("[Raster][Preload] Preloaded {} rasters (~{} MB) for current tile range.",
+                loadedCount, loadedBytes / (1024 * 1024));
+        }
+    }
+
+    private long computePreloadBudgetBytes() {
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long freeHeadroom = maxMemory - usedMemory - HEAP_RESERVE_BYTES;
+        if (freeHeadroom <= 0L) {
+            return 0L;
+        }
+
+        long desiredBudget = Math.min(MAX_PRELOAD_BUDGET_BYTES, Math.max(MIN_PRELOAD_BUDGET_BYTES, maxMemory / 4));
+        return Math.min(desiredBudget, freeHeadroom);
     }
 }

@@ -56,11 +56,14 @@ class RasterStandardizerTest {
             rasterStandardizer.standardize(coverage, tempDir.toFile());
 
             long tifFileCount;
-            try (var paths = Files.list(tempDir)) {
+            try (var paths = Files.walk(tempDir)) {
                 tifFileCount = paths.filter(path -> path.getFileName().toString().endsWith(".tif")).count();
             }
 
             assertEquals(4, tifFileCount);
+            try (var paths = Files.list(tempDir)) {
+                assertEquals(1, paths.filter(Files::isDirectory).count());
+            }
         } finally {
             coverage.dispose(true);
             deleteRecursively(tempDir);
@@ -92,7 +95,7 @@ class RasterStandardizerTest {
             rasterStandardizer.standardizeWithGeoid(demCoverage, tempDir.toFile(), geoidFile.toFile());
 
             Path outputTile;
-            try (var paths = Files.list(tempDir)) {
+            try (var paths = Files.walk(tempDir)) {
                 outputTile = paths
                         .filter(path -> path.getFileName().toString().endsWith(".tif"))
                         .filter(path -> !path.getFileName().toString().equals("geoid.tif"))
@@ -141,6 +144,36 @@ class RasterStandardizerTest {
         adjustedCoverage.dispose(true);
         demCoverage.dispose(true);
         geoidCoverage.dispose(true);
+    }
+
+    @Test
+    @Tag("default")
+    void standardizeSkipsAllNoDataTiles() throws Exception {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        globalOptions.setOutputCRS(DefaultGeographicCRS.WGS84);
+        globalOptions.setMaxRasterSize(4);
+        globalOptions.setNoDataValue(-9999.0);
+
+        RasterStandardizer rasterStandardizer = new RasterStandardizer();
+        GridCoverage2D coverage = createCoverage("nodata", new float[][]{
+                {-9999.0f, -9999.0f},
+                {-9999.0f, -9999.0f}
+        });
+        Path tempDir = Files.createTempDirectory("raster-standardize-nodata-");
+
+        try {
+            rasterStandardizer.standardize(coverage, tempDir.toFile());
+
+            long tifFileCount;
+            try (var paths = Files.walk(tempDir)) {
+                tifFileCount = paths.filter(path -> path.getFileName().toString().endsWith(".tif")).count();
+            }
+
+            assertEquals(0, tifFileCount);
+        } finally {
+            coverage.dispose(true);
+            deleteRecursively(tempDir);
+        }
     }
 
     private GridCoverage2D createCoverage(String name, int width, int height) {
