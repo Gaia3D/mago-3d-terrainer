@@ -321,6 +321,7 @@ public class GlobalOptions {
         instance.setCalculateNormalsExtension(command.hasOption(CommandOptions.EXT_CALCULATE_NORMALS.getLongName()));
         instance.setMetaDataExtension(command.hasOption(CommandOptions.EXT_META_DATA.getLongName()));
         instance.setWaterMaskExtension(command.hasOption(CommandOptions.EXT_WATER_MASK.getLongName()));
+        instance.setSkipStandardizationAndResize(command.hasOption(CommandOptions.SKIP_STANDARDIZATION_RESIZE.getLongName()));
         printGlobalOptions();
     }
 
@@ -351,6 +352,7 @@ public class GlobalOptions {
         } else {
             log.info("Geoid Model(Height Reference): Ellipsoid");
         }
+        log.info("SKIP Standardization and Resize: {}", instance.isSkipStandardizationAndResize());
         Mago3DTerrainerMain.drawLine();
         log.info("Celestial Body: {}", instance.getCelestialBody().getDisplayName());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
@@ -372,6 +374,7 @@ public class GlobalOptions {
         log.info("Tiling Mosaic Size: {}", instance.getMosaicSize());
         log.info("Tiling Max Raster Size: {}", instance.getMaxRasterSize());
         log.info("Layer Json Generate: {}", instance.isLayerJsonGenerate());
+        log.info("Leave Temp: {}", instance.isLeaveTemp());
         log.info("Debug Mode: {}", instance.isDebugMode());
         Mago3DTerrainerMain.drawLine();
     }

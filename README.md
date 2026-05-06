@@ -42,39 +42,41 @@ Output:
 mago-3d-terrainer(dev-version) by Gaia3D, Inc.
 ----------------------------------------
 Usage: command options
- -h, --help                       Print Help
- -lt, --leaveTemp                 Leave temporary files for debugging
- -j, --json                       Generate layer.json from terrain data
- -c, --continue                   Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails.
- -i, --input <arg>                [Required] Input directory path
- -o, --output <arg>               [Required] Output directory path
- -l, --log <arg>                  Log file path
- -t, --temp <arg>                 Temporary directory path (default: {OUTPUT}/temp)
- -g, --geoid <arg>                Set reference height option for terrain data.
-                                  Geoid file path for height correction,
-                                  (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)
- -min, --minDepth <arg>           Set minimum terrain tile depth
-                                  (default : 0)(options: 0 - 22)
- -max, --maxDepth <arg>           Set maximum terrain tile depth
-                                  (default : 14)(options: 0 - 22)
- -is, --intensity <arg>           Set Mesh refinement intensity.
-                                  (default: 4.0)
- -it, --interpolationType <arg>   Set Interpolation type
-                                  (default : bilinear)(options: nearest, bilinear)
- -pt, --priorityType <arg>        Nesting height priority type options
-                                  (default : resolution)(options: resolution, higher)
- -nv, --nodataValue <arg>         Set NODATA value for terrain generating
-                                  (default : -9999)
- -cn, --calculateNormals          Add terrain octVertexNormals for lighting effect
- -ms, --mosaicSize <arg>          Tiling mosaic buffer size per tile.
-                                  (default : 16)
- -mr, --rasterMaxSize <arg>       Maximum raster size for split function.
-                                  (default : 8192)
- -b, --body <arg>                 Target celestial body for terrain generation
-                                  (default : earth)(options: earth, moon)
- -md, --metadata                  [Experimental] Generate metadata for the terrain data.
- -wm, --waterMask                 [Experimental] Generate water mask for the terrain data.
- -d, --debug                      [DEBUG] Print more detailed logs.
+ -h, --help                          Print Help
+ -q, --quiet                         Suppress all output except errors
+ -lt, --leaveTemp                    Leave temporary files for debugging
+ -j, --json                          Generate layer.json from terrain data
+ -c, --continue                      Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails.
+ -m, --modify                        Modify terrain. This option can be used when need modify some terrain region.
+ -ssr, --skipStandardizationResize   Skip standardization and resizing process. This option can be used when the input data is already standardized and resized.
+ -i, --input <arg>                   [Required] Input directory path
+ -o, --output <arg>                  [Required] Output directory path
+ -l, --log <arg>                     Log file path
+ -t, --temp <arg>                    Temporary directory path (default: {OUTPUT}/temp)
+ -g, --geoid <arg>                   Set reference height option for terrain data.
+                                     Geoid file path for height correction,
+                                     (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)
+ -min, --minDepth <arg>              Set minimum terrain tile depth
+                                     (default : 0)(options: 0 - 22)
+ -max, --maxDepth <arg>              Set maximum terrain tile depth
+                                     (default : 14)(options: 0 - 22)
+ -is, --intensity <arg>              Set Mesh refinement intensity.
+                                     (default: 4.0)
+ -it, --interpolationType <arg>      Set Interpolation type
+                                     (default : bilinear)(options: nearest, bilinear)
+ -pt, --priorityType <arg>           Nesting height priority type options
+                                     (default : resolution)(options: resolution, higher)
+ -nv, --nodataValue <arg>            Set NODATA value for terrain generating
+                                     (default : -9999)
+ -cn, --calculateNormals             Add terrain octVertexNormals for lighting effect
+ -ms, --mosaicSize <arg>             Tiling mosaic buffer size per tile.
+                                     (default : 16)
+ -mr, --rasterMaxSize <arg>          Maximum raster size for split function.
+                                     (default : 8192)
+ -md, --metadata                     [Experimental] Generate metadata for the terrain data.
+ -wm, --waterMask                    [Experimental] Generate water mask for the terrain data.
+ -b, --body <arg>                    Celestial body for terrain generation (default : earth)(options: earth, moon)
+ -d, --debug                         [DEBUG] Print more detailed logs.
 ```
 This is a simple Quantized-mesh conversion code with the required argument values.
 ```

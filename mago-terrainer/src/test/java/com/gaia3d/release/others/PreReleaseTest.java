@@ -264,6 +264,7 @@ public class PreReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-calculateNormals",
+                "-skipStandardizationResize"
         };
         Mago3DTerrainerMain.main(args);
     }
