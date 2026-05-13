@@ -129,15 +129,20 @@ public class TerrainTriangle {
     }
 
     public Vector3d getBarycenter(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {
+        Vector3d barycenter = new Vector3d();
+        getBarycenter(listVertices, listHalfEdges, barycenter);
+        return barycenter;
+    }
+
+    public void getBarycenter(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges, Vector3d result) {
         listVertices.clear();
         listHalfEdges.clear();
         listVertices = this.getVertices(listVertices, listHalfEdges);
-        Vector3d barycenter = new Vector3d();
+        result.zero();
         for (TerrainVertex vertex : listVertices) {
-            barycenter.add(vertex.getPosition());
+            result.add(vertex.getPosition());
         }
-        barycenter.mul(1.0 / 3.0);
-        return barycenter;
+        result.mul(1.0 / 3.0);
     }
 
     public List<Vector3d> getSomePointsToCheckForTriangleRefinement(List<TerrainVertex> listVertices, List<TerrainHalfEdge> listHalfEdges) {

@@ -482,7 +482,7 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteObjects();
             this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
             this.terrainElevationDataManager.setTileWgs84Manager(this);
-            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(resolveTerrainElevationDataFolderPath(depth));
             this.terrainElevationDataManager.makeTerrainQuadTree(depth);
 
             int mosaicSize = globalOptions.getMosaicSize();
@@ -608,7 +608,7 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteObjects();
             this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
             this.terrainElevationDataManager.setTileWgs84Manager(this);
-            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(resolveTerrainElevationDataFolderPath(depth));
             this.terrainElevationDataManager.makeTerrainQuadTree(depth);
             int mosaicSize = globalOptions.getMosaicSize();
 
@@ -732,7 +732,7 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteObjects();
             this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
             this.terrainElevationDataManager.setTileWgs84Manager(this);
-            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(resolveTerrainElevationDataFolderPath(depth));
             this.terrainElevationDataManager.makeTerrainQuadTree(depth);
             int mosaicSize = globalOptions.getMosaicSize();
 
@@ -836,7 +836,7 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteObjects();
             this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
             this.terrainElevationDataManager.setTileWgs84Manager(this);
-            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(resolveTerrainElevationDataFolderPath(depth));
             this.terrainElevationDataManager.makeTerrainQuadTree(depth);
             int mosaicSize = globalOptions.getMosaicSize();
 
@@ -1044,7 +1044,7 @@ public class TileWgs84Manager {
             this.terrainElevationDataManager.deleteObjects();
             this.terrainElevationDataManager = new TerrainElevationDataManager(); // new
             this.terrainElevationDataManager.setTileWgs84Manager(this);
-            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(this.depthGeoTiffFolderPathMap.get(depth));
+            this.terrainElevationDataManager.setTerrainElevationDataFolderPath(resolveTerrainElevationDataFolderPath(depth));
             this.terrainElevationDataManager.makeTerrainQuadTree(depth);
 
             int mosaicSize = globalOptions.getMosaicSize();
@@ -1227,6 +1227,56 @@ public class TileWgs84Manager {
         }
     }
 
+    public void loadExistingStandardizedAndResizedRasters() {
+        loadExistingStandardizedRasters();
+        loadExistingResizedRasters();
+    }
+
+    private void loadExistingStandardizedRasters() {
+        File standardizeFolder = new File(globalOptions.getStandardizeTempPath());
+        if (!standardizeFolder.exists() || !standardizeFolder.isDirectory()) {
+            throw new RuntimeException("Error: Standardization temp path does not exist: " + standardizeFolder.getAbsolutePath());
+        }
+
+        List<String> standardizedGeoTiffPaths = new ArrayList<>();
+        FileUtils.getFilePathsByExtension(standardizeFolder.getAbsolutePath(), ".tif", standardizedGeoTiffPaths, true);
+        if (standardizedGeoTiffPaths.isEmpty()) {
+            throw new RuntimeException("Error: No standardized GeoTiff files found in the standardization temp path: " + standardizeFolder.getAbsolutePath());
+        }
+
+        this.standardizedGeoTiffFiles.clear();
+        for (String standardizedGeoTiffPath : standardizedGeoTiffPaths) {
+            this.standardizedGeoTiffFiles.add(new File(standardizedGeoTiffPath));
+        }
+    }
+
+    private void loadExistingResizedRasters() {
+        File resizedRoot = new File(globalOptions.getResizedTiffTempPath());
+        if (!resizedRoot.exists() || !resizedRoot.isDirectory()) {
+            throw new RuntimeException("Error: Resized GeoTiff temp path does not exist: " + resizedRoot.getAbsolutePath());
+        }
+
+        this.depthGeoTiffFolderPathMap.clear();
+        int minTileDepth = globalOptions.getMinimumTileDepth();
+        int maxTileDepth = globalOptions.getMaximumTileDepth();
+        for (int depth = minTileDepth; depth <= maxTileDepth; depth++) {
+            File depthFolder = new File(resizedRoot, String.valueOf(depth));
+            if (!depthFolder.exists() || !depthFolder.isDirectory()) {
+                continue;
+            }
+
+            List<String> geoTiffFilePaths = new ArrayList<>();
+            FileUtils.getFilePathsByExtension(depthFolder.getAbsolutePath(), ".tif", geoTiffFilePaths, true);
+            if (!geoTiffFilePaths.isEmpty()) {
+                this.depthGeoTiffFolderPathMap.put(depth, depthFolder.getAbsolutePath());
+            }
+        }
+
+        if (!this.depthGeoTiffFolderPathMap.containsKey(minTileDepth)) {
+            throw new RuntimeException("Error: No resized GeoTiff files found for minimum depth " + minTileDepth + " in " + resizedRoot.getAbsolutePath());
+        }
+    }
+
     public void standardizeRasters(List<String> geoTiffFileNames) {
         String tempPath = globalOptions.getStandardizeTempPath();
         File tempFolder = new File(tempPath);
@@ -1378,6 +1428,24 @@ public class TileWgs84Manager {
 
     public boolean originIsLeftUp() {
         return this.originIsLeftUp;
+    }
+
+    private String resolveTerrainElevationDataFolderPath(int depth) {
+        String folderPath = this.depthGeoTiffFolderPathMap.get(depth);
+        if (folderPath != null && !folderPath.isBlank()) {
+            return folderPath;
+        }
+
+        for (int fallbackDepth = depth - 1; fallbackDepth >= 0; fallbackDepth--) {
+            folderPath = this.depthGeoTiffFolderPathMap.get(fallbackDepth);
+            if (folderPath != null && !folderPath.isBlank()) {
+                log.warn("[Raster][DepthPath] Missing raster folder for depth {}. Reusing depth {} folder: {}",
+                    depth, fallbackDepth, folderPath);
+                return folderPath;
+            }
+        }
+
+        throw new IllegalStateException("No terrain raster folder is available for depth " + depth);
     }
 
     private File resolveStandardizedSourceDirectory(File standardizeRoot, String sourceGeoTiffPath) {

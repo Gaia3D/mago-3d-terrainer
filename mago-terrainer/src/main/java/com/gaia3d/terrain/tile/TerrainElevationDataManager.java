@@ -33,17 +33,21 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationDataManager {
-    private static final long MIN_PRELOAD_BUDGET_BYTES = 512L * 1024L * 1024L;
-    private static final long MAX_PRELOAD_BUDGET_BYTES = 4L * 1024L * 1024L * 1024L;
-    private static final long HEAP_RESERVE_BYTES = 1024L * 1024L * 1024L;
+    private static final boolean PRELOAD_TERRAIN_RASTERS = true;
+    private static final long MIN_PRELOAD_BUDGET_BYTES = 1024L * 1024L * 1024L;
+    private static final long MAX_PRELOAD_BUDGET_BYTES = 8L * 1024L * 1024L * 1024L;
+    private static final long HEAP_RESERVE_BYTES = 512L * 1024L * 1024L;
+    private static final long MIN_LIVE_RASTER_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L;
+    private static final long MAX_LIVE_RASTER_BUDGET_BYTES = 8L * 1024L * 1024L * 1024L;
 
     private static GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     private TileWgs84Manager tileWgs84Manager = null;
     private List<TerrainElevationData> terrainElevationDataArray = new ArrayList<>();
     private List<TerrainTriangle> trianglesArray = new ArrayList<>();
-    private Map<String, TileWgs84Raster> mapIndicesTileRaster = new HashMap<>();
+    private Map<Long, TileWgs84Raster> mapIndicesTileRaster = new HashMap<>();
     private Map<String, Double> gridAreaMap = new HashMap<>();
+    private Map<String, Vector2d> priorityPixelSizeByGeoTiffName = new HashMap<>();
 
     // Inside the folder, there are multiple geoTiff files
     private String terrainElevationDataFolderPath;
@@ -55,6 +59,7 @@ public class TerrainElevationDataManager {
     private GaiaGeoTiffManager myGaiaGeoTiffManager = null;
     private boolean[] intersects = {false};
     private List<String> geoTiffFileNames = new ArrayList<>();
+    private int terrainElevationDataQueryMark = 1;
 
     public void makeTerrainQuadTree(int depth) throws FactoryException, TransformException, IOException {
         List<File> standardizedGeoTiffFiles = tileWgs84Manager.getStandardizedGeoTiffFiles();
@@ -75,13 +80,14 @@ public class TerrainElevationDataManager {
     }
 
     public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) {
-        TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
+        long tileKey = tileIndices.toCacheKey();
+        TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileKey);
         if (tileWgs84Raster == null) {
             tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
             int tileRasterWidth = tileWgs84Manager.getRasterTileSize();
             int tileRasterHeight = tileWgs84Manager.getRasterTileSize();
             tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
-            mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
+            mapIndicesTileRaster.put(tileKey, tileWgs84Raster);
         }
         return tileWgs84Raster;
     }
@@ -90,23 +96,21 @@ public class TerrainElevationDataManager {
         List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
 
         // 1rst, delete from the mapIndicesTileRaster the tiles that are not in the tileIndicesList
-        List<String> tileIndicesStringList = new ArrayList<>(mapIndicesTileRaster.keySet());
+        List<Long> tileIndicesKeyList = new ArrayList<>(mapIndicesTileRaster.keySet());
+        Map<Long, Long> requestedTileKeys = new HashMap<>();
+        for (TileIndices tileIndices : tileIndicesList) {
+            long tileKey = tileIndices.toCacheKey();
+            requestedTileKeys.put(tileKey, tileKey);
+        }
         int initialSize = mapIndicesTileRaster.size();
         int reusedRasterTilesCount = 0;
-        for (String tileIndicesString : tileIndicesStringList) {
-            boolean isExist = false;
-            for (TileIndices tileIndices : tileIndicesList) {
-                if (tileIndicesString.equals(tileIndices.getString())) {
-                    isExist = true;
-                    reusedRasterTilesCount++;
-                    break;
-                }
-            }
-
-            if (!isExist) {
-                TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndicesString);
+        for (Long tileKey : tileIndicesKeyList) {
+            if (requestedTileKeys.containsKey(tileKey)) {
+                reusedRasterTilesCount++;
+            } else {
+                TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileKey);
                 tileWgs84Raster.deleteObjects();
-                mapIndicesTileRaster.remove(tileIndicesString);
+                mapIndicesTileRaster.remove(tileKey);
             }
         }
 
@@ -130,15 +134,18 @@ public class TerrainElevationDataManager {
         }
 
         for (TileIndices tileIndices : tileIndicesList) {
-            TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileIndices.getString());
+            long tileKey = tileIndices.toCacheKey();
+            TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileKey);
             if (tileWgs84Raster == null) {
                 tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
                 int tileRasterWidth = tileWgs84Manager.getRasterTileSize();
                 int tileRasterHeight = tileWgs84Manager.getRasterTileSize();
                 tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
-                mapIndicesTileRaster.put(tileIndices.getString(), tileWgs84Raster);
+                mapIndicesTileRaster.put(tileKey, tileWgs84Raster);
+                enforceLiveRasterBudget(geoExtensionTotal, tileWgs84Raster.getGeographicExtension());
             }
         }
+
     }
 
     public void deleteTileRaster() {
@@ -187,7 +194,9 @@ public class TerrainElevationDataManager {
 
         terrainElevationDataArray.clear();
         trianglesArray.clear();
+        mapIndicesTileRaster.clear();
         gridAreaMap.clear();
+        priorityPixelSizeByGeoTiffName.clear();
         geoTiffFileNames.clear();
         tileWgs84Manager = null;
     }
@@ -215,6 +224,36 @@ public class TerrainElevationDataManager {
         return terrainElevDataMap;
     }
 
+    public List<TerrainElevationData> getTerrainElevationDataArray(
+        GeographicExtension geoExtension,
+        List<TerrainElevationData> resultTerrainElevDataArray
+    ) {
+        if (rootTerrainElevationDataQuadTree == null) {
+            return resultTerrainElevDataArray;
+        }
+
+        if (resultTerrainElevDataArray == null) {
+            resultTerrainElevDataArray = new ArrayList<>();
+        } else {
+            resultTerrainElevDataArray.clear();
+        }
+
+        rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(
+            geoExtension,
+            resultTerrainElevDataArray,
+            nextTerrainElevationDataQueryMark()
+        );
+        return resultTerrainElevDataArray;
+    }
+
+    private int nextTerrainElevationDataQueryMark() {
+        terrainElevationDataQueryMark++;
+        if (terrainElevationDataQueryMark == 0) {
+            terrainElevationDataQueryMark = 1;
+        }
+        return terrainElevationDataQueryMark;
+    }
+
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         double resultElevation = 0.0;
 
@@ -225,7 +264,7 @@ public class TerrainElevationDataManager {
         PriorityType priorityType = globalOptions.getPriorityType();
 
         intersects[0] = false;
-        if (priorityType.equals(PriorityType.RESOLUTION)) {
+        if (priorityType == PriorityType.RESOLUTION) {
             for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
                 double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
                 if (intersects[0]) {
@@ -241,7 +280,9 @@ public class TerrainElevationDataManager {
             if (!intersects[0]) {
                 continue;
             }
-            candidateElevation = Math.max(candidateElevation, elevation);
+            if (elevation > candidateElevation) {
+                candidateElevation = elevation;
+            }
         }
 
         resultElevation = candidateElevation;
@@ -278,6 +319,7 @@ public class TerrainElevationDataManager {
         //GridCoverage2D gridCoverage2D = null;
         String geoTiffFileName = null;
         String geoTiffFilePath = null;
+        String priorityReferenceGeoTiffPath = null;
 
         CoordinateReferenceSystem crsTarget = null;
         CoordinateReferenceSystem crsOutput = globalOptions.getOutputCRS();
@@ -287,12 +329,17 @@ public class TerrainElevationDataManager {
 
         for (String currentFolderGeoTiffFileName : currentFolderGeoTiffFileNames) {
             geoTiffFileName = currentFolderGeoTiffFileName;
+            geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
+            File currentFolderGeoTiffFile = new File(geoTiffFilePath);
             File standardizedGeoTiffFile = standardizedGeoTiffByName.get(geoTiffFileName);
-            if (standardizedGeoTiffFile != null) {
-                geoTiffFilePath = standardizedGeoTiffFile.getAbsolutePath();
-            } else {
-                geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
+            if (!currentFolderGeoTiffFile.exists()) {
+                if (standardizedGeoTiffFile != null) {
+                    geoTiffFilePath = standardizedGeoTiffFile.getAbsolutePath();
+                }
             }
+            priorityReferenceGeoTiffPath = standardizedGeoTiffFile != null
+                ? standardizedGeoTiffFile.getAbsolutePath()
+                : geoTiffFilePath;
 
             // check if this geoTiff is usable
             if (mapNoUsableGeotiffPaths.containsKey(geoTiffFilePath)) {
@@ -308,7 +355,17 @@ public class TerrainElevationDataManager {
             targetToOutput = CRS.findMathTransform(crsTarget, crsOutput, true);
 
             GaiaGeoTiffUtils.getGeographicExtension(gridCoverage2D, gf, targetToOutput, terrainElevationData.getGeographicExtension());
-            terrainElevationData.setPixelSizeMeters(GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D));
+            Vector2d priorityPixelSize = priorityPixelSizeByGeoTiffName.get(geoTiffFileName);
+            if (priorityPixelSize == null) {
+                if (priorityReferenceGeoTiffPath.equals(geoTiffFilePath)) {
+                    priorityPixelSize = GaiaGeoTiffUtils.getPixelSizeMeters(gridCoverage2D);
+                } else {
+                    GridCoverage2D priorityReferenceCoverage = myGaiaGeoTiffManager.loadGeoTiffGridCoverage2D(priorityReferenceGeoTiffPath);
+                    priorityPixelSize = GaiaGeoTiffUtils.getPixelSizeMeters(priorityReferenceCoverage);
+                }
+                priorityPixelSizeByGeoTiffName.put(geoTiffFileName, new Vector2d(priorityPixelSize));
+            }
+            terrainElevationData.setPixelSizeMeters(new Vector2d(priorityPixelSize));
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
             // Important: Do not dispose the gridCoverage2D here, because it can be stored in the myGaiaGeoTiffManager cache map.
@@ -354,7 +411,7 @@ public class TerrainElevationDataManager {
     }
 
     public void preloadTerrainElevationRasters(List<TerrainElevationData> terrainElevDataArray) {
-        if (terrainElevDataArray == null || terrainElevDataArray.isEmpty()) {
+        if (!PRELOAD_TERRAIN_RASTERS || terrainElevDataArray == null || terrainElevDataArray.isEmpty()) {
             return;
         }
 
@@ -382,9 +439,106 @@ public class TerrainElevationDataManager {
         }
 
         if (loadedCount > 0) {
-            log.info("[Raster][Preload] Preloaded {} rasters (~{} MB) for current tile range.",
+            log.debug("[Raster][Preload] Preloaded {} rasters (~{} MB) for current tile range.",
                 loadedCount, loadedBytes / (1024 * 1024));
         }
+    }
+
+    public void releaseTerrainElevationRasters(List<TerrainElevationData> terrainElevDataArray) {
+        if (terrainElevDataArray == null || terrainElevDataArray.isEmpty()) {
+            return;
+        }
+
+        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+            terrainElevationData.deleteCoverage();
+        }
+    }
+
+    public void releaseTerrainElevationRastersOutsideGeographicExtension(
+        List<TerrainElevationData> terrainElevDataArray,
+        GeographicExtension retainArea
+    ) {
+        if (terrainElevDataArray == null || terrainElevDataArray.isEmpty() || retainArea == null) {
+            return;
+        }
+
+        long liveRasterBudgetBytes = computeLiveRasterBudgetBytes();
+        if (liveRasterBudgetBytes <= 0L) {
+            return;
+        }
+
+        long loadedRasterBytes = estimateLoadedRasterBytes(terrainElevDataArray);
+        if (loadedRasterBytes <= liveRasterBudgetBytes) {
+            return;
+        }
+
+        int releasedCount = 0;
+        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+            if (!retainArea.intersects(terrainElevationData.getGeographicExtension())) {
+                terrainElevationData.releaseTileRaster();
+                releasedCount++;
+            }
+        }
+
+        if (releasedCount > 0) {
+            log.info("[Raster][Budget] Released {} tile rasters outside active block (~{} MB > budget {} MB).",
+                releasedCount,
+                loadedRasterBytes / (1024 * 1024),
+                liveRasterBudgetBytes / (1024 * 1024));
+        }
+    }
+
+    private void enforceLiveRasterBudget(GeographicExtension activeArea, GeographicExtension retainArea) {
+        if (rootTerrainElevationDataQuadTree == null || activeArea == null || retainArea == null) {
+            return;
+        }
+
+        long liveRasterBudgetBytes = computeLiveRasterBudgetBytes();
+        if (liveRasterBudgetBytes <= 0L) {
+            return;
+        }
+
+        long loadedRasterBytes = estimateLoadedRasterBytes(activeArea);
+        if (loadedRasterBytes <= liveRasterBudgetBytes) {
+            return;
+        }
+
+        log.warn("[Raster][Budget] Live raster working set {} MB exceeds budget {} MB. Releasing non-intersecting rasters outside current tile window.",
+            loadedRasterBytes / (1024 * 1024),
+            liveRasterBudgetBytes / (1024 * 1024));
+
+        rootTerrainElevationDataQuadTree.deleteCoverageIfNoIntersectsGeoExtension(retainArea);
+
+        long remainingRasterBytes = estimateLoadedRasterBytes(activeArea);
+        log.info("[Raster][Budget] Live raster working set reduced to {} MB after trimming.",
+            remainingRasterBytes / (1024 * 1024));
+    }
+
+    private long estimateLoadedRasterBytes(GeographicExtension geographicExtension) {
+        List<TerrainElevationData> terrainElevDataArray = getTerrainElevationDataArray(geographicExtension, (List<TerrainElevationData>) null);
+        if (terrainElevDataArray == null || terrainElevDataArray.isEmpty()) {
+            return 0L;
+        }
+
+        long totalBytes = 0L;
+        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+            if (!terrainElevationData.isRasterLoaded()) {
+                continue;
+            }
+            totalBytes += terrainElevationData.estimateRasterBytes();
+        }
+        return totalBytes;
+    }
+
+    private long estimateLoadedRasterBytes(List<TerrainElevationData> terrainElevDataArray) {
+        long totalBytes = 0L;
+        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+            if (!terrainElevationData.isRasterLoaded()) {
+                continue;
+            }
+            totalBytes += terrainElevationData.estimateRasterBytes();
+        }
+        return totalBytes;
     }
 
     private long computePreloadBudgetBytes() {
@@ -396,7 +550,20 @@ public class TerrainElevationDataManager {
             return 0L;
         }
 
-        long desiredBudget = Math.min(MAX_PRELOAD_BUDGET_BYTES, Math.max(MIN_PRELOAD_BUDGET_BYTES, maxMemory / 4));
+        long desiredBudget = Math.min(MAX_PRELOAD_BUDGET_BYTES, Math.max(MIN_PRELOAD_BUDGET_BYTES, maxMemory / 2));
+        return Math.min(desiredBudget, freeHeadroom);
+    }
+
+    private long computeLiveRasterBudgetBytes() {
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long freeHeadroom = maxMemory - usedMemory - HEAP_RESERVE_BYTES;
+        if (freeHeadroom <= 0L) {
+            return 0L;
+        }
+
+        long desiredBudget = Math.min(MAX_LIVE_RASTER_BUDGET_BYTES, Math.max(MIN_LIVE_RASTER_BUDGET_BYTES, maxMemory / 2));
         return Math.min(desiredBudget, freeHeadroom);
     }
 }

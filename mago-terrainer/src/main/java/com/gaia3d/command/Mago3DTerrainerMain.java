@@ -125,13 +125,19 @@ public class Mago3DTerrainerMain {
             log.info("[Pre][Resize] Start GeoTiff Resizing files.");
             tileWgs84Manager.processResizeRasters(globalOptions.getInputPath(), null);
             log.info("[Pre][Resize] Finished GeoTiff Resizing files.");
+        } else {
+            log.info("[Pre][Reuse] Load existing standardization and resized GeoTiff files.");
+            tileWgs84Manager.loadExistingStandardizedAndResizedRasters();
+            log.info("[Pre][Reuse] Finished loading existing standardization and resized GeoTiff files.");
         }
 
         log.info("[Tile] Start generate terrain elevation data.");
         TerrainElevationDataManager terrainElevationDataManager = new TerrainElevationDataManager();
         tileWgs84Manager.setTerrainElevationDataManager(terrainElevationDataManager);
         terrainElevationDataManager.setTileWgs84Manager(tileWgs84Manager);
-        terrainElevationDataManager.setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
+        terrainElevationDataManager.setTerrainElevationDataFolderPath(
+                tileWgs84Manager.getDepthGeoTiffFolderPathMap().getOrDefault(0, globalOptions.getResizedTiffTempPath() + File.separator + "0")
+        );
 
         int depth = 0;
         terrainElevationDataManager.makeTerrainQuadTree(depth);

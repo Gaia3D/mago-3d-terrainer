@@ -12,14 +12,15 @@ import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Getter
 @Setter
 public class TileWgs84Raster {
+    private static final int RASTER_RELEASE_ROW_BLOCK_SIZE = 32;
+    private static final int RASTER_RELEASE_COLUMN_BLOCK_SIZE = 32;
+
     private TileWgs84Manager manager = null;
     private TileIndices tileIndices = null;
     private GeographicExtension geographicExtension = null;
@@ -154,11 +155,7 @@ public class TileWgs84Raster {
         // make intersected terrainElevationDataList
         GeographicExtension geoExtension = this.getGeographicExtension();
         List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
-        resultTerrainElevDataArray.clear();
-        // Debug : check if the terrainElevationDataList is intersected with the geoExtension
-        Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap = new HashMap<>();
-        terrainElevationDataManager.getTerrainElevationDataArray(geoExtension, terrainElevDataMap);
-        resultTerrainElevDataArray = new ArrayList<>(terrainElevDataMap.keySet());
+        terrainElevationDataManager.getTerrainElevationDataArray(geoExtension, resultTerrainElevDataArray);
         if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
             resultTerrainElevDataArray.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
         }
@@ -169,43 +166,95 @@ public class TileWgs84Raster {
             longitudes[col] = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;
         }
 
-        for (int row = 0; row < rasterHeight; row++) {
-            double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
-            int rowOffset = row * rasterWidth;
-            for (int col = 0; col < rasterWidth; col++) {
-                double lonDeg = longitudes[col];
-                int idx = row * rasterWidth + col;
-                elevations[rowOffset + col] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, resultTerrainElevDataArray);
+        GeographicExtension activeBlock = new GeographicExtension();
+        List<TerrainElevationData> blockTerrainElevDataArray = new ArrayList<>(resultTerrainElevDataArray.size());
+        for (int rowStart = 0; rowStart < rasterHeight; rowStart += RASTER_RELEASE_ROW_BLOCK_SIZE) {
+            int rowEndExclusive = Math.min(rowStart + RASTER_RELEASE_ROW_BLOCK_SIZE, rasterHeight);
+            for (int colStart = 0; colStart < rasterWidth; colStart += RASTER_RELEASE_COLUMN_BLOCK_SIZE) {
+                int colEndExclusive = Math.min(colStart + RASTER_RELEASE_COLUMN_BLOCK_SIZE, rasterWidth);
+
+                double blockMinLatDeg = minLatDeg + semiDeltaLatDeg + rowStart * deltaLatDeg;
+                double blockMaxLatDeg = minLatDeg + semiDeltaLatDeg + (rowEndExclusive - 1) * deltaLatDeg;
+                if (blockMinLatDeg > blockMaxLatDeg) {
+                    double swap = blockMinLatDeg;
+                    blockMinLatDeg = blockMaxLatDeg;
+                    blockMaxLatDeg = swap;
+                }
+
+                double blockMinLonDeg = longitudes[colStart];
+                double blockMaxLonDeg = longitudes[colEndExclusive - 1];
+                if (blockMinLonDeg > blockMaxLonDeg) {
+                    double swap = blockMinLonDeg;
+                    blockMinLonDeg = blockMaxLonDeg;
+                    blockMaxLonDeg = swap;
+                }
+
+                activeBlock.setDegrees(
+                    blockMinLonDeg,
+                    blockMinLatDeg,
+                    0.0,
+                    blockMaxLonDeg,
+                    blockMaxLatDeg,
+                    0.0
+                );
+                terrainElevationDataManager.releaseTerrainElevationRastersOutsideGeographicExtension(resultTerrainElevDataArray, activeBlock);
+                filterTerrainElevationDataForBlock(resultTerrainElevDataArray, activeBlock, blockTerrainElevDataArray);
+
+                for (int row = rowStart; row < rowEndExclusive; row++) {
+                    double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
+                    int rowOffset = row * rasterWidth;
+                    for (int col = colStart; col < colEndExclusive; col++) {
+                        double lonDeg = longitudes[col];
+                        elevations[rowOffset + col] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, blockTerrainElevDataArray);
+                    }
+                }
+            }
+        }
+
+    }
+
+    private void filterTerrainElevationDataForBlock(
+        List<TerrainElevationData> sourceTerrainElevDataArray,
+        GeographicExtension activeBlock,
+        List<TerrainElevationData> resultTerrainElevDataArray
+    ) {
+        resultTerrainElevDataArray.clear();
+        for (TerrainElevationData terrainElevationData : sourceTerrainElevDataArray) {
+            if (activeBlock.intersects(terrainElevationData.getGeographicExtension())) {
+                resultTerrainElevDataArray.add(terrainElevationData);
             }
         }
     }
 
     public RasterTriangle getRasterTriangle(TerrainTriangle triangle) {
         RasterTriangle rasterTriangle = new RasterTriangle();
+        populateRasterTriangle(triangle, null, new ArrayList<>(), rasterTriangle);
+        return rasterTriangle;
+    }
 
-        List<TerrainHalfEdge> listHalfEdges = new ArrayList<>(); // no used in this function, but needed to call the getVertices function.
-        List<TerrainVertex> vertices = triangle.getVertices(null, listHalfEdges);
+    public void populateRasterTriangle(
+            TerrainTriangle triangle,
+            List<TerrainVertex> vertices,
+            List<TerrainHalfEdge> listHalfEdges,
+            RasterTriangle rasterTriangle
+    ) {
+        if (vertices == null) {
+            vertices = new ArrayList<>();
+        }
+
+        vertices.clear();
+        listHalfEdges.clear();
+        vertices = triangle.getVertices(vertices, listHalfEdges);
+
         Vector3d pos0 = vertices.get(0).getPosition();
         Vector3d pos1 = vertices.get(1).getPosition();
         Vector3d pos2 = vertices.get(2).getPosition();
 
-        // the pos0, pos1 and pos2 are in geographic coordinates.
-        int col0 = getColumn(pos0.x);
-        int row0 = getRow(pos0.y);
-
-        int col1 = getColumn(pos1.x);
-        int row1 = getRow(pos1.y);
-
-        int col2 = getColumn(pos2.x);
-        int row2 = getRow(pos2.y);
-
-        Vector2i v0 = new Vector2i(col0, row0);
-        Vector2i v1 = new Vector2i(col1, row1);
-        Vector2i v2 = new Vector2i(col2, row2);
-
-        rasterTriangle.setVertices(v0, v1, v2);
-
-        return rasterTriangle;
+        rasterTriangle.setVertices(
+            getColumn(pos0.x), getRow(pos0.y),
+            getColumn(pos1.x), getRow(pos1.y),
+            getColumn(pos2.x), getRow(pos2.y)
+        );
     }
 
 }

@@ -18,7 +18,7 @@ import java.awt.image.WritableRaster;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class TerrainElevationDataTest {
+class 아TerrainElevationDataTest {
 
     @Test
     @Tag("default")

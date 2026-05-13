@@ -36,7 +36,7 @@ public class GlobalOptions {
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
     private static final int DEFAULT_MAXIMUM_TILE_DEPTH = -1;
     private static final int DEFAULT_MOSAIC_SIZE = 16;
-    private static final int DEFAULT_MAX_RASTER_SIZE = 8192; // 4096
+    private static final int DEFAULT_MAX_RASTER_SIZE = 8192;
     private static final double DEFAULT_INTENSITY = 4.0;
     private static final double DEFAULT_NO_DATA_VALUE = -9999.0;
     private static final CoordinateReferenceSystem DEFAULT_TARGET_CRS = DefaultGeographicCRS.WGS84;
@@ -130,8 +130,8 @@ public class GlobalOptions {
 
         if (command.hasOption(CommandOptions.TEMP_PATH.getLongName())) {
             String tempPath = command.getOptionValue(CommandOptions.TEMP_PATH.getLongName());
-            String sufix = java.util.UUID.randomUUID().toString();
-            File tempFullPath = new File(tempPath, sufix);
+            String suffix = java.util.UUID.randomUUID().toString();
+            File tempFullPath = new File(tempPath, suffix);
             File resizedDir = new File(tempFullPath, "resized");
             File splitDir = new File(tempFullPath, "split");
             File standardizeDir = new File(tempFullPath, "standardization");

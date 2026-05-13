@@ -211,4 +211,8 @@ public class TileIndices {
         return result;
     }
 
+    public long toCacheKey() {
+        return ((long) L << 58) | ((long) X << 29) | (long) Y;
+    }
+
 }

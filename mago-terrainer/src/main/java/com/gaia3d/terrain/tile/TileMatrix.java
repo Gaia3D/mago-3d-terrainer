@@ -45,6 +45,8 @@ public class TileMatrix {
     // all the arrays have the same length
     List<TerrainVertex> listVertices = new ArrayList<>();
     List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
+    private final Vector3d barycenterScratch = new Vector3d();
+    private final RasterTriangle rasterTriangleScratch = new RasterTriangle();
 
     public TileMatrix(TileRange tilesRange, TileWgs84Manager manager) {
         this.tilesRange = tilesRange;
@@ -854,7 +856,7 @@ public class TileMatrix {
         for (int i = 0; i < meshesCount; i++) {
             TerrainMesh mesh = separatedMeshes.get(i);
 
-            TerrainTriangle triangle = mesh.triangles.get(0);
+            TerrainTriangle triangle = mesh.triangles.getFirst();
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             String tileTempDirectory = globalOptions.getTileTempPath();
             String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
@@ -931,17 +933,18 @@ public class TileMatrix {
         }
     }
 
-    public boolean mustRefineTriangle(TerrainTriangle triangle) throws TransformException, IOException {
+    public boolean mustRefineTriangle(TerrainTriangle triangle) {
         if (triangle.isRefineChecked()) {
             return false;
         }
 
         TerrainElevationDataManager terrainElevationDataManager = this.manager.getTerrainElevationDataManager();
         TileIndices tileIndices = triangle.getOwnerTileIndices();
-
-        // check if the triangle must be refined
         this.listVertices.clear();
         this.listHalfEdges.clear();
+        this.listVertices = triangle.getVertices(this.listVertices, this.listHalfEdges);
+
+        // check if the triangle must be refined
         GaiaBoundingBox bboxTriangle = triangle.getBoundingBox(this.listVertices, this.listHalfEdges);
         double bboxMaxLength = bboxTriangle.getLongestDistanceXY();
         double equatorialRadius = GlobalOptions.getInstance().getCelestialBody().getEquatorialRadius();
@@ -981,9 +984,6 @@ public class TileMatrix {
         GeographicExtension rootGeographicExtension = terrainElevationDataManager.getRootGeographicExtension();
         if (!rootGeographicExtension.intersectsBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY())) {
             // Need check only the 3 vertex of the triangle
-            this.listVertices.clear();
-            this.listHalfEdges.clear();
-            this.listVertices = triangle.getVertices(this.listVertices, this.listHalfEdges);
             for (TerrainVertex vertex : this.listVertices) {
                 if (vertex.getPosition().z > maxDiff) {
                     return true;
@@ -998,35 +998,32 @@ public class TileMatrix {
             return false;
         }
 
-        // calculate the angle between triangleNormalWC with the normal at cartesian of the center of the tile
         float cosAng = 1.0f;
-        if (tileIndices.getL() > 10) {
-            Vector3f triangleNormalWC = triangle.getNormal(); // this is normalWC
-            Vector3d triangleNormalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
-            GeographicExtension geographicExtension = tileRaster.getGeographicExtension();
-            Vector3d centerGeoCoord = geographicExtension.getMidPoint();
-            CelestialBody body = GlobalOptions.getInstance().getCelestialBody();
-            double[] centerCartesian = GlobeUtils.geographicToCartesian(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z, body);
-            Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPoint(centerCartesian[0], centerCartesian[1], centerCartesian[2], body);
-            cosAng = (float) GeometryUtils.cosineBetweenUnitaryVectors(triangleNormalDouble.x, triangleNormalDouble.y, triangleNormalDouble.z, normalAtCartesian.x, normalAtCartesian.y, normalAtCartesian.z);
-        }
+        boolean requiresCosAng = tileIndices.getL() > 10;
+        boolean cosAngComputed = !requiresCosAng;
 
         // check the barycenter of the triangle
         this.listVertices.clear();
         this.listHalfEdges.clear();
         TerrainPlane plane = triangle.getPlane(this.listVertices, this.listHalfEdges);
-        this.listVertices.clear();
-        this.listHalfEdges.clear();
-        Vector3d barycenter = triangle.getBarycenter(this.listVertices, this.listHalfEdges);
-        int colIdx = tileRaster.getColumn(barycenter.x);
-        int rowIdx = tileRaster.getRow(barycenter.y);
+        triangle.getBarycenter(this.listVertices, this.listHalfEdges, this.barycenterScratch);
+        int colIdx = tileRaster.getColumn(this.barycenterScratch.x);
+        int rowIdx = tileRaster.getRow(this.barycenterScratch.y);
         double barycenterLonDeg = tileRaster.getLonDeg(colIdx);
         double barycenterLatDeg = tileRaster.getLatDeg(rowIdx);
 
         double elevation = tileRaster.getElevation(colIdx, rowIdx);
         double planeElevation = plane.getValueZ(barycenterLonDeg, barycenterLatDeg);
+        double rawDistToPlane = abs(elevation - planeElevation);
+        double distToPlane = rawDistToPlane;
 
-        double distToPlane = abs(elevation - planeElevation) * cosAng;
+        if (rawDistToPlane > maxDiff) {
+            if (!cosAngComputed) {
+                cosAng = computeCosAng(triangle, tileRaster);
+                cosAngComputed = true;
+            }
+            distToPlane = rawDistToPlane * cosAng;
+        }
 
         if (distToPlane > maxDiff) {
             // is it Barycenter?
@@ -1048,7 +1045,8 @@ public class TileMatrix {
             return false;
         }
 
-        RasterTriangle rasterTriangle = tileRaster.getRasterTriangle(triangle);
+        tileRaster.populateRasterTriangle(triangle, this.listVertices, this.listHalfEdges, this.rasterTriangleScratch);
+        RasterTriangle rasterTriangle = this.rasterTriangleScratch;
         if (rasterTriangle == null || rasterTriangle.getP1() == null ||
             rasterTriangle.getP2() == null || rasterTriangle.getP3() == null) {
             log.warn("Unable to get valid raster triangle for triangle {}. Skipping refinement check.",
@@ -1141,8 +1139,15 @@ public class TileMatrix {
                 float elevationFloat = tileRaster.getElevation(col, row);
 
                 planeElevation = plane.getValueZ(posX, posY);
-
-                distToPlane = abs(elevationFloat - planeElevation) * cosAng;
+                double rawSampleDistToPlane = abs(elevationFloat - planeElevation);
+                distToPlane = rawSampleDistToPlane;
+                if (rawSampleDistToPlane > maxDiff) {
+                    if (!cosAngComputed) {
+                        cosAng = computeCosAng(triangle, tileRaster);
+                        cosAngComputed = true;
+                    }
+                    distToPlane = rawSampleDistToPlane * cosAng;
+                }
                 if (distToPlane > maxDiff) {
 
 //                    this.listVertices.clear();
@@ -1160,6 +1165,20 @@ public class TileMatrix {
 
         log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + colAux + " / " + colsCount + " # row : " + rowAux + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
         return false;
+    }
+
+    private float computeCosAng(TerrainTriangle triangle, TileWgs84Raster tileRaster) {
+        Vector3f triangleNormalWC = triangle.getNormal();
+        Vector3d triangleNormalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
+        GeographicExtension geographicExtension = tileRaster.getGeographicExtension();
+        Vector3d centerGeoCoord = geographicExtension.getMidPoint();
+        CelestialBody body = GlobalOptions.getInstance().getCelestialBody();
+        double[] centerCartesian = GlobeUtils.geographicToCartesian(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z, body);
+        Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPoint(centerCartesian[0], centerCartesian[1], centerCartesian[2], body);
+        return (float) GeometryUtils.cosineBetweenUnitaryVectors(
+            triangleNormalDouble.x, triangleNormalDouble.y, triangleNormalDouble.z,
+            normalAtCartesian.x, normalAtCartesian.y, normalAtCartesian.z
+        );
     }
 
 

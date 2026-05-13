@@ -36,6 +36,7 @@ import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
+import java.awt.Point;
 import java.awt.image.WritableRenderedImage;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -54,6 +55,8 @@ public class RasterStandardizer {
     private static final int MAX_FILES_PER_DIRECTORY = 10_000;
 
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private record PreparedCoverage(GridCoverage2D coverage, boolean disposeAfterUse, boolean allNoData) {}
+
     @FunctionalInterface
     interface TileProcessor {
         void process(String tileName, ReferencedEnvelope tileEnvelope) throws TransformException, IOException;
@@ -82,11 +85,7 @@ public class RasterStandardizer {
                 try {
                     CoordinateReferenceSystem sourceCRS = croppedTile.getCoordinateReferenceSystem();
                     if (!isSameCRS(sourceCRS, targetCRS)) {
-                        GridCoverage2D resampledTile = resample(croppedTile, targetCRS);
-                        outputTile = materializeCoverage(resampledTile);
-                        if (resampledTile != outputTile) {
-                            disposeCoverage(resampledTile);
-                        }
+                        outputTile = resample(croppedTile, targetCRS);
                     }
 
                     File tileFile = createOutputTileFile(outputPath, tileDescriptor.tileName(), current);
@@ -185,9 +184,10 @@ public class RasterStandardizer {
                 log.info("[Raster][I/O] File already exists and not Empty : {}", outputFile.getAbsolutePath());
                 return;
             }
-            GridCoverage2D materializedCoverage = materializeCoverage(coverage);
+            PreparedCoverage preparedCoverage = prepareCoverageForWrite(coverage);
+            GridCoverage2D materializedCoverage = preparedCoverage.coverage();
             try {
-                if (isAllNoData(materializedCoverage)) {
+                if (preparedCoverage.allNoData()) {
                     log.info("[Raster][I/O] Skip all-noData tile: {}", outputFile.getAbsolutePath());
                     return;
                 }
@@ -202,7 +202,9 @@ public class RasterStandardizer {
                     }
                 }
             } finally {
-                disposeCoverage(materializedCoverage);
+                if (preparedCoverage.disposeAfterUse()) {
+                    disposeCoverage(materializedCoverage);
+                }
             }
         } catch (IllegalArgumentException e) {
             if (e.getMessage() != null && e.getMessage().contains("Unable to map projection")) {
@@ -219,10 +221,30 @@ public class RasterStandardizer {
         }
     }
 
+    private PreparedCoverage prepareCoverageForWrite(GridCoverage2D coverage) {
+        RenderedImage renderedImage = coverage.getRenderedImage();
+        double noDataValue = resolveNoDataValue(coverage);
+        if (renderedImage instanceof WritableRenderedImage) {
+            return new PreparedCoverage(coverage, false, isAllNoData(renderedImage.getData(), noDataValue));
+        }
+
+        RasterCopyResult copyResult = copyZeroBasedRasterAndCheckNoData(renderedImage.getData(), noDataValue);
+        GridCoverage2D materializedCoverage = new GridCoverageFactory().create(coverage.getName(), copyResult.raster(), coverage.getEnvelope());
+        return new PreparedCoverage(materializedCoverage, true, copyResult.allNoData());
+    }
+
     private void writeGeotiffWithCarrierCrs(GridCoverage2D coverage, File outputFile) {
         try {
             GridCoverageFactory coverageFactory = new GridCoverageFactory();
-            GridCoverage2D materializedCoverage = materializeCoverage(coverage);
+            PreparedCoverage preparedCoverage = prepareCoverageForWrite(coverage);
+            GridCoverage2D materializedCoverage = preparedCoverage.coverage();
+            if (preparedCoverage.allNoData()) {
+                log.info("[Raster][I/O] Skip all-noData tile with carrier CRS: {}", outputFile.getAbsolutePath());
+                if (preparedCoverage.disposeAfterUse()) {
+                    disposeCoverage(materializedCoverage);
+                }
+                return;
+            }
             ReferencedEnvelope carrierEnvelope = new ReferencedEnvelope(
                 materializedCoverage.getEnvelope2D().getMinimum(0),
                 materializedCoverage.getEnvelope2D().getMaximum(0),
@@ -247,7 +269,9 @@ public class RasterStandardizer {
                 }
             } finally {
                 carrierCoverage.dispose(true);
-                materializedCoverage.dispose(true);
+                if (preparedCoverage.disposeAfterUse()) {
+                    materializedCoverage.dispose(true);
+                }
             }
         } catch (Exception e) {
             log.error("Failed to write GeoTiff with carrier CRS: {}", outputFile.getAbsolutePath(), e);
@@ -495,8 +519,11 @@ public class RasterStandardizer {
 
     private boolean isAllNoData(GridCoverage2D coverage) {
         Raster raster = coverage.getRenderedImage().getData();
-        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-        double noDataValue = noDataContainer != null ? noDataContainer.getAsSingleValue() : globalOptions.getNoDataValue();
+        double noDataValue = resolveNoDataValue(coverage);
+        return isAllNoData(raster, noDataValue);
+    }
+
+    private boolean isAllNoData(Raster raster, double noDataValue) {
         int minX = raster.getMinX();
         int minY = raster.getMinY();
         int maxX = minX + raster.getWidth();
@@ -504,12 +531,17 @@ public class RasterStandardizer {
         for (int y = minY; y < maxY; y++) {
             for (int x = minX; x < maxX; x++) {
                 double value = raster.getSampleDouble(x, y, 0);
-                if (!Double.isNaN(value) && Double.compare(value, noDataValue) != 0) {
+                if (!isNoDataValue(value, noDataValue)) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    private double resolveNoDataValue(GridCoverage2D coverage) {
+        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+        return noDataContainer != null ? noDataContainer.getAsSingleValue() : globalOptions.getNoDataValue();
     }
 
     private GridCoverage2D materializeCoverage(GridCoverage2D coverage) {
@@ -521,6 +553,28 @@ public class RasterStandardizer {
         Raster sourceRaster = renderedImage.getData();
         WritableRaster materializedRaster = createZeroBasedWritableRaster(sourceRaster);
         return new GridCoverageFactory().create(coverage.getName(), materializedRaster, coverage.getEnvelope());
+    }
+
+    private RasterCopyResult copyZeroBasedRasterAndCheckNoData(Raster sourceRaster, double noDataValue) {
+        Raster translatedRaster = sourceRaster.createTranslatedChild(0, 0);
+        WritableRaster materializedRaster = translatedRaster.createCompatibleWritableRaster(translatedRaster.getWidth(), translatedRaster.getHeight());
+        boolean allNoData = true;
+        int width = translatedRaster.getWidth();
+        int height = translatedRaster.getHeight();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double value = translatedRaster.getSampleDouble(x, y, 0);
+                materializedRaster.setSample(x, y, 0, value);
+                if (allNoData && !isNoDataValue(value, noDataValue)) {
+                    allNoData = false;
+                }
+            }
+        }
+        return new RasterCopyResult(materializedRaster, allNoData);
+    }
+
+    private boolean isNoDataValue(double value, double noDataValue) {
+        return Double.isNaN(value) || Double.compare(value, noDataValue) == 0;
     }
 
     private GeneralParameterValue[] createWriteParameters(GridCoverage2D coverage) {
@@ -542,8 +596,8 @@ public class RasterStandardizer {
 
     private GridCoverage2D extractTileCoverage(GridCoverage2D sourceCoverage, GridEnvelope2D gridEnvelope, ReferencedEnvelope tileEnvelope) {
         Raster sourceRaster = sourceCoverage.getRenderedImage().getData(gridEnvelope);
-        WritableRaster materializedRaster = createZeroBasedWritableRaster(sourceRaster);
-        return new GridCoverageFactory().create(sourceCoverage.getName(), materializedRaster, tileEnvelope);
+        WritableRaster zeroBasedRaster = createSharedZeroBasedWritableRaster(sourceRaster);
+        return new GridCoverageFactory().create(sourceCoverage.getName(), zeroBasedRaster, tileEnvelope);
     }
 
     private WritableRaster createZeroBasedWritableRaster(Raster sourceRaster) {
@@ -552,6 +606,19 @@ public class RasterStandardizer {
         materializedRaster.setRect(translatedRaster);
         return materializedRaster;
     }
+
+    private WritableRaster createSharedZeroBasedWritableRaster(Raster sourceRaster) {
+        if (sourceRaster instanceof WritableRaster writableRaster
+                && writableRaster.getMinX() == 0
+                && writableRaster.getMinY() == 0) {
+            return writableRaster;
+        }
+
+        Raster translatedRaster = sourceRaster.createTranslatedChild(0, 0);
+        return Raster.createWritableRaster(translatedRaster.getSampleModel(), translatedRaster.getDataBuffer(), new Point(0, 0));
+    }
+
+    private record RasterCopyResult(WritableRaster raster, boolean allNoData) {}
 
     private File createOutputTileFile(File sourceOutputDirectory, String tileName, int tileIndex) {
         File shardDirectory = new File(sourceOutputDirectory, shardDirectoryName(tileIndex));

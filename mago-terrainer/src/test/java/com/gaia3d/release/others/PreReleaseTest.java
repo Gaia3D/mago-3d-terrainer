@@ -236,7 +236,8 @@ public class PreReleaseTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-max", "12",
+                "-max", "11",
+                "-leaveTemp",
                 "-calculateNormals",
         };
         Mago3DTerrainerMain.main(args);
@@ -251,6 +252,8 @@ public class PreReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-calculateNormals",
+                "-leaveTemp",
+                "-skipStandardizationResize"
         };
         Mago3DTerrainerMain.main(args);
     }
@@ -264,7 +267,22 @@ public class PreReleaseTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-calculateNormals",
+                "-leaveTemp",
                 "-skipStandardizationResize"
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void resolutionTest1MCrop() {
+        String name = "test_jeju_1m_crop.tif";
+        File inputPath = MagoTestConfig.getInputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name.substring(0, name.lastIndexOf(".")));
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-calculateNormals",
+                //"-skipStandardizationResize"
         };
         Mago3DTerrainerMain.main(args);
     }

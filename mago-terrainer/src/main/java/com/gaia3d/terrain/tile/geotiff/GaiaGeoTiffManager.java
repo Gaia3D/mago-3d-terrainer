@@ -48,14 +48,19 @@ import javax.imageio.stream.ImageInputStream;
 @NoArgsConstructor
 @Slf4j
 public class GaiaGeoTiffManager {
+    private static final boolean ENABLE_RASTER_LRU_CACHE = false;
+    private record PreparedCoverage(GridCoverage2D coverage, boolean disposeAfterUse, boolean allNoData) {}
+
     private final String PROJECTION_CRS = "EPSG:3857";
     private final double defaultNoDataValue = GlobalOptions.getInstance().getNoDataValue();
-    private static final long MIN_RASTER_CACHE_BYTES = 1024L * 1024L * 1024L;
-    private static final long MAX_RASTER_CACHE_BYTES = 6L * 1024L * 1024L * 1024L;
-    private static final double RASTER_CACHE_HEAP_RATIO = 0.5d;
+    private static final long MIN_RASTER_CACHE_BYTES = 128L * 1024L * 1024L;
+    private static final long MAX_RASTER_CACHE_BYTES = 768L * 1024L * 1024L;
+    private static final long MAX_SINGLE_RASTER_CACHE_BYTES = 96L * 1024L * 1024L;
+    private static final double RASTER_CACHE_HEAP_RATIO = 0.15d;
     private int[] pixel = new int[1];
     private double[] originalUpperLeftCorner = new double[2];
     private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
+    private Map<String, GeoTiffReader> mapPathGeoTiffReader = new HashMap<>();
     private Map<String, Vector2i> mapPathGridCoverage2dSize = new HashMap<>();
     private Map<String, String> mapGeoTiffToGeoTiff4326 = new HashMap<>();
     private List<String> pathList = new ArrayList<>(); // used to delete the oldest coverage
@@ -64,10 +69,15 @@ public class GaiaGeoTiffManager {
     private long currentRasterCacheBytes = 0L;
 
     {
-        log.info("[Raster][LRU] Raster cache budget set to {} MB (maxHeap={} MB, ratio={})",
-            maxRasterCacheBytes / (1024 * 1024),
-            Runtime.getRuntime().maxMemory() / (1024 * 1024),
-            RASTER_CACHE_HEAP_RATIO);
+        if (!ENABLE_RASTER_LRU_CACHE) {
+            log.info("[Raster][LRU] Raster cache disabled.");
+        } else {
+            log.info("[Raster][LRU] Raster cache budget set to {} MB (maxHeap={} MB, ratio={}, maxSingle={} MB)",
+                maxRasterCacheBytes / (1024 * 1024),
+                Runtime.getRuntime().maxMemory() / (1024 * 1024),
+                RASTER_CACHE_HEAP_RATIO,
+                MAX_SINGLE_RASTER_CACHE_BYTES / (1024 * 1024));
+        }
     }
 
     public GridCoverage2D loadGeoTiffGridCoverage2D(String geoTiffFilePath) {
@@ -90,6 +100,10 @@ public class GaiaGeoTiffManager {
             GridCoverage2D oldestCoverage = mapPathGridCoverage2d.get(oldestPath);
             oldestCoverage.dispose(true);
             mapPathGridCoverage2d.remove(oldestPath);
+            GeoTiffReader oldestReader = mapPathGeoTiffReader.remove(oldestPath);
+            if (oldestReader != null) {
+                oldestReader.dispose();
+            }
             mapPathGridCoverage2dSize.remove(oldestPath);
             pathList.remove(0);
         }
@@ -102,16 +116,16 @@ public class GaiaGeoTiffManager {
             reader = new GeoTiffReader(file);
             coverage = reader.read(null);
         } catch (Exception e) {
-            log.error("Failed to read GeoTIFF file: {}", geoTiffFilePath, e);
-            throw new RuntimeException("Failed to read GeoTIFF file: " + geoTiffFilePath, e);
-        } finally {
             if (reader != null) {
                 reader.dispose();
             }
+            log.error("Failed to read GeoTIFF file: {}", geoTiffFilePath, e);
+            throw new RuntimeException("Failed to read GeoTIFF file: " + geoTiffFilePath, e);
         }
 
         // save the coverage
         mapPathGridCoverage2d.put(geoTiffFilePath, coverage);
+        mapPathGeoTiffReader.put(geoTiffFilePath, reader);
         pathList.add(geoTiffFilePath);
 
         // save the width and height of the coverage
@@ -134,18 +148,25 @@ public class GaiaGeoTiffManager {
     }
 
     public boolean hasCachedRaster(String geoTiffFilePath) {
+        if (!ENABLE_RASTER_LRU_CACHE) {
+            return false;
+        }
         return mapPathRasterCache.containsKey(geoTiffFilePath);
     }
 
     public Raster loadGeoTiffRaster(String geoTiffFilePath) {
-        RasterCacheEntry cacheEntry = mapPathRasterCache.get(geoTiffFilePath);
-        if (cacheEntry != null) {
-            return cacheEntry.raster();
+        if (ENABLE_RASTER_LRU_CACHE) {
+            RasterCacheEntry cacheEntry = mapPathRasterCache.get(geoTiffFilePath);
+            if (cacheEntry != null) {
+                return cacheEntry.raster();
+            }
         }
 
         GridCoverage2D coverage = loadGeoTiffGridCoverage2D(geoTiffFilePath);
         Raster raster = coverage.getRenderedImage().getData();
-        cacheRaster(geoTiffFilePath, raster);
+        if (ENABLE_RASTER_LRU_CACHE) {
+            cacheRaster(geoTiffFilePath, raster);
+        }
         return raster;
     }
 
@@ -153,7 +174,13 @@ public class GaiaGeoTiffManager {
         for (GridCoverage2D coverage : mapPathGridCoverage2d.values()) {
             coverage.dispose(true);
         }
+        for (GeoTiffReader reader : mapPathGeoTiffReader.values()) {
+            if (reader != null) {
+                reader.dispose();
+            }
+        }
         mapPathGridCoverage2d.clear();
+        mapPathGeoTiffReader.clear();
         clearRasterCache();
 
     }
@@ -162,7 +189,13 @@ public class GaiaGeoTiffManager {
         for (GridCoverage2D c : mapPathGridCoverage2d.values()) {
             if (c != null) {c.dispose(true);}
         }
+        for (GeoTiffReader reader : mapPathGeoTiffReader.values()) {
+            if (reader != null) {
+                reader.dispose();
+            }
+        }
         mapPathGridCoverage2d.clear();
+        mapPathGeoTiffReader.clear();
         mapPathGridCoverage2dSize.clear();
         pathList.clear();
         clearRasterCache();
@@ -218,9 +251,10 @@ public class GaiaGeoTiffManager {
     public void saveGridCoverage2D(GridCoverage2D coverage, String outputFilePath) throws IOException {
         // now save the newCoverage as geotiff
         File outputFile = new File(outputFilePath);
-        GridCoverage2D materializedCoverage = materializeCoverage(coverage);
+        PreparedCoverage preparedCoverage = prepareCoverageForWrite(coverage);
+        GridCoverage2D materializedCoverage = preparedCoverage.coverage();
         try {
-            if (isAllNoData(materializedCoverage)) {
+            if (preparedCoverage.allNoData()) {
                 log.info("[Raster][I/O] Skip all-noData resize output: {}", outputFilePath);
                 return;
             }
@@ -235,10 +269,22 @@ public class GaiaGeoTiffManager {
                 }
             }
         } finally {
-            if (materializedCoverage != coverage) {
+            if (preparedCoverage.disposeAfterUse()) {
                 materializedCoverage.dispose(true);
             }
         }
+    }
+
+    private PreparedCoverage prepareCoverageForWrite(GridCoverage2D coverage) {
+        RenderedImage renderedImage = coverage.getRenderedImage();
+        double noDataValue = resolveNoDataValue(coverage);
+        if (renderedImage instanceof WritableRenderedImage) {
+            return new PreparedCoverage(coverage, false, isAllNoData(renderedImage.getData(), noDataValue));
+        }
+
+        RasterCopyResult copyResult = copyZeroBasedRasterAndCheckNoData(renderedImage.getData(), noDataValue);
+        GridCoverage2D materializedCoverage = new GridCoverageFactory().create(coverage.getName(), copyResult.raster(), coverage.getEnvelope());
+        return new PreparedCoverage(materializedCoverage, true, copyResult.allNoData());
     }
 
     private GridCoverage2D materializeCoverage(GridCoverage2D coverage) {
@@ -306,8 +352,11 @@ public class GaiaGeoTiffManager {
 
     private boolean isAllNoData(GridCoverage2D coverage) {
         Raster raster = coverage.getRenderedImage().getData();
-        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
-        double noDataValue = noDataContainer != null ? noDataContainer.getAsSingleValue() : defaultNoDataValue;
+        double noDataValue = resolveNoDataValue(coverage);
+        return isAllNoData(raster, noDataValue);
+    }
+
+    private boolean isAllNoData(Raster raster, double noDataValue) {
         int minX = raster.getMinX();
         int minY = raster.getMinY();
         int maxX = minX + raster.getWidth();
@@ -315,12 +364,39 @@ public class GaiaGeoTiffManager {
         for (int y = minY; y < maxY; y++) {
             for (int x = minX; x < maxX; x++) {
                 double value = raster.getSampleDouble(x, y, 0);
-                if (!Double.isNaN(value) && Double.compare(value, noDataValue) != 0) {
+                if (!isNoDataValue(value, noDataValue)) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    private double resolveNoDataValue(GridCoverage2D coverage) {
+        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
+        return noDataContainer != null ? noDataContainer.getAsSingleValue() : defaultNoDataValue;
+    }
+
+    private RasterCopyResult copyZeroBasedRasterAndCheckNoData(Raster sourceRaster, double noDataValue) {
+        Raster translatedRaster = sourceRaster.createTranslatedChild(0, 0);
+        WritableRaster materializedRaster = translatedRaster.createCompatibleWritableRaster(translatedRaster.getWidth(), translatedRaster.getHeight());
+        boolean allNoData = true;
+        int width = translatedRaster.getWidth();
+        int height = translatedRaster.getHeight();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double value = translatedRaster.getSampleDouble(x, y, 0);
+                materializedRaster.setSample(x, y, 0, value);
+                if (allNoData && !isNoDataValue(value, noDataValue)) {
+                    allNoData = false;
+                }
+            }
+        }
+        return new RasterCopyResult(materializedRaster, allNoData);
+    }
+
+    private boolean isNoDataValue(double value, double noDataValue) {
+        return Double.isNaN(value) || Double.compare(value, noDataValue) == 0;
     }
 
     private WritableRaster createZeroBasedWritableRaster(Raster sourceRaster) {
@@ -330,9 +406,23 @@ public class GaiaGeoTiffManager {
         return materializedRaster;
     }
 
+    private record RasterCopyResult(WritableRaster raster, boolean allNoData) {}
+
     private void cacheRaster(String geoTiffFilePath, Raster raster) {
+        if (!ENABLE_RASTER_LRU_CACHE) {
+            return;
+        }
+
         long rasterBytes = estimateRasterBytes(raster);
         if (rasterBytes <= 0L) {
+            return;
+        }
+
+        if (rasterBytes > MAX_SINGLE_RASTER_CACHE_BYTES) {
+            log.info("[Raster][LRU] Skip caching large raster: {} (~{} MB > {} MB)",
+                geoTiffFilePath,
+                rasterBytes / (1024 * 1024),
+                MAX_SINGLE_RASTER_CACHE_BYTES / (1024 * 1024));
             return;
         }
 
@@ -369,6 +459,11 @@ public class GaiaGeoTiffManager {
     }
 
     private void clearRasterCache() {
+        if (!ENABLE_RASTER_LRU_CACHE) {
+            mapPathRasterCache.clear();
+            currentRasterCacheBytes = 0L;
+            return;
+        }
         mapPathRasterCache.clear();
         currentRasterCacheBytes = 0L;
     }
