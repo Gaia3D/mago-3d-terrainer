@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Setter
 @Slf4j
 public class TileWgs84Manager {
-    private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final int rasterTileSize = 256;
     private final String imaginaryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
     // For each depth level, use a different folder

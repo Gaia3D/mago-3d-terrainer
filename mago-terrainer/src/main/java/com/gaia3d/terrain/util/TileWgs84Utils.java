@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TileWgs84Utils {
-    private final static GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     public static double getTileSizeInMetersByDepth(int depth) {
         double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);

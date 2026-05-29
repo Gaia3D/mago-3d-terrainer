@@ -40,7 +40,7 @@ public class TerrainElevationDataManager {
     private static final long MIN_LIVE_RASTER_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L;
     private static final long MAX_LIVE_RASTER_BUDGET_BYTES = 8L * 1024L * 1024L * 1024L;
 
-    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     private TileWgs84Manager tileWgs84Manager = null;
     private List<TerrainElevationData> terrainElevationDataArray = new ArrayList<>();

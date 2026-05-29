@@ -6,7 +6,6 @@ import com.gaia3d.command.Mago3DTerrainerMain;
 import java.io.File;
 
 public class MagoTestConfig {
-    //public static final String OUTPUT_PATH = "E:/data/mago-server/output";
     public static final String OUTPUT_PATH = "H:/workspace/mago-server/output";
     public static final String SSD_INPUT_PATH = "H:/workspace/mago-3d-terrainer";
     public static final String INPUT_PATH = "D:/data/mago-3d-terrainer/release-sample";

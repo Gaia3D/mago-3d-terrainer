@@ -37,7 +37,7 @@ import static java.lang.Math.abs;
 public class TileMatrix {
     private static final double VERTEX_COINCIDENT_ERROR = 0.0000000000001; // 1e-13
 
-    private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TileRange tilesRange;
     private final List<List<TileWgs84>> tilesMatrixRowCol = new ArrayList<>();
     public TileWgs84Manager manager = null;
