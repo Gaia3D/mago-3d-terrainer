@@ -31,6 +31,26 @@ public class GaiaSceneUtils {
         return scene;
     }
 
+    public static GaiaBoundingBox calculateBBoxOfFaces(List<GaiaFace> faces, List<GaiaVertex> vertices){
+        GaiaBoundingBox boundingBox = null;
+        int facesCount = faces.size();
+        for(GaiaFace face : faces){
+            int[] indices = face.getIndices();
+            int indicesCount = indices.length;
+            for(int i = 0; i < indicesCount; i++){
+                GaiaVertex vertex = vertices.get(indices[i]);
+                Vector3d position = vertex.getPosition();
+
+                if(boundingBox == null){
+                    boundingBox = new GaiaBoundingBox();
+                }
+
+                boundingBox.addPoint(position);
+            }
+        }
+        return boundingBox;
+    }
+
     public static boolean checkSceneMaterials(GaiaScene scene) {
         for (GaiaNode node : scene.getNodes()) {
             for (GaiaMesh mesh : node.getMeshes()) {
@@ -44,24 +64,6 @@ public class GaiaSceneUtils {
             }
         }
         return true;
-    }
-
-    public static void materialImagesGammaSaturationCorrectionCorrection(GaiaScene scene, double gamma, float saturation) {
-        for (GaiaMaterial material : scene.getMaterials()) {
-            Map<TextureType, List<GaiaTexture>> textures = material.getTextures();
-
-            // modify only diffuse textures for now.
-            List<GaiaTexture> diffuseTextures = textures.get(TextureType.DIFFUSE);
-            if (diffuseTextures != null) {
-                for (GaiaTexture texture : diffuseTextures) {
-                    BufferedImage image = texture.getBufferedImage();
-                    BufferedImage imageCorrected = ImageUtils.correctGammaSaturation(image, gamma, saturation);
-                    texture.setBufferedImage(imageCorrected);
-                    String fullPath = texture.getFullPath();
-                    texture.saveImage(fullPath);
-                }
-            }
-        }
     }
 
     public static Map<GaiaVertex, List<GaiaFaceExplicit>> getMapVertexToFaceExplicits(List<GaiaFaceExplicit> faces, Map<GaiaVertex, List<GaiaFaceExplicit>> resultMapVertexToFace) {
