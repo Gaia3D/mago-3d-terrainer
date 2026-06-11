@@ -14,12 +14,12 @@ import de.javagl.jgltf.model.GltfModels;
 import de.javagl.jgltf.model.io.GltfModelWriter;
 import de.javagl.jgltf.model.io.v2.GltfAssetV2;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4d;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
+import org.joml.Vector4d;
 import org.lwjgl.opengl.GL20;
 
 import javax.imageio.IIOImage;
@@ -126,7 +126,12 @@ public class GltfWriter {
         GltfBinary binary = new GltfBinary();
         GlTF gltf = new GlTF();
         gltf.setAsset(genAsset());
-        gltf.addSamplers(genSampler());
+        List<GaiaMaterial> materials = gaiaScene.getMaterials();
+        if (materials == null || materials.isEmpty()) {
+            log.error("[Error] : gaiaScene has no materials");
+        }
+        GaiaMaterial gaiaMaterial0 = gaiaScene.getMaterials().getFirst();
+        gltf.addSamplers(genSampler(gaiaMaterial0));
 
         Node rootNode = initNode();
         initScene(gltf, rootNode);
@@ -163,8 +168,12 @@ public class GltfWriter {
 
             List<GaiaMesh> gaiaMeshes = gaiaNode.getMeshes();
             gaiaMeshes.forEach((gaiaMesh) -> {
-                GltfNodeBuffer nodeBuffer = convertGeometryInfo(gltf, gaiaMesh, node);
-                nodeBuffers.add(nodeBuffer);
+                if (gaiaMesh.getPrimitives().size() <= 0) {
+                    log.warn("[WARN] The mesh has no primitives. Skip the mesh.");
+                } else {
+                    GltfNodeBuffer nodeBuffer = convertGeometryInfo(gltf, gaiaMesh, node);
+                    nodeBuffers.add(nodeBuffer);
+                }
             });
         });
     }
@@ -227,7 +236,6 @@ public class GltfWriter {
             node.setMatrix(quantizationMatrix.get(new float[16]));
 
             if (node.getRotation() != null && node.getTranslation() != null) {
-                log.warn("[WARN] When using quantization, rotation and translation are ignored.");
                 node.setRotation(null);
                 node.setTranslation(null);
             }
@@ -379,7 +387,7 @@ public class GltfWriter {
         }
 
         List<Material> materials = gltf.getMaterials();
-        GaiaPrimitive gaiaPrimitive = gaiaMesh.getPrimitives().get(0);
+        GaiaPrimitive gaiaPrimitive = gaiaMesh.getPrimitives().getFirst();
         MeshPrimitive primitive = createPrimitive(nodeBuffer, gaiaPrimitive, materials);
         int meshId = createMesh(gltf, primitive);
         node.setMesh(meshId);
@@ -628,35 +636,42 @@ public class GltfWriter {
 
         Material material = new Material();
         material.setName(gaiaMaterial.getName());
-        //material.setDoubleSided(formatType != null && formatType.equals(FormatType.CITYGML));
         material.setDoubleSided(gltfOptions.isDoubleSided());
 
         // Set the alpha mode
         boolean isOpaque = gaiaMaterial.isOpaqueMaterial();
         if (!isOpaque) {
             boolean isBlend = gaiaMaterial.isBlend();
+            float alphaCutoff = gaiaMaterial.getAlphaCutoff();
             if (isBlend) {
                 material.setAlphaMode("BLEND");
             } else {
                 material.setAlphaMode("MASK");
-                material.setAlphaCutoff(0.5f);
+                material.setAlphaCutoff(alphaCutoff);
             }
         } else {
             material.setAlphaMode("OPAQUE");
         }
 
         MaterialPbrMetallicRoughness pbrMetallicRoughness = new MaterialPbrMetallicRoughness();
-        if (!diffuseTextures.isEmpty()) {
+        if (diffuseTextures != null && !diffuseTextures.isEmpty()) {
             GaiaTexture gaiaTexture = diffuseTextures.get(0);
             int textureId = createTexture(gltf, binary, gaiaTexture);
             TextureInfo textureInfo = new TextureInfo();
             textureInfo.setIndex(textureId);
+
+            Vector4d diffuseColor = gaiaMaterial.getDiffuseColor();
+            float[] baseColorFactor = new float[]{(float) diffuseColor.x, (float) diffuseColor.y, (float) diffuseColor.z, (float) diffuseColor.w};
+            pbrMetallicRoughness.setBaseColorFactor(baseColorFactor);
+            //pbrMetallicRoughness.setBaseColorFactor(new float[]{1.0f, 1.0f, 1.0f, 1.0f});
             pbrMetallicRoughness.setBaseColorTexture(textureInfo);
-            pbrMetallicRoughness.setBaseColorFactor(new float[]{1.0f, 1.0f, 1.0f, 1.0f});
             pbrMetallicRoughness.setMetallicFactor(0.0f);
             pbrMetallicRoughness.setRoughnessFactor(1.0f);
         } else {
-            pbrMetallicRoughness.setBaseColorFactor(new float[]{1.0f, 1.0f, 1.0f, 1.0f});
+            Vector4d diffuseColor = gaiaMaterial.getDiffuseColor();
+            float[] baseColorFactor = new float[]{(float) diffuseColor.x, (float) diffuseColor.y, (float) diffuseColor.z, (float) diffuseColor.w};
+            pbrMetallicRoughness.setBaseColorFactor(baseColorFactor);
+            //pbrMetallicRoughness.setBaseColorFactor(new float[]{0.0f, 1.0f, 1.0f, 1.0f});
             pbrMetallicRoughness.setMetallicFactor(0.0f);
             pbrMetallicRoughness.setRoughnessFactor(1.0f);
         }
@@ -739,6 +754,7 @@ public class GltfWriter {
     }
 
     protected Sampler genSampler() {
+        // deprecated.
         Sampler sampler = new Sampler();
         sampler.setMagFilter(GL20.GL_LINEAR);
         sampler.setMinFilter(GL20.GL_LINEAR_MIPMAP_LINEAR);
@@ -747,9 +763,29 @@ public class GltfWriter {
         return sampler;
     }
 
+    protected Sampler genSampler(GaiaMaterial gaiaMaterial) {
+        GaiaSamplers gaiaSamplers = gaiaMaterial.getSamplers();
+        if(gaiaSamplers == null){
+            // create with default values.
+            gaiaSamplers = new GaiaSamplers();
+        }
+        Sampler sampler = new Sampler();
+        sampler.setMagFilter(gaiaSamplers.getMagFilter());
+        sampler.setMinFilter(gaiaSamplers.getMinFilter());
+        sampler.setWrapS(gaiaSamplers.getWrapS());
+        sampler.setWrapT(gaiaSamplers.getWrapT());
+        return sampler;
+    }
+
     protected MeshPrimitive createPrimitive(GltfNodeBuffer nodeBuffer, GaiaPrimitive gaiaPrimitive, List<Material> materials) {
         MeshPrimitive primitive = new MeshPrimitive();
         primitive.setMode(GltfConstants.GL_TRIANGLES);
+        if (gaiaPrimitive.getMaterialIndex() >= 0) {
+            primitive.setMaterial(gaiaPrimitive.getMaterialIndex());
+        } else {
+            log.warn("[WARN] The material index of the primitive is out of range. Set the default material index (0).");
+            primitive.setMaterial(0);
+        }
         primitive.setMaterial(gaiaPrimitive.getMaterialIndex());
         primitive.setAttributes(new HashMap<>());
         primitive.setIndices(nodeBuffer.getIndicesAccessorId());
@@ -775,7 +811,6 @@ public class GltfWriter {
 
     protected int createMesh(GlTF gltf, MeshPrimitive primitive) {
         Mesh mesh = new Mesh();
-        //mesh.addWeights(1.0f);
         mesh.addPrimitives(primitive);
         gltf.addMeshes(mesh);
         return gltf.getMeshes().size() - 1;
@@ -788,13 +823,6 @@ public class GltfWriter {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             int width = bufferedImage.getWidth();
             int height = bufferedImage.getHeight();
-            /*if (!globalOptions.isPhotogrammetry()) {
-                int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
-                int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
-                if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                    bufferedImage = imageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
-                }
-            }*/
             int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
             int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
             if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
@@ -830,13 +858,6 @@ public class GltfWriter {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             int width = bufferedImage.getWidth();
             int height = bufferedImage.getHeight();
-            /*if (!globalOptions.isPhotogrammetry()) {
-                int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
-                int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
-                if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                    bufferedImage = imageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
-                }
-            }*/
             int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
             int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
             if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
@@ -846,11 +867,11 @@ public class GltfWriter {
 
             if (gltfOptions.isForceJpeg() || mimeType.equals("image/jpeg")) {
                 float quality = 0.75f;
-                imageString = writeJpegImageUrl(bufferedImage, quality);
+                imageString = convertBase64JpegText(bufferedImage, quality);
             } else {
                 ImageIO.write(bufferedImage, formatName, baos);
                 byte[] bytes = baos.toByteArray();
-                imageString = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+                imageString = convertBase64ImageText(bytes, mimeType);
                 bufferedImage.flush();
             }
         } catch (IOException e) {
@@ -914,8 +935,12 @@ public class GltfWriter {
         return null;
     }
 
-    private String writeJpegImageUrl(BufferedImage bufferedImage, float quality) {
+    private String convertBase64ImageText(byte[] bytes, String mimeType) {
+        return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+    }
+
+    private String convertBase64JpegText(BufferedImage bufferedImage, float quality) {
         byte[] bytes = writeJpeg(bufferedImage, quality);
-        return "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(bytes);
+        return convertBase64ImageText(bytes, "image/jpeg");
     }
 }

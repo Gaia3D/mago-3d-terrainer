@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 public class AssimpConverter implements Converter {
 
     private final AssimpConverterOptions options;
+    private final GaiaSceneGeometryValidator sceneGeometryValidator = new GaiaSceneGeometryValidator();
 
     public final int DEFAULT_FLAGS = Assimp.aiProcess_GenNormals |
             Assimp.aiProcess_Triangulate |
@@ -60,6 +61,7 @@ public class AssimpConverter implements Converter {
         }
 
         String path = file.getAbsolutePath().replace(file.getName(), "");
+
         AIScene aiScene = Assimp.aiImportFile(file.getAbsolutePath(), DEFAULT_FLAGS);
 
         if (aiScene == null) {
@@ -82,10 +84,20 @@ public class AssimpConverter implements Converter {
             gaiaScene.setAttribute(attribute);
 
             gaiaScenes.add(gaiaScene);
+            //validateScenes(file, gaiaScenes);
         }
 
         Assimp.aiFreeScene(aiScene);
         return gaiaScenes;
+    }
+
+    private void validateScenes(File file, List<GaiaScene> gaiaScenes) {
+        GaiaSceneGeometryValidator.ValidationReport report = sceneGeometryValidator.validate(file, gaiaScenes);
+        if (report.hasIssues()) {
+            log.warn("[WARN] Converted scene geometry validation failed. {}", report.toDetailString());
+        } else if (log.isDebugEnabled()) {
+            log.debug("Converted scene geometry validation passed. {}", report.toSummaryString());
+        }
     }
 
     @Override
@@ -137,7 +149,7 @@ public class AssimpConverter implements Converter {
         String fileName = file.getName();
         Path originalPath = file.toPath();
 
-        FormatType formatType = FormatType.fromExtension(FilenameUtils.getExtension(fileName));
+        FormatType formatType = FormatType.requireFromExtension(FilenameUtils.getExtension(fileName));
         GaiaScene gaiaScene = new GaiaScene();
 
         AINode aiNode = aiScene.mRootNode();
@@ -192,7 +204,7 @@ public class AssimpConverter implements Converter {
     }
 
     private GaiaScene convertScene(AIScene aiScene, String filePath, String fileName) {
-        FormatType formatType = FormatType.fromExtension(FilenameUtils.getExtension(fileName));
+        FormatType formatType = FormatType.requireFromExtension(FilenameUtils.getExtension(fileName));
         GaiaScene gaiaScene = new GaiaScene();
         AINode aiNode = aiScene.mRootNode();
         List<String> embeddedTextures = getEmbeddedTexturePath(aiScene, filePath, fileName);
@@ -262,6 +274,10 @@ public class AssimpConverter implements Converter {
     private GaiaMaterial processMaterial(AIMaterial aiMaterial, String path, List<String> embeddedTextures) {
         GaiaMaterial material = new GaiaMaterial();
 
+        String alphaMode = "OPAQUE";
+        float alphaCutoff = 0.5f;
+        float shininess = 0.0f;
+        float roughness = 0.0f;
         float opacity = 1.0f;
         int properties = aiMaterial.mNumProperties();
         for (int i = 0; i < properties; i++) {
@@ -273,12 +289,45 @@ public class AssimpConverter implements Converter {
             byte[] data = new byte[aiMaterialProperty.mDataLength()];
             buffer.get(data);
 
+            //log.info(aiMaterialProperty.mKey().dataString());
             if (aiMaterialProperty.mKey().dataString().contains("opacity")) {
                 ByteBuffer byteBuffer = ByteBuffer.wrap(data);
                 byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
                 float opacityValue = byteBuffer.getFloat();
                 if (opacityValue < 1.0f) {
                     opacity = opacityValue;
+                }
+            } else if (aiMaterialProperty.mKey().dataString().contains("alphaMode")) {
+                String value = new String(data);
+                value = value.toUpperCase().trim();
+
+                if (value.contains("OPAQUE")) {
+                    alphaMode = "OPAQUE";
+                } else if (value.contains("MASK")) {
+                    alphaMode = "MASK";
+                } else if (value.contains("BLEND")) {
+                    alphaMode = "BLEND";
+                }
+            } else if (aiMaterialProperty.mKey().dataString().contains("alphaCutoff")) {
+                ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+                float value = byteBuffer.getFloat();
+                if (value < 1.0f) {
+                    alphaCutoff = value;
+                }
+            } else if (aiMaterialProperty.mKey().dataString().contains("shininess")) {
+                ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+                float value = byteBuffer.getFloat();
+                if (value < 1.0f) {
+                    shininess = value;
+                }
+            } else if (aiMaterialProperty.mKey().dataString().contains("roughness")) {
+                ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+                float value = byteBuffer.getFloat();
+                if (value < 1.0f) {
+                    roughness = value;
                 }
             }
         }
@@ -311,6 +360,28 @@ public class AssimpConverter implements Converter {
             material.setSpecularColor(specVector4d);
         }
 
+        if (shininess > 0.0f) {
+            material.setShininess(shininess);
+        }
+        if (roughness > 0.0f) {
+            material.setRoughness(roughness);
+        }
+        switch (alphaMode) {
+            case "OPAQUE":
+                material.setBlend(false);
+                material.setOpaque(true);
+                break;
+            case "MASK":
+                material.setBlend(false);
+                material.setOpaque(false);
+                material.setAlphaCutoff(alphaCutoff);
+                break;
+            case "BLEND":
+                material.setBlend(true);
+                material.setOpaque(false);
+                material.setAlphaCutoff(alphaCutoff);
+                break;
+        }
         AIString diffPath = AIString.calloc();
         Assimp.aiGetMaterialTexture(aiMaterial, Assimp.aiTextureType_DIFFUSE, 0, diffPath, (IntBuffer) null, null, null, null, null, null);
         String diffTexPath = diffPath.dataString();
