@@ -62,7 +62,7 @@ public class GaiaSet implements Serializable {
         return newGaiaSet;
     }
 
-    public static GaiaSet readFile(Path path) throws FileNotFoundException {
+    public static GaiaSet readFile(Path path) throws IOException {
         File input = path.toFile();
         Path imagesPath = path.getParent().resolve("images");
         try (ObjectInputStream inputStream = new ObjectInputStream(new BufferedInputStream(new FileInputStream(input)))) {
@@ -80,9 +80,9 @@ public class GaiaSet implements Serializable {
             }
             return gaiaSet;
         } catch (Exception e) {
-            log.error("[ERROR] GaiaSet Read Error : ", e);
+            log.error("[ERROR] GaiaSet Read Error : {}", path, e);
+            throw new IOException("Failed to read GaiaSet file: " + path, e);
         }
-        return null;
     }
 
     public GaiaBoundingBox getBoundingBox() {
@@ -138,7 +138,7 @@ public class GaiaSet implements Serializable {
         int dividedNumber = serial / 10000;
 
         String tempFileName = this.attribute.getIdentifier().toString() + "." + FormatType.TEMP.getExtension();
-        Path tempDir = path.resolve(this.projectName).resolve(String.valueOf(dividedNumber));
+        Path tempDir = path.resolve(this.projectName + this.attribute.getIdentifier()).resolve(String.valueOf(dividedNumber));
         File tempDirFile = tempDir.toFile();
         if (tempDirFile.mkdirs()) {
             log.debug("Directory created: {}", tempDir);
