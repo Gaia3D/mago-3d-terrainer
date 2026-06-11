@@ -23,6 +23,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GaiaVertex extends VertexStructure implements Serializable, GeometryContent {
+    private Vector3d position;
+    private Vector3d normal;
+    private Vector2d texcoords;
+    private byte[] color;
+    private float batchId;
+
     private short[] quantizedPosition;
     private char intensity;
     private short classification;

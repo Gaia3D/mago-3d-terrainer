@@ -36,7 +36,7 @@ public class SurfaceSeparator {
             HalfEdgeSurface firstSurface = surfaces.get(0);
 
             List<HalfEdgeFace> faces = firstSurface.getFaces();
-            List<List<HalfEdgeFace>> weldedFacesGroups = HalfEdgeUtils.getWeldedFacesGroups(faces, null);
+            List<List<HalfEdgeFace>> weldedFacesGroups = WeldedFacesFinder.getWeldedFacesGroups(firstSurface, null);
 
             List<HalfEdgeSurface> separatedSurfaces = new ArrayList<>();
             for (List<HalfEdgeFace> weldedFaces : weldedFacesGroups) {

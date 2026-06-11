@@ -9,4 +9,5 @@ public interface GeometryContent {
     GaiaBoundingBox getBoundingBox();
 
     Vector3d getCenterPoint();
+
 }
