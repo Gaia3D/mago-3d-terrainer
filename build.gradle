@@ -7,6 +7,15 @@ repositories {
     mavenCentral()
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}
+
 dependencies {
     implementation "org.locationtech.proj4j:proj4j:1.2.3"
     implementation "org.locationtech.proj4j:proj4j-epsg:1.2.3"
