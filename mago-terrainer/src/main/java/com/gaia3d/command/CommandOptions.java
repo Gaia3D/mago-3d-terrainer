@@ -32,8 +32,8 @@ public enum CommandOptions {
     EXT_CALCULATE_NORMALS("calculateNormals", "cn", false, "Add terrain octVertexNormals for lighting effect"),
 
     // Optimization options
-    TILING_MOSAIC_SIZE("mosaicSize", "ms", true, "Tiling mosaic buffer size per tile. \n(default : 16)"),
-    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", true, "Maximum raster size for split function. \n(default : 8192)"),
+    TILING_MOSAIC_SIZE("mosaicSize", "ms", true, "Tiling mosaic buffer size per tile. \n(default : 8)"),
+    RASTER_MAXIMUM_SIZE("rasterMaxSize", "mr", true, "Maximum raster size for split function. \n(default : 4096)"),
 
     // Experimental options
     //INPUT_CRS("inputCrs", "ic", true, "[Experimental] Input Coordinate Reference System, EPSG Code [4326, 3857...]"),

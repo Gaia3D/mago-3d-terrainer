@@ -1187,6 +1187,7 @@ public class TileMatrix {
         // Here refine only the triangles of the current tile
 
         boolean isModify = globalOptions.isModify();
+        final int memoryCheckSplitInterval = 256;
 
         // refine the mesh
         AtomicBoolean refined = new AtomicBoolean(false);
@@ -1204,6 +1205,17 @@ public class TileMatrix {
                 continue;
             }
             if (mustRefineTriangle(triangle)) {
+                int currentSplitCount = splitCount.get();
+                if (currentSplitCount == 0 || currentSplitCount % memoryCheckSplitInterval == 0) {
+                    MemoryMonitor.MemoryState memState = MemoryMonitor.checkMemory("RefineMesh-Split");
+                    if (memState.isCritical) {
+                        log.error("[RefineMesh] Stopping current iteration before split due to critical memory pressure: " +
+                                "free={}%, triangles={}, vertices={}, splits_this_iteration={}.",
+                                memState.getFormattedPercent(), mesh.triangles.size(), mesh.vertices.size(), currentSplitCount);
+                        break;
+                    }
+                }
+
                 this.manager.getTriangleList().clear();
                 this.listHalfEdges.clear();
                 mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
@@ -1275,6 +1287,10 @@ public class TileMatrix {
     }
 
     public void refineMesh(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
+        refineMeshWithMemoryGuard(mesh, tilesRange);
+    }
+
+    public void refineMeshLegacy(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of n different tiles
         // Here refine only the triangles of the tiles of TilesRange
 
@@ -1298,7 +1314,7 @@ public class TileMatrix {
         }
     }
 
-    public void refineMesh_new(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
+    public void refineMeshWithMemoryGuard(TerrainMesh mesh, TileRange tilesRange) throws TransformException, IOException {
         // Inside the mesh, there are triangles of n different tiles
         // Here refine only the triangles of the tiles of TilesRange
 

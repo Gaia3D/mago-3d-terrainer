@@ -64,7 +64,18 @@ jib {
                 "-XX:InitialRAMPercentage=50.0",
                 "-XX:MaxRAMPercentage=50.0"
         ]
-        entrypoint = ["java", "-jar", "/app/mago-3d-terrainer-${project.version}.jar"]
+        entrypoint = [
+                "java",
+                "-Djava.awt.headless=true",
+                "-Dfile.encoding=UTF-8",
+                "-XX:+UseContainerSupport",
+                "-XX:MaxGCPauseMillis=100",
+                "-XX:+UseStringDeduplication",
+                "-XX:InitialRAMPercentage=50.0",
+                "-XX:MaxRAMPercentage=50.0",
+                "-jar",
+                "/app/mago-3d-terrainer-${project.version}.jar"
+        ]
     }
     extraDirectories {
         paths {

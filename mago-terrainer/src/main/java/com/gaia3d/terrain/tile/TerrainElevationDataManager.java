@@ -33,12 +33,12 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationDataManager {
-    private static final boolean PRELOAD_TERRAIN_RASTERS = true;
-    private static final long MIN_PRELOAD_BUDGET_BYTES = 1024L * 1024L * 1024L;
-    private static final long MAX_PRELOAD_BUDGET_BYTES = 8L * 1024L * 1024L * 1024L;
-    private static final long HEAP_RESERVE_BYTES = 512L * 1024L * 1024L;
-    private static final long MIN_LIVE_RASTER_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L;
-    private static final long MAX_LIVE_RASTER_BUDGET_BYTES = 8L * 1024L * 1024L * 1024L;
+    private static final boolean PRELOAD_TERRAIN_RASTERS = false;
+    private static final long MIN_PRELOAD_BUDGET_BYTES = 128L * 1024L * 1024L;
+    private static final long MAX_PRELOAD_BUDGET_BYTES = 1024L * 1024L * 1024L;
+    private static final long HEAP_RESERVE_BYTES = 2L * 1024L * 1024L * 1024L;
+    private static final long MIN_LIVE_RASTER_BUDGET_BYTES = 512L * 1024L * 1024L;
+    private static final long MAX_LIVE_RASTER_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L;
 
     private GlobalOptions globalOptions = GlobalOptions.getInstance();
 
@@ -428,7 +428,11 @@ public class TerrainElevationDataManager {
             }
 
             long estimatedBytes = terrainElevationData.estimateRasterBytes();
-            if (loadedCount > 0 && loadedBytes + estimatedBytes > preloadBudgetBytes) {
+            if (estimatedBytes > preloadBudgetBytes) {
+                continue;
+            }
+
+            if (loadedBytes + estimatedBytes > preloadBudgetBytes) {
                 break;
             }
 
@@ -550,7 +554,7 @@ public class TerrainElevationDataManager {
             return 0L;
         }
 
-        long desiredBudget = Math.min(MAX_PRELOAD_BUDGET_BYTES, Math.max(MIN_PRELOAD_BUDGET_BYTES, maxMemory / 2));
+        long desiredBudget = Math.min(MAX_PRELOAD_BUDGET_BYTES, Math.max(MIN_PRELOAD_BUDGET_BYTES, maxMemory / 8));
         return Math.min(desiredBudget, freeHeadroom);
     }
 
@@ -563,7 +567,7 @@ public class TerrainElevationDataManager {
             return 0L;
         }
 
-        long desiredBudget = Math.min(MAX_LIVE_RASTER_BUDGET_BYTES, Math.max(MIN_LIVE_RASTER_BUDGET_BYTES, maxMemory / 2));
+        long desiredBudget = Math.min(MAX_LIVE_RASTER_BUDGET_BYTES, Math.max(MIN_LIVE_RASTER_BUDGET_BYTES, maxMemory / 8));
         return Math.min(desiredBudget, freeHeadroom);
     }
 }

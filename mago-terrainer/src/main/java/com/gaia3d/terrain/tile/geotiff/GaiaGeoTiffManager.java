@@ -49,6 +49,7 @@ import javax.imageio.stream.ImageInputStream;
 @Slf4j
 public class GaiaGeoTiffManager {
     private static final boolean ENABLE_RASTER_LRU_CACHE = false;
+    private static final int MAX_CACHED_GRID_COVERAGES = 2;
     private record PreparedCoverage(GridCoverage2D coverage, boolean disposeAfterUse, boolean allNoData) {}
 
     private final String PROJECTION_CRS = "EPSG:3857";
@@ -94,7 +95,7 @@ public class GaiaGeoTiffManager {
             }
         }
 
-        while (mapPathGridCoverage2d.size() > 4) {
+        while (mapPathGridCoverage2d.size() >= MAX_CACHED_GRID_COVERAGES) {
             // delete the old coverage. Check the pathList. the 1rst is the oldest
             String oldestPath = pathList.get(0);
             GridCoverage2D oldestCoverage = mapPathGridCoverage2d.get(oldestPath);

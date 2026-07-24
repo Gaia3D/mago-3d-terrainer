@@ -32,9 +32,9 @@ import java.util.Arrays;
 @Getter
 @Setter
 public class TerrainElevationData {
-    private static final int TILE_RASTER_CACHE_SIZE = 32;
+    private static final int TILE_RASTER_CACHE_SIZE = 4;
     private static final long EMPTY_TILE_KEY = Long.MIN_VALUE;
-    private static final long MAX_MATERIALIZED_RASTER_BYTES = 1024L * 1024L * 1024L;
+    private static final long MAX_MATERIALIZED_RASTER_BYTES = 0L;
     private GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     private Vector2d pixelSizeMeters;
@@ -191,6 +191,7 @@ public class TerrainElevationData {
         this.rasterIntData = null;
         this.rasterShortData = null;
         this.rasterByteData = null;
+        clearTileRasterCache();
     }
 
     public void deleteObjects() {
@@ -455,6 +456,18 @@ public class TerrainElevationData {
             return;
         }
 
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long availableMemory = runtime.maxMemory() - usedMemory;
+        long requiredHeadroom = estimatedBytes * 3L;
+        if (availableMemory < requiredHeadroom) {
+            log.debug("[Raster][SampleInit] Skip materializing {} (estimated={} MB, available={} MB).",
+                geotiffFilePath,
+                estimatedBytes / (1024 * 1024),
+                availableMemory / (1024 * 1024));
+            return;
+        }
+
         Raster fullRaster = this.renderedImage.getData();
         this.materializedRasterMinX = fullRaster.getMinX();
         this.materializedRasterMinY = fullRaster.getMinY();
@@ -702,18 +715,34 @@ public class TerrainElevationData {
             return (long) this.materializedRasterData.length * Float.BYTES;
         }
 
+        long cachedTileBytes = estimateCachedTileRasterBytes();
+        if (cachedTileBytes > 0L) {
+            return cachedTileBytes;
+        }
+
         if (this.rasterWidth > 0 && this.rasterHeight > 0) {
             return (long) this.rasterWidth * this.rasterHeight * estimateBytesPerSample();
         }
 
-        if (this.gridCoverage2DSize == null && this.terrainElevDataManager != null) {
-            this.gridCoverage2DSize = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
-        }
+        return this.renderedImage != null ? estimateImageTileBytes() : 0L;
+    }
 
-        if (this.gridCoverage2DSize == null) {
+    private long estimateCachedTileRasterBytes() {
+        long totalBytes = 0L;
+        for (Raster cachedTileRaster : this.tileRasterCacheValues) {
+            if (cachedTileRaster == null) {
+                continue;
+            }
+            totalBytes += (long) cachedTileRaster.getWidth() * cachedTileRaster.getHeight() * estimateBytesPerSample(cachedTileRaster);
+        }
+        return totalBytes;
+    }
+
+    private long estimateImageTileBytes() {
+        if (this.renderedImage == null) {
             return 0L;
         }
-        return (long) this.gridCoverage2DSize.x * this.gridCoverage2DSize.y * 4L;
+        return (long) this.renderedImage.getTileWidth() * this.renderedImage.getTileHeight() * 4L;
     }
 
     private int estimateBytesPerSample() {
@@ -722,6 +751,20 @@ public class TerrainElevationData {
             case RASTER_KIND_INT, RASTER_KIND_FLOAT -> 4;
             case RASTER_KIND_USHORT, RASTER_KIND_SHORT -> 2;
             case RASTER_KIND_BYTE -> 1;
+            default -> 4;
+        };
+    }
+
+    private int estimateBytesPerSample(Raster sampleRaster) {
+        if (sampleRaster == null) {
+            return 4;
+        }
+
+        return switch (sampleRaster.getDataBuffer().getDataType()) {
+            case java.awt.image.DataBuffer.TYPE_DOUBLE -> 8;
+            case java.awt.image.DataBuffer.TYPE_FLOAT, java.awt.image.DataBuffer.TYPE_INT -> 4;
+            case java.awt.image.DataBuffer.TYPE_USHORT, java.awt.image.DataBuffer.TYPE_SHORT -> 2;
+            case java.awt.image.DataBuffer.TYPE_BYTE -> 1;
             default -> 4;
         };
     }
