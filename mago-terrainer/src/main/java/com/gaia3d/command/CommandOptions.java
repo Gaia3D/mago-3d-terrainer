@@ -15,12 +15,12 @@ public enum CommandOptions {
     MODIFY("modify", "m", false, "Modify terrain. This option can be used when need modify some terrain region."),
     SKIP_STANDARDIZATION_RESIZE("skipStandardizationResize", "ssr", false, "Skip standardization and resizing process. This option can be used when the input data is already standardized and resized."),
     // Path options
-    INPUT("input", "i", true, "[Required] Input directory path"),
+    INPUT("input", "i", true, "[Required] Input file or directory path. Repeatable."),
     OUTPUT("output", "o", true, "[Required] Output directory path"),
     LOG("log", "l", true, "Log file path"),
     TEMP_PATH("temp", "t", true, "Temporary directory path (default: {OUTPUT}/temp)"),
     GEOID_PATH("geoid", "g", true, "Set reference height option for terrain data. \n"
-            + "Geoid file path for height correction, \n (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)"),
+            + "Geoid file path for height correction, \n (default: Ellipsoid)(options: Ellipsoid, EGM96, EGM2008, EGM84 or GeoTIFF File Path)"),
 
     // Terrain generation options
     MINIMUM_TILE_DEPTH("minDepth", "min", true, "Set minimum terrain tile depth \n(default : 0)(options: 0 - 22)"),

@@ -8,6 +8,11 @@ The following example shows a basic conversion of GeoTIFF data using the minimum
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output"
 ```
 
+Multiple input files or directories can be provided by repeating the input option:
+```bash
+java -jar mago-3d-terrainer.jar --input "/input_path/dem-a.tif" --input "/input_path/dem-b.tif" --output "/output_path/terrain_tiles_output"
+```
+
 ## Setting minimum / maximum tile depth
 You can define the minimum and maximum tile depth using the `-minDepth <value>` and `-maxDepth <value>` options.  
 Short options are `-min <value>` and `-max <value>`.
@@ -57,7 +62,7 @@ For terrain data stored in **orthometric height**, the geoid height is added to 
 Formula:```DEM (Orthometric Height) + Geoid Height = Ellipsoid Height```
 
 Supported format: **GeoTIFF**  
-Built-in model: **EGM96**
+Built-in models: **EGM96**, **EGM2008**, **EGM84**
 ```
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "/input_path/geoid_file.tif"
 ```
@@ -65,6 +70,16 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 Using the built-in EGM96 model:
 ```
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "EGM96"
+```
+
+Using the built-in EGM2008 2.5' model:
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "EGM2008"
+```
+
+Using the built-in EGM84 30' model:
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "EGM84"
 ```
 
 ---

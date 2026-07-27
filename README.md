@@ -49,13 +49,13 @@ Usage: command options
  -c, --continue                      Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails.
  -m, --modify                        Modify terrain. This option can be used when need modify some terrain region.
  -ssr, --skipStandardizationResize   Skip standardization and resizing process. This option can be used when the input data is already standardized and resized.
- -i, --input <arg>                   [Required] Input directory path
+ -i, --input <arg>                   [Required] Input file or directory path. Repeatable.
  -o, --output <arg>                  [Required] Output directory path
  -l, --log <arg>                     Log file path
  -t, --temp <arg>                    Temporary directory path (default: {OUTPUT}/temp)
  -g, --geoid <arg>                   Set reference height option for terrain data.
                                      Geoid file path for height correction,
-                                     (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)
+                                     (default: Ellipsoid)(options: Ellipsoid, EGM96, EGM2008, EGM84 or GeoTIFF File Path)
  -min, --minDepth <arg>              Set minimum terrain tile depth
                                      (default : 0)(options: 0 - 22)
  -max, --maxDepth <arg>              Set maximum terrain tile depth
@@ -82,6 +82,12 @@ Usage: command options
 This is a simple Quantized-mesh conversion code with the required argument values.
 ```
 java -jar mago-3d-terrainer-x.x.x.jar -input C:\data\geotiff-sample -output C:\data\geotiff-terrain-output -maxDepth 14
+```
+
+Multiple input files or directories can be provided by repeating the input option:
+
+```bash
+java -jar mago-3d-terrainer-x.x.x.jar --input C:\data\dem-a.tif --input C:\data\dem-b.tif --output C:\data\terrain-output -maxDepth 14
 ```
 or
 ```

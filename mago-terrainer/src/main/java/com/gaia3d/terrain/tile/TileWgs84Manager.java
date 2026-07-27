@@ -1192,25 +1192,12 @@ public class TileWgs84Manager {
     }
 
     public void processStandardizeRasters() {
-        String inputPath = globalOptions.getInputPath();
-        File inputFolder = new File(inputPath);
-
-        List<String> rasterFileNames = new ArrayList<>();
-        if (inputFolder.exists() && inputFolder.isDirectory()) {
-            FileUtils.getFilePathsByExtension(inputPath, ".tif", rasterFileNames, true);
-        } else if (inputFolder.exists() && inputFolder.isFile()) {
-            if (inputPath.endsWith(".tif")) {
-                rasterFileNames.add(inputPath);
-            }
-        } else {
-            log.error("Input path is not exist or not a directory: {}", inputPath);
-            throw new RuntimeException("Error: Input path is not exist or not a directory: " + inputPath);
-        }
-        log.info("Found {} GeoTiff files in the input path: {}", rasterFileNames.size(), inputPath);
+        List<String> rasterFileNames = resolveInputRasterFileNames();
+        log.info("Found {} GeoTiff files in input paths: {}", rasterFileNames.size(), resolveConfiguredInputPaths());
 
         if (rasterFileNames.isEmpty()) {
-            log.error("No GeoTiff files found in the input path: {}", inputPath);
-            throw new RuntimeException("Error: No GeoTiff files found in the input path: " + inputPath);
+            log.error("No GeoTiff files found in input paths: {}", resolveConfiguredInputPaths());
+            throw new RuntimeException("Error: No GeoTiff files found in input paths: " + resolveConfiguredInputPaths());
         }
 
         standardizeRasters(rasterFileNames);
@@ -1549,24 +1536,11 @@ public class TileWgs84Manager {
     }
 
     public void calculateAvailableTilesForEachDepth() throws IOException, FactoryException {
-        String terrainElevationDataFolderPath = globalOptions.getInputPath();
-        File inputFolder = new File(terrainElevationDataFolderPath);
-
-        List<String> rasterFileNames = new ArrayList<>();
-        if (inputFolder.exists() && inputFolder.isDirectory()) {
-            FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, ".tif", rasterFileNames, true);
-        } else if (inputFolder.exists() && inputFolder.isFile()) {
-            if (terrainElevationDataFolderPath.endsWith(".tif")) {
-                rasterFileNames.add(terrainElevationDataFolderPath);
-            }
-        } else {
-            log.error("Input path is not exist or not a directory: {}", terrainElevationDataFolderPath);
-            throw new RuntimeException("Error: Input path is not exist or not a directory: " + terrainElevationDataFolderPath);
-        }
+        List<String> rasterFileNames = resolveInputRasterFileNames();
 
         if (rasterFileNames.isEmpty()) {
-            log.error("No GeoTiff files found in the input path: {}", terrainElevationDataFolderPath);
-            throw new RuntimeException("Error: No GeoTiff files found in the input path: " + terrainElevationDataFolderPath);
+            log.error("No GeoTiff files found in input paths: {}", resolveConfiguredInputPaths());
+            throw new RuntimeException("Error: No GeoTiff files found in input paths: " + resolveConfiguredInputPaths());
         }
 
         // now load all geotiff and make geotiff geoExtension data
@@ -1621,5 +1595,40 @@ public class TileWgs84Manager {
             globalOptions.setMaximumTileDepth(availableTileSet.getMaxAvailableDepth());
         }
         System.gc();
+    }
+
+    public List<String> resolveInputRasterFileNames() {
+        Set<String> rasterFileNames = new LinkedHashSet<>();
+        for (String inputPath : resolveConfiguredInputPaths()) {
+            File inputFile = new File(inputPath);
+            if (inputFile.exists() && inputFile.isDirectory()) {
+                List<String> paths = new ArrayList<>();
+                FileUtils.getFilePathsByExtension(inputFile.getAbsolutePath(), ".tif", paths, true);
+                rasterFileNames.addAll(paths);
+
+                paths.clear();
+                FileUtils.getFilePathsByExtension(inputFile.getAbsolutePath(), ".tiff", paths, true);
+                rasterFileNames.addAll(paths);
+            } else if (inputFile.exists() && inputFile.isFile()) {
+                String lowerName = inputFile.getName().toLowerCase(Locale.ROOT);
+                if (lowerName.endsWith(".tif") || lowerName.endsWith(".tiff")) {
+                    rasterFileNames.add(inputFile.getAbsolutePath());
+                }
+            } else {
+                log.error("Input path is not exist or not a directory: {}", inputPath);
+                throw new RuntimeException("Error: Input path is not exist or not a directory: " + inputPath);
+            }
+        }
+        return new ArrayList<>(rasterFileNames);
+    }
+
+    private List<String> resolveConfiguredInputPaths() {
+        if (globalOptions.getInputPaths() != null && !globalOptions.getInputPaths().isEmpty()) {
+            return globalOptions.getInputPaths();
+        }
+        if (globalOptions.getInputPath() != null && !globalOptions.getInputPath().isBlank()) {
+            return List.of(globalOptions.getInputPath());
+        }
+        return List.of();
     }
 }

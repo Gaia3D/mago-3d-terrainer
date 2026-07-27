@@ -19,6 +19,9 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Global options for Gaia3D Tiler.
@@ -55,6 +58,7 @@ public class GlobalOptions {
 
     // Default options
     private String inputPath;
+    private List<String> inputPaths = new ArrayList<>();
     private String outputPath;
     private String geoidPath;
     private String logPath;
@@ -114,8 +118,15 @@ public class GlobalOptions {
     public static void init(CommandLine command) throws IOException {
         checkHeapMemory();
         if (command.hasOption(CommandOptions.INPUT.getLongName())) {
-            instance.setInputPath(command.getOptionValue(CommandOptions.INPUT.getLongName()));
-            validateInputPath(new File(instance.getInputPath()).toPath());
+            String[] inputValues = command.getOptionValues(CommandOptions.INPUT.getLongName());
+            if (inputValues == null || inputValues.length == 0) {
+                inputValues = new String[]{command.getOptionValue(CommandOptions.INPUT.getLongName())};
+            }
+            instance.setInputPaths(new ArrayList<>(Arrays.asList(inputValues)));
+            instance.setInputPath(instance.getInputPaths().getFirst());
+            for (String inputPath : instance.getInputPaths()) {
+                validateInputPath(new File(inputPath).toPath());
+            }
         } else {
             throw new IllegalArgumentException("Please enter the value of the input argument.");
         }
@@ -163,22 +174,8 @@ public class GlobalOptions {
             String geoidPath = command.getOptionValue(CommandOptions.GEOID_PATH.getLongName());
             if (geoidPath == null || geoidPath.isEmpty() || geoidPath.equalsIgnoreCase("Ellipsoid")) {
                 instance.setGeoidPath(null);
-            } else if (geoidPath.equalsIgnoreCase("EGM96")) {
-                log.info("Using built-in geoid model: EGM96");
-
-                String resourcePath = "geoid/egm96_15.tif";
-                ClassLoader classLoader = GlobalOptions.class.getClassLoader();
-                try (InputStream in = classLoader.getResourceAsStream(resourcePath)) {
-                    if (in == null) {
-                        throw new IllegalArgumentException("EGM96 geoid model not found in resources: " + resourcePath);
-                    }
-                    Path tmp = Files.createTempFile("egm96_15-", ".tif");
-                    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
-                    tmp.toFile().deleteOnExit();
-                    instance.setGeoidPath(tmp.toAbsolutePath().toString());
-                } catch (IOException e) {
-                    throw new IllegalStateException("Failed to extract EGM96 geoid model from classpath", e);
-                }
+            } else if (isBuiltInGeoidModel(geoidPath)) {
+                instance.setGeoidPath(extractBuiltInGeoidModel(geoidPath));
             } else {
                 instance.setGeoidPath(geoidPath);
             }
@@ -341,7 +338,11 @@ public class GlobalOptions {
 
         Mago3DTerrainerMain.drawLine();
 
-        log.info("Input Path: {}", instance.getInputPath());
+        if (instance.getInputPaths().size() == 1) {
+            log.info("Input Path: {}", instance.getInputPath());
+        } else {
+            log.info("Input Paths: {}", instance.getInputPaths());
+        }
         log.info("Output Path: {}", instance.getOutputPath());
         log.info("Temp Path: {}", instance.getTileTempPath());
         if (instance.getLogPath() != null) {
@@ -402,6 +403,56 @@ public class GlobalOptions {
         } else if (!output.canWrite()) {
             throw new IOException(String.format("%s path is not writable.", path));
         }
+    }
+
+    private static boolean isBuiltInGeoidModel(String geoidModel) {
+        return resolveBuiltInGeoidModel(geoidModel) != null;
+    }
+
+    private static String extractBuiltInGeoidModel(String geoidModel) {
+        BuiltInGeoidModel builtInGeoidModel = resolveBuiltInGeoidModel(geoidModel);
+        if (builtInGeoidModel == null) {
+            throw new IllegalArgumentException("Unsupported built-in geoid model: " + geoidModel);
+        }
+
+        log.info("Using built-in geoid model: {}", builtInGeoidModel.displayName());
+        ClassLoader classLoader = GlobalOptions.class.getClassLoader();
+        try (InputStream in = classLoader.getResourceAsStream(builtInGeoidModel.resourcePath())) {
+            if (in == null) {
+                throw new IllegalArgumentException(
+                    builtInGeoidModel.displayName() + " geoid model not found in resources: "
+                        + builtInGeoidModel.resourcePath());
+            }
+            Path tmp = Files.createTempFile(builtInGeoidModel.tempPrefix(), ".tif");
+            Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            tmp.toFile().deleteOnExit();
+            return tmp.toAbsolutePath().toString();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                "Failed to extract " + builtInGeoidModel.displayName() + " geoid model from classpath", e);
+        }
+    }
+
+    private static BuiltInGeoidModel resolveBuiltInGeoidModel(String geoidModel) {
+        if (geoidModel == null) {
+            return null;
+        }
+
+        String normalized = geoidModel.trim()
+            .replace("-", "")
+            .replace("_", "")
+            .replace("'", "")
+            .replace(".", "")
+            .toUpperCase();
+        return switch (normalized) {
+            case "EGM96", "EGM9615" -> new BuiltInGeoidModel("EGM96 15'", "geoid/egm96_15.tif", "egm96_15-");
+            case "EGM8430", "EGM84" -> new BuiltInGeoidModel("EGM84 30'", "geoid/egm84_30.tif", "egm84_30-");
+            case "EGM2008", "EGM200825", "EGM20082M5", "EGM200825MIN" -> new BuiltInGeoidModel("EGM2008 2.5'", "geoid/egm2008_2_5.tif", "egm2008_2_5-");
+            default -> null;
+        };
+    }
+
+    private record BuiltInGeoidModel(String displayName, String resourcePath, String tempPrefix) {
     }
 
     protected static void initVersionInfo() {
