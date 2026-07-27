@@ -9,143 +9,6 @@ import org.joml.Vector3i;
 import java.util.*;
 
 public class TextureAwareReMesher {
-    private static class EdgeKey {
-        final int a;
-        final int b;
-
-        EdgeKey(int i0, int i1) {
-            if (i0 < i1) {
-                this.a = i0;
-                this.b = i1;
-            } else {
-                this.a = i1;
-                this.b = i0;
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof EdgeKey)) return false;
-
-            EdgeKey other = (EdgeKey) obj;
-
-            return a == other.a && b == other.b;
-        }
-
-        @Override
-        public int hashCode() {
-            int h = 17;
-            h = 31 * h + a;
-            h = 31 * h + b;
-            return h;
-        }
-    }
-    private static class CellClusterKey {
-        final Vector3i cell;
-
-        CellClusterKey(Vector3i cell) {
-            this.cell = new Vector3i(cell);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof CellClusterKey)) return false;
-
-            CellClusterKey other = (CellClusterKey) obj;
-
-            return cell.x == other.cell.x
-                    && cell.y == other.cell.y
-                    && cell.z == other.cell.z;
-        }
-
-        @Override
-        public int hashCode() {
-            int h = 17;
-            h = 31 * h + cell.x;
-            h = 31 * h + cell.y;
-            h = 31 * h + cell.z;
-            return h;
-        }
-    }
-
-    private static class CellStats {
-        Vector3i cellIndex;
-
-        int triangleCount = 0;
-        double areaSum = 0.0;
-
-        Vector3d min = new Vector3d(
-                Double.POSITIVE_INFINITY,
-                Double.POSITIVE_INFINITY,
-                Double.POSITIVE_INFINITY
-        );
-
-        Vector3d max = new Vector3d(
-                Double.NEGATIVE_INFINITY,
-                Double.NEGATIVE_INFINITY,
-                Double.NEGATIVE_INFINITY
-        );
-
-        boolean remeshable = false;
-
-        CellStats(Vector3i cellIndex) {
-            this.cellIndex = new Vector3i(cellIndex);
-        }
-
-        void addPoint(Vector3d p) {
-            if (p.x < min.x) min.x = p.x;
-            if (p.y < min.y) min.y = p.y;
-            if (p.z < min.z) min.z = p.z;
-
-            if (p.x > max.x) max.x = p.x;
-            if (p.y > max.y) max.y = p.y;
-            if (p.z > max.z) max.z = p.z;
-        }
-
-        double sizeX() {
-            return max.x - min.x;
-        }
-
-        double sizeY() {
-            return max.y - min.y;
-        }
-
-        double sizeZ() {
-            return max.z - min.z;
-        }
-
-        double maxDim() {
-            return Math.max(sizeX(), Math.max(sizeY(), sizeZ()));
-        }
-
-        double minDim() {
-            return Math.min(sizeX(), Math.min(sizeY(), sizeZ()));
-        }
-    }
-
-    private static class MoveCluster {
-        Vector3d sumPos = new Vector3d();
-        int count = 0;
-
-        List<Integer> positionGroupIds = new ArrayList<>();
-
-        void addPositionGroup(int groupId, PositionGroup group) {
-            if (group == null || group.position == null) return;
-
-            sumPos.add(group.position);
-            positionGroupIds.add(groupId);
-            count++;
-        }
-
-        Vector3d getAveragePosition() {
-            if (count == 0) {
-                return new Vector3d();
-            }
-
-            return new Vector3d(sumPos).div(count);
-        }
-    }
-
     private static void classifyTextureIslands(List<GaiaSurface> surfaces) {
         int globalIslandId = 0;
 
@@ -169,7 +32,7 @@ public class TextureAwareReMesher {
             GaiaFace face = faces.get(fIdx);
             int[] idx = face.getIndices();
 
-            if (idx == null || idx.length < 3) continue;
+            if (idx == null || idx.length < 3) {continue;}
 
             for (int i = 0; i < idx.length; i++) {
                 int a = idx[i];
@@ -189,7 +52,7 @@ public class TextureAwareReMesher {
         }
 
         for (List<Integer> linkedFaces : edgeToFaces.values()) {
-            if (linkedFaces.size() < 2) continue;
+            if (linkedFaces.size() < 2) {continue;}
 
             for (int i = 0; i < linkedFaces.size(); i++) {
                 for (int j = i + 1; j < linkedFaces.size(); j++) {
@@ -206,7 +69,7 @@ public class TextureAwareReMesher {
         int islandId = startIslandId;
 
         for (int i = 0; i < faces.size(); i++) {
-            if (visited[i]) continue;
+            if (visited[i]) {continue;}
 
             Queue<Integer> q = new ArrayDeque<>();
             q.add(i);
@@ -243,10 +106,10 @@ public class TextureAwareReMesher {
                 int islandId = face.getClassifyId();
                 int[] idx = face.getIndices();
 
-                if (idx == null) continue;
+                if (idx == null) {continue;}
 
                 for (int vi : idx) {
-                    if (vi < 0 || vi >= vertexCount) continue;
+                    if (vi < 0 || vi >= vertexCount) {continue;}
 
                     if (vertexIslands[vi] == null) {
                         vertexIslands[vi] = new HashSet<>();
@@ -277,10 +140,10 @@ public class TextureAwareReMesher {
                 int islandId = face.getClassifyId();
                 int[] idx = face.getIndices();
 
-                if (idx == null) continue;
+                if (idx == null) {continue;}
 
                 for (int vi : idx) {
-                    if (vi < 0 || vi >= vertexCount) continue;
+                    if (vi < 0 || vi >= vertexCount) {continue;}
 
                     Map<Integer, Integer> counts =
                             vertexIslandCounts.computeIfAbsent(vi, k -> new HashMap<>());
@@ -326,30 +189,30 @@ public class TextureAwareReMesher {
             double sy = stats.sizeY();
             double sz = stats.sizeZ();
 
-            double[] dims = new double[] { sx, sy, sz };
+            double[] dims = new double[]{sx, sy, sz};
             Arrays.sort(dims);
 
             double d1 = dims[1];
             double d2 = dims[2];
 
-            if (stats.triangleCount < minTriangles) continue;
-            if (stats.areaSum < minArea) continue;
-            if (d2 < cellSize * 0.25) continue;
+            if (stats.triangleCount < minTriangles) {continue;}
+            if (stats.areaSum < minArea) {continue;}
+            if (d2 < cellSize * 0.25) {continue;}
 
             boolean lineLike =
                     d1 < cellSize * 0.10 &&
                             d2 > cellSize * 0.45;
 
-            if (lineLike) continue;
+            if (lineLike) {continue;}
 
             boolean surfaceLike =
                     d1 > cellSize * 0.10 &&
                             d2 > cellSize * 0.30;
 
-            if (!surfaceLike) continue;
+            if (!surfaceLike) {continue;}
 
             double elongation = d2 / Math.max(d1, 1e-9);
-            if (elongation > 18.0) continue;
+            if (elongation > 18.0) {continue;}
 
             stats.remeshable = true;
         }
@@ -357,7 +220,7 @@ public class TextureAwareReMesher {
 
     private static double calculateFaceArea(GaiaFace face, List<GaiaVertex> vertices) {
         int[] idx = face.getIndices();
-        if (idx == null || idx.length < 3) return 0.0;
+        if (idx == null || idx.length < 3) {return 0.0;}
 
         Vector3d p0 = vertices.get(idx[0]).getPosition();
 
@@ -380,7 +243,7 @@ public class TextureAwareReMesher {
         Vector3d center = new Vector3d();
 
         int[] idx = face.getIndices();
-        if (idx == null || idx.length == 0) return center;
+        if (idx == null || idx.length == 0) {return center;}
 
         for (int i : idx) {
             center.add(vertices.get(i).getPosition());
@@ -400,7 +263,7 @@ public class TextureAwareReMesher {
         for (GaiaSurface surface : primitive.getSurfaces()) {
             for (GaiaFace face : surface.getFaces()) {
                 int[] idx = face.getIndices();
-                if (idx == null || idx.length < 3) continue;
+                if (idx == null || idx.length < 3) {continue;}
 
                 Vector3d center = calculateFaceCenter(face, vertices);
                 Vector3i cell = cellGrid.getCellIndex(center);
@@ -437,13 +300,13 @@ public class TextureAwareReMesher {
                 Vector3i cell = entry.getKey();
                 CellStats stats = entry.getValue();
 
-                if (!stats.remeshable) continue;
+                if (!stats.remeshable) {continue;}
 
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dy = -1; dy <= 1; dy++) {
                         for (int dz = -1; dz <= 1; dz++) {
 
-                            if (dx == 0 && dy == 0 && dz == 0) continue;
+                            if (dx == 0 && dy == 0 && dz == 0) {continue;}
 
                             Vector3i nb = new Vector3i(
                                     cell.x + dx,
@@ -473,7 +336,7 @@ public class TextureAwareReMesher {
             double cellSize
     ) {
         for (CellStats stats : cellStatsMap.values()) {
-            if (!stats.remeshable) continue;
+            if (!stats.remeshable) {continue;}
 
             double sx = stats.sizeX();
             double sy = stats.sizeY();
@@ -585,7 +448,7 @@ public class TextureAwareReMesher {
             for (int fIdx = 0; fIdx < faces.size(); fIdx++) {
                 GaiaFace face = faces.get(fIdx);
                 int[] idx = face.getIndices();
-                if (idx == null || idx.length < 3) continue;
+                if (idx == null || idx.length < 3) {continue;}
 
                 boolean remesh = remeshFaceFlags[sIdx][fIdx];
 
@@ -624,7 +487,7 @@ public class TextureAwareReMesher {
         boolean first = true;
 
         for (GaiaVertex vertex : vertices) {
-            if (vertex == null || vertex.getPosition() == null) continue;
+            if (vertex == null || vertex.getPosition() == null) {continue;}
 
             Vector3i cell = cellGrid.getCellIndex(vertex.getPosition());
 
@@ -633,18 +496,236 @@ public class TextureAwareReMesher {
                 sceneMaxCellIndex.set(cell);
                 first = false;
             } else {
-                if (cell.x < sceneMinCellIndex.x) sceneMinCellIndex.x = cell.x;
-                if (cell.y < sceneMinCellIndex.y) sceneMinCellIndex.y = cell.y;
-                if (cell.z < sceneMinCellIndex.z) sceneMinCellIndex.z = cell.z;
+                if (cell.x < sceneMinCellIndex.x) {sceneMinCellIndex.x = cell.x;}
+                if (cell.y < sceneMinCellIndex.y) {sceneMinCellIndex.y = cell.y;}
+                if (cell.z < sceneMinCellIndex.z) {sceneMinCellIndex.z = cell.z;}
 
-                if (cell.x > sceneMaxCellIndex.x) sceneMaxCellIndex.x = cell.x;
-                if (cell.y > sceneMaxCellIndex.y) sceneMaxCellIndex.y = cell.y;
-                if (cell.z > sceneMaxCellIndex.z) sceneMaxCellIndex.z = cell.z;
+                if (cell.x > sceneMaxCellIndex.x) {sceneMaxCellIndex.x = cell.x;}
+                if (cell.y > sceneMaxCellIndex.y) {sceneMaxCellIndex.y = cell.y;}
+                if (cell.z > sceneMaxCellIndex.z) {sceneMaxCellIndex.z = cell.z;}
             }
         }
     }
 
+    private static boolean isDegenerated(int[] idx) {
+        if (idx == null || idx.length < 3) {return true;}
 
+        for (int i = 0; i < idx.length; i++) {
+            for (int j = i + 1; j < idx.length; j++) {
+                if (idx[i] == idx[j]) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static void recalculateMovedVertexTexcoords(
+            List<GaiaSurface> surfaces,
+            List<GaiaVertex> vertices,
+            List<Vector3d> originalPositions,
+            List<Vector2d> originalTexcoords,
+            boolean[] movedVertex
+    ) {
+        // vertex -> incident faces
+        Map<Integer, List<GaiaFace>> vertexToFaces = new HashMap<>();
+
+        for (GaiaSurface surface : surfaces) {
+            for (GaiaFace face : surface.getFaces()) {
+                int[] idx = face.getIndices();
+                if (idx == null || idx.length < 3) {continue;}
+
+                for (int vi : idx) {
+                    if (vi < 0 || vi >= vertices.size()) {continue;}
+
+                    vertexToFaces
+                            .computeIfAbsent(vi, k -> new ArrayList<>())
+                            .add(face);
+                }
+            }
+        }
+
+        for (int vi = 0; vi < vertices.size(); vi++) {
+            if (!movedVertex[vi]) {continue;}
+
+            GaiaVertex vertex = vertices.get(vi);
+            if (vertex == null || vertex.getPosition() == null) {continue;}
+
+            List<GaiaFace> faces = vertexToFaces.get(vi);
+            if (faces == null || faces.isEmpty()) {continue;}
+
+            Vector3d newPos = vertex.getPosition();
+
+            Vector2d bestUv = null;
+            double bestScore = Double.POSITIVE_INFINITY;
+
+            for (GaiaFace face : faces) {
+                int[] idx = face.getIndices();
+                if (idx == null || idx.length != 3) {continue;}
+
+                int i0 = idx[0];
+                int i1 = idx[1];
+                int i2 = idx[2];
+
+                Vector2d uv0 = originalTexcoords.get(i0);
+                Vector2d uv1 = originalTexcoords.get(i1);
+                Vector2d uv2 = originalTexcoords.get(i2);
+
+                if (uv0 == null || uv1 == null || uv2 == null) {
+                    continue;
+                }
+
+                Vector3d p0 = originalPositions.get(i0);
+                Vector3d p1 = originalPositions.get(i1);
+                Vector3d p2 = originalPositions.get(i2);
+
+                BarycentricResult result = closestBarycentricOnTriangle(
+                        newPos,
+                        p0,
+                        p1,
+                        p2
+                );
+
+                if (result == null) {continue;}
+
+                Vector2d uv = interpolateUv(
+                        uv0,
+                        uv1,
+                        uv2,
+                        result.u,
+                        result.v,
+                        result.w
+                );
+
+                if (result.distanceSquared < bestScore) {
+                    bestScore = result.distanceSquared;
+                    bestUv = uv;
+                }
+            }
+
+            if (bestUv != null) {
+                vertex.setTexcoords(bestUv);
+            }
+        }
+    }
+
+    private static BarycentricResult closestBarycentricOnTriangle(
+            Vector3d p,
+            Vector3d a,
+            Vector3d b,
+            Vector3d c
+    ) {
+        Vector3d ab = new Vector3d(b).sub(a);
+        Vector3d ac = new Vector3d(c).sub(a);
+        Vector3d ap = new Vector3d(p).sub(a);
+
+        double d00 = ab.dot(ab);
+        double d01 = ab.dot(ac);
+        double d11 = ac.dot(ac);
+        double d20 = ap.dot(ab);
+        double d21 = ap.dot(ac);
+
+        double denom = d00 * d11 - d01 * d01;
+
+        if (Math.abs(denom) < 1e-20) {
+            return null;
+        }
+
+        double v = (d11 * d20 - d01 * d21) / denom;
+        double w = (d00 * d21 - d01 * d20) / denom;
+        double u = 1.0 - v - w;
+
+        // Clamping simple para que si cae un poco fuera del triángulo,
+        // use el punto más cercano aproximado.
+        if (u < 0.0) {u = 0.0;}
+        if (v < 0.0) {v = 0.0;}
+        if (w < 0.0) {w = 0.0;}
+
+        double sum = u + v + w;
+        if (sum < 1e-20) {
+            return null;
+        }
+
+        u /= sum;
+        v /= sum;
+        w /= sum;
+
+        Vector3d closest = new Vector3d(a).mul(u)
+                .add(new Vector3d(b).mul(v))
+                .add(new Vector3d(c).mul(w));
+
+        BarycentricResult result = new BarycentricResult();
+        result.u = u;
+        result.v = v;
+        result.w = w;
+        result.distanceSquared = closest.distanceSquared(p);
+
+        return result;
+    }
+
+    private static Vector2d interpolateUv(
+            Vector2d uv0,
+            Vector2d uv1,
+            Vector2d uv2,
+            double u,
+            double v,
+            double w
+    ) {
+        return new Vector2d(uv0).mul(u)
+                .add(new Vector2d(uv1).mul(v))
+                .add(new Vector2d(uv2).mul(w));
+    }
+
+    private static List<PositionGroup> buildPositionGroups(
+            List<GaiaVertex> vertices,
+            double epsilon,
+            int[] vertexIslandId,
+            int[] vertexToPositionGroup
+    ) {
+        Map<PositionKey, PositionGroup> map = new HashMap<>();
+
+        for (int i = 0; i < vertices.size(); i++) {
+            GaiaVertex vertex = vertices.get(i);
+            if (vertex == null || vertex.getPosition() == null) {continue;}
+
+            PositionKey key = new PositionKey(vertex.getPosition(), epsilon);
+
+            PositionGroup group = map.computeIfAbsent(key, k -> new PositionGroup());
+            group.addVertex(i, vertex);
+        }
+
+        List<PositionGroup> groups = new ArrayList<>(map.values());
+
+        for (int groupId = 0; groupId < groups.size(); groupId++) {
+            PositionGroup group = groups.get(groupId);
+
+            Map<Integer, Integer> islandCounts = new HashMap<>();
+
+            for (int vi : group.vertexIndices) {
+                vertexToPositionGroup[vi] = groupId;
+
+                int islandId = vertexIslandId[vi];
+                if (islandId >= 0) {
+                    islandCounts.put(islandId, islandCounts.getOrDefault(islandId, 0) + 1);
+                }
+            }
+
+            int bestIsland = -1;
+            int bestCount = -1;
+
+            for (Map.Entry<Integer, Integer> e : islandCounts.entrySet()) {
+                if (e.getValue() > bestCount) {
+                    bestCount = e.getValue();
+                    bestIsland = e.getKey();
+                }
+            }
+
+            group.dominantIslandId = bestIsland;
+        }
+
+        return groups;
+    }
 
     public void reMeshScene(
             GaiaScene gaiaScene,
@@ -655,14 +736,14 @@ public class TextureAwareReMesher {
         GaiaExtractor extractor = new GaiaExtractor();
         List<GaiaPrimitive> primitives = extractor.extractAllPrimitives(gaiaScene);
 
-        if (primitives == null || primitives.isEmpty()) return;
+        if (primitives == null || primitives.isEmpty()) {return;}
 
         GaiaPrimitive primitive = primitives.get(0);
 
         List<GaiaVertex> vertices = primitive.getVertices();
         List<GaiaSurface> surfaces = primitive.getSurfaces();
 
-        if (vertices == null || vertices.isEmpty()) return;
+        if (vertices == null || vertices.isEmpty()) {return;}
 
         CellGrid3D cellGrid = params.getCellGrid();
         double cellSize = cellGrid.getCellSize();
@@ -755,7 +836,7 @@ public class TextureAwareReMesher {
                 GaiaFace face = faces.get(fIdx);
                 int[] idx = face.getIndices();
 
-                if (idx == null) continue;
+                if (idx == null) {continue;}
 
                 for (int vi : idx) {
                     if (vi < 0 || vi >= vertexToPositionGroup.length) {
@@ -763,7 +844,7 @@ public class TextureAwareReMesher {
                     }
 
                     int groupId = vertexToPositionGroup[vi];
-                    if (groupId < 0) continue;
+                    if (groupId < 0) {continue;}
 
                     movableGroup[groupId] = true;
                     positionGroups.get(groupId).movable = true;
@@ -782,7 +863,7 @@ public class TextureAwareReMesher {
         Map<CellClusterKey, MoveCluster> clusterMap = new HashMap<>();
 
         for (int groupId = 0; groupId < positionGroups.size(); groupId++) {
-            if (!movableGroup[groupId]) continue;
+            if (!movableGroup[groupId]) {continue;}
 
             PositionGroup group = positionGroups.get(groupId);
 
@@ -861,10 +942,10 @@ public class TextureAwareReMesher {
                 PositionGroup group = positionGroups.get(groupId);
 
                 for (int vi : group.vertexIndices) {
-                    if (vi < 0 || vi >= vertices.size()) continue;
+                    if (vi < 0 || vi >= vertices.size()) {continue;}
 
                     GaiaVertex vertex = vertices.get(vi);
-                    if (vertex == null) continue;
+                    if (vertex == null) {continue;}
 
                     vertex.setPosition(new Vector3d(avgPosition));
                     movedVertex[vi] = true;
@@ -915,106 +996,141 @@ public class TextureAwareReMesher {
         // =========================================================
     }
 
-    private static boolean isDegenerated(int[] idx) {
-        if (idx == null || idx.length < 3) return true;
+    private static class EdgeKey {
+        final int a;
+        final int b;
 
-        for (int i = 0; i < idx.length; i++) {
-            for (int j = i + 1; j < idx.length; j++) {
-                if (idx[i] == idx[j]) {
-                    return true;
-                }
+        EdgeKey(int i0, int i1) {
+            if (i0 < i1) {
+                this.a = i0;
+                this.b = i1;
+            } else {
+                this.a = i1;
+                this.b = i0;
             }
         }
 
-        return false;
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof EdgeKey)) {return false;}
+
+            EdgeKey other = (EdgeKey) obj;
+
+            return a == other.a && b == other.b;
+        }
+
+        @Override
+        public int hashCode() {
+            int h = 17;
+            h = 31 * h + a;
+            h = 31 * h + b;
+            return h;
+        }
     }
 
-    private static void recalculateMovedVertexTexcoords(
-            List<GaiaSurface> surfaces,
-            List<GaiaVertex> vertices,
-            List<Vector3d> originalPositions,
-            List<Vector2d> originalTexcoords,
-            boolean[] movedVertex
-    ) {
-        // vertex -> incident faces
-        Map<Integer, List<GaiaFace>> vertexToFaces = new HashMap<>();
+    private static class CellClusterKey {
+        final Vector3i cell;
 
-        for (GaiaSurface surface : surfaces) {
-            for (GaiaFace face : surface.getFaces()) {
-                int[] idx = face.getIndices();
-                if (idx == null || idx.length < 3) continue;
-
-                for (int vi : idx) {
-                    if (vi < 0 || vi >= vertices.size()) continue;
-
-                    vertexToFaces
-                            .computeIfAbsent(vi, k -> new ArrayList<>())
-                            .add(face);
-                }
-            }
+        CellClusterKey(Vector3i cell) {
+            this.cell = new Vector3i(cell);
         }
 
-        for (int vi = 0; vi < vertices.size(); vi++) {
-            if (!movedVertex[vi]) continue;
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof CellClusterKey)) {return false;}
 
-            GaiaVertex vertex = vertices.get(vi);
-            if (vertex == null || vertex.getPosition() == null) continue;
+            CellClusterKey other = (CellClusterKey) obj;
 
-            List<GaiaFace> faces = vertexToFaces.get(vi);
-            if (faces == null || faces.isEmpty()) continue;
+            return cell.x == other.cell.x
+                    && cell.y == other.cell.y
+                    && cell.z == other.cell.z;
+        }
 
-            Vector3d newPos = vertex.getPosition();
+        @Override
+        public int hashCode() {
+            int h = 17;
+            h = 31 * h + cell.x;
+            h = 31 * h + cell.y;
+            h = 31 * h + cell.z;
+            return h;
+        }
+    }
 
-            Vector2d bestUv = null;
-            double bestScore = Double.POSITIVE_INFINITY;
+    private static class CellStats {
+        Vector3i cellIndex;
 
-            for (GaiaFace face : faces) {
-                int[] idx = face.getIndices();
-                if (idx == null || idx.length != 3) continue;
+        int triangleCount = 0;
+        double areaSum = 0.0;
 
-                int i0 = idx[0];
-                int i1 = idx[1];
-                int i2 = idx[2];
+        Vector3d min = new Vector3d(
+                Double.POSITIVE_INFINITY,
+                Double.POSITIVE_INFINITY,
+                Double.POSITIVE_INFINITY
+        );
 
-                Vector2d uv0 = originalTexcoords.get(i0);
-                Vector2d uv1 = originalTexcoords.get(i1);
-                Vector2d uv2 = originalTexcoords.get(i2);
+        Vector3d max = new Vector3d(
+                Double.NEGATIVE_INFINITY,
+                Double.NEGATIVE_INFINITY,
+                Double.NEGATIVE_INFINITY
+        );
 
-                if (uv0 == null || uv1 == null || uv2 == null) {
-                    continue;
-                }
+        boolean remeshable = false;
 
-                Vector3d p0 = originalPositions.get(i0);
-                Vector3d p1 = originalPositions.get(i1);
-                Vector3d p2 = originalPositions.get(i2);
+        CellStats(Vector3i cellIndex) {
+            this.cellIndex = new Vector3i(cellIndex);
+        }
 
-                BarycentricResult result = closestBarycentricOnTriangle(
-                        newPos,
-                        p0,
-                        p1,
-                        p2
-                );
+        void addPoint(Vector3d p) {
+            if (p.x < min.x) {min.x = p.x;}
+            if (p.y < min.y) {min.y = p.y;}
+            if (p.z < min.z) {min.z = p.z;}
 
-                if (result == null) continue;
+            if (p.x > max.x) {max.x = p.x;}
+            if (p.y > max.y) {max.y = p.y;}
+            if (p.z > max.z) {max.z = p.z;}
+        }
 
-                Vector2d uv = interpolateUv(
-                        uv0,
-                        uv1,
-                        uv2,
-                        result.u,
-                        result.v,
-                        result.w
-                );
+        double sizeX() {
+            return max.x - min.x;
+        }
 
-                if (result.distanceSquared < bestScore) {
-                    bestScore = result.distanceSquared;
-                    bestUv = uv;
-                }
+        double sizeY() {
+            return max.y - min.y;
+        }
+
+        double sizeZ() {
+            return max.z - min.z;
+        }
+
+        double maxDim() {
+            return Math.max(sizeX(), Math.max(sizeY(), sizeZ()));
+        }
+
+        double minDim() {
+            return Math.min(sizeX(), Math.min(sizeY(), sizeZ()));
+        }
+    }
+
+    private static class MoveCluster {
+        Vector3d sumPos = new Vector3d();
+        int count = 0;
+
+        List<Integer> positionGroupIds = new ArrayList<>();
+
+        void addPositionGroup(int groupId, PositionGroup group) {
+            if (group == null || group.position == null) {return;}
+
+            sumPos.add(group.position);
+            positionGroupIds.add(groupId);
+            count++;
+        }
+
+        Vector3d getAveragePosition() {
+            if (count == 0) {
+                return new Vector3d();
             }
 
-            if (bestUv != null) {
-                vertex.setTexcoords(bestUv);
-            }
+            return new Vector3d(sumPos).div(count);
         }
     }
 
@@ -1023,73 +1139,6 @@ public class TextureAwareReMesher {
         double v;
         double w;
         double distanceSquared;
-    }
-
-    private static BarycentricResult closestBarycentricOnTriangle(
-            Vector3d p,
-            Vector3d a,
-            Vector3d b,
-            Vector3d c
-    ) {
-        Vector3d ab = new Vector3d(b).sub(a);
-        Vector3d ac = new Vector3d(c).sub(a);
-        Vector3d ap = new Vector3d(p).sub(a);
-
-        double d00 = ab.dot(ab);
-        double d01 = ab.dot(ac);
-        double d11 = ac.dot(ac);
-        double d20 = ap.dot(ab);
-        double d21 = ap.dot(ac);
-
-        double denom = d00 * d11 - d01 * d01;
-
-        if (Math.abs(denom) < 1e-20) {
-            return null;
-        }
-
-        double v = (d11 * d20 - d01 * d21) / denom;
-        double w = (d00 * d21 - d01 * d20) / denom;
-        double u = 1.0 - v - w;
-
-        // Clamping simple para que si cae un poco fuera del triángulo,
-        // use el punto más cercano aproximado.
-        if (u < 0.0) u = 0.0;
-        if (v < 0.0) v = 0.0;
-        if (w < 0.0) w = 0.0;
-
-        double sum = u + v + w;
-        if (sum < 1e-20) {
-            return null;
-        }
-
-        u /= sum;
-        v /= sum;
-        w /= sum;
-
-        Vector3d closest = new Vector3d(a).mul(u)
-                .add(new Vector3d(b).mul(v))
-                .add(new Vector3d(c).mul(w));
-
-        BarycentricResult result = new BarycentricResult();
-        result.u = u;
-        result.v = v;
-        result.w = w;
-        result.distanceSquared = closest.distanceSquared(p);
-
-        return result;
-    }
-
-    private static Vector2d interpolateUv(
-            Vector2d uv0,
-            Vector2d uv1,
-            Vector2d uv2,
-            double u,
-            double v,
-            double w
-    ) {
-        return new Vector2d(uv0).mul(u)
-                .add(new Vector2d(uv1).mul(v))
-                .add(new Vector2d(uv2).mul(w));
     }
 
     private static class UvKey {
@@ -1103,7 +1152,7 @@ public class TextureAwareReMesher {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof UvKey)) return false;
+            if (!(obj instanceof UvKey)) {return false;}
             UvKey other = (UvKey) obj;
             return u == other.u && v == other.v;
         }
@@ -1130,7 +1179,7 @@ public class TextureAwareReMesher {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof PositionKey)) return false;
+            if (!(obj instanceof PositionKey)) {return false;}
             PositionKey other = (PositionKey) obj;
             return x == other.x && y == other.y && z == other.z;
         }
@@ -1159,56 +1208,6 @@ public class TextureAwareReMesher {
                 position.set(vertex.getPosition());
             }
         }
-    }
-
-    private static List<PositionGroup> buildPositionGroups(
-            List<GaiaVertex> vertices,
-            double epsilon,
-            int[] vertexIslandId,
-            int[] vertexToPositionGroup
-    ) {
-        Map<PositionKey, PositionGroup> map = new HashMap<>();
-
-        for (int i = 0; i < vertices.size(); i++) {
-            GaiaVertex vertex = vertices.get(i);
-            if (vertex == null || vertex.getPosition() == null) continue;
-
-            PositionKey key = new PositionKey(vertex.getPosition(), epsilon);
-
-            PositionGroup group = map.computeIfAbsent(key, k -> new PositionGroup());
-            group.addVertex(i, vertex);
-        }
-
-        List<PositionGroup> groups = new ArrayList<>(map.values());
-
-        for (int groupId = 0; groupId < groups.size(); groupId++) {
-            PositionGroup group = groups.get(groupId);
-
-            Map<Integer, Integer> islandCounts = new HashMap<>();
-
-            for (int vi : group.vertexIndices) {
-                vertexToPositionGroup[vi] = groupId;
-
-                int islandId = vertexIslandId[vi];
-                if (islandId >= 0) {
-                    islandCounts.put(islandId, islandCounts.getOrDefault(islandId, 0) + 1);
-                }
-            }
-
-            int bestIsland = -1;
-            int bestCount = -1;
-
-            for (Map.Entry<Integer, Integer> e : islandCounts.entrySet()) {
-                if (e.getValue() > bestCount) {
-                    bestCount = e.getValue();
-                    bestIsland = e.getKey();
-                }
-            }
-
-            group.dominantIslandId = bestIsland;
-        }
-
-        return groups;
     }
 
 }

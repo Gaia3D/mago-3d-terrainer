@@ -30,10 +30,6 @@ public enum CameraDirectionType {
     XNEG_YPOS_ZPOS,
     XNEG_YNEG_ZPOS;
 
-    public String getName() {
-        return this.name();
-    }
-
     public static Vector3d getCameraDirection(CameraDirectionType cameraDirectionType) {
         Vector3d result = new Vector3d();
         double z = 1.0;
@@ -123,7 +119,7 @@ public enum CameraDirectionType {
         CameraDirectionType result = ZNEG;
         double maxDot = -Double.MAX_VALUE;
 
-        CameraDirectionType[] candidates = new CameraDirectionType[] {
+        CameraDirectionType[] candidates = new CameraDirectionType[]{
                 XPOS_ZNEG,
                 XNEG_ZNEG,
                 YPOS_ZNEG,
@@ -163,21 +159,21 @@ public enum CameraDirectionType {
 
     public static String getName(CameraDirectionType type) {
         if (type == null) {
-            return     UNKNOWN.name();
+            return UNKNOWN.name();
         }
 
         return type.name();
     }
 
     public static CameraDirectionType getBestObliqueCameraDirectionType(Vector3d normal) {
-        CameraDirectionType result = CameraDirectionType.    UNKNOWN;
+        CameraDirectionType result = CameraDirectionType.UNKNOWN;
 
         // invert normal and do dot product test
         Vector3d invertedNormal = new Vector3d(normal).mul(-1.0);
         double maxDot = -Double.MAX_VALUE;
         for (CameraDirectionType cameraDirectionType : CameraDirectionType.values()) {
             // In oblique camera direction selection, we only consider oblique directions.
-            if (cameraDirectionType ==     UNKNOWN || cameraDirectionType == XPOS ||
+            if (cameraDirectionType == UNKNOWN || cameraDirectionType == XPOS ||
                     cameraDirectionType == XNEG || cameraDirectionType == ZPOS ||
                     cameraDirectionType == ZNEG || cameraDirectionType == YPOS ||
                     cameraDirectionType == YNEG) {
@@ -193,8 +189,8 @@ public enum CameraDirectionType {
         return result;
     }
 
-    public static List<CameraDirectionType> get9ObliqueCameraDirectionTypes(List<CameraDirectionType> result){
-        if(result == null){
+    public static List<CameraDirectionType> get9ObliqueCameraDirectionTypes(List<CameraDirectionType> result) {
+        if (result == null) {
             result = new ArrayList<>();
         }
 
@@ -209,6 +205,10 @@ public enum CameraDirectionType {
         result.add(XNEG_YNEG_ZNEG);
 
         return result;
+    }
+
+    public String getName() {
+        return this.name();
     }
 
 }

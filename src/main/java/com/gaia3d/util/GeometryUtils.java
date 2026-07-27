@@ -178,8 +178,8 @@ public class GeometryUtils {
         return primitive;
     }
 
-    public static GaiaPrimitive getPrimitiveFromBox(Vector3d leftFrontBottom, Vector3d rightFrontBottom, Vector3d rightRearBottom,Vector3d leftRearBottom,
-                                                    Vector3d leftFrontTop, Vector3d rightFrontTop, Vector3d rightRearTop,Vector3d leftRearTop,
+    public static GaiaPrimitive getPrimitiveFromBox(Vector3d leftFrontBottom, Vector3d rightFrontBottom, Vector3d rightRearBottom, Vector3d leftRearBottom,
+                                                    Vector3d leftFrontTop, Vector3d rightFrontTop, Vector3d rightRearTop, Vector3d leftRearTop,
                                                     boolean left, boolean right, boolean front, boolean rear, boolean bottom, boolean top) {
         GaiaPrimitive resultPrimitive = new GaiaPrimitive();
 
@@ -208,8 +208,6 @@ public class GeometryUtils {
         //                          /        /
         //                         /        /   <- bottom
         //                        0--------3
-
-
 
         if (left) {
             // leftFrontBottom - leftFrontTop - leftRearTop - leftRearBottom
@@ -285,7 +283,6 @@ public class GeometryUtils {
         //                          /        /
         //                         /        /   <- bottom
         //                        0--------1
-
 
         GaiaVertex vertex0 = new GaiaVertex();
         // Bottom
@@ -395,7 +392,6 @@ public class GeometryUtils {
         vertex23.setPosition(new Vector3d(minX, maxY, maxZ));
         vertex23.setNormal(normalTop);
 
-
         resultPrimitive.getVertices().add(vertex0);
         resultPrimitive.getVertices().add(vertex1);
         resultPrimitive.getVertices().add(vertex2);
@@ -420,7 +416,6 @@ public class GeometryUtils {
         resultPrimitive.getVertices().add(vertex21);
         resultPrimitive.getVertices().add(vertex22);
         resultPrimitive.getVertices().add(vertex23);
-
 
         // BottomSurface
         GaiaSurface bottomSurface = new GaiaSurface();
@@ -723,7 +718,6 @@ public class GeometryUtils {
 
             Vector3d cross = new Vector3d();
             v1.cross(v2, cross);
-
 
             if (!isValidVector(cross)) {
                 // cross is invalid

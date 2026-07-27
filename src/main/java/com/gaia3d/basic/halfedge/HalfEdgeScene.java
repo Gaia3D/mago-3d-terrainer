@@ -10,12 +10,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.joml.Vector2d;
 import org.joml.Vector3d;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -77,12 +77,6 @@ public class HalfEdgeScene implements Serializable {
                     texture.setPath("");
                 }
             }
-        }
-    }
-
-    public void checkSandClockFaces() {
-        for (HalfEdgeNode node : nodes) {
-            node.checkSandClockFaces();
         }
     }
 

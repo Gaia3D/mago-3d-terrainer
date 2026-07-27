@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,15 +32,6 @@ public class HalfEdgeNode implements Serializable {
             child.deleteObjects();
         }
         children.clear();
-    }
-
-    public void checkSandClockFaces() {
-        for (HalfEdgeMesh mesh : meshes) {
-            mesh.checkSandClockFaces();
-        }
-        for (HalfEdgeNode child : children) {
-            child.checkSandClockFaces();
-        }
     }
 
     public void calculateNormals() {
