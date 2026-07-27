@@ -197,8 +197,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
                 resizeHeight = ImageUtils.getNearestPowerOfTwo(resizeHeight);
                 this.width = resizeWidth;
                 this.height = resizeHeight;
-                ImageResizer imageResizer = new ImageResizer();
-                this.bufferedImage = imageResizer.resizeImageGraphic2D(this.bufferedImage, resizeWidth, resizeHeight);
+                this.bufferedImage = ImageResizer.resizeImageGraphic2D(this.bufferedImage, resizeWidth, resizeHeight);
             }
         }
     }
@@ -210,8 +209,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
         if (this.bufferedImage == null) {
             return;
         }
-        ImageResizer imageResizer = new ImageResizer();
-        this.bufferedImage = imageResizer.resizeImageGraphic2D(this.bufferedImage, width, height);
+        this.bufferedImage = ImageResizer.resizeImageGraphic2D(this.bufferedImage, width, height);
         this.width = width;
         this.height = height;
     }

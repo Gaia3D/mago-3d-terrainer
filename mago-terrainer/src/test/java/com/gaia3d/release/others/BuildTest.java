@@ -60,7 +60,7 @@ public class BuildTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-max", "4",
+                //"-max", "6",
                 "-calculateNormals",
                 "-geoid", "EGM96",
         };
@@ -68,7 +68,7 @@ public class BuildTest {
     }
 
     @Test
-    void changewon1MwithBase5M() {
+    void changewon1mWithBase5M() {
         String name = "changewon1-m-with-base-5M";
         File inputPath = new File("D:\\data\\mago-3d-terrainer\\release-sample\\changwon_4326_0501_nodata");
         File outputPath = MagoTestConfig.getOutputPath(name);
@@ -81,7 +81,7 @@ public class BuildTest {
     }
 
     @Test
-    void changewon1MwithBase5MMini() {
+    void changewon1mWithBase5mMini() {
         String name = "changewon1-m-with-base-5M-mini";
         File inputPath = new File("D:\\data\\mago-3d-terrainer\\release-sample\\changwon_4326_mini");
         File outputPath = MagoTestConfig.getOutputPath(name);
@@ -108,7 +108,7 @@ public class BuildTest {
 
     @Test
     void resampleBigMoreFast() {
-        String name = "global-copernicus-dem-90m";
+        String name = "dem05-all-5186";
         File inputPath = new File("G:\\workspace\\dem05-all-5186.tif");
         File outputPath = MagoTestConfig.getOutputPath(name);
 
