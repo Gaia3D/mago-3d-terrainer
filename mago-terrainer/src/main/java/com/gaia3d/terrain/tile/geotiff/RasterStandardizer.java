@@ -4,7 +4,9 @@ import com.gaia3d.command.GlobalOptions;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.imagen.Interpolation;
+import org.eclipse.imagen.PlanarImage;
 import org.eclipse.imagen.RasterFactory;
+import org.eclipse.imagen.TiledImage;
 import org.eclipse.imagen.media.range.NoDataContainer;
 import org.geotools.api.coverage.grid.GridEnvelope;
 import org.geotools.api.coverage.processing.Operation;
@@ -33,16 +35,23 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.awt.*;
 import java.awt.image.DataBuffer;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
+import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.awt.Point;
 import java.awt.image.WritableRenderedImage;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -229,7 +238,7 @@ public class RasterStandardizer {
         }
 
         RasterCopyResult copyResult = copyZeroBasedRasterAndCheckNoData(renderedImage.getData(), noDataValue);
-        GridCoverage2D materializedCoverage = new GridCoverageFactory().create(coverage.getName(), copyResult.raster(), coverage.getEnvelope());
+        GridCoverage2D materializedCoverage = createCoveragePreservingNoData(coverage, copyResult.raster(), coverage.getEnvelope());
         return new PreparedCoverage(materializedCoverage, true, copyResult.allNoData());
     }
 
@@ -255,7 +264,10 @@ public class RasterStandardizer {
             GridCoverage2D carrierCoverage = coverageFactory.create(
                 materializedCoverage.getName(),
                 materializedCoverage.getRenderedImage(),
-                carrierEnvelope
+                carrierEnvelope,
+                null,
+                null,
+                createNoDataProperties(materializedCoverage)
             );
 
             try (FileOutputStream outputStream = new FileOutputStream(outputFile);
@@ -469,6 +481,7 @@ public class RasterStandardizer {
         Double demNoDataVal = getNodata(dem);
         boolean hasDemNoDataVal = demNoDataVal != null;
         double demNoData = hasDemNoDataVal ? demNoDataVal : Double.NaN;
+        double outputNoData = hasDemNoDataVal ? demNoData : globalNodata;
 
         Raster demRaster = demImg.getData();
         Raster geoRaster = geoidImg.getData();
@@ -493,10 +506,10 @@ public class RasterStandardizer {
                 int outputY = y - demRectangle.y;
 
                 double H = demRaster.getSampleDouble(x, y, 0);
-                if (H <= -9999) {
-                    outRaster.setSample(outputX, outputY, 0, (float) globalNodata);
-                } else if (Double.isNaN(H) || (hasDemNoDataVal && Double.compare(H, demNoData) == 0)) {
-                    outRaster.setSample(outputX, outputY, 0, (float) globalNodata);
+                if (Double.isNaN(H)
+                    || (hasDemNoDataVal && Double.compare(H, demNoData) == 0)
+                    || (!hasDemNoDataVal && H <= -9999)) {
+                    outRaster.setSample(outputX, outputY, 0, (float) outputNoData);
                 } else {
                     double N = geoRaster.getSampleDouble(x, y, 0);
                     outRaster.setSample(outputX, outputY, 0, (float) (H + N));
@@ -508,7 +521,7 @@ public class RasterStandardizer {
         demRaster = null;
         geoRaster = null;
 
-        return new GridCoverageFactory().create(dem.getName(), outRaster, dem.getEnvelope());
+        return createCoveragePreservingNoData(dem, outRaster, dem.getEnvelope());
     }
 
     private void disposeCoverage(GridCoverage2D coverage) {
@@ -552,7 +565,7 @@ public class RasterStandardizer {
 
         Raster sourceRaster = renderedImage.getData();
         WritableRaster materializedRaster = createZeroBasedWritableRaster(sourceRaster);
-        return new GridCoverageFactory().create(coverage.getName(), materializedRaster, coverage.getEnvelope());
+        return createCoveragePreservingNoData(coverage, materializedRaster, coverage.getEnvelope());
     }
 
     private RasterCopyResult copyZeroBasedRasterAndCheckNoData(Raster sourceRaster, double noDataValue) {
@@ -597,7 +610,75 @@ public class RasterStandardizer {
     private GridCoverage2D extractTileCoverage(GridCoverage2D sourceCoverage, GridEnvelope2D gridEnvelope, ReferencedEnvelope tileEnvelope) {
         Raster sourceRaster = sourceCoverage.getRenderedImage().getData(gridEnvelope);
         WritableRaster zeroBasedRaster = createSharedZeroBasedWritableRaster(sourceRaster);
-        return new GridCoverageFactory().create(sourceCoverage.getName(), zeroBasedRaster, tileEnvelope);
+        return createCoveragePreservingNoData(sourceCoverage, zeroBasedRaster, tileEnvelope);
+    }
+
+    private GridCoverage2D createCoveragePreservingNoData(GridCoverage2D sourceCoverage, WritableRaster raster, org.geotools.api.geometry.Bounds envelope) {
+        if (CoverageUtilities.getNoDataProperty(sourceCoverage) == null) {
+            return new GridCoverageFactory().create(sourceCoverage.getName(), raster, envelope);
+        }
+
+        TiledImage image = new TiledImage(
+            raster.getMinX(),
+            raster.getMinY(),
+            raster.getWidth(),
+            raster.getHeight(),
+            raster.getMinX(),
+            raster.getMinY(),
+            raster.getSampleModel(),
+            createColorModel(raster.getSampleModel())
+        );
+        image.setData(raster);
+        return new GridCoverageFactory().create(
+            sourceCoverage.getName(),
+            image,
+            envelope,
+            null,
+            null,
+            createNoDataProperties(sourceCoverage)
+        );
+    }
+
+    private Map<String, Object> createNoDataProperties(GridCoverage2D sourceCoverage) {
+        Map<String, Object> properties = new HashMap<>();
+        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(sourceCoverage);
+        if (noDataContainer != null) {
+            CoverageUtilities.setNoDataProperty(properties, noDataContainer);
+        }
+        return properties;
+    }
+
+    private ColorModel createColorModel(SampleModel sampleModel) {
+        ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
+        if (colorModel != null) {
+            return colorModel;
+        }
+
+        int numBands = sampleModel.getNumBands();
+        if (numBands == 1) {
+            return new ComponentColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_GRAY),
+                sampleModel.getSampleSize(),
+                false,
+                false,
+                Transparency.OPAQUE,
+                sampleModel.getDataType()
+            );
+        }
+
+        if (numBands == 3 || numBands == 4) {
+            boolean hasAlpha = numBands == 4;
+            return new ComponentColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                sampleModel.getSampleSize(),
+                hasAlpha,
+                false,
+                hasAlpha ? Transparency.TRANSLUCENT : Transparency.OPAQUE,
+                sampleModel.getDataType()
+            );
+        }
+
+        throw new IllegalArgumentException("Unsupported sample model for GeoTIFF color model: bands=" + numBands);
     }
 
     private WritableRaster createZeroBasedWritableRaster(Raster sourceRaster) {

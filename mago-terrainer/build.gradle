@@ -23,8 +23,22 @@ java {
 }
 
 test {
+    if (project.hasProperty("testMaxHeap")) {
+        maxHeapSize = project.property("testMaxHeap").toString()
+    }
+
     useJUnitPlatform {
-        includeTags 'default'
+        if (project.hasProperty("includeLoadTests")) {
+            includeTags 'default', 'load'
+        } else {
+            includeTags 'default'
+        }
+    }
+
+    if (project.hasProperty("showTestOutput")) {
+        testLogging {
+            showStandardStreams = true
+        }
     }
 }
 

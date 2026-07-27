@@ -1445,7 +1445,7 @@ public class TileMatrix {
                     }
                 } else {
                     consecutiveNoProgressCount = 0; // Reset counter on progress
-                    log.info("[RefineMesh] Iteration {}/{}: added {} triangles, total {}, vertices {}",
+                    log.debug("[RefineMesh] Iteration {}/{}: added {} triangles, total {}, vertices {}",
                             splitCount, maxIterations, trianglesAdded, currentTriangleCount, mesh.vertices.size());
                 }
 
@@ -1467,7 +1467,7 @@ public class TileMatrix {
         MemoryMonitor.MemoryMetrics finalMetrics = new MemoryMonitor.MemoryMetrics(
                 finalMemState.usedMemory, mesh.triangles.size(), mesh.vertices.size());
 
-        log.info("[RefineMesh] Final memory state: used={}, free={}%, " +
+        log.debug("[RefineMesh] Final memory state: used={}, free={}%, " +
                 "avg_memory_per_triangle={}, avg_memory_per_vertex={}",
                 finalMemState.getUsedMemoryDisplay(), finalMemState.getFormattedPercent(),
                 finalMetrics.formattedBytesPerTriangle, finalMetrics.formattedBytesPerVertex);

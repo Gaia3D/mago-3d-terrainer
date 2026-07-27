@@ -1,9 +1,13 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.GlobalOptions;
+import org.eclipse.imagen.media.range.NoDataContainer;
+import org.eclipse.imagen.PlanarImage;
 import org.eclipse.imagen.RasterFactory;
+import org.eclipse.imagen.TiledImage;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
+import org.geotools.coverage.util.CoverageUtilities;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -15,9 +19,12 @@ import java.awt.image.WritableRaster;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RasterStandardizerTest {
@@ -148,6 +155,36 @@ class RasterStandardizerTest {
 
     @Test
     @Tag("default")
+    void addGeoidPreservesCoverageNoDataValue() {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        globalOptions.setNoDataValue(-9999.0);
+
+        RasterStandardizer rasterStandardizer = new RasterStandardizer();
+        GridCoverage2D demCoverage = createCoverage("dem", new float[][]{
+                {-32768.0f, 2.0f},
+                {3.0f, 4.0f}
+        }, -32768.0);
+        GridCoverage2D geoidCoverage = createCoverage("geoid", new float[][]{
+                {10.0f, 10.0f},
+                {10.0f, 10.0f}
+        });
+
+        GridCoverage2D adjustedCoverage = rasterStandardizer.addGeoidPreserveDemNoData(demCoverage, geoidCoverage);
+        var raster = adjustedCoverage.getRenderedImage().getData();
+        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(adjustedCoverage);
+
+        assertEquals(-32768.0, raster.getSampleDouble(0, 0, 0), 0.0001);
+        assertEquals(12.0, raster.getSampleDouble(1, 0, 0), 0.0001);
+        assertNotNull(noDataContainer);
+        assertEquals(-32768.0, noDataContainer.getAsSingleValue(), 0.0001);
+
+        adjustedCoverage.dispose(true);
+        demCoverage.dispose(true);
+        geoidCoverage.dispose(true);
+    }
+
+    @Test
+    @Tag("default")
     void standardizeSkipsAllNoDataTiles() throws Exception {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         globalOptions.setOutputCRS(DefaultGeographicCRS.WGS84);
@@ -170,6 +207,85 @@ class RasterStandardizerTest {
             }
 
             assertEquals(0, tifFileCount);
+        } finally {
+            coverage.dispose(true);
+            deleteRecursively(tempDir);
+        }
+    }
+
+    @Test
+    @Tag("default")
+    void standardizePreservesCoverageNoDataValue() throws Exception {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        globalOptions.setOutputCRS(DefaultGeographicCRS.WGS84);
+        globalOptions.setMaxRasterSize(4);
+        globalOptions.setNoDataValue(-9999.0);
+
+        RasterStandardizer rasterStandardizer = new RasterStandardizer();
+        GridCoverage2D coverage = createCoverage("nodata32768", new float[][]{
+                {-32768.0f, 10.0f},
+                {20.0f, 30.0f}
+        }, -32768.0);
+        Path tempDir = Files.createTempDirectory("raster-standardize-nodata32768-");
+
+        try {
+            rasterStandardizer.standardize(coverage, tempDir.toFile());
+
+            Path outputTile;
+            try (var paths = Files.walk(tempDir)) {
+                outputTile = paths
+                        .filter(path -> path.getFileName().toString().endsWith(".tif"))
+                        .findFirst()
+                        .orElseThrow();
+            }
+
+            GeoTiffReader reader = new GeoTiffReader(outputTile.toFile());
+            try {
+                GridCoverage2D outputCoverage = reader.read(null);
+                NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(outputCoverage);
+                double sample = outputCoverage.getRenderedImage().getData().getSampleDouble(0, 0, 0);
+
+                assertEquals(-32768.0, sample, 0.0001);
+                assertNotNull(noDataContainer);
+                assertEquals(-32768.0, noDataContainer.getAsSingleValue(), 0.0001);
+
+                outputCoverage.dispose(true);
+            } finally {
+                reader.dispose();
+            }
+        } finally {
+            coverage.dispose(true);
+            deleteRecursively(tempDir);
+        }
+    }
+
+    @Test
+    @Tag("default")
+    void geoTiffManagerWritesFloat32NoDataCoverageWithColorModelFallback() throws Exception {
+        GridCoverage2D coverage = createCoverage("resize-nodata32768", new float[][]{
+                {-32768.0f, 10.0f},
+                {20.0f, 30.0f}
+        }, -32768.0);
+        Path tempDir = Files.createTempDirectory("geotiff-manager-nodata32768-");
+        Path outputFile = tempDir.resolve("resized.tif");
+
+        try {
+            new GaiaGeoTiffManager().saveGridCoverage2D(coverage, outputFile.toString());
+
+            GeoTiffReader reader = new GeoTiffReader(outputFile.toFile());
+            try {
+                GridCoverage2D outputCoverage = reader.read(null);
+                NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(outputCoverage);
+                double sample = outputCoverage.getRenderedImage().getData().getSampleDouble(0, 0, 0);
+
+                assertEquals(-32768.0, sample, 0.0001);
+                assertNotNull(noDataContainer);
+                assertEquals(-32768.0, noDataContainer.getAsSingleValue(), 0.0001);
+
+                outputCoverage.dispose(true);
+            } finally {
+                reader.dispose();
+            }
         } finally {
             coverage.dispose(true);
             deleteRecursively(tempDir);
@@ -200,6 +316,24 @@ class RasterStandardizerTest {
 
         ReferencedEnvelope envelope = new ReferencedEnvelope(0.0, width, 0.0, height, DefaultGeographicCRS.WGS84);
         return new GridCoverageFactory().create(name, raster, envelope);
+    }
+
+    private GridCoverage2D createCoverage(String name, float[][] values, double noDataValue) {
+        int height = values.length;
+        int width = values[0].length;
+        WritableRaster raster = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                raster.setSample(x, y, 0, values[y][x]);
+            }
+        }
+
+        ReferencedEnvelope envelope = new ReferencedEnvelope(0.0, width, 0.0, height, DefaultGeographicCRS.WGS84);
+        TiledImage image = new TiledImage(0, 0, width, height, 0, 0, raster.getSampleModel(), PlanarImage.createColorModel(raster.getSampleModel()));
+        image.setData(raster);
+        Map<String, Object> properties = new HashMap<>();
+        CoverageUtilities.setNoDataProperty(properties, new NoDataContainer(noDataValue));
+        return new GridCoverageFactory().create(name, image, envelope, null, null, properties);
     }
 
     private void deleteRecursively(Path directory) throws Exception {

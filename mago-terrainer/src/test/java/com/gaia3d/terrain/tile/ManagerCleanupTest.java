@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -66,6 +67,23 @@ class ManagerCleanupTest {
         assertTrue(manager.getStandardizedGeoTiffFiles().isEmpty());
         assertTrue(manager.getAvailableTileSet().getMapDepthAvailableTileRanges().isEmpty());
         assertTrue(manager.getMapNoUsableGeotiffPaths().isEmpty());
-        assertEquals(0, manager.getDepthGeoTiffFolderPathMap().size());
+        assertEquals(0, manager.getDepthGeoTiffFilesMap().size());
+    }
+
+    @Test
+    @Tag("default")
+    void depthRasterSelectionCanKeepMixedResolutionFiles() {
+        initializeGlobalOptions();
+        TileWgs84Manager manager = new TileWgs84Manager();
+        File coarseStandardized = new File("standardized/5m.tif");
+        File fineResized = new File("resized/14/1m.tif");
+
+        manager.getDepthGeoTiffFilesMap().put(14, new java.util.ArrayList<>(List.of(coarseStandardized, fineResized)));
+
+        List<File> resolvedFiles = manager.resolveTerrainElevationDataFiles(14);
+
+        assertEquals(2, resolvedFiles.size());
+        assertTrue(resolvedFiles.contains(coarseStandardized));
+        assertTrue(resolvedFiles.contains(fineResized));
     }
 }

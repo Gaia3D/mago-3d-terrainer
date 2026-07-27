@@ -68,6 +68,45 @@ public class BuildTest {
     }
 
     @Test
+    void changewon1MwithBase5M() {
+        String name = "changewon1-m-with-base-5M";
+        File inputPath = new File("D:\\data\\mago-3d-terrainer\\release-sample\\changwon_4326_0501_nodata");
+        File outputPath = MagoTestConfig.getOutputPath(name);
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-calculateNormals",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void changewon1MwithBase5MMini() {
+        String name = "changewon1-m-with-base-5M-mini";
+        File inputPath = new File("D:\\data\\mago-3d-terrainer\\release-sample\\changwon_4326_mini");
+        File outputPath = MagoTestConfig.getOutputPath(name);
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-calculateNormals",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void dsmSeattle2026() {
+        String name = "dsm-tri-seattle-2026";
+        File inputPath = new File("D:\\data\\mago-3d-terrainer\\release-sample\\dsm-tri-seattle-2026");
+        File outputPath = MagoTestConfig.getOutputPath(name);
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "-calculateNormals",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
     void resampleBigMoreFast() {
         String name = "global-copernicus-dem-90m";
         File inputPath = new File("G:\\workspace\\dem05-all-5186.tif");

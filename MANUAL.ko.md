@@ -44,13 +44,12 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 ```
 
 ## Terrain Normal 계산 (조명 처리)
-`-calculateNormals` 또는 `-cn` 옵션을 사용하여 Terrain Tiles의 normal 벡터를 계산할 수 있습니다.  
-기본값은 `false`입니다.
+Terrain normal 계산은 기본적으로 활성화되며, 조명을 위한 `octvertexnormals` 확장을 생성합니다.
 
-이 옵션을 활성화하면 변환 시간이 증가할 수 있으나,  
-렌더링 시 광원(Lighting) 효과를 적용할 수 있습니다.
+normal 생성을 원하지 않는 경우 `--noCalculateNormals` / `-ncn` 옵션을 사용합니다.  
+기존 호환성을 위해 `--calculateNormals` / `-cn` 옵션은 계속 허용되지만, 더 이상 지정할 필요는 없습니다.
 ```
-java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --calculateNormals
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --noCalculateNormals
 ```
 
 ## Geoid 보정 파일 사용

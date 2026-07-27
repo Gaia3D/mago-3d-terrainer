@@ -51,6 +51,7 @@ public class TerrainElevationDataManager {
 
     // Inside the folder, there are multiple geoTiff files
     private String terrainElevationDataFolderPath;
+    private List<File> terrainElevationDataFiles = new ArrayList<>();
     private int geoTiffFilesCount = 0;
 
     // if there are multiple geoTiff files, use this
@@ -65,7 +66,7 @@ public class TerrainElevationDataManager {
         List<File> standardizedGeoTiffFiles = tileWgs84Manager.getStandardizedGeoTiffFiles();
 
         // load all geoTiffFiles & make a quadTree
-        loadAllGeoTiff(terrainElevationDataFolderPath, standardizedGeoTiffFiles);
+        loadAllGeoTiff(resolveTerrainElevationDataFiles(), standardizedGeoTiffFiles);
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreeMaxDepth);
     }
 
@@ -198,7 +199,14 @@ public class TerrainElevationDataManager {
         gridAreaMap.clear();
         priorityPixelSizeByGeoTiffName.clear();
         geoTiffFileNames.clear();
+        terrainElevationDataFiles = new ArrayList<>();
         tileWgs84Manager = null;
+    }
+
+    public void setTerrainElevationDataFiles(List<File> terrainElevationDataFiles) {
+        this.terrainElevationDataFiles = terrainElevationDataFiles == null
+            ? new ArrayList<>()
+            : new ArrayList<>(terrainElevationDataFiles);
     }
 
     public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager,
@@ -289,23 +297,36 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
-    private void loadAllGeoTiff(String terrainElevationDataFolderPath, List<File> standardizedGeoTiffFiles) throws FactoryException, TransformException {
-        // recursively load all geoTiff files
+    private List<File> resolveTerrainElevationDataFiles() {
+        if (terrainElevationDataFiles != null && !terrainElevationDataFiles.isEmpty()) {
+            return terrainElevationDataFiles;
+        }
+
+        List<File> result = new ArrayList<>();
+        if (terrainElevationDataFolderPath == null || terrainElevationDataFolderPath.isBlank()) {
+            return result;
+        }
+
+        List<String> geoTiffFilePaths = new ArrayList<>();
+        FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, ".tif", geoTiffFilePaths, true);
+        for (String geoTiffFilePath : geoTiffFilePaths) {
+            result.add(new File(geoTiffFilePath));
+        }
+        return result;
+    }
+
+    private void loadAllGeoTiff(List<File> geoTiffFiles, List<File> standardizedGeoTiffFiles) throws FactoryException, TransformException {
         geoTiffFileNames.clear();
-        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
 
         Map<String, File> standardizedGeoTiffByName = new HashMap<>();
         for (File standardizedGeoTiffFile : standardizedGeoTiffFiles) {
             standardizedGeoTiffByName.putIfAbsent(standardizedGeoTiffFile.getName(), standardizedGeoTiffFile);
         }
 
-        loadAllGeoTiff(terrainElevationDataFolderPath, standardizedGeoTiffByName);
+        loadAllGeoTiff(geoTiffFiles, standardizedGeoTiffByName);
     }
 
-    private void loadAllGeoTiff(String terrainElevationDataFolderPath, Map<String, File> standardizedGeoTiffByName) throws FactoryException, TransformException {
-        List<String> currentFolderGeoTiffFileNames = new ArrayList<>();
-        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", currentFolderGeoTiffFileNames);
-
+    private void loadAllGeoTiff(List<File> geoTiffFiles, Map<String, File> standardizedGeoTiffByName) throws FactoryException, TransformException {
         if (myGaiaGeoTiffManager == null) {
             myGaiaGeoTiffManager = this.getGaiaGeoTiffManager();
         }
@@ -317,27 +338,23 @@ public class TerrainElevationDataManager {
 
         // now load all geotiff and make geotiff geoExtension data
         //GridCoverage2D gridCoverage2D = null;
-        String geoTiffFileName = null;
-        String geoTiffFilePath = null;
-        String priorityReferenceGeoTiffPath = null;
-
         CoordinateReferenceSystem crsTarget = null;
         CoordinateReferenceSystem crsOutput = globalOptions.getOutputCRS();
         MathTransform targetToOutput = null;
 
         Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
 
-        for (String currentFolderGeoTiffFileName : currentFolderGeoTiffFileNames) {
-            geoTiffFileName = currentFolderGeoTiffFileName;
-            geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
-            File currentFolderGeoTiffFile = new File(geoTiffFilePath);
+        for (File currentFolderGeoTiffFile : geoTiffFiles) {
+            String geoTiffFileName = currentFolderGeoTiffFile.getName();
+            String geoTiffFilePath = currentFolderGeoTiffFile.getAbsolutePath();
+            geoTiffFileNames.add(geoTiffFilePath);
             File standardizedGeoTiffFile = standardizedGeoTiffByName.get(geoTiffFileName);
             if (!currentFolderGeoTiffFile.exists()) {
                 if (standardizedGeoTiffFile != null) {
                     geoTiffFilePath = standardizedGeoTiffFile.getAbsolutePath();
                 }
             }
-            priorityReferenceGeoTiffPath = standardizedGeoTiffFile != null
+            String priorityReferenceGeoTiffPath = standardizedGeoTiffFile != null
                 ? standardizedGeoTiffFile.getAbsolutePath()
                 : geoTiffFilePath;
 
@@ -369,14 +386,6 @@ public class TerrainElevationDataManager {
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
             // Important: Do not dispose the gridCoverage2D here, because it can be stored in the myGaiaGeoTiffManager cache map.
-        }
-
-        // now check if exist folders inside the terrainElevationDataFolderPath
-        List<String> folderNames = new ArrayList<>();
-        FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
-        for (String folderName : folderNames) {
-            String folderPath = terrainElevationDataFolderPath + File.separator + folderName;
-            loadAllGeoTiff(folderPath, standardizedGeoTiffByName);
         }
     }
 

@@ -43,12 +43,12 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 ```
 
 ## Terrain normal calculation (Lighting)
-Enable terrain normal calculation using the `-calculateNormals` or `-cn` option.  
-Default value is `false`.
+Terrain normal calculation is enabled by default and adds the `octvertexnormals` extension for lighting.
 
-This increases conversion time but allows lighting effects during rendering.
+Use `--noCalculateNormals` / `-ncn` to disable normal generation when smaller output or faster conversion is preferred.  
+The legacy `--calculateNormals` / `-cn` option is still accepted for compatibility, but it is no longer required.
 ```
-java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --calculateNormals
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --noCalculateNormals
 ```
 
 ## Using a geoid correction file

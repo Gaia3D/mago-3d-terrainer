@@ -49,7 +49,7 @@ public class PreReleaseTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
-                "-max", "10",
+                //"-max", "10",
                 "-interpolation", "nearest",
                 "-calculateNormals",
         };

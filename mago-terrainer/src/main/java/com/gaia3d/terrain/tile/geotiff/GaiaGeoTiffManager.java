@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.imagen.PlanarImage;
+import org.eclipse.imagen.TiledImage;
 import org.eclipse.imagen.media.range.NoDataContainer;
 import org.geotools.api.parameter.GeneralParameterValue;
 import org.geotools.api.parameter.ParameterValueGroup;
@@ -42,6 +44,11 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.SampleModel;
 
 @Getter
 @Setter
@@ -222,7 +229,7 @@ public class GaiaGeoTiffManager {
         int desiredImageWidth = Math.max((int) desiredPixelsCountX, minXSize);
         int desiredImageHeight = Math.max((int) desiredPixelsCountY, minYSize);
 
-        resizedCoverage = readSubsampledCoverage(geoTiffFilePath, envelopeOriginal, desiredImageWidth, desiredImageHeight);
+        resizedCoverage = readSubsampledCoverage(geoTiffFilePath, originalCoverage, envelopeOriginal, desiredImageWidth, desiredImageHeight);
         if (resizedCoverage != null) {
             GridGeometry resizedGridGeometry = resizedCoverage.getGridGeometry();
             int resizedSpanX = resizedGridGeometry.getGridRange().getSpan(0);
@@ -284,7 +291,7 @@ public class GaiaGeoTiffManager {
         }
 
         RasterCopyResult copyResult = copyZeroBasedRasterAndCheckNoData(renderedImage.getData(), noDataValue);
-        GridCoverage2D materializedCoverage = new GridCoverageFactory().create(coverage.getName(), copyResult.raster(), coverage.getEnvelope());
+        GridCoverage2D materializedCoverage = createCoveragePreservingNoData(coverage, copyResult.raster(), coverage.getEnvelope());
         return new PreparedCoverage(materializedCoverage, true, copyResult.allNoData());
     }
 
@@ -296,7 +303,7 @@ public class GaiaGeoTiffManager {
 
         Raster sourceRaster = renderedImage.getData();
         WritableRaster materializedRaster = createZeroBasedWritableRaster(sourceRaster);
-        return new GridCoverageFactory().create(coverage.getName(), materializedRaster, coverage.getEnvelope());
+        return createCoveragePreservingNoData(coverage, materializedRaster, coverage.getEnvelope());
     }
 
     private GeneralParameterValue[] createWriteParameters(GridCoverage2D coverage) {
@@ -314,7 +321,7 @@ public class GaiaGeoTiffManager {
         return params.values().toArray(new GeneralParameterValue[0]);
     }
 
-    private GridCoverage2D readSubsampledCoverage(String geoTiffFilePath, ReferencedEnvelope envelope, int width, int height) {
+    private GridCoverage2D readSubsampledCoverage(String geoTiffFilePath, GridCoverage2D originalCoverage, ReferencedEnvelope envelope, int width, int height) {
         File geoTiffFile = new File(geoTiffFilePath);
         try (ImageInputStream inputStream = ImageIO.createImageInputStream(geoTiffFile)) {
             if (inputStream == null) {
@@ -341,7 +348,14 @@ public class GaiaGeoTiffManager {
                 ImageReadParam readParam = imageReader.getDefaultReadParam();
                 readParam.setSourceSubsampling(subsamplingX, subsamplingY, 0, 0);
                 RenderedImage subsampledImage = imageReader.read(0, readParam);
-                return new GridCoverageFactory().create(geoTiffFile.getName(), subsampledImage, envelope);
+                return new GridCoverageFactory().create(
+                    geoTiffFile.getName(),
+                    subsampledImage,
+                    envelope,
+                    null,
+                    null,
+                    createNoDataProperties(originalCoverage)
+                );
             } finally {
                 imageReader.dispose();
             }
@@ -376,6 +390,74 @@ public class GaiaGeoTiffManager {
     private double resolveNoDataValue(GridCoverage2D coverage) {
         NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(coverage);
         return noDataContainer != null ? noDataContainer.getAsSingleValue() : defaultNoDataValue;
+    }
+
+    private GridCoverage2D createCoveragePreservingNoData(GridCoverage2D sourceCoverage, WritableRaster raster, org.geotools.api.geometry.Bounds envelope) {
+        if (CoverageUtilities.getNoDataProperty(sourceCoverage) == null) {
+            return new GridCoverageFactory().create(sourceCoverage.getName(), raster, envelope);
+        }
+
+        TiledImage image = new TiledImage(
+            raster.getMinX(),
+            raster.getMinY(),
+            raster.getWidth(),
+            raster.getHeight(),
+            raster.getMinX(),
+            raster.getMinY(),
+            raster.getSampleModel(),
+            createColorModel(raster.getSampleModel())
+        );
+        image.setData(raster);
+        return new GridCoverageFactory().create(
+            sourceCoverage.getName(),
+            image,
+            envelope,
+            null,
+            null,
+            createNoDataProperties(sourceCoverage)
+        );
+    }
+
+    private Map<String, Object> createNoDataProperties(GridCoverage2D sourceCoverage) {
+        Map<String, Object> properties = new HashMap<>();
+        NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(sourceCoverage);
+        if (noDataContainer != null) {
+            CoverageUtilities.setNoDataProperty(properties, noDataContainer);
+        }
+        return properties;
+    }
+
+    private ColorModel createColorModel(SampleModel sampleModel) {
+        ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
+        if (colorModel != null) {
+            return colorModel;
+        }
+
+        int numBands = sampleModel.getNumBands();
+        if (numBands == 1) {
+            return new ComponentColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_GRAY),
+                sampleModel.getSampleSize(),
+                false,
+                false,
+                Transparency.OPAQUE,
+                sampleModel.getDataType()
+            );
+        }
+
+        if (numBands == 3 || numBands == 4) {
+            boolean hasAlpha = numBands == 4;
+            return new ComponentColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                sampleModel.getSampleSize(),
+                hasAlpha,
+                false,
+                hasAlpha ? Transparency.TRANSLUCENT : Transparency.OPAQUE,
+                sampleModel.getDataType()
+            );
+        }
+
+        throw new IllegalArgumentException("Unsupported sample model for GeoTIFF color model: bands=" + numBands);
     }
 
     private RasterCopyResult copyZeroBasedRasterAndCheckNoData(Raster sourceRaster, double noDataValue) {

@@ -318,7 +318,7 @@ public class GlobalOptions {
             instance.setNoDataValue(DEFAULT_NO_DATA_VALUE);
         }
 
-        instance.setCalculateNormalsExtension(command.hasOption(CommandOptions.EXT_CALCULATE_NORMALS.getLongName()));
+        instance.setCalculateNormalsExtension(!command.hasOption(CommandOptions.EXT_NO_CALCULATE_NORMALS.getLongName()));
         instance.setMetaDataExtension(command.hasOption(CommandOptions.EXT_META_DATA.getLongName()));
         instance.setWaterMaskExtension(command.hasOption(CommandOptions.EXT_WATER_MASK.getLongName()));
         instance.setSkipStandardizationAndResize(command.hasOption(CommandOptions.SKIP_STANDARDIZATION_RESIZE.getLongName()));

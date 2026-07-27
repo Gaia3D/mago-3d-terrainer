@@ -135,9 +135,7 @@ public class Mago3DTerrainerMain {
         TerrainElevationDataManager terrainElevationDataManager = new TerrainElevationDataManager();
         tileWgs84Manager.setTerrainElevationDataManager(terrainElevationDataManager);
         terrainElevationDataManager.setTileWgs84Manager(tileWgs84Manager);
-        terrainElevationDataManager.setTerrainElevationDataFolderPath(
-                tileWgs84Manager.getDepthGeoTiffFolderPathMap().getOrDefault(0, globalOptions.getResizedTiffTempPath() + File.separator + "0")
-        );
+        terrainElevationDataManager.setTerrainElevationDataFiles(tileWgs84Manager.resolveTerrainElevationDataFiles(0));
 
         int depth = 0;
         terrainElevationDataManager.makeTerrainQuadTree(depth);
@@ -198,7 +196,7 @@ public class Mago3DTerrainerMain {
         TerrainElevationDataManager terrainElevationDataManager = new TerrainElevationDataManager();
         tileWgs84Manager.setTerrainElevationDataManager(terrainElevationDataManager);
         tileWgs84Manager.getTerrainElevationDataManager().setTileWgs84Manager(tileWgs84Manager);
-        tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFolderPath(globalOptions.getResizedTiffTempPath() + File.separator + "0");
+        tileWgs84Manager.getTerrainElevationDataManager().setTerrainElevationDataFiles(tileWgs84Manager.resolveTerrainElevationDataFiles(0));
 
         int depth = 0;
         tileWgs84Manager.getTerrainElevationDataManager().makeTerrainQuadTree(depth);
