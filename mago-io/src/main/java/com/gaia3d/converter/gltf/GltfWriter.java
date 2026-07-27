@@ -765,7 +765,7 @@ public class GltfWriter {
 
     protected Sampler genSampler(GaiaMaterial gaiaMaterial) {
         GaiaSamplers gaiaSamplers = gaiaMaterial.getSamplers();
-        if(gaiaSamplers == null){
+        if (gaiaSamplers == null) {
             // create with default values.
             gaiaSamplers = new GaiaSamplers();
         }
@@ -817,6 +817,7 @@ public class GltfWriter {
     }
 
     private byte[] convertBufferedImageToBytes(BufferedImage bufferedImage, String mimeType) {
+        ImageResizer imageResizer = new ImageResizer();
         String formatName = ImageUtils.getFormatNameByMimeType(mimeType);
         byte[] imageBytes = null;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -825,7 +826,7 @@ public class GltfWriter {
             int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
             int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
             if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                bufferedImage = ImageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
+                bufferedImage = imageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
             }
             assert formatName != null;
 
@@ -851,6 +852,7 @@ public class GltfWriter {
     }
 
     private String convertBufferedImageToURI(BufferedImage bufferedImage, String mimeType) {
+        ImageResizer imageResizer = new ImageResizer();
         String formatName = ImageUtils.getFormatNameByMimeType(mimeType);
         String imageString = null;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -859,7 +861,7 @@ public class GltfWriter {
             int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
             int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
             if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                bufferedImage = ImageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
+                bufferedImage = imageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
             }
             assert formatName != null;
 
