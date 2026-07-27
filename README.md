@@ -9,7 +9,7 @@ See: https://github.com/CesiumGS/quantized-mesh
 
 ![Static Badge](https://img.shields.io/badge/Gaia3D%2C%20Inc-blue?style=flat-square)
 ![Static Badge](https://img.shields.io/badge/QuantizedMesh-green?style=flat-square&logo=Cesium)
-![Static Badge](https://img.shields.io/badge/Jdk17-red?style=flat-square&logo=openjdk)
+![Static Badge](https://img.shields.io/badge/JDK21-red?style=flat-square&logo=openjdk)
 ![Static Badge](https://img.shields.io/badge/Gradle-darkorange?style=flat-square&logo=gradle)
 ![Static Badge](https://img.shields.io/badge/Docker%20Image-blue?style=flat-square&logo=docker)
 
@@ -30,7 +30,7 @@ The built jar is created in the ```/dist``` directory.
 ```
 gradlew jar
 ```
-###### The java version used in the release is openjdk 17.
+###### The Java version used in the release is OpenJDK 21.
 
 ## Example help command
 ```
@@ -143,7 +143,7 @@ For detailed documentation, including installation and usage instructions, pleas
 - Manual : [github.com/Gaia3D/mago-3d-terrainer](https://github.com/Gaia3D/mago-3d-terrainer/blob/main/MANUAL.md)
 
 ## Supported Java versions
-Supports long-term support (LTS) versions of the JDK, including JDK17 and JDK21.
+Requires JDK 21 or later. The release artifacts are built and tested with OpenJDK 21.
 
 ## License
 - mago 3DTerrainer is licensed under the MPL2.0 license (<https://www.mozilla.org/en-US/MPL/2.0/>).

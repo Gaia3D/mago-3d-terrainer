@@ -67,6 +67,10 @@ subprojects {
         }
     }
 
+    tasks.withType(JavaCompile).configureEach {
+        options.release = 21
+    }
+
     configurations.configureEach {
         exclude group: "javax.media", module: "jai_core"
         exclude group: "javax.media", module: "jai_codec"
