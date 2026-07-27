@@ -6,6 +6,7 @@ import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
@@ -16,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
-
+@UtilityClass
 public class TerrainMeshUtils {
     public static List<TerrainHalfEdge> getHalfEdgesOfTriangles(List<TerrainTriangle> triangles, List<TerrainHalfEdge> resultHalfEdges, List<TerrainHalfEdge> listHalfEdges) {
         if (resultHalfEdges == null) {

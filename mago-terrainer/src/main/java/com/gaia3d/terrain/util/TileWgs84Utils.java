@@ -6,12 +6,13 @@ import com.gaia3d.terrain.structure.TerrainMesh;
 import com.gaia3d.terrain.structure.TerrainVertex;
 import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.tile.TileRange;
-import com.gaia3d.util.GlobeUtils;
+import lombok.experimental.UtilityClass;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+@UtilityClass
 public class TileWgs84Utils {
     private static GlobalOptions globalOptions = GlobalOptions.getInstance();
 
@@ -176,12 +177,7 @@ public class TileWgs84Utils {
         return resultTileIndices;
     }
 
-    public static TileIndices selectTileIndices(
-            int depth,
-            double longitude,
-            double latitude,
-            TileIndices out,
-            boolean originIsLeftUp) {
+    public static TileIndices selectTileIndices(int depth, double longitude, double latitude, TileIndices out, boolean originIsLeftUp) {
 
         if (out == null) {
             out = new TileIndices();
@@ -269,8 +265,8 @@ public class TileWgs84Utils {
         // so when the extent hits an exact tile boundary they are 1 too large.
         int maxValidX = (int) Math.pow(2, depth + 1) - 1;
         int maxValidY = (int) Math.pow(2, depth) - 1;
-        if (maxX > maxValidX) maxX = maxValidX;
-        if (maxY > maxValidY) maxY = maxValidY;
+        if (maxX > maxValidX) {maxX = maxValidX;}
+        if (maxY > maxValidY) {maxY = maxValidY;}
 
         // the "tilesRange" is optional
         if (tilesRange != null) {

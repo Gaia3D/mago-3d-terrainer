@@ -583,6 +583,7 @@ public class TileWgs84Manager {
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
+        saveLayerJsonBeforeTileGeneration();
 
 //        // if the maxTileDepth is less than the existent max depth, set the maxTileDepth to the existent max depth
 //        minTileDepth = Math.max(minTileDepth, existentMaxDepth + 1);
@@ -709,6 +710,7 @@ public class TileWgs84Manager {
 
         // if the maxTileDepth is less than the existent max depth, set the maxTileDepth to the existent max depth
         minTileDepth = Math.max(minTileDepth, existentMaxDepth + 1);
+        saveLayerJsonBeforeTileGeneration();
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             long startTime = System.currentTimeMillis();
@@ -820,6 +822,7 @@ public class TileWgs84Manager {
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
+        saveLayerJsonBeforeTileGeneration();
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             long startTime = System.currentTimeMillis();
@@ -893,6 +896,11 @@ public class TileWgs84Manager {
             log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
             log.info("----------------------------------------");
         }
+        terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
+    }
+
+    private void saveLayerJsonBeforeTileGeneration() {
+        log.info("[Pre][layer.json] Save layer.json before terrain tile generation.");
         terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
     }
 

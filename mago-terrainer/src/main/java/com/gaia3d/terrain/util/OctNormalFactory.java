@@ -1,8 +1,10 @@
 package com.gaia3d.terrain.util;
 
+import lombok.experimental.UtilityClass;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+@UtilityClass
 public class OctNormalFactory {
 
     /**

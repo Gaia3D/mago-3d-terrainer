@@ -66,7 +66,6 @@ public class PreReleaseTest {
         String[] args = new String[]{
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath() + "_geoid",
-                "-max", "10",
                 "-interpolation", "nearest",
                 "-calculateNormals",
                 "-geoid", "EGM96",

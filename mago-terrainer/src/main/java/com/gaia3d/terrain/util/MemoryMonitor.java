@@ -1,6 +1,7 @@
 package com.gaia3d.terrain.util;
 
 import com.gaia3d.util.DecimalUtils;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
  * Provides proactive memory checks with configurable thresholds.
  */
 @Slf4j
+@UtilityClass
 public class MemoryMonitor {
 
     // Memory thresholds

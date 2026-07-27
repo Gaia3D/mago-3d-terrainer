@@ -4,10 +4,12 @@ import com.gaia3d.basic.geometry.octree.GaiaFaceContent;
 import com.gaia3d.basic.geometry.octree.GaiaFaceData;
 import com.gaia3d.basic.geometry.octree.GeometryContent;
 import com.gaia3d.basic.model.*;
+import lombok.experimental.UtilityClass;
 import org.joml.Vector3d;
 
 import java.util.List;
 
+@UtilityClass
 public class GaiaOctreeUtils {
 
     public static void getFaceDataListOfNode(GaiaScene sceneParent, GaiaNode node, List<GeometryContent> resultFaceDataList) {
