@@ -28,12 +28,7 @@ public class GeometryOnlyReMesherByOctree {
     private GaiaStatistics sceneStats = null;
     private boolean reMeshAnyWay = false;
 
-    public static class BarInfo {
-        public boolean isBar;
-        public Vector3d axis = new Vector3d(1, 0, 0);
-        public double length;
-        public double radius;
-        public double slenderness;
+    public GeometryOnlyReMesherByOctree() {
     }
 
     public BarInfo detectBarByPCA(List<GaiaVertex> vertices) {
@@ -130,31 +125,6 @@ public class GeometryOnlyReMesherByOctree {
         return info;
     }
 
-    public enum OctreeShapeType {
-        UNKNOWN,
-        BAR,
-        FLOOR,
-        WALL,
-        VOLUME
-    }
-
-    public static class OctreeShapeInfo {
-        public OctreeShapeType type = OctreeShapeType.UNKNOWN;
-
-        public double sizeX;
-        public double sizeY;
-        public double sizeZ;
-
-        public double longest;
-        public double middle;
-        public double shortest;
-
-        public double elongation; // longest / middle
-        public double flatness;   // middle / shortest
-
-        public Vector3d averageNormal = new Vector3d();
-    }
-
     public OctreeShapeInfo classifyOctreeShape(
             GaiaOctreeFaces octFaces,
             List<GeometryContent> faceDataList,
@@ -238,7 +208,7 @@ public class GeometryOnlyReMesherByOctree {
         info.sizeY = maxY - minY;
         info.sizeZ = maxZ - minZ;
 
-        double[] sizes = new double[] {
+        double[] sizes = new double[]{
                 info.sizeX,
                 info.sizeY,
                 info.sizeZ
@@ -292,16 +262,13 @@ public class GeometryOnlyReMesherByOctree {
         return info;
     }
 
-    public GeometryOnlyReMesherByOctree() {
-    }
-
     public void reMeshScene(GaiaScene scene,
                             GaiaStatistics sceneStatsOptional,
                             GaiaBoundingBox nodeBBoxOptional) {
         //***********************************************************
         // The scene must be Baked (all tMatrix must be identity).***
         //-----------------------------------------------------------
-        if(sceneStatsOptional != null) {
+        if (sceneStatsOptional != null) {
             this.sceneStats = sceneStatsOptional;
         } else {
             this.sceneStats = GaiaStatistics.calculateStatistics(scene);
@@ -318,7 +285,7 @@ public class GeometryOnlyReMesherByOctree {
 //        areaFoldRatio = 3.43007347681656
 
         List<GaiaNode> nodes = scene.getNodes();
-        for(GaiaNode node : nodes) {
+        for (GaiaNode node : nodes) {
             reMeshNode(node, scene, nodeBBoxOptional);
         }
 
@@ -329,21 +296,21 @@ public class GeometryOnlyReMesherByOctree {
         cleaner.apply(scene);
     }
 
-    public void reMeshNode(GaiaNode node, GaiaScene parentScene, GaiaBoundingBox nodeBBoxOptional){
-        List<GaiaMesh>  meshes = node.getMeshes();
-        for(GaiaMesh mesh : meshes) {
+    public void reMeshNode(GaiaNode node, GaiaScene parentScene, GaiaBoundingBox nodeBBoxOptional) {
+        List<GaiaMesh> meshes = node.getMeshes();
+        for (GaiaMesh mesh : meshes) {
             reMeshMesh(mesh, node, parentScene, nodeBBoxOptional);
         }
 
         List<GaiaNode> children = node.getChildren();
-        for(GaiaNode child : children) {
+        for (GaiaNode child : children) {
             reMeshNode(child, parentScene, nodeBBoxOptional);
         }
     }
 
-    public void reMeshMesh(GaiaMesh mesh, GaiaNode parentNode, GaiaScene parentScene, GaiaBoundingBox nodeBBoxOptional){
-        List<GaiaPrimitive>  primitives = mesh.getPrimitives();
-        for(GaiaPrimitive primitive : primitives) {
+    public void reMeshMesh(GaiaMesh mesh, GaiaNode parentNode, GaiaScene parentScene, GaiaBoundingBox nodeBBoxOptional) {
+        List<GaiaPrimitive> primitives = mesh.getPrimitives();
+        for (GaiaPrimitive primitive : primitives) {
             reMeshPrimitive(primitive, parentNode, parentScene, nodeBBoxOptional);
         }
     }
@@ -358,150 +325,6 @@ public class GeometryOnlyReMesherByOctree {
         return shapeInfo.elongation > 3.0
                 && shapeInfo.flatness < 10.0
                 && stats.normalVariance > 0.05;
-    }
-
-    public void reMeshPrimitive_new(GaiaPrimitive primitive, GaiaNode parentNode, GaiaScene parentScene, GaiaBoundingBox nodeBBoxOptional) {
-        // create []weldedIndices.***
-        int[] weldedIndices = new int[primitive.getVertices().size()];
-
-        GaiaBoundingBox cubeBoundingBox;
-
-        if (nodeBBoxOptional != null) {
-            cubeBoundingBox = nodeBBoxOptional.clone();
-        } else {
-            Matrix4d mat = new Matrix4d();
-            mat.identity();
-
-            GaiaBoundingBox boundingBox = primitive.getBoundingBox(mat);
-            if (boundingBox == null) return;
-
-            cubeBoundingBox = boundingBox.createCubeFromMinPosition();
-        }
-
-        // 1rst, find the frontier vertices and frontier faces.
-        List<GaiaVertex> vertices = primitive.getVertices();
-        List<GaiaFace> faces = new ArrayList<>();
-        primitive.extractGaiaAllFaces(faces);
-        GaiaFrontierFinder  finder = new GaiaFrontierFinder();
-        boolean[] frontierVertices = finder.findBoundaryVertices(vertices, faces, 1e-6, weldedIndices);
-
-        GaiaOctreeFaces octreeFaces = new GaiaOctreeFaces(null, cubeBoundingBox);
-        List<GeometryContent> faceDataList = new ArrayList<>();
-        GaiaOctreeUtils.getFaceDataListOfScene(parentScene, faceDataList);
-        octreeFaces.addContents(faceDataList);
-        octreeFaces.setLimitDepth(limitDepth);
-        octreeFaces.setLimitSize(limitBoxSize);
-        octreeFaces.setLimitFacesCount(minFacesCount);
-        octreeFaces.setContentsCanBeInMultipleChildren(true);
-        octreeFaces.makeTree();
-
-        List<GaiaOctree<GeometryContent>> octreesWithContent = octreeFaces.extractOctreesWithContents();
-
-        Set<GaiaVertex> verticesToReMesh = new HashSet<>();
-
-        List<GaiaVertex> verticesToTestShape = new ArrayList<>();
-        Set<Integer> shapeVertexIndices = new HashSet<>();
-
-        for (GaiaOctree<GeometryContent> octree : octreesWithContent) {
-            GaiaOctreeFaces octFaces = (GaiaOctreeFaces) octree;
-
-            verticesToReMesh.clear();
-            verticesToTestShape.clear();
-            shapeVertexIndices.clear();
-
-            List<GeometryContent> facesDates = octree.getContents();
-            int facesCount = facesDates.size();
-
-            if (facesCount <= 3) {
-                continue;
-            }
-
-            List<GaiaFace> facesOfOctree = new ArrayList<>();
-
-            for (int i = 0; i < facesCount; i++) {
-                GaiaFaceContent faceData = (GaiaFaceContent) facesDates.get(i);
-                facesOfOctree.add(faceData.getFace());
-            }
-
-            GaiaStatistics stats = GaiaStatistics.calculateStatistics(facesOfOctree, vertices);
-
-//            if (stats.trianglesDensity < this.sceneStats.trianglesDensity * 0.1) {
-//                continue;
-//            }
-
-            for (int i = 0; i < facesCount; i++) {
-                GaiaFaceContent faceData = (GaiaFaceContent) facesDates.get(i);
-                int[] indices = faceData.getFace().getIndices();
-
-                for (int j = 0; j < indices.length; j++) {
-                    int vertexIndex = indices[j];
-                    GaiaVertex vertex = vertices.get(vertexIndex);
-
-                    if (!octFaces.intersects(vertex)) {
-                        continue;
-                    }
-
-                    // Vertices únicos dentro del octree para analizar la forma.
-                    if (shapeVertexIndices.add(vertexIndex)) {
-                        verticesToTestShape.add(vertex);
-                    }
-
-                    // Los vértices frontera no se remeshean.
-                    if (frontierVertices[vertexIndex]) {
-                        continue;
-                    }
-
-                    verticesToReMesh.add(vertex);
-                }
-            }
-
-            if (verticesToTestShape.size() < 3) {
-                continue;
-            }
-
-
-            OctreeShapeInfo shapeInfo = classifyOctreeShape(octFaces, facesDates, vertices);
-
-            // 1. Planos arquitectónicos claros: proteger siempre.
-//            if (isArchitecturalFlatCandidate(shapeInfo, stats)) {
-//                log.debug("Architectural flat surface detected. Skip reMesh it");
-//                continue;
-//            }
-
-            // 2. Barras lisas: proteger. Barras rugosas pueden ser ramas.
-            BarInfo barInfo = detectBarByPCA(verticesToTestShape);
-            if (barInfo.isBar && stats.normalVariance < 0.18) {
-                log.debug("Slim architectural object detected by PCA. Skip reMesh it. slenderness = " + barInfo.slenderness);
-                continue;
-            }
-
-            if (isBarCandidate(shapeInfo, stats) && stats.normalVariance < 0.18) {
-                log.debug("Slim architectural object detected by AABB. Skip reMesh it");
-                continue;
-            }
-
-            // 3. Esquinas: solo si parece arquitectura.
-            boolean maybeArchitectural =
-                    stats.normalVariance < 0.28 ||
-                            shapeInfo.flatness > 3.0;
-
-            if (maybeArchitectural && isBuildingCornerCandidate(facesDates, vertices)) {
-                log.debug("Building corner detected. Skip reMesh it");
-                continue;
-            }
-
-            // 4. Vegetación / geometría arrugada.
-//            if (!isWrinkledOrganicCandidate(stats)) {
-//                continue;
-//            }
-
-            if (verticesToReMesh.size() < 2) {
-                continue;
-            }
-
-            List<GaiaVertex> verticesSelected = verticesToReMesh.stream().toList();
-            ReMesh(verticesSelected);
-        }
     }
 
     public OctreeBBoxInfo calculateBoundingBoxForLeafDistInfo(
@@ -554,25 +377,94 @@ public class GeometryOnlyReMesherByOctree {
         );
     }
 
+    private List<GeometryContent> getContentsOfParent(GaiaOctree<GeometryContent> octree) {
+        List<GeometryContent> result = new ArrayList<>();
+        Set<GeometryContent> used = new HashSet<>();
+
+        if (octree == null) {
+            return result;
+        }
+
+        GaiaOctree<GeometryContent> parent = octree.getParent();
+
+        if (parent == null) {
+            addUniqueContents(octree.getContents(), result, used);
+            return result;
+        }
+
+        List<GaiaOctree<GeometryContent>> children = parent.getChildren();
+
+        if (children == null || children.isEmpty()) {
+            addUniqueContents(parent.getContents(), result, used);
+            return result;
+        }
+
+        for (GaiaOctree<GeometryContent> child : children) {
+            if (child == null) {
+                continue;
+            }
+
+            addUniqueContents(child.getContents(), result, used);
+        }
+
+        return result;
+    }
+
+    private void addUniqueContents(
+            List<GeometryContent> contents,
+            List<GeometryContent> result,
+            Set<GeometryContent> used
+    ) {
+        if (contents == null || contents.isEmpty()) {
+            return;
+        }
+
+        for (GeometryContent content : contents) {
+            if (content == null) {
+                continue;
+            }
+
+            if (used.add(content)) {
+                result.add(content);
+            }
+        }
+    }
+
     public void reMeshPrimitive(GaiaPrimitive primitive, GaiaNode parentNode, GaiaScene parentScene, GaiaBoundingBox nodeBBoxOptional) {
         // create []weldedIndices.***
         int[] weldedIndices = new int[primitive.getVertices().size()];
 
-        GaiaBoundingBox cubeBoundingBox = nodeBBoxOptional.clone();
-        if(nodeBBoxOptional == null) {
+        GaiaBoundingBox cubeBoundingBox;
+
+        if (nodeBBoxOptional != null) {
+            cubeBoundingBox = nodeBBoxOptional.clone();
+        } else {
             Matrix4d mat = new Matrix4d();
             mat.identity();
+
             GaiaBoundingBox boundingBox = primitive.getBoundingBox(mat);
-            if (boundingBox == null) return;
+            if (boundingBox == null) {
+                return;
+            }
 
             cubeBoundingBox = boundingBox.createCubeFromMinPosition();
         }
+
+        double cubeSize = cubeBoundingBox.getMaxSize();
+
+        int depth = (int) Math.ceil(
+                Math.log(cubeSize / limitBoxSize) / Math.log(2.0)
+        );
+
+        double desiredCubeSize = limitBoxSize * Math.pow(2.0, depth);
+        double difSize = desiredCubeSize - cubeSize;
+        cubeBoundingBox.expand(difSize * 0.5);
 
         // 1rst, find the frontier vertices and frontier faces.
         List<GaiaVertex> vertices = primitive.getVertices();
         List<GaiaFace> faces = new ArrayList<>();
         primitive.extractGaiaAllFaces(faces);
-        GaiaFrontierFinder  finder = new GaiaFrontierFinder();
+        GaiaFrontierFinder finder = new GaiaFrontierFinder();
         boolean[] frontierVertices = finder.findBoundaryVertices(vertices, faces, 1e-6, weldedIndices);
 
         GaiaOctreeFaces octreeFaces = new GaiaOctreeFaces(null, cubeBoundingBox);
@@ -585,6 +477,174 @@ public class GeometryOnlyReMesherByOctree {
         octreeFaces.setContentsCanBeInMultipleChildren(true);
         octreeFaces.makeTree();
 
+        List<GaiaOctree<GeometryContent>> octreesWithContent = octreeFaces.extractOctreesWithContents();
+
+        Set<GaiaVertex> verticesToReMesh = new HashSet<>();
+
+        List<GaiaVertex> verticesToTestShape = new ArrayList<>();
+        Set<Integer> shapeVertexIndices = new HashSet<>();
+
+        for (GaiaOctree<GeometryContent> octree : octreesWithContent) {
+            GaiaOctreeFaces octFaces = (GaiaOctreeFaces) octree;
+
+            verticesToReMesh.clear();
+            verticesToTestShape.clear();
+            shapeVertexIndices.clear();
+
+            List<GeometryContent> facesDates = octree.getContents();
+            int facesCount = facesDates.size();
+
+            if (facesCount <= 7) {
+                continue;
+            }
+
+//            List<GaiaFace> facesOfOctree = new ArrayList<>();
+//
+//            for (int i = 0; i < facesCount; i++) {
+//                GeometryContent faceData = facesDates.get(i);
+//                GaiaFaceContent faceContent = (GaiaFaceContent) faceData;
+//                GaiaFace face = faceContent.getFace();
+//                facesOfOctree.add(face);
+//            }
+
+            //GaiaStatistics stats = GaiaStatistics.calculateStatistics(facesOfOctree, vertices);
+            List<GaiaFace> facesOfParentOctree = new ArrayList<>();
+            List<GeometryContent> parentFaces = getContentsOfParent(octree);
+            for (GeometryContent faceData : parentFaces) {
+                GaiaFaceContent faceContent = (GaiaFaceContent) faceData;
+                GaiaFace face = faceContent.getFace();
+                facesOfParentOctree.add(face);
+            }
+            GaiaStatistics stats = GaiaStatistics.calculateStatistics(facesOfParentOctree, vertices);
+
+            for (int i = 0; i < facesCount; i++) {
+                GeometryContent faceData = facesDates.get(i);
+                GaiaFaceContent faceContent = (GaiaFaceContent) faceData;
+                GaiaFace face = faceContent.getFace();
+                int[] indices = face.getIndices();
+
+                for (int j = 0; j < indices.length; j++) {
+                    int vertexIndex = indices[j];
+                    GaiaVertex vertex = vertices.get(vertexIndex);
+
+                    if (!octFaces.intersects(vertex)) {
+                        continue;
+                    }
+
+                    // Vertices únicos dentro del octree para analizar la forma.
+                    if (shapeVertexIndices.add(vertexIndex)) {
+                        verticesToTestShape.add(vertex);
+                    }
+
+                    // Los vértices frontera no se remeshean.
+                    if (frontierVertices[vertexIndex]) {
+                        continue;
+                    }
+
+                    verticesToReMesh.add(vertex);
+                }
+            }
+
+            if (verticesToTestShape.size() < 3) {
+                continue;
+            }
+
+            if (verticesToReMesh.size() < 2) {
+                continue;
+            }
+
+            if (!reMeshAnyWay) {
+                // Detector fuerte para barras oblicuas.
+                BarInfo barInfo = detectBarByPCA(verticesToTestShape);
+                if (barInfo.isBar) {
+                    log.debug("Slim object detected by PCA. Skip reMesh it. slenderness = " + barInfo.slenderness);
+                    continue;
+                }
+
+                OctreeShapeInfo shapeInfo = classifyOctreeShape(octFaces, facesDates, vertices);
+
+                // Detector rápido para barra alineada al mundo.
+                if (isBarCandidate(shapeInfo, stats)) {
+                    log.debug("Slim object detected by AABB. Skip reMesh it");
+                    continue;
+                }
+
+                if (isBuildingWallProtected(shapeInfo, stats)) {
+                    log.debug("Building wall detected by AABB and statistics. Skip reMesh it");
+                    continue;
+                }
+            }
+
+            List<GaiaVertex> verticesSelected = verticesToReMesh.stream().toList();
+
+            ReMesh(verticesSelected);
+        }
+    }
+
+    private boolean isBuildingWallProtected(
+            OctreeShapeInfo shapeInfo,
+            GaiaStatistics stats
+    ) {
+        if (shapeInfo == null || stats == null) {
+            return false;
+        }
+
+        boolean orderedNormals =
+                stats.normalVariance < 0.15;
+
+        boolean notFolded =
+                stats.areaFoldRatio > 0.5 &&
+                        stats.areaFoldRatio < 3.0;
+
+        boolean enoughWallScale =
+                shapeInfo.longest > 1.0 &&
+                        shapeInfo.middle > 0.5;
+
+        return orderedNormals &&
+                notFolded &&
+                enoughWallScale;
+    }
+
+    private boolean isChaoticZone(GaiaStatistics stats) {
+        if (stats == null) {
+            return false;
+        }
+
+        return stats.normalVariance > 0.05 &&
+                stats.areaFoldRatio > 0.3 &&
+                stats.trianglesDensity > 1.0;
+    }
+
+    public void reMeshPrimitive_original(GaiaPrimitive primitive, GaiaNode parentNode, GaiaScene parentScene, GaiaBoundingBox nodeBBoxOptional) {
+        // create []weldedIndices.***
+        int[] weldedIndices = new int[primitive.getVertices().size()];
+
+        GaiaBoundingBox cubeBoundingBox = nodeBBoxOptional.clone();
+        if (cubeBoundingBox == null) {
+            Matrix4d mat = new Matrix4d();
+            mat.identity();
+            GaiaBoundingBox boundingBox = primitive.getBoundingBox(mat);
+            if (boundingBox == null) {return;}
+
+            cubeBoundingBox = boundingBox.createCubeFromMinPosition();
+        }
+
+        // 1rst, find the frontier vertices and frontier faces.
+        List<GaiaVertex> vertices = primitive.getVertices();
+        List<GaiaFace> faces = new ArrayList<>();
+        primitive.extractGaiaAllFaces(faces);
+        GaiaFrontierFinder finder = new GaiaFrontierFinder();
+        boolean[] frontierVertices = finder.findBoundaryVertices(vertices, faces, 1e-6, weldedIndices);
+
+        GaiaOctreeFaces octreeFaces = new GaiaOctreeFaces(null, cubeBoundingBox);
+        List<GeometryContent> faceDataList = new ArrayList<>();
+        GaiaOctreeUtils.getFaceDataListOfScene(parentScene, faceDataList);
+        octreeFaces.addContents(faceDataList);
+        octreeFaces.setLimitDepth(limitDepth);
+        octreeFaces.setLimitSize(limitBoxSize);
+        octreeFaces.setLimitFacesCount(minFacesCount);
+        octreeFaces.setContentsCanBeInMultipleChildren(true);
+        octreeFaces.makeTree();
 
         List<GaiaOctree<GeometryContent>> octreesWithContent = octreeFaces.extractOctreesWithContents();
 
@@ -654,7 +714,7 @@ public class GeometryOnlyReMesherByOctree {
                 continue;
             }
 
-            if(!reMeshAnyWay) {
+            if (!reMeshAnyWay) {
                 // Detector fuerte para barras oblicuas.
                 BarInfo barInfo = detectBarByPCA(verticesToTestShape);
                 if (barInfo.isBar) {
@@ -967,5 +1027,38 @@ public class GeometryOnlyReMesherByOctree {
                 vertex.getTexcoords().set(avgU, avgV);
             }
         }
+    }
+
+    public enum OctreeShapeType {
+        UNKNOWN,
+        BAR,
+        FLOOR,
+        WALL,
+        VOLUME
+    }
+
+    public static class BarInfo {
+        public boolean isBar;
+        public Vector3d axis = new Vector3d(1, 0, 0);
+        public double length;
+        public double radius;
+        public double slenderness;
+    }
+
+    public static class OctreeShapeInfo {
+        public OctreeShapeType type = OctreeShapeType.UNKNOWN;
+
+        public double sizeX;
+        public double sizeY;
+        public double sizeZ;
+
+        public double longest;
+        public double middle;
+        public double shortest;
+
+        public double elongation; // longest / middle
+        public double flatness;   // middle / shortest
+
+        public Vector3d averageNormal = new Vector3d();
     }
 }

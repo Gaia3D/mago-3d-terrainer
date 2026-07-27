@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,12 +51,6 @@ public class HalfEdgePrimitive implements Serializable {
             vertex.deleteObjects();
         }
         vertices.clear();
-    }
-
-    public void checkSandClockFaces() {
-        for (HalfEdgeSurface surface : surfaces) {
-            surface.checkSandClockFaces();
-        }
     }
 
     public void transformPoints(Matrix4d finalMatrix) {

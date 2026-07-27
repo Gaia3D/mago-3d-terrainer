@@ -4,82 +4,11 @@ import com.gaia3d.basic.model.GaiaFace;
 import com.gaia3d.basic.model.GaiaSurface;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class GaiaTexFacesFinder {
-
-    public static class Island {
-        private final List<Integer> faceIndices = new ArrayList<>();
-
-        public List<Integer> getFaceIndices() {
-            return faceIndices;
-        }
-
-        public int getFacesCount() {
-            return faceIndices.size();
-        }
-
-        public List<GaiaFace> getFaces(List<GaiaFace> allFaces) {
-            List<GaiaFace> result = new ArrayList<>(faceIndices.size());
-
-            for (int faceIndex : faceIndices) {
-                result.add(allFaces.get(faceIndex));
-            }
-
-            return result;
-        }
-    }
-
-    private static class UnionFind {
-        private final int[] parent;
-        private final byte[] rank;
-
-        public UnionFind(int size) {
-            parent = new int[size];
-            rank = new byte[size];
-
-            for (int i = 0; i < size; i++) {
-                parent[i] = i;
-            }
-        }
-
-        public int find(int x) {
-            int root = x;
-
-            while (parent[root] != root) {
-                root = parent[root];
-            }
-
-            while (parent[x] != x) {
-                int next = parent[x];
-                parent[x] = root;
-                x = next;
-            }
-
-            return root;
-        }
-
-        public void union(int a, int b) {
-            int rootA = find(a);
-            int rootB = find(b);
-
-            if (rootA == rootB) {
-                return;
-            }
-
-            if (rank[rootA] < rank[rootB]) {
-                parent[rootA] = rootB;
-            } else if (rank[rootA] > rank[rootB]) {
-                parent[rootB] = rootA;
-            } else {
-                parent[rootB] = rootA;
-                rank[rootA]++;
-            }
-        }
-    }
 
     private static int countTriangles(List<GaiaFace> faces) {
         int triangleCount = 0;
@@ -290,6 +219,76 @@ public class GaiaTexFacesFinder {
 
         if (i < right) {
             quickSortEdges(edgeKeys, faceIndices, i, right);
+        }
+    }
+
+    public static class Island {
+        private final List<Integer> faceIndices = new ArrayList<>();
+
+        public List<Integer> getFaceIndices() {
+            return faceIndices;
+        }
+
+        public int getFacesCount() {
+            return faceIndices.size();
+        }
+
+        public List<GaiaFace> getFaces(List<GaiaFace> allFaces) {
+            List<GaiaFace> result = new ArrayList<>(faceIndices.size());
+
+            for (int faceIndex : faceIndices) {
+                result.add(allFaces.get(faceIndex));
+            }
+
+            return result;
+        }
+    }
+
+    private static class UnionFind {
+        private final int[] parent;
+        private final byte[] rank;
+
+        public UnionFind(int size) {
+            parent = new int[size];
+            rank = new byte[size];
+
+            for (int i = 0; i < size; i++) {
+                parent[i] = i;
+            }
+        }
+
+        public int find(int x) {
+            int root = x;
+
+            while (parent[root] != root) {
+                root = parent[root];
+            }
+
+            while (parent[x] != x) {
+                int next = parent[x];
+                parent[x] = root;
+                x = next;
+            }
+
+            return root;
+        }
+
+        public void union(int a, int b) {
+            int rootA = find(a);
+            int rootB = find(b);
+
+            if (rootA == rootB) {
+                return;
+            }
+
+            if (rank[rootA] < rank[rootB]) {
+                parent[rootA] = rootB;
+            } else if (rank[rootA] > rank[rootB]) {
+                parent[rootB] = rootA;
+            } else {
+                parent[rootB] = rootA;
+                rank[rootA]++;
+            }
         }
     }
 }

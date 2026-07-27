@@ -9,15 +9,426 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2d;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
+import java.awt.image.*;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class TextureAtlasManager {
+    public static int calculateExpandedPixels(double pixelWidth, double pixelHeight) {
+        double maxSize = Math.max(pixelWidth, pixelHeight);
+        double minSize = Math.min(pixelWidth, pixelHeight);
+
+        int expanded = (int) Math.ceil(maxSize * 0.02); // 3.5%
+
+        expanded = Math.max(expanded, 6);
+        expanded = Math.min(expanded, 12);
+
+        return expanded;
+    }
+
+    public static void dilateBackgroundColor(
+            BufferedImage image,
+            Color backgroundColor
+    ) {
+        if (image == null || backgroundColor == null) {
+            return;
+        }
+
+        log.debug("*** start dilate - Background - Color ***");
+
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+
+        final int pixelCount = width * height;
+        final int rgbMask = 0x00FFFFFF;
+        final int backgroundRGB = backgroundColor.getRGB() & rgbMask;
+
+        /*
+         * Cuando la imagen tiene almacenamiento int[] compatible,
+         * trabajamos directamente sobre sus píxeles.
+         *
+         * Así evitamos:
+         *   image.getRGB(...)
+         *   image.setRGB(...)
+         *   una copia completa de la imagen
+         */
+        int[] pixels = null;
+        boolean directPixelAccess = false;
+
+        int imageType = image.getType();
+        WritableRaster raster = image.getRaster();
+
+        if ((imageType == BufferedImage.TYPE_INT_ARGB
+                || imageType == BufferedImage.TYPE_INT_RGB)
+                && raster.getDataBuffer() instanceof DataBufferInt dataBuffer
+                && raster.getSampleModel()
+                instanceof SinglePixelPackedSampleModel sampleModel
+                && sampleModel.getScanlineStride() == width
+                && raster.getSampleModelTranslateX() == 0
+                && raster.getSampleModelTranslateY() == 0
+                && dataBuffer.getOffset() == 0
+                && dataBuffer.getData().length >= pixelCount) {
+
+            pixels = dataBuffer.getData();
+            directPixelAccess = true;
+        }
+
+        /*
+         * Fallback seguro para otros tipos de BufferedImage,
+         * por ejemplo TYPE_3BYTE_BGR.
+         */
+        if (!directPixelAccess) {
+            pixels = image.getRGB(
+                    0,
+                    0,
+                    width,
+                    height,
+                    null,
+                    0,
+                    width
+            );
+        }
+
+        /*
+         * byte[] evita el coste de estructuras como HashSet.
+         *
+         * 0 = todavía no añadido
+         * 1 = ya añadido
+         */
+        byte[] queued = new byte[pixelCount];
+
+        /*
+         * Cola primitiva.
+         *
+         * Cada píxel puede añadirse como máximo una vez,
+         * por lo que pixelCount es capacidad suficiente.
+         */
+        int[] queue = new int[pixelCount];
+
+        int head = 0;
+        int tail = 0;
+
+        /*
+         * Primera fase:
+         * localizar píxeles de fondo que tocan algún píxel coloreado.
+         */
+        for (int y = 0; y < height; y++) {
+            int rowStart = y * width;
+
+            for (int x = 0; x < width; x++) {
+                int index = rowStart + x;
+
+                if ((pixels[index] & rgbMask) != backgroundRGB) {
+                    continue;
+                }
+
+                boolean touchesColoredPixel = false;
+
+                // Derecha.
+                if (x + 1 < width
+                        && (pixels[index + 1] & rgbMask) != backgroundRGB) {
+                    touchesColoredPixel = true;
+                }
+                // Izquierda.
+                else if (x > 0
+                        && (pixels[index - 1] & rgbMask) != backgroundRGB) {
+                    touchesColoredPixel = true;
+                }
+                // Abajo.
+                else if (index + width < pixelCount
+                        && (pixels[index + width] & rgbMask) != backgroundRGB) {
+                    touchesColoredPixel = true;
+                }
+                // Arriba.
+                else if (index >= width
+                        && (pixels[index - width] & rgbMask) != backgroundRGB) {
+                    touchesColoredPixel = true;
+                }
+
+                if (touchesColoredPixel) {
+                    queued[index] = 1;
+                    queue[tail++] = index;
+                }
+            }
+        }
+
+        /*
+         * Segunda fase:
+         * propagación BFS del color.
+         */
+        while (head < tail) {
+            int index = queue[head++];
+
+            /*
+             * Solo necesitamos x para controlar los límites
+             * izquierdo y derecho. No hace falta calcular y.
+             */
+            int x = index % width;
+
+            int replacement;
+
+            /*
+             * Conservamos el mismo orden que el código original:
+             * derecha, izquierda, abajo, arriba.
+             */
+            if (x + 1 < width
+                    && (pixels[index + 1] & rgbMask) != backgroundRGB) {
+
+                replacement = pixels[index + 1];
+
+            } else if (x > 0
+                    && (pixels[index - 1] & rgbMask) != backgroundRGB) {
+
+                replacement = pixels[index - 1];
+
+            } else if (index + width < pixelCount
+                    && (pixels[index + width] & rgbMask) != backgroundRGB) {
+
+                replacement = pixels[index + width];
+
+            } else if (index >= width
+                    && (pixels[index - width] & rgbMask) != backgroundRGB) {
+
+                replacement = pixels[index - width];
+
+            } else {
+                /*
+                 * En condiciones normales no debería ocurrir,
+                 * porque el píxel se añade solamente cuando toca
+                 * un píxel ya coloreado.
+                 */
+                continue;
+            }
+
+            pixels[index] = replacement;
+
+            /*
+             * Añadir los píxeles de fondo vecinos.
+             */
+
+            // Derecha.
+            if (x + 1 < width) {
+                int neighborIndex = index + 1;
+
+                if (queued[neighborIndex] == 0
+                        && (pixels[neighborIndex] & rgbMask) == backgroundRGB) {
+
+                    queued[neighborIndex] = 1;
+                    queue[tail++] = neighborIndex;
+                }
+            }
+
+            // Izquierda.
+            if (x > 0) {
+                int neighborIndex = index - 1;
+
+                if (queued[neighborIndex] == 0
+                        && (pixels[neighborIndex] & rgbMask) == backgroundRGB) {
+
+                    queued[neighborIndex] = 1;
+                    queue[tail++] = neighborIndex;
+                }
+            }
+
+            // Abajo.
+            if (index + width < pixelCount) {
+                int neighborIndex = index + width;
+
+                if (queued[neighborIndex] == 0
+                        && (pixels[neighborIndex] & rgbMask) == backgroundRGB) {
+
+                    queued[neighborIndex] = 1;
+                    queue[tail++] = neighborIndex;
+                }
+            }
+
+            // Arriba.
+            if (index >= width) {
+                int neighborIndex = index - width;
+
+                if (queued[neighborIndex] == 0
+                        && (pixels[neighborIndex] & rgbMask) == backgroundRGB) {
+
+                    queued[neighborIndex] = 1;
+                    queue[tail++] = neighborIndex;
+                }
+            }
+        }
+
+        /*
+         * Solo copiamos los píxeles de vuelta cuando no pudimos
+         * acceder directamente al DataBufferInt.
+         */
+        if (!directPixelAccess) {
+            image.setRGB(
+                    0,
+                    0,
+                    width,
+                    height,
+                    pixels,
+                    0,
+                    width
+            );
+        }
+
+        log.debug(
+                "--- end dilate - Background - Color. Dilated pixels: {} ---",
+                tail
+        );
+    }
+
+    public static void dilateBackgroundColor_original(
+            BufferedImage image,
+            Color backgroundColor
+    ) {
+        if (image == null || backgroundColor == null) {
+            return;
+        }
+
+        log.debug("*** start dilate - Background - Color ***");
+
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+        final int bgRGB = backgroundColor.getRGB() & 0x00FFFFFF;
+
+        int[] pixels = image.getRGB(0, 0, width, height, null, 0, width);
+        boolean[] queued = new boolean[pixels.length];
+
+        ArrayDeque<Integer> queue = new ArrayDeque<>();
+
+        int[] dx4 = {1, -1, 0, 0};
+        int[] dy4 = {0, 0, 1, -1};
+
+        // 1. Inicializar cola con píxeles magenta vecinos a píxeles no-magenta
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int idx = y * width + x;
+                int rgb = pixels[idx] & 0x00FFFFFF;
+
+                if (rgb != bgRGB) {
+                    continue;
+                }
+
+                for (int n = 0; n < 4; n++) {
+                    int nx = x + dx4[n];
+                    int ny = y + dy4[n];
+
+                    if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+                        continue;
+                    }
+
+                    int nIdx = ny * width + nx;
+                    int nRgb = pixels[nIdx] & 0x00FFFFFF;
+
+                    if (nRgb != bgRGB) {
+                        queued[idx] = true;
+                        queue.add(idx);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 2. Propagar color
+        while (!queue.isEmpty()) {
+            int idx = queue.poll();
+
+            if ((pixels[idx] & 0x00FFFFFF) != bgRGB) {
+                continue;
+            }
+
+            int x = idx % width;
+            int y = idx / width;
+
+            int replacement = 0;
+            boolean found = false;
+
+            // buscar vecino ya coloreado
+            for (int n = 0; n < 4 && !found; n++) {
+                int nx = x + dx4[n];
+                int ny = y + dy4[n];
+
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+                    continue;
+                }
+
+                int nIdx = ny * width + nx;
+                int nRgb = pixels[nIdx] & 0x00FFFFFF;
+
+                if (nRgb != bgRGB) {
+                    replacement = pixels[nIdx];
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                continue;
+            }
+
+            pixels[idx] = replacement;
+
+            // añadir vecinos magenta
+            for (int n = 0; n < 4; n++) {
+                int nx = x + dx4[n];
+                int ny = y + dy4[n];
+
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+                    continue;
+                }
+
+                int nIdx = ny * width + nx;
+
+                if (!queued[nIdx] && (pixels[nIdx] & 0x00FFFFFF) == bgRGB) {
+                    queued[nIdx] = true;
+                    queue.add(nIdx);
+                }
+            }
+        }
+
+        image.setRGB(0, 0, width, height, pixels, 0, width);
+        log.debug("--- end dilate - Background - Color ---");
+    }
+
+    private static void safeCopyPixel(
+            Raster srcRaster,
+            WritableRaster dstRaster,
+            int srcX,
+            int srcY,
+            int dstX,
+            int dstY,
+            int[] pixelBuffer
+    ) {
+        int srcMinX = srcRaster.getMinX();
+        int srcMinY = srcRaster.getMinY();
+        int srcMaxX = srcMinX + srcRaster.getWidth() - 1;
+        int srcMaxY = srcMinY + srcRaster.getHeight() - 1;
+
+        int dstMinX = dstRaster.getMinX();
+        int dstMinY = dstRaster.getMinY();
+        int dstMaxX = dstMinX + dstRaster.getWidth() - 1;
+        int dstMaxY = dstMinY + dstRaster.getHeight() - 1;
+
+        if (dstX < dstMinX || dstX > dstMaxX || dstY < dstMinY || dstY > dstMaxY) {
+            return;
+        }
+
+        int sx = clampInt(srcX, srcMinX, srcMaxX);
+        int sy = clampInt(srcY, srcMinY, srcMaxY);
+
+        srcRaster.getPixel(sx, sy, pixelBuffer);
+        dstRaster.setPixel(dstX, dstY, pixelBuffer);
+    }
+
+    private static int clampInt(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     public void doAtlasTextureProcessByScissorDates(List<GaiaTextureScissorData> textureScissorDates) {
         // here calculates the batchedBoundaries of each textureScissorData
         int textureScissorDatasCount = textureScissorDates.size();
@@ -136,25 +547,13 @@ public class TextureAtlasManager {
         return compareImages.stream().mapToInt(textureScissorData -> (int) textureScissorData.getBatchedBoundary().getMaxY()).max().orElse(0);
     }
 
-    public static int calculateExpandedPixels(double pixelWidth, double pixelHeight) {
-        double maxSize = Math.max(pixelWidth, pixelHeight);
-        double minSize = Math.min(pixelWidth, pixelHeight);
-
-        int expanded = (int) Math.ceil(maxSize * 0.02); // 3.5%
-
-        expanded = Math.max(expanded, 6);
-        expanded = Math.min(expanded, 12);
-
-        return expanded;
-    }
-
     public List<GaiaTextureScissorData> calculateTextureScissorDates(List<List<HalfEdgeFace>> mergedWeldedFacesGroups,
                                                                      int texWidth,
                                                                      int texHeight,
                                                                      boolean existPngTextures,
                                                                      BufferedImage srcImage,
                                                                      GaiaTexture resultTextureAtlas,
-                                                                     boolean paintUsedPixels){
+                                                                     boolean paintUsedPixels) {
         // now, for each faceGroup, create a scissorData
         // there are 2 types of scissorData :
         // 1- more width than height.
@@ -631,8 +1030,6 @@ public class TextureAtlasManager {
         return textureScissorDatas;
     }
 
-
-
     private void paintUsedFacesRedOnAtlas(
             BufferedImage atlasImage,
             List<GaiaTextureScissorData> textureScissorDatas,
@@ -774,7 +1171,7 @@ public class TextureAtlasManager {
                 Color fillColor = getDebugColorForGroup(groupIdx, totalGroups);
                 //fillColor = new Color(255,0,0); // solid
                 Color lineColor = fillColor.darker();
-                lineColor = new Color(0,0,0); // solid
+                lineColor = new Color(0, 0, 0); // solid
 
                 // 1. Relleno semitransparente para todas las faces del grupo.
                 float alpha = 0.45f;
@@ -1047,11 +1444,11 @@ public class TextureAtlasManager {
     }
 
     public List<GaiaTextureScissorData> calculateTextureScissorDates_original(List<List<HalfEdgeFace>> mergedWeldedFacesGroups,
-                                                                     int texWidth,
-                                                                     int texHeight,
-                                                                     boolean existPngTextures,
-                                                                     BufferedImage srcImage,
-                                                                     GaiaTexture resultTextureAtlas){
+                                                                              int texWidth,
+                                                                              int texHeight,
+                                                                              boolean existPngTextures,
+                                                                              BufferedImage srcImage,
+                                                                              GaiaTexture resultTextureAtlas) {
         // now, for each faceGroup, create a scissorData
         // there are 2 types of scissorData :
         // 1- more width than height.
@@ -1529,155 +1926,7 @@ public class TextureAtlasManager {
             resultTextureAtlas.setHeight(newHeight);
         }
 
-
-
         return textureScissorDatas;
-    }
-
-    public static void dilateBackgroundColor(
-            BufferedImage image,
-            Color backgroundColor
-    ) {
-        if (image == null || backgroundColor == null) {
-            return;
-        }
-
-        log.debug("*** start dilate - Background - Color ***");
-
-        final int width = image.getWidth();
-        final int height = image.getHeight();
-        final int bgRGB = backgroundColor.getRGB() & 0x00FFFFFF;
-
-        int[] pixels = image.getRGB(0, 0, width, height, null, 0, width);
-        boolean[] queued = new boolean[pixels.length];
-
-        ArrayDeque<Integer> queue = new ArrayDeque<>();
-
-        int[] dx4 = {1, -1, 0, 0};
-        int[] dy4 = {0, 0, 1, -1};
-
-        // 1. Inicializar cola con píxeles magenta vecinos a píxeles no-magenta
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int idx = y * width + x;
-                int rgb = pixels[idx] & 0x00FFFFFF;
-
-                if (rgb != bgRGB) {
-                    continue;
-                }
-
-                for (int n = 0; n < 4; n++) {
-                    int nx = x + dx4[n];
-                    int ny = y + dy4[n];
-
-                    if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
-                        continue;
-                    }
-
-                    int nIdx = ny * width + nx;
-                    int nRgb = pixels[nIdx] & 0x00FFFFFF;
-
-                    if (nRgb != bgRGB) {
-                        queued[idx] = true;
-                        queue.add(idx);
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 2. Propagar color
-        while (!queue.isEmpty()) {
-            int idx = queue.poll();
-
-            if ((pixels[idx] & 0x00FFFFFF) != bgRGB) {
-                continue;
-            }
-
-            int x = idx % width;
-            int y = idx / width;
-
-            int replacement = 0;
-            boolean found = false;
-
-            // buscar vecino ya coloreado
-            for (int n = 0; n < 4 && !found; n++) {
-                int nx = x + dx4[n];
-                int ny = y + dy4[n];
-
-                if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
-                    continue;
-                }
-
-                int nIdx = ny * width + nx;
-                int nRgb = pixels[nIdx] & 0x00FFFFFF;
-
-                if (nRgb != bgRGB) {
-                    replacement = pixels[nIdx];
-                    found = true;
-                }
-            }
-
-            if (!found) {
-                continue;
-            }
-
-            pixels[idx] = replacement;
-
-            // añadir vecinos magenta
-            for (int n = 0; n < 4; n++) {
-                int nx = x + dx4[n];
-                int ny = y + dy4[n];
-
-                if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
-                    continue;
-                }
-
-                int nIdx = ny * width + nx;
-
-                if (!queued[nIdx] && (pixels[nIdx] & 0x00FFFFFF) == bgRGB) {
-                    queued[nIdx] = true;
-                    queue.add(nIdx);
-                }
-            }
-        }
-
-        image.setRGB(0, 0, width, height, pixels, 0, width);
-        log.debug("--- end dilate - Background - Color ---");
-    }
-
-    private static void safeCopyPixel(
-            Raster srcRaster,
-            WritableRaster dstRaster,
-            int srcX,
-            int srcY,
-            int dstX,
-            int dstY,
-            int[] pixelBuffer
-    ) {
-        int srcMinX = srcRaster.getMinX();
-        int srcMinY = srcRaster.getMinY();
-        int srcMaxX = srcMinX + srcRaster.getWidth() - 1;
-        int srcMaxY = srcMinY + srcRaster.getHeight() - 1;
-
-        int dstMinX = dstRaster.getMinX();
-        int dstMinY = dstRaster.getMinY();
-        int dstMaxX = dstMinX + dstRaster.getWidth() - 1;
-        int dstMaxY = dstMinY + dstRaster.getHeight() - 1;
-
-        if (dstX < dstMinX || dstX > dstMaxX || dstY < dstMinY || dstY > dstMaxY) {
-            return;
-        }
-
-        int sx = clampInt(srcX, srcMinX, srcMaxX);
-        int sy = clampInt(srcY, srcMinY, srcMaxY);
-
-        srcRaster.getPixel(sx, sy, pixelBuffer);
-        dstRaster.setPixel(dstX, dstY, pixelBuffer);
-    }
-
-    private static int clampInt(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     public void doAtlasTextureProcess(List<TexturesAtlasData> texAtlasDatasList) {

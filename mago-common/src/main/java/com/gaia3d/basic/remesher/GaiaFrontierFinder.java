@@ -2,7 +2,6 @@ package com.gaia3d.basic.remesher;
 
 import com.gaia3d.basic.model.GaiaFace;
 import com.gaia3d.basic.model.GaiaVertex;
-import org.joml.Vector3d;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,11 +13,11 @@ public class GaiaFrontierFinder {
         int usedCount = 0;
 
         for (GaiaFace face : faces) {
-            if (face == null || face.getIndices() == null) continue;
+            if (face == null || face.getIndices() == null) {continue;}
 
             int[] indices = face.getIndices();
             for (int index : indices) {
-                if (index < 0 || index >= vertexCount) continue;
+                if (index < 0 || index >= vertexCount) {continue;}
 
                 if (!used[index]) {
                     used[index] = true;
@@ -141,11 +140,11 @@ public class GaiaFrontierFinder {
 
         long ax = qx(va, invTolerance);
         long bx = qx(vb, invTolerance);
-        if (ax != bx) return Long.compare(ax, bx);
+        if (ax != bx) {return Long.compare(ax, bx);}
 
         long ay = qy(va, invTolerance);
         long by = qy(vb, invTolerance);
-        if (ay != by) return Long.compare(ay, by);
+        if (ay != by) {return Long.compare(ay, by);}
 
         long az = qz(va, invTolerance);
         long bz = qz(vb, invTolerance);
@@ -266,7 +265,6 @@ public class GaiaFrontierFinder {
 
         return (((long) a) << 32) | (b & 0xffffffffL);
     }
-
 
 
     public static boolean isGeometricBoundaryEdge(
@@ -397,9 +395,9 @@ public class GaiaFrontierFinder {
                     continue;
                 }
 
-                if (i0 != i1) edgeKeys[edgeCount++] = edgeKey(i0, i1);
-                if (i1 != i2) edgeKeys[edgeCount++] = edgeKey(i1, i2);
-                if (i2 != i0) edgeKeys[edgeCount++] = edgeKey(i2, i0);
+                if (i0 != i1) {edgeKeys[edgeCount++] = edgeKey(i0, i1);}
+                if (i1 != i2) {edgeKeys[edgeCount++] = edgeKey(i1, i2);}
+                if (i2 != i0) {edgeKeys[edgeCount++] = edgeKey(i2, i0);}
             }
         }
 
@@ -485,36 +483,6 @@ public class GaiaFrontierFinder {
         }
 
         return max + 1;
-    }
-
-    public boolean[] findBoundaryVertices(
-            List<GaiaVertex> vertices,
-            List<GaiaFace> faces,
-            double tolerance,
-            int[] weldedIndices
-    ) {
-        if (vertices == null || vertices.isEmpty()) {
-            return new boolean[0];
-        }
-
-        if (faces == null || faces.isEmpty()) {
-            return new boolean[vertices.size()];
-        }
-
-        //int[] weldedIndices =
-                buildWeldedVertexIndices_LowMemory(vertices, faces, tolerance, weldedIndices);
-
-        int weldedVertexCount =
-                getWeldedVertexCount(weldedIndices);
-
-        boolean[] weldedBoundary =
-                buildWeldedBoundaryVertexFlags_SortEdges(
-                        faces,
-                        weldedIndices,
-                        weldedVertexCount
-                );
-
-        return buildOriginalBoundaryVertexFlags(weldedIndices, weldedBoundary);
     }
 
     private static void fillOriginalBoundaryVertexFlags(
@@ -701,5 +669,35 @@ public class GaiaFrontierFinder {
         }
 
         return weldedBoundary;
+    }
+
+    public boolean[] findBoundaryVertices(
+            List<GaiaVertex> vertices,
+            List<GaiaFace> faces,
+            double tolerance,
+            int[] weldedIndices
+    ) {
+        if (vertices == null || vertices.isEmpty()) {
+            return new boolean[0];
+        }
+
+        if (faces == null || faces.isEmpty()) {
+            return new boolean[vertices.size()];
+        }
+
+        //int[] weldedIndices =
+        buildWeldedVertexIndices_LowMemory(vertices, faces, tolerance, weldedIndices);
+
+        int weldedVertexCount =
+                getWeldedVertexCount(weldedIndices);
+
+        boolean[] weldedBoundary =
+                buildWeldedBoundaryVertexFlags_SortEdges(
+                        faces,
+                        weldedIndices,
+                        weldedVertexCount
+                );
+
+        return buildOriginalBoundaryVertexFlags(weldedIndices, weldedBoundary);
     }
 }
