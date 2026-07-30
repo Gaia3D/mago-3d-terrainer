@@ -1,10 +1,4 @@
-package com.gaia3d.release.others;
-
-import com.gaia3d.terrain.tile.core.*;
-import com.gaia3d.terrain.tile.elevation.*;
-import com.gaia3d.terrain.tile.generation.*;
-import com.gaia3d.terrain.tile.layer.*;
-import com.gaia3d.terrain.tile.mesh.*;
+package com.gaia3d.release.env;
 
 import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.GlobeUtils;
