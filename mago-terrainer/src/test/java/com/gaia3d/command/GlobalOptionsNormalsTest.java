@@ -1,8 +1,8 @@
 package com.gaia3d.command;
 
+import com.gaia3d.terrain.tile.TileWgs84Manager;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
-import com.gaia3d.terrain.tile.TileWgs84Manager;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -10,10 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalOptionsNormalsTest {
 

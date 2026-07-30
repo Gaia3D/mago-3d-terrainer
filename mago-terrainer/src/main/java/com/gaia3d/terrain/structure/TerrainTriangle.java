@@ -23,6 +23,7 @@ import java.util.List;
 @Slf4j
 public class TerrainTriangle {
 
+    public TerrainHalfEdge halfEdge = null; // The half edge structure caused a stack overflow, so we applied a public access controller.
     private int id = -1;
     private int halfEdgeId = -1;
     private Vector3f normal = null;
@@ -30,7 +31,6 @@ public class TerrainTriangle {
     private TerrainObjectStatus objectStatus = TerrainObjectStatus.ACTIVE;
     private GaiaBoundingBox myBoundingBox = null;
     private TerrainPlane myPlane = null;
-    public TerrainHalfEdge halfEdge = null; // The half edge structure caused a stack overflow, so we applied a public access controller.
     private int splitDepth = 0;
     private boolean refineChecked = false;
 
@@ -176,9 +176,9 @@ public class TerrainTriangle {
     public TerrainHalfEdge getLongestHalfEdge(List<TerrainHalfEdge> listHalfEdges) {
         // Note : the length of the halfEdges meaning only the length of the XY plane
         listHalfEdges.clear();
-        if(this.halfEdge == null) {
+        if (this.halfEdge == null) {
             log.warn("Triangle {} has no half-edge assigned. This may indicate a data inconsistency or an issue in the terrain generation process. " +
-                     "TileIndices: {}", this.id, this.ownerTileIndices != null ? this.ownerTileIndices.getString() : "null");
+                    "TileIndices: {}", this.id, this.ownerTileIndices != null ? this.ownerTileIndices.getString() : "null");
             return null;
         }
         this.halfEdge.getHalfEdgesLoop(listHalfEdges);
@@ -196,10 +196,10 @@ public class TerrainTriangle {
         // Debug logging for degenerate triangles
         if (longestHalfEdge == null) {
             log.debug("Triangle {} has no half-edge with length > 0 (degenerate triangle). " +
-                      "HalfEdges count: {}, TileIndices: {}",
-                      this.id,
-                      listHalfEdges.size(),
-                      this.ownerTileIndices != null ? this.ownerTileIndices.getString() : "null");
+                            "HalfEdges count: {}, TileIndices: {}",
+                    this.id,
+                    listHalfEdges.size(),
+                    this.ownerTileIndices != null ? this.ownerTileIndices.getString() : "null");
         }
 
         return longestHalfEdge;

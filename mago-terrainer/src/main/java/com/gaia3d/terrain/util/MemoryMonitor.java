@@ -17,6 +17,41 @@ public class MemoryMonitor {
     private static final double WARNING_MEMORY_THRESHOLD = 0.20;   // 20% free = WARN
 
     /**
+     * Check memory and log appropriate messages based on state
+     * @param context Description of current operation (e.g., "RefineMesh", "Iteration 5")
+     * @return MemoryState object containing all memory metrics
+     */
+    public static MemoryState checkMemory(String context) {
+        MemoryState state = new MemoryState();
+
+        if (state.isCritical) {
+            log.error("[{}] CRITICAL memory pressure: {}% free ({} / {}). " +
+                            "Recommend stopping to prevent OutOfMemoryError.",
+                    context, state.getFormattedPercent(),
+                    state.getAvailableMemoryDisplay(), state.getMaxMemoryDisplay());
+        } else if (state.isWarning) {
+            log.warn("[{}] LOW memory warning: {}% free ({} / {}). Approaching limits.",
+                    context, state.getFormattedPercent(),
+                    state.getAvailableMemoryDisplay(), state.getMaxMemoryDisplay());
+        }
+
+        return state;
+    }
+
+    /**
+     * Calculate memory growth trends
+     * @param previousUsed Previous used memory
+     * @param currentUsed Current used memory
+     * @param previousTriangles Previous triangle count
+     * @param currentTriangles Current triangle count
+     * @return Growth rate information
+     */
+    public static MemoryGrowth calculateGrowth(long previousUsed, long currentUsed,
+                                               int previousTriangles, int currentTriangles) {
+        return new MemoryGrowth(previousUsed, currentUsed, previousTriangles, currentTriangles);
+    }
+
+    /**
      * Represents the current memory state of the JVM
      */
     public static class MemoryState {
@@ -74,29 +109,6 @@ public class MemoryMonitor {
     }
 
     /**
-     * Check memory and log appropriate messages based on state
-     *
-     * @param context Description of current operation (e.g., "RefineMesh", "Iteration 5")
-     * @return MemoryState object containing all memory metrics
-     */
-    public static MemoryState checkMemory(String context) {
-        MemoryState state = new MemoryState();
-
-        if (state.isCritical) {
-            log.error("[{}] CRITICAL memory pressure: {}% free ({} / {}). " +
-                    "Recommend stopping to prevent OutOfMemoryError.",
-                    context, state.getFormattedPercent(),
-                    state.getAvailableMemoryDisplay(), state.getMaxMemoryDisplay());
-        } else if (state.isWarning) {
-            log.warn("[{}] LOW memory warning: {}% free ({} / {}). Approaching limits.",
-                    context, state.getFormattedPercent(),
-                    state.getAvailableMemoryDisplay(), state.getMaxMemoryDisplay());
-        }
-
-        return state;
-    }
-
-    /**
      * Memory metrics for trend analysis - calculates per-element memory usage
      */
     public static class MemoryMetrics {
@@ -123,25 +135,11 @@ public class MemoryMonitor {
         public final String formattedDelta;
 
         public MemoryGrowth(long previousUsed, long currentUsed,
-                           int previousTriangles, int currentTriangles) {
+                            int previousTriangles, int currentTriangles) {
             this.memoryDelta = currentUsed - previousUsed;
             this.triangleDelta = currentTriangles - previousTriangles;
             this.growthRateMB = memoryDelta / (1024.0 * 1024.0);
             this.formattedDelta = DecimalUtils.byteCountToDisplaySize(memoryDelta);
         }
-    }
-
-    /**
-     * Calculate memory growth trends
-     *
-     * @param previousUsed Previous used memory
-     * @param currentUsed Current used memory
-     * @param previousTriangles Previous triangle count
-     * @param currentTriangles Current triangle count
-     * @return Growth rate information
-     */
-    public static MemoryGrowth calculateGrowth(long previousUsed, long currentUsed,
-                                                int previousTriangles, int currentTriangles) {
-        return new MemoryGrowth(previousUsed, currentUsed, previousTriangles, currentTriangles);
     }
 }

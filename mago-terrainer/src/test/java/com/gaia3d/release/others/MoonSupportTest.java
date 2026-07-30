@@ -5,7 +5,8 @@ import com.gaia3d.util.GlobeUtils;
 import org.joml.Vector3d;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MoonSupportTest {
 
@@ -25,11 +26,11 @@ class MoonSupportTest {
     void testMoonGeographicToCartesianConsistency() {
         // Test multiple points on the Moon
         double[][] testPoints = {
-            {0, 0, 0},
-            {90, 0, 0},
-            {0, 45, 0},
-            {-120, -30, 1000},
-            {180, 0, 0}
+                {0, 0, 0},
+                {90, 0, 0},
+                {0, 45, 0},
+                {-120, -30, 1000},
+                {180, 0, 0}
         };
 
         for (double[] point : testPoints) {

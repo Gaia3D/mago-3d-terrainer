@@ -1,10 +1,10 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.GlobalOptions;
-import org.eclipse.imagen.media.range.NoDataContainer;
 import org.eclipse.imagen.PlanarImage;
 import org.eclipse.imagen.RasterFactory;
 import org.eclipse.imagen.TiledImage;
+import org.eclipse.imagen.media.range.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.util.CoverageUtilities;
@@ -23,9 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class RasterStandardizerTest {
 

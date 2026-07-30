@@ -8,8 +8,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileExistsException;
-import org.geotools.referencing.CRS;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.io.File;
@@ -30,10 +30,6 @@ import java.util.List;
 @Getter
 @Slf4j
 public class GlobalOptions {
-    // Singleton
-    private static GlobalOptions instance = new GlobalOptions();
-    private CommandLineConfiguration commandLineConfiguration = new DefaultCommandLineConfiguration();
-
     // Constants
     private static final InterpolationType DEFAULT_INTERPOLATION_TYPE = InterpolationType.BILINEAR;
     private static final int DEFAULT_MINIMUM_TILE_DEPTH = 0;
@@ -46,7 +42,9 @@ public class GlobalOptions {
     private static final CelestialBody DEFAULT_CELESTIAL_BODY = CelestialBody.EARTH;
     private static final TilingSchema DEFAULT_TILING_SCHEMA = TilingSchema.GEODETIC;
     private static final String DEFAULT_TEMP_DIR = "temp";
-
+    // Singleton
+    private static GlobalOptions instance = new GlobalOptions();
+    private CommandLineConfiguration commandLineConfiguration = new DefaultCommandLineConfiguration();
     // Program information
     private String version;
     private String javaVersionInfo;
@@ -212,7 +210,7 @@ public class GlobalOptions {
                 log.info("Using CRS: {} for {}", crsCode, instance.getCelestialBody().getDisplayName());
             } catch (Exception e) {
                 log.warn("* Failed to decode CRS for {}. Using WGS84 as carrier CRS.",
-                         instance.getCelestialBody().getDisplayName());
+                        instance.getCelestialBody().getDisplayName());
                 instance.setOutputCRS(DEFAULT_TARGET_CRS);
             }
         }
@@ -322,13 +320,6 @@ public class GlobalOptions {
         printGlobalOptions();
     }
 
-    public long getProcessTimeMillis() {
-        long endTimeMillis = System.currentTimeMillis();
-        long processTimeMillis = endTimeMillis - startTimeMillis;
-        this.endTimeMillis = endTimeMillis;
-        return processTimeMillis;
-    }
-
     protected static void printGlobalOptions() {
         log.info("Java Version Info: {}", instance.javaVersionInfo);
         log.info("Program Info: {}", instance.programInfo);
@@ -420,8 +411,8 @@ public class GlobalOptions {
         try (InputStream in = classLoader.getResourceAsStream(builtInGeoidModel.resourcePath())) {
             if (in == null) {
                 throw new IllegalArgumentException(
-                    builtInGeoidModel.displayName() + " geoid model not found in resources: "
-                        + builtInGeoidModel.resourcePath());
+                        builtInGeoidModel.displayName() + " geoid model not found in resources: "
+                                + builtInGeoidModel.resourcePath());
             }
             Path tmp = Files.createTempFile(builtInGeoidModel.tempPrefix(), ".tif");
             Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
@@ -429,7 +420,7 @@ public class GlobalOptions {
             return tmp.toAbsolutePath().toString();
         } catch (IOException e) {
             throw new IllegalStateException(
-                "Failed to extract " + builtInGeoidModel.displayName() + " geoid model from classpath", e);
+                    "Failed to extract " + builtInGeoidModel.displayName() + " geoid model from classpath", e);
         }
     }
 
@@ -439,20 +430,17 @@ public class GlobalOptions {
         }
 
         String normalized = geoidModel.trim()
-            .replace("-", "")
-            .replace("_", "")
-            .replace("'", "")
-            .replace(".", "")
-            .toUpperCase();
+                .replace("-", "")
+                .replace("_", "")
+                .replace("'", "")
+                .replace(".", "")
+                .toUpperCase();
         return switch (normalized) {
             case "EGM96", "EGM9615" -> new BuiltInGeoidModel("EGM96 15'", "geoid/egm96_15.tif", "egm96_15-");
             case "EGM8430", "EGM84" -> new BuiltInGeoidModel("EGM84 30'", "geoid/egm84_30.tif", "egm84_30-");
             case "EGM2008", "EGM200825", "EGM20082M5", "EGM200825MIN" -> new BuiltInGeoidModel("EGM2008 2.5'", "geoid/egm2008_2_5.tif", "egm2008_2_5-");
             default -> null;
         };
-    }
-
-    private record BuiltInGeoidModel(String displayName, String resourcePath, String tempPrefix) {
     }
 
     protected static void initVersionInfo() {
@@ -478,5 +466,15 @@ public class GlobalOptions {
         if (maxMemory < recommendedMemory) {
             log.warn("Maximum memory is less than the recommended 16GB. Current max memory: {} GB. Consider allocating more memory for better performance.", maxMemory / (1024 * 1024 * 1024));
         }
+    }
+
+    public long getProcessTimeMillis() {
+        long endTimeMillis = System.currentTimeMillis();
+        long processTimeMillis = endTimeMillis - startTimeMillis;
+        this.endTimeMillis = endTimeMillis;
+        return processTimeMillis;
+    }
+
+    private record BuiltInGeoidModel(String displayName, String resourcePath, String tempPrefix) {
     }
 }

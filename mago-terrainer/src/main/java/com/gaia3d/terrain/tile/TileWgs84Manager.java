@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Setter
 @Slf4j
 public class TileWgs84Manager {
-    private GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final int rasterTileSize = 256;
     private final String imaginaryType = "CRS84"; // "CRS84" or "WEB_MERCATOR"
     // For each depth level, use the concrete GeoTIFF files selected for that level.
@@ -49,6 +48,7 @@ public class TileWgs84Manager {
     private final Map<Integer, Double> depthDesiredPixelSizeXinMetersMap = new HashMap<>();
     private final Map<Integer, Double> depthMaxDiffBetweenGeoTiffSampleAndTrianglePlaneMap = new HashMap<>();
     private final List<TileWgs84> tileWgs84List = new ArrayList<>();
+    private GlobalOptions globalOptions = GlobalOptions.getInstance();
     // tileRasterSize : when triangles refinement, we use a DEM raster of this size
     private TerrainElevationDataManager terrainElevationDataManager = null;
     private int geoTiffFilesCount = 0;
@@ -264,8 +264,8 @@ public class TileWgs84Manager {
         int minTileY = tileRange.getMinTileY();
         int maxTileY = tileRange.getMaxTileY();
 
-        for(int tileX = minTileX; tileX <= maxTileX; tileX++) {
-            for(int tileY = minTileY; tileY <= maxTileY; tileY++) {
+        for (int tileX = minTileX; tileX <= maxTileX; tileX++) {
+            for (int tileY = minTileY; tileY <= maxTileY; tileY++) {
                 String qMeshFolderNameX = String.valueOf(tileX);
                 String qMeshFileNameY = String.valueOf(tileY) + ".terrain";
                 String qMeshFullPath = quantizedMeshPath + File.separator + qMeshFolderNameX + File.separator + qMeshFileNameY;
@@ -555,7 +555,6 @@ public class TileWgs84Manager {
         double minLat = geographicExtension.getMinLatitudeDeg();
         double maxLat = geographicExtension.getMaxLatitudeDeg();
 
-
         double[] bounds = terrainLayer.getBounds();
         bounds[0] = minLon;
         bounds[1] = minLat;
@@ -577,7 +576,7 @@ public class TileWgs84Manager {
         int maxTileDepth = globalOptions.getMaximumTileDepth();
 
         int availableMaxDepth = this.availableTileSet.getMaxAvailableDepth();
-        if(availableMaxDepth < maxTileDepth) {
+        if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
 
@@ -640,7 +639,7 @@ public class TileWgs84Manager {
                 tileMatrix.deleteObjects();
             }
 
-            if(!GlobalOptions.getInstance().isLeaveTemp()) {
+            if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
 
@@ -1422,7 +1421,7 @@ public class TileWgs84Manager {
             geoTiffFiles = this.depthGeoTiffFilesMap.get(fallbackDepth);
             if (geoTiffFiles != null && !geoTiffFiles.isEmpty()) {
                 log.warn("[Raster][DepthPath] Missing raster files for depth {}. Reusing depth {} files: {}",
-                    depth, fallbackDepth, geoTiffFiles.size());
+                        depth, fallbackDepth, geoTiffFiles.size());
                 return geoTiffFiles;
             }
         }
@@ -1499,12 +1498,12 @@ public class TileWgs84Manager {
             }
 
             log.info("[Pre][Standardization] Downsampling {} before split. pixelSize={}m -> {}m",
-                geoTiffFilePath, pixelSizeMeters.x, maxUsefulPixelSizeMeters);
+                    geoTiffFilePath, pixelSizeMeters.x, maxUsefulPixelSizeMeters);
             return gaiaGeoTiffManager.getResizedCoverage2D(
-                geoTiffFilePath,
-                originalCoverage,
-                maxUsefulPixelSizeMeters,
-                maxUsefulPixelSizeMeters
+                    geoTiffFilePath,
+                    originalCoverage,
+                    maxUsefulPixelSizeMeters,
+                    maxUsefulPixelSizeMeters
             );
         } catch (Exception e) {
             log.warn("[Pre][Standardization] Failed to pre-downsample {}. Using original coverage.", geoTiffFilePath, e);

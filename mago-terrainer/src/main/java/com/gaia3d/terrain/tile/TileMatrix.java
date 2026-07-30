@@ -36,17 +36,16 @@ import static java.lang.Math.abs;
 @Slf4j
 public class TileMatrix {
     private static final double VERTEX_COINCIDENT_ERROR = 0.0000000000001; // 1e-13
-
-    private GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TileRange tilesRange;
     private final List<List<TileWgs84>> tilesMatrixRowCol = new ArrayList<>();
+    private final Vector3d barycenterScratch = new Vector3d();
+    private final RasterTriangle rasterTriangleScratch = new RasterTriangle();
     public TileWgs84Manager manager = null;
     // the tilesMatrixRowCol is a matrix of tiles
     // all the arrays have the same length
     List<TerrainVertex> listVertices = new ArrayList<>();
     List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
-    private final Vector3d barycenterScratch = new Vector3d();
-    private final RasterTriangle rasterTriangleScratch = new RasterTriangle();
+    private GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     public TileMatrix(TileRange tilesRange, TileWgs84Manager manager) {
         this.tilesRange = tilesRange;
@@ -65,7 +64,7 @@ public class TileMatrix {
     }
 
     private boolean refineAdjacentTilesVertically(TerrainMesh upMesh, TerrainMesh downMesh, boolean isModify) {
-        if(upMesh == null || downMesh == null) {
+        if (upMesh == null || downMesh == null) {
             return false;
         }
 
@@ -84,7 +83,7 @@ public class TileMatrix {
         List<TerrainVertex> upTileDownVertices = upMesh.getDownVerticesSortedLeftToRight();
         List<TerrainVertex> downTileUpVertices = downMesh.getUpVerticesSortedRightToLeft();
 
-        if(upTileDownVertices.size() != downTileUpVertices.size()) {
+        if (upTileDownVertices.size() != downTileUpVertices.size()) {
             // For each vertex of the upTile, check if is coincident with a vertex or hedge of the downTile.
             // If a vertex of upTile is coincident with a hedge of downTile, then must refine the triangle of the hedge of the downTile.
             int splitCountUp = 0;
@@ -116,7 +115,7 @@ public class TileMatrix {
         List<TerrainVertex> leftTileRightVertices = leftMesh.getRightVerticesSortedDownToUp();
         List<TerrainVertex> rightTileLeftVertices = rightMesh.getLeftVerticesSortedUpToDown();
 
-        if(leftTileRightVertices.size() != rightTileLeftVertices.size()) {
+        if (leftTileRightVertices.size() != rightTileLeftVertices.size()) {
             // For each vertex of the leftTile, check if is coincident with a vertex or hedge of the rightTile.
             // If a vertex of leftTile is coincident with a hedge of rightTile, then must refine the triangle of the hedge of the rightTile.
             int splitCountLeft = 0;
@@ -130,7 +129,7 @@ public class TileMatrix {
     }
 
     private int refineTileOneSide(TerrainMesh meshToRefine, List<TerrainVertex> vertices,
-                                      CardinalDirection tileSide, boolean isModify){
+                                  CardinalDirection tileSide, boolean isModify) {
         double error = 1e-6;
         int verticesCount = vertices.size();
         boolean triangleSplit = false;
@@ -138,11 +137,11 @@ public class TileMatrix {
         int counter = 0;
         int splitCount = 0;
         List<TerrainHalfEdge> halfEdgesToRefine = null;
-        while(!finished) {
+        while (!finished) {
             triangleSplit = false;
             for (int i = 0; i < verticesCount; i++) {
                 TerrainVertex vertex = vertices.get(i);
-                if(vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                if (vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
                     continue;
                 }
                 if (tileSide == CardinalDirection.SOUTH) {
@@ -158,7 +157,7 @@ public class TileMatrix {
                 int hedgesCount = halfEdgesToRefine.size();
                 for (int j = 0; j < hedgesCount; j++) {
                     TerrainHalfEdge hEdge = halfEdgesToRefine.get(j);
-                    if(hEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+                    if (hEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                         continue;
                     }
                     // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = COINCIDENT_WITH_START_VERTEX, 3 = COINCIDENT_WITH_END_VERTEX
@@ -187,13 +186,13 @@ public class TileMatrix {
             meshToRefine.removeDeletedObjects();
             meshToRefine.setObjectsIdInList();
 
-            if(!triangleSplit){
+            if (!triangleSplit) {
                 finished = true;
                 break;
             }
 
             counter++;
-            if(counter > 100) {
+            if (counter > 100) {
                 log.warn("Refine adjacent tiles horizontally, counter : {}", counter);
                 break;
             }
@@ -271,7 +270,7 @@ public class TileMatrix {
             // After redirecting all half-edges from startVertex2/endVertex2 to startVertex/endVertex,
             // make sure startVertex and endVertex have valid outingHEdge pointers
             if (startVertex.getOutingHEdge() == null ||
-                startVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
+                    startVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
                 // Find a valid outingHEdge for startVertex from the consolidated edges
                 for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_endVertex2) {
                     if (outingHalfEdge.getObjectStatus() != TerrainObjectStatus.DELETED) {
@@ -282,7 +281,7 @@ public class TileMatrix {
             }
 
             if (endVertex.getOutingHEdge() == null ||
-                endVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
+                    endVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
                 for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_strVertex2) {
                     if (outingHalfEdge.getObjectStatus() != TerrainObjectStatus.DELETED) {
                         endVertex.setOutingHEdge(outingHalfEdge);
@@ -296,13 +295,13 @@ public class TileMatrix {
 
             // Validate startVertex
             if (startVertex.getOutingHEdge() == null ||
-                startVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
+                    startVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
 
                 // Try to find a valid outingHEdge from listHEdges_A
                 boolean foundValid = false;
                 for (TerrainHalfEdge edge : listHEdges_A) {
                     if (edge.getStartVertex() == startVertex &&
-                        edge.getObjectStatus() != TerrainObjectStatus.DELETED) {
+                            edge.getObjectStatus() != TerrainObjectStatus.DELETED) {
                         startVertex.setOutingHEdge(edge);
                         foundValid = true;
                         break;
@@ -311,7 +310,7 @@ public class TileMatrix {
 
                 if (!foundValid) {
                     log.warn("Failed to find valid outingHEdge for vertex {} after consolidation. " +
-                             "Marking as DELETED to prevent topology corruption.", startVertex.getId());
+                            "Marking as DELETED to prevent topology corruption.", startVertex.getId());
                     startVertex.setOutingHEdge(null);
                     startVertex.setObjectStatus(TerrainObjectStatus.DELETED);
                 }
@@ -319,12 +318,12 @@ public class TileMatrix {
 
             // Validate endVertex
             if (endVertex.getOutingHEdge() == null ||
-                endVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
+                    endVertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
 
                 boolean foundValid = false;
                 for (TerrainHalfEdge edge : listHEdges_A) {
                     if (edge.getStartVertex() == endVertex &&
-                        edge.getObjectStatus() != TerrainObjectStatus.DELETED) {
+                            edge.getObjectStatus() != TerrainObjectStatus.DELETED) {
                         endVertex.setOutingHEdge(edge);
                         foundValid = true;
                         break;
@@ -333,7 +332,7 @@ public class TileMatrix {
 
                 if (!foundValid) {
                     log.warn("Failed to find valid outingHEdge for vertex {} after consolidation. " +
-                             "Marking as DELETED to prevent topology corruption.", endVertex.getId());
+                            "Marking as DELETED to prevent topology corruption.", endVertex.getId());
                     endVertex.setOutingHEdge(null);
                     endVertex.setObjectStatus(TerrainObjectStatus.DELETED);
                 }
@@ -418,8 +417,8 @@ public class TileMatrix {
 
                         // the c_tile can be null
                         if (!rowMeshRightHalfEdges.isEmpty()) {
-                            if(rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
-                                log.warn("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
+                            if (rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
+                                log.debug("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
                                 refineAdjacentTilesHorizontally(rowMesh, tileMesh, globalOptions.isModify());
                             }
                             this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
@@ -462,8 +461,8 @@ public class TileMatrix {
                     // the c_tile can be null
                     if (!resultMeshDownHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
-                        if(resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
-                            log.warn("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
+                        if (resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
+                            log.debug("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
                             refineAdjacentTilesVertically(resultMesh, rowMesh, globalOptions.isModify());
                         }
                         this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
@@ -612,44 +611,11 @@ public class TileMatrix {
 
                         // the c_tile can be null
                         if (!rowMeshRightHalfEdges.isEmpty()) {
-//                            if(rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
-//                                log.warn("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
-//                                refineAdjacentTilesHorizontally(rowMesh, tileMesh, globalOptions.isModify());
-//                            }
                             this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
 
                             // now, merge the left tile mesh to the result mesh.
                             rowMesh.removeDeletedObjects();
                             rowMesh.mergeMesh(tileMesh);
-
-//                            // POST-MERGE VALIDATION: Check and repair topology after horizontal consolidation
-//                            int[] healthMetrics = checkTopologyHealth(rowMesh);
-//                            int totalVertices = healthMetrics[0];
-//                            int corruptedVertices = healthMetrics[1];
-//                            int maxEdgeCount = healthMetrics[2];
-//
-//                            if (corruptedVertices > 0) {
-//                                double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
-//
-//                                // Check for SEVERE corruption before attempting repair
-//                                if (corruptionRate > 20.0 || maxEdgeCount > 50) {
-//                                    log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
-//                                            "({}/{}), max edges={}. Consolidation quality too poor.",
-//                                            String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
-//                                    // Continue anyway but log severe warning - mesh may still be usable
-//                                }
-//
-//                                log.warn("[TileConsolidation] Horizontal merge: Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
-//                                        corruptedVertices, String.format("%.1f", corruptionRate));
-//                                int repairedCount = rowMesh.repairMeshTopology();
-//                                if (repairedCount < corruptedVertices) {
-//                                    log.warn("[TileConsolidation] Horizontal merge: Only repaired {}/{} vertices.",
-//                                            repairedCount, corruptedVertices);
-//                                } else {
-//                                    log.info("[TileConsolidation] Horizontal merge: Successfully repaired all {} corrupted vertices.",
-//                                            repairedCount);
-//                                }
-//                            }
                         }
                     }
                 }
@@ -685,43 +651,10 @@ public class TileMatrix {
                     // the c_tile can be null
                     if (!resultMeshDownHalfEdges.isEmpty()) {
                         // now, set twins of halfEdges
-//                        if(resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
-//                            log.warn("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
-//                            refineAdjacentTilesVertically(resultMesh, rowMesh, globalOptions.isModify());
-//                        }
                         this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
                         // now, merge the row mesh to the result mesh.
                         resultMesh.removeDeletedObjects();
                         resultMesh.mergeMesh(rowMesh);
-
-//                        // POST-MERGE VALIDATION: Check and repair topology after vertical consolidation
-//                        int[] healthMetrics = checkTopologyHealth(resultMesh);
-//                        int totalVertices = healthMetrics[0];
-//                        int corruptedVertices = healthMetrics[1];
-//                        int maxEdgeCount = healthMetrics[2];
-//
-//                        if (corruptedVertices > 0) {
-//                            double corruptionRate = (double) corruptedVertices / totalVertices * 100.0;
-//
-//                            // Check for SEVERE corruption before attempting repair
-//                            if (corruptionRate > 20.0 || maxEdgeCount > 50) {
-//                                log.error("[TileConsolidation] SEVERE corruption detected: {}% vertices corrupted " +
-//                                        "({}/{}), max edges={}. Consolidation quality too poor.",
-//                                        String.format("%.1f", corruptionRate), corruptedVertices, totalVertices, maxEdgeCount);
-//                                // Continue anyway but log severe warning - mesh may still be usable
-//                            }
-//
-//                            log.warn("[TileConsolidation] Vertical merge (down): Detected {} corrupted vertices ({:.1f}%). Attempting repair...",
-//                                    corruptedVertices, String.format("%.1f", corruptionRate));
-//                            int repairedCount = resultMesh.repairMeshTopology();
-//                            if (repairedCount < corruptedVertices) {
-//                                log.warn("[TileConsolidation] Vertical merge (down): Only repaired {}/{} vertices.",
-//                                        repairedCount, corruptedVertices);
-//                            } else {
-//                                log.info("[TileConsolidation] Vertical merge (down): Successfully repaired all {} corrupted vertices.",
-//                                        repairedCount);
-//                            }
-//                        }
                     }
                 } else {
                     //  +------------+
@@ -919,11 +852,11 @@ public class TileMatrix {
             //********************************************************************************
             TileWgs84Utils.selectTileIndices(currDepth, position.x, position.y, tileIndicesAux, originIsLeftUp);
             double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, position.x, position.y, intersectionType);
-            if(skipNoDataType){
+            if (skipNoDataType) {
                 //********************************************
                 // skipNoDataType is true only in MODIFY_MODE.
                 //********************************************
-                if(intersectionType[0] == 1){
+                if (intersectionType[0] == 1) {
                     // only modify when there are pixel data.***
                     position.z = z;
                 }
@@ -1048,9 +981,9 @@ public class TileMatrix {
         tileRaster.populateRasterTriangle(triangle, this.listVertices, this.listHalfEdges, this.rasterTriangleScratch);
         RasterTriangle rasterTriangle = this.rasterTriangleScratch;
         if (rasterTriangle == null || rasterTriangle.getP1() == null ||
-            rasterTriangle.getP2() == null || rasterTriangle.getP3() == null) {
+                rasterTriangle.getP2() == null || rasterTriangle.getP3() == null) {
             log.warn("Unable to get valid raster triangle for triangle {}. Skipping refinement check.",
-                     triangle.getId());
+                    triangle.getId());
             triangle.setRefineChecked(true);
             return false;
         }
@@ -1176,8 +1109,8 @@ public class TileMatrix {
         double[] centerCartesian = GlobeUtils.geographicToCartesian(centerGeoCoord.x, centerGeoCoord.y, centerGeoCoord.z, body);
         Vector3d normalAtCartesian = GlobeUtils.normalAtCartesianPoint(centerCartesian[0], centerCartesian[1], centerCartesian[2], body);
         return (float) GeometryUtils.cosineBetweenUnitaryVectors(
-            triangleNormalDouble.x, triangleNormalDouble.y, triangleNormalDouble.z,
-            normalAtCartesian.x, normalAtCartesian.y, normalAtCartesian.z
+                triangleNormalDouble.x, triangleNormalDouble.y, triangleNormalDouble.z,
+                normalAtCartesian.x, normalAtCartesian.y, normalAtCartesian.z
         );
     }
 
@@ -1210,7 +1143,7 @@ public class TileMatrix {
                     MemoryMonitor.MemoryState memState = MemoryMonitor.checkMemory("RefineMesh-Split");
                     if (memState.isCritical) {
                         log.error("[RefineMesh] Stopping current iteration before split due to critical memory pressure: " +
-                                "free={}%, triangles={}, vertices={}, splits_this_iteration={}.",
+                                        "free={}%, triangles={}, vertices={}, splits_this_iteration={}.",
                                 memState.getFormattedPercent(), mesh.triangles.size(), mesh.vertices.size(), currentSplitCount);
                         break;
                     }
@@ -1242,7 +1175,6 @@ public class TileMatrix {
      * Check the topology health of the mesh by examining vertex half-edge counts.
      * Detects corrupted vertices that have excessive outgoing half-edges (>10),
      * which indicates topology corruption from infinite splitting.
-     *
      * @param mesh The mesh to validate
      * @return An array: [totalActiveVertices, verticesWithExcessiveEdges, maxEdgeCount]
      */
@@ -1278,7 +1210,7 @@ public class TileMatrix {
         if (verticesWithExcessiveEdges > 0) {
             double corruptionRate = (double) verticesWithExcessiveEdges / totalVertices * 100.0;
             log.warn("[TopologyHealth] Detected {} vertices with >10 edges out of {} total ({:.2f}%). " +
-                    "Max edges: {} (vertex {})",
+                            "Max edges: {} (vertex {})",
                     verticesWithExcessiveEdges, totalVertices,
                     String.format("%.2f", corruptionRate), maxEdgeCount, criticalVertexId);
         }
@@ -1338,7 +1270,7 @@ public class TileMatrix {
         MemoryMonitor.MemoryState initialMemState = MemoryMonitor.checkMemory("RefineMesh-Start");
         if (initialMemState.isCritical) {
             log.error("[RefineMesh] CRITICAL memory pressure BEFORE refinement starts: free={}%. " +
-                    "Cannot proceed. Increase heap size (-Xmx).",
+                            "Cannot proceed. Increase heap size (-Xmx).",
                     initialMemState.getFormattedPercent());
             return; // Abort refinement
         }
@@ -1357,9 +1289,9 @@ public class TileMatrix {
                             memState.usedMemory, currentTriangleCount, currentVertexCount);
 
                     log.error("[RefineMesh] STOPPING at iteration {} due to CRITICAL memory pressure: " +
-                            "free={}%, triangles={}, vertices={}, " +
-                            "memory_per_triangle={}, memory_per_vertex={}. " +
-                            "Increase heap size (-Xmx) or reduce refinement intensity to process deeper tiles.",
+                                    "free={}%, triangles={}, vertices={}, " +
+                                    "memory_per_triangle={}, memory_per_vertex={}. " +
+                                    "Increase heap size (-Xmx) or reduce refinement intensity to process deeper tiles.",
                             splitCount, memState.getFormattedPercent(),
                             currentTriangleCount, currentVertexCount,
                             metrics.formattedBytesPerTriangle, metrics.formattedBytesPerVertex);
@@ -1376,8 +1308,8 @@ public class TileMatrix {
                             previousTriangleCount, currentTriangleCount);
 
                     log.warn("[RefineMesh] Memory warning at iteration {}: free={}%, " +
-                            "triangles_added={}, memory_growth={}MB, " +
-                            "triangles_total={}, vertices_total={}",
+                                    "triangles_added={}, memory_growth={}MB, " +
+                                    "triangles_total={}, vertices_total={}",
                             splitCount, memState.getFormattedPercent(),
                             growth.triangleDelta, String.format("%.2f", growth.growthRateMB),
                             currentTriangleCount, mesh.vertices.size());
@@ -1411,8 +1343,8 @@ public class TileMatrix {
                         // SEVERE CORRUPTION: >5% vertices corrupted OR any vertex >20 edges
                         if (corruptionRate > 5.0 || maxEdgeCount > 20) {
                             log.error("[RefineMesh] SEVERE topology corruption detected at iteration {}: " +
-                                    "corruption_rate={}%, max_edges={}. " +
-                                    "Stopping refinement to prevent OutOfMemoryError.",
+                                            "corruption_rate={}%, max_edges={}. " +
+                                            "Stopping refinement to prevent OutOfMemoryError.",
                                     splitCount, String.format("%.2f", corruptionRate), maxEdgeCount);
                             finished = true;
                             continue;
@@ -1421,7 +1353,7 @@ public class TileMatrix {
                         // MODERATE CORRUPTION: 2-5% vertices corrupted
                         if (corruptionRate > 2.0 && corruptionRate <= 5.0) {
                             log.warn("[RefineMesh] MODERATE topology corruption at iteration {}: " +
-                                    "corruption_rate={}%, max_edges={}. Watching closely.",
+                                            "corruption_rate={}%, max_edges={}. Watching closely.",
                                     splitCount, String.format("%.2f", corruptionRate), maxEdgeCount);
                         }
                     }
@@ -1432,15 +1364,15 @@ public class TileMatrix {
                     // This indicates a problem - likely infinite splitting loop
                     consecutiveNoProgressCount++;
                     log.warn("[RefineMesh] Iteration {}/{} added no new triangles (current: {}, previous: {}). " +
-                            "Consecutive no-progress count: {}/{}",
+                                    "Consecutive no-progress count: {}/{}",
                             splitCount, maxIterations, currentTriangleCount, previousTriangleCount,
                             consecutiveNoProgressCount, CONVERGENCE_WINDOW);
 
                     if (consecutiveNoProgressCount >= CONVERGENCE_WINDOW) {
                         log.error("[RefineMesh] No progress for {} consecutive iterations. " +
-                                 "Stopping refinement to prevent infinite loop. " +
-                                 "This may indicate topology corruption or deadlock issues.",
-                                 CONVERGENCE_WINDOW);
+                                        "Stopping refinement to prevent infinite loop. " +
+                                        "This may indicate topology corruption or deadlock issues.",
+                                CONVERGENCE_WINDOW);
                         finished = true;
                     }
                 } else {
@@ -1460,7 +1392,7 @@ public class TileMatrix {
         }
 
         log.info("[RefineMesh] Refinement complete: {} iterations, final triangle count: {}",
-                 splitCount, mesh.triangles.size());
+                splitCount, mesh.triangles.size());
 
         // Log final memory state for debugging and capacity planning
         MemoryMonitor.MemoryState finalMemState = MemoryMonitor.checkMemory("RefineMesh-Complete");
@@ -1468,7 +1400,7 @@ public class TileMatrix {
                 finalMemState.usedMemory, mesh.triangles.size(), mesh.vertices.size());
 
         log.debug("[RefineMesh] Final memory state: used={}, free={}%, " +
-                "avg_memory_per_triangle={}, avg_memory_per_vertex={}",
+                        "avg_memory_per_triangle={}, avg_memory_per_vertex={}",
                 finalMemState.getUsedMemoryDisplay(), finalMemState.getFormattedPercent(),
                 finalMetrics.formattedBytesPerTriangle, finalMetrics.formattedBytesPerVertex);
     }

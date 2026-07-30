@@ -2,7 +2,6 @@ package com.gaia3d.terrain.tile;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
-import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
 import com.gaia3d.terrain.types.InterpolationType;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,16 +14,7 @@ import org.geotools.geometry.Position2D;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 
-import java.awt.image.ComponentSampleModel;
-import java.awt.image.DataBufferByte;
-import java.awt.image.DataBufferDouble;
-import java.awt.image.DataBufferFloat;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DataBufferShort;
-import java.awt.image.DataBufferUShort;
-import java.awt.image.Raster;
-import java.awt.image.RenderedImage;
-import java.awt.image.SampleModel;
+import java.awt.image.*;
 import java.io.File;
 import java.util.Arrays;
 
@@ -35,8 +25,16 @@ public class TerrainElevationData {
     private static final int TILE_RASTER_CACHE_SIZE = 4;
     private static final long EMPTY_TILE_KEY = Long.MIN_VALUE;
     private static final long MAX_MATERIALIZED_RASTER_BYTES = 0L;
+    private static final int RASTER_KIND_GENERIC = 0;
+    private static final int RASTER_KIND_FLOAT = 1;
+    private static final int RASTER_KIND_DOUBLE = 2;
+    private static final int RASTER_KIND_INT = 3;
+    private static final int RASTER_KIND_USHORT = 4;
+    private static final int RASTER_KIND_SHORT = 5;
+    private static final int RASTER_KIND_BYTE = 6;
+    private final long[] tileRasterCacheKeys = new long[TILE_RASTER_CACHE_SIZE];
+    private final Raster[] tileRasterCacheValues = new Raster[TILE_RASTER_CACHE_SIZE];
     private GlobalOptions globalOptions = GlobalOptions.getInstance();
-
     private Vector2d pixelSizeMeters;
     private TerrainElevationDataManager terrainElevDataManager = null;
     private String geotiffFilePath = "";
@@ -96,16 +94,6 @@ public class TerrainElevationData {
     private int[] rasterIntData = null;
     private short[] rasterShortData = null;
     private byte[] rasterByteData = null;
-    private final long[] tileRasterCacheKeys = new long[TILE_RASTER_CACHE_SIZE];
-    private final Raster[] tileRasterCacheValues = new Raster[TILE_RASTER_CACHE_SIZE];
-
-    private static final int RASTER_KIND_GENERIC = 0;
-    private static final int RASTER_KIND_FLOAT = 1;
-    private static final int RASTER_KIND_DOUBLE = 2;
-    private static final int RASTER_KIND_INT = 3;
-    private static final int RASTER_KIND_USHORT = 4;
-    private static final int RASTER_KIND_SHORT = 5;
-    private static final int RASTER_KIND_BYTE = 6;
 
     public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
         this.terrainElevDataManager = terrainElevationDataManager;
@@ -433,12 +421,12 @@ public class TerrainElevationData {
         if (!rasterInitializationLogged) {
             rasterInitializationLogged = true;
             log.info("[Raster][SampleInit] Prepared rendered image for {} (image={}x{}, tile={}x{}, materialized={})",
-                geotiffFilePath,
-                this.renderedImage.getWidth(),
-                this.renderedImage.getHeight(),
-                this.renderedImage.getTileWidth(),
-                this.renderedImage.getTileHeight(),
-                this.materializedRasterData != null);
+                    geotiffFilePath,
+                    this.renderedImage.getWidth(),
+                    this.renderedImage.getHeight(),
+                    this.renderedImage.getTileWidth(),
+                    this.renderedImage.getTileHeight(),
+                    this.materializedRasterData != null);
         }
         return true;
     }
@@ -462,9 +450,9 @@ public class TerrainElevationData {
         long requiredHeadroom = estimatedBytes * 3L;
         if (availableMemory < requiredHeadroom) {
             log.debug("[Raster][SampleInit] Skip materializing {} (estimated={} MB, available={} MB).",
-                geotiffFilePath,
-                estimatedBytes / (1024 * 1024),
-                availableMemory / (1024 * 1024));
+                    geotiffFilePath,
+                    estimatedBytes / (1024 * 1024),
+                    availableMemory / (1024 * 1024));
             return;
         }
 
@@ -642,10 +630,10 @@ public class TerrainElevationData {
 
     private boolean isPixelInCurrentRaster(int x, int y) {
         return this.raster != null
-            && x >= rasterMinX
-            && y >= rasterMinY
-            && x < rasterMinX + rasterWidth
-            && y < rasterMinY + rasterHeight;
+                && x >= rasterMinX
+                && y >= rasterMinY
+                && x < rasterMinX + rasterWidth
+                && y < rasterMinY + rasterHeight;
     }
 
     private double readGridValueFast(int x, int y) {
@@ -669,9 +657,9 @@ public class TerrainElevationData {
 
     private double readMaterializedGridValue(int x, int y) {
         if (x < materializedRasterMinX
-            || y < materializedRasterMinY
-            || x >= materializedRasterMinX + materializedRasterWidth
-            || y >= materializedRasterMinY + materializedRasterHeight) {
+                || y < materializedRasterMinY
+                || x >= materializedRasterMinX + materializedRasterWidth
+                || y >= materializedRasterMinY + materializedRasterHeight) {
             return globalOptions.getNoDataValue();
         }
 

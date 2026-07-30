@@ -7,7 +7,6 @@ import com.gaia3d.terrain.util.TileWgs84Utils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.joml.Vector2i;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
@@ -190,12 +189,12 @@ public class TileWgs84Raster {
                 }
 
                 activeBlock.setDegrees(
-                    blockMinLonDeg,
-                    blockMinLatDeg,
-                    0.0,
-                    blockMaxLonDeg,
-                    blockMaxLatDeg,
-                    0.0
+                        blockMinLonDeg,
+                        blockMinLatDeg,
+                        0.0,
+                        blockMaxLonDeg,
+                        blockMaxLatDeg,
+                        0.0
                 );
                 terrainElevationDataManager.releaseTerrainElevationRastersOutsideGeographicExtension(resultTerrainElevDataArray, activeBlock);
                 filterTerrainElevationDataForBlock(resultTerrainElevDataArray, activeBlock, blockTerrainElevDataArray);
@@ -214,9 +213,9 @@ public class TileWgs84Raster {
     }
 
     private void filterTerrainElevationDataForBlock(
-        List<TerrainElevationData> sourceTerrainElevDataArray,
-        GeographicExtension activeBlock,
-        List<TerrainElevationData> resultTerrainElevDataArray
+            List<TerrainElevationData> sourceTerrainElevDataArray,
+            GeographicExtension activeBlock,
+            List<TerrainElevationData> resultTerrainElevDataArray
     ) {
         resultTerrainElevDataArray.clear();
         for (TerrainElevationData terrainElevationData : sourceTerrainElevDataArray) {
@@ -251,9 +250,9 @@ public class TileWgs84Raster {
         Vector3d pos2 = vertices.get(2).getPosition();
 
         rasterTriangle.setVertices(
-            getColumn(pos0.x), getRow(pos0.y),
-            getColumn(pos1.x), getRow(pos1.y),
-            getColumn(pos2.x), getRow(pos2.y)
+                getColumn(pos0.x), getRow(pos0.y),
+                getColumn(pos1.x), getRow(pos1.y),
+                getColumn(pos2.x), getRow(pos2.y)
         );
     }
 

@@ -19,6 +19,13 @@ public class RasterTriangle {
         this(new Vector2i(), new Vector2i(), new Vector2i());
     }
 
+    private static Vector2i requireVertex(Vector2i value) {
+        if (value == null) {
+            throw new IllegalArgumentException("RasterTriangle vertices must not be null");
+        }
+        return value;
+    }
+
     public void setVertices(Vector2i v0, Vector2i v1, Vector2i v2) {
         this.p1.set(v0);
         this.p2.set(v1);
@@ -29,12 +36,5 @@ public class RasterTriangle {
         this.p1.set(col0, row0);
         this.p2.set(col1, row1);
         this.p3.set(col2, row2);
-    }
-
-    private static Vector2i requireVertex(Vector2i value) {
-        if (value == null) {
-            throw new IllegalArgumentException("RasterTriangle vertices must not be null");
-        }
-        return value;
     }
 }

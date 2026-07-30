@@ -1,7 +1,6 @@
 package com.gaia3d.terrain.tile.custom;
 
 import com.gaia3d.terrain.structure.GeographicExtension;
-import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.tile.TileRange;
 import com.gaia3d.terrain.tile.geotiff.TileRangeIntersectionType;
 import com.gaia3d.terrain.util.TileWgs84Utils;

@@ -34,17 +34,8 @@ import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.awt.*;
-import java.awt.image.DataBuffer;
-import java.awt.image.ColorModel;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.Raster;
-import java.awt.image.RenderedImage;
-import java.awt.image.SampleModel;
-import java.awt.image.WritableRaster;
-import java.awt.Point;
-import java.awt.image.WritableRenderedImage;
-import java.awt.Transparency;
 import java.awt.color.ColorSpace;
+import java.awt.image.*;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -64,19 +55,30 @@ public class RasterStandardizer {
     private static final int MAX_FILES_PER_DIRECTORY = 10_000;
 
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
-    private record PreparedCoverage(GridCoverage2D coverage, boolean disposeAfterUse, boolean allNoData) {}
 
-    @FunctionalInterface
-    interface TileProcessor {
-        void process(String tileName, ReferencedEnvelope tileEnvelope) throws TransformException, IOException;
+    public static String sourceDirectoryName(String sourceIdentifier) {
+        String fileName = new File(sourceIdentifier).getName();
+        int extensionIndex = fileName.lastIndexOf('.');
+        String baseName = extensionIndex > 0 ? fileName.substring(0, extensionIndex) : fileName;
+        String sanitized = sanitizePathSegment(baseName);
+        String suffix = Integer.toHexString(sourceIdentifier.hashCode());
+        return sanitized + "-" + suffix;
     }
 
-    @FunctionalInterface
-    private interface TileDescriptorProcessor {
-        void process(TileDescriptor tileDescriptor) throws TransformException, IOException;
+    public static String sanitizePathSegment(String value) {
+        String sanitized = value.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (sanitized.isBlank()) {
+            return "raster";
+        }
+        return sanitized;
     }
 
-    private record TileDescriptor(String tileName, GridEnvelope2D gridEnvelope, ReferencedEnvelope tileEnvelope) {}
+    private static String shardDirectoryName(int itemIndex) {
+        int shardIndex = Math.max(0, (itemIndex - 1) / MAX_FILES_PER_DIRECTORY);
+        int shardStart = shardIndex * MAX_FILES_PER_DIRECTORY;
+        int shardEnd = shardStart + MAX_FILES_PER_DIRECTORY - 1;
+        return String.format("batch-%05d-%05d", shardStart, shardEnd);
+    }
 
     public void standardize(GridCoverage2D source, File outputPath) {
         CoordinateReferenceSystem targetCRS = globalOptions.getOutputCRS();
@@ -218,7 +220,7 @@ public class RasterStandardizer {
         } catch (IllegalArgumentException e) {
             if (e.getMessage() != null && e.getMessage().contains("Unable to map projection")) {
                 log.warn("[Raster][I/O] IAU CRS cannot be encoded in GeoTIFF. Writing with WGS84 carrier CRS: {}",
-                         outputFile.getName());
+                        outputFile.getName());
                 writeGeotiffWithCarrierCrs(coverage, outputFile);
             } else {
                 log.error("Failed to write GeoTiff file : {}", outputFile.getAbsolutePath());
@@ -255,19 +257,19 @@ public class RasterStandardizer {
                 return;
             }
             ReferencedEnvelope carrierEnvelope = new ReferencedEnvelope(
-                materializedCoverage.getEnvelope2D().getMinimum(0),
-                materializedCoverage.getEnvelope2D().getMaximum(0),
-                materializedCoverage.getEnvelope2D().getMinimum(1),
-                materializedCoverage.getEnvelope2D().getMaximum(1),
-                DefaultGeographicCRS.WGS84
+                    materializedCoverage.getEnvelope2D().getMinimum(0),
+                    materializedCoverage.getEnvelope2D().getMaximum(0),
+                    materializedCoverage.getEnvelope2D().getMinimum(1),
+                    materializedCoverage.getEnvelope2D().getMaximum(1),
+                    DefaultGeographicCRS.WGS84
             );
             GridCoverage2D carrierCoverage = coverageFactory.create(
-                materializedCoverage.getName(),
-                materializedCoverage.getRenderedImage(),
-                carrierEnvelope,
-                null,
-                null,
-                createNoDataProperties(materializedCoverage)
+                    materializedCoverage.getName(),
+                    materializedCoverage.getRenderedImage(),
+                    carrierEnvelope,
+                    null,
+                    null,
+                    createNoDataProperties(materializedCoverage)
             );
 
             try (FileOutputStream outputStream = new FileOutputStream(outputFile);
@@ -507,8 +509,8 @@ public class RasterStandardizer {
 
                 double H = demRaster.getSampleDouble(x, y, 0);
                 if (Double.isNaN(H)
-                    || (hasDemNoDataVal && Double.compare(H, demNoData) == 0)
-                    || (!hasDemNoDataVal && H <= -9999)) {
+                        || (hasDemNoDataVal && Double.compare(H, demNoData) == 0)
+                        || (!hasDemNoDataVal && H <= -9999)) {
                     outRaster.setSample(outputX, outputY, 0, (float) outputNoData);
                 } else {
                     double N = geoRaster.getSampleDouble(x, y, 0);
@@ -619,23 +621,23 @@ public class RasterStandardizer {
         }
 
         TiledImage image = new TiledImage(
-            raster.getMinX(),
-            raster.getMinY(),
-            raster.getWidth(),
-            raster.getHeight(),
-            raster.getMinX(),
-            raster.getMinY(),
-            raster.getSampleModel(),
-            createColorModel(raster.getSampleModel())
+                raster.getMinX(),
+                raster.getMinY(),
+                raster.getWidth(),
+                raster.getHeight(),
+                raster.getMinX(),
+                raster.getMinY(),
+                raster.getSampleModel(),
+                createColorModel(raster.getSampleModel())
         );
         image.setData(raster);
         return new GridCoverageFactory().create(
-            sourceCoverage.getName(),
-            image,
-            envelope,
-            null,
-            null,
-            createNoDataProperties(sourceCoverage)
+                sourceCoverage.getName(),
+                image,
+                envelope,
+                null,
+                null,
+                createNoDataProperties(sourceCoverage)
         );
     }
 
@@ -657,24 +659,24 @@ public class RasterStandardizer {
         int numBands = sampleModel.getNumBands();
         if (numBands == 1) {
             return new ComponentColorModel(
-                ColorSpace.getInstance(ColorSpace.CS_GRAY),
-                sampleModel.getSampleSize(),
-                false,
-                false,
-                Transparency.OPAQUE,
-                sampleModel.getDataType()
+                    ColorSpace.getInstance(ColorSpace.CS_GRAY),
+                    sampleModel.getSampleSize(),
+                    false,
+                    false,
+                    Transparency.OPAQUE,
+                    sampleModel.getDataType()
             );
         }
 
         if (numBands == 3 || numBands == 4) {
             boolean hasAlpha = numBands == 4;
             return new ComponentColorModel(
-                ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                sampleModel.getSampleSize(),
-                hasAlpha,
-                false,
-                hasAlpha ? Transparency.TRANSLUCENT : Transparency.OPAQUE,
-                sampleModel.getDataType()
+                    ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                    sampleModel.getSampleSize(),
+                    hasAlpha,
+                    false,
+                    hasAlpha ? Transparency.TRANSLUCENT : Transparency.OPAQUE,
+                    sampleModel.getDataType()
             );
         }
 
@@ -699,8 +701,6 @@ public class RasterStandardizer {
         return Raster.createWritableRaster(translatedRaster.getSampleModel(), translatedRaster.getDataBuffer(), new Point(0, 0));
     }
 
-    private record RasterCopyResult(WritableRaster raster, boolean allNoData) {}
-
     private File createOutputTileFile(File sourceOutputDirectory, String tileName, int tileIndex) {
         File shardDirectory = new File(sourceOutputDirectory, shardDirectoryName(tileIndex));
         if (!shardDirectory.exists() && !shardDirectory.mkdirs()) {
@@ -708,30 +708,6 @@ public class RasterStandardizer {
         }
         String uniqueTileName = tileName + "-" + UUID.randomUUID();
         return new File(shardDirectory, uniqueTileName + ".tif");
-    }
-
-    public static String sourceDirectoryName(String sourceIdentifier) {
-        String fileName = new File(sourceIdentifier).getName();
-        int extensionIndex = fileName.lastIndexOf('.');
-        String baseName = extensionIndex > 0 ? fileName.substring(0, extensionIndex) : fileName;
-        String sanitized = sanitizePathSegment(baseName);
-        String suffix = Integer.toHexString(sourceIdentifier.hashCode());
-        return sanitized + "-" + suffix;
-    }
-
-    public static String sanitizePathSegment(String value) {
-        String sanitized = value.replaceAll("[^a-zA-Z0-9._-]", "_");
-        if (sanitized.isBlank()) {
-            return "raster";
-        }
-        return sanitized;
-    }
-
-    private static String shardDirectoryName(int itemIndex) {
-        int shardIndex = Math.max(0, (itemIndex - 1) / MAX_FILES_PER_DIRECTORY);
-        int shardStart = shardIndex * MAX_FILES_PER_DIRECTORY;
-        int shardEnd = shardStart + MAX_FILES_PER_DIRECTORY - 1;
-        return String.format("batch-%05d-%05d", shardStart, shardEnd);
     }
 
     /**
@@ -772,4 +748,20 @@ public class RasterStandardizer {
         }
         return false;
     }
+
+    @FunctionalInterface
+    interface TileProcessor {
+        void process(String tileName, ReferencedEnvelope tileEnvelope) throws TransformException, IOException;
+    }
+
+    @FunctionalInterface
+    private interface TileDescriptorProcessor {
+        void process(TileDescriptor tileDescriptor) throws TransformException, IOException;
+    }
+
+    private record PreparedCoverage(GridCoverage2D coverage, boolean disposeAfterUse, boolean allNoData) {}
+
+    private record TileDescriptor(String tileName, GridEnvelope2D gridEnvelope, ReferencedEnvelope tileEnvelope) {}
+
+    private record RasterCopyResult(WritableRaster raster, boolean allNoData) {}
 }

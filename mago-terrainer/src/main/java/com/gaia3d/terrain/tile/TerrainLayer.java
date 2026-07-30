@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.tile.custom.AvailableTileSet;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;

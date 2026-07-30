@@ -15,16 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.image.BandedSampleModel;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.RenderedImage;
-import java.awt.image.Raster;
-import java.awt.image.SampleModel;
-import java.awt.image.WritableRaster;
+import java.awt.*;
+import java.awt.image.*;
 import java.util.List;
 import java.util.Vector;
 
@@ -172,7 +164,7 @@ class TerrainElevationDataTest {
         globalOptions.setNoDataValue(-9999.0);
 
         int rasterCount = 16;
-        int rasterSize = 32768 *  2;
+        int rasterSize = 32768 * 2;
         int tileSize = 256;
         TerrainElevationDataManager manager = new TerrainElevationDataManager();
         TerrainElevationDataQuadTree root = new TerrainElevationDataQuadTree(null);

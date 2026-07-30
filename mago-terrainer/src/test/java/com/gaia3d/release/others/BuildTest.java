@@ -19,6 +19,8 @@ public class BuildTest {
                 "-input", inputPath2.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
                 "-calculateNormals",
+                "-continue",
+                "-skipStandardizationResize",
                 "-geoid", "EGM2008",
         };
         Mago3DTerrainerMain.main(args);

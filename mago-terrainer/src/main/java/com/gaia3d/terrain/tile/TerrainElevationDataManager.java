@@ -205,8 +205,8 @@ public class TerrainElevationDataManager {
 
     public void setTerrainElevationDataFiles(List<File> terrainElevationDataFiles) {
         this.terrainElevationDataFiles = terrainElevationDataFiles == null
-            ? new ArrayList<>()
-            : new ArrayList<>(terrainElevationDataFiles);
+                ? new ArrayList<>()
+                : new ArrayList<>(terrainElevationDataFiles);
     }
 
     public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager,
@@ -233,8 +233,8 @@ public class TerrainElevationDataManager {
     }
 
     public List<TerrainElevationData> getTerrainElevationDataArray(
-        GeographicExtension geoExtension,
-        List<TerrainElevationData> resultTerrainElevDataArray
+            GeographicExtension geoExtension,
+            List<TerrainElevationData> resultTerrainElevDataArray
     ) {
         if (rootTerrainElevationDataQuadTree == null) {
             return resultTerrainElevDataArray;
@@ -247,9 +247,9 @@ public class TerrainElevationDataManager {
         }
 
         rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(
-            geoExtension,
-            resultTerrainElevDataArray,
-            nextTerrainElevationDataQueryMark()
+                geoExtension,
+                resultTerrainElevDataArray,
+                nextTerrainElevationDataQueryMark()
         );
         return resultTerrainElevDataArray;
     }
@@ -355,8 +355,8 @@ public class TerrainElevationDataManager {
                 }
             }
             String priorityReferenceGeoTiffPath = standardizedGeoTiffFile != null
-                ? standardizedGeoTiffFile.getAbsolutePath()
-                : geoTiffFilePath;
+                    ? standardizedGeoTiffFile.getAbsolutePath()
+                    : geoTiffFilePath;
 
             // check if this geoTiff is usable
             if (mapNoUsableGeotiffPaths.containsKey(geoTiffFilePath)) {
@@ -453,7 +453,7 @@ public class TerrainElevationDataManager {
 
         if (loadedCount > 0) {
             log.debug("[Raster][Preload] Preloaded {} rasters (~{} MB) for current tile range.",
-                loadedCount, loadedBytes / (1024 * 1024));
+                    loadedCount, loadedBytes / (1024 * 1024));
         }
     }
 
@@ -468,8 +468,8 @@ public class TerrainElevationDataManager {
     }
 
     public void releaseTerrainElevationRastersOutsideGeographicExtension(
-        List<TerrainElevationData> terrainElevDataArray,
-        GeographicExtension retainArea
+            List<TerrainElevationData> terrainElevDataArray,
+            GeographicExtension retainArea
     ) {
         if (terrainElevDataArray == null || terrainElevDataArray.isEmpty() || retainArea == null) {
             return;
@@ -495,9 +495,9 @@ public class TerrainElevationDataManager {
 
         if (releasedCount > 0) {
             log.info("[Raster][Budget] Released {} tile rasters outside active block (~{} MB > budget {} MB).",
-                releasedCount,
-                loadedRasterBytes / (1024 * 1024),
-                liveRasterBudgetBytes / (1024 * 1024));
+                    releasedCount,
+                    loadedRasterBytes / (1024 * 1024),
+                    liveRasterBudgetBytes / (1024 * 1024));
         }
     }
 
@@ -517,14 +517,14 @@ public class TerrainElevationDataManager {
         }
 
         log.warn("[Raster][Budget] Live raster working set {} MB exceeds budget {} MB. Releasing non-intersecting rasters outside current tile window.",
-            loadedRasterBytes / (1024 * 1024),
-            liveRasterBudgetBytes / (1024 * 1024));
+                loadedRasterBytes / (1024 * 1024),
+                liveRasterBudgetBytes / (1024 * 1024));
 
         rootTerrainElevationDataQuadTree.deleteCoverageIfNoIntersectsGeoExtension(retainArea);
 
         long remainingRasterBytes = estimateLoadedRasterBytes(activeArea);
         log.info("[Raster][Budget] Live raster working set reduced to {} MB after trimming.",
-            remainingRasterBytes / (1024 * 1024));
+                remainingRasterBytes / (1024 * 1024));
     }
 
     private long estimateLoadedRasterBytes(GeographicExtension geographicExtension) {

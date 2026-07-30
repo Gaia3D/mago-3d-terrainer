@@ -1,12 +1,12 @@
 package com.gaia3d.quantized.mesh;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.tile.TileIndices;
 import com.gaia3d.terrain.tile.TileWgs84;
 import com.gaia3d.terrain.tile.TileWgs84Manager;
 import com.gaia3d.terrain.util.OctNormalFactory;
-import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.GlobeUtils;

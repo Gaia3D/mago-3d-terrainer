@@ -222,9 +222,9 @@ public class TerrainElevationDataQuadTree {
     }
 
     public void getTerrainElevationDataArray(
-        GeographicExtension geoExtension,
-        List<TerrainElevationData> resultTerrainElevDataArray,
-        int queryMark
+            GeographicExtension geoExtension,
+            List<TerrainElevationData> resultTerrainElevDataArray,
+            int queryMark
     ) {
         double minLonDeg = geoExtension.getMinLongitudeDeg();
         double minLatDeg = geoExtension.getMinLatitudeDeg();
@@ -234,12 +234,12 @@ public class TerrainElevationDataQuadTree {
     }
 
     private void getTerrainElevationDataArray(
-        double minLonDeg,
-        double minLatDeg,
-        double maxLonDeg,
-        double maxLatDeg,
-        List<TerrainElevationData> resultTerrainElevDataArray,
-        int queryMark
+            double minLonDeg,
+            double minLatDeg,
+            double maxLonDeg,
+            double maxLatDeg,
+            List<TerrainElevationData> resultTerrainElevDataArray,
+            int queryMark
     ) {
         for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
             if (terrainElevationData.getQueryMark() == queryMark) {
@@ -257,12 +257,12 @@ public class TerrainElevationDataQuadTree {
             for (int j = 0; j < CHILDREN_COUNT; j++) {
                 if (children[j].geographicExtension.intersects(minLonDeg, minLatDeg, maxLonDeg, maxLatDeg)) {
                     children[j].getTerrainElevationDataArray(
-                        minLonDeg,
-                        minLatDeg,
-                        maxLonDeg,
-                        maxLatDeg,
-                        resultTerrainElevDataArray,
-                        queryMark
+                            minLonDeg,
+                            minLatDeg,
+                            maxLonDeg,
+                            maxLatDeg,
+                            resultTerrainElevDataArray,
+                            queryMark
                     );
                 }
             }

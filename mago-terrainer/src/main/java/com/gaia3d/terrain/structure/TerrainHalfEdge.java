@@ -200,7 +200,7 @@ public class TerrainHalfEdge {
     }
 
     public boolean isHalfEdgePossibleTwin(TerrainHalfEdge halfEdge, double error) {
-        if(halfEdge == null || halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
+        if (halfEdge == null || halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
             return false;
         }
 
@@ -211,7 +211,7 @@ public class TerrainHalfEdge {
         TerrainVertex startPoint_B = halfEdge.getStartVertex();
         TerrainVertex endPoint_B = halfEdge.getEndVertex();
 
-        if(startPoint_A == null || endPoint_A == null || startPoint_B == null || endPoint_B == null) {
+        if (startPoint_A == null || endPoint_A == null || startPoint_B == null || endPoint_B == null) {
             log.error("Error: startPoint_A, endPoint_A, startPoint_B or endPoint_B is null");
             return false;
         }
@@ -300,7 +300,7 @@ public class TerrainHalfEdge {
         }
     }
 
-    public GaiaLine getLine(){
+    public GaiaLine getLine() {
         Vector3d startPos = this.getStartVertex().getPosition();
         Vector3d direction = getDirection();
         return new GaiaLine(startPos, direction);
@@ -312,20 +312,20 @@ public class TerrainHalfEdge {
 
         // 1rst, check if intersects with the line.
         GaiaLine line = this.getLine();
-        if(!line.intersectsPoint(point, error)) {
+        if (!line.intersectsPoint(point, error)) {
             return 0;
         }
 
         // check if the point is coincident with start point or end point.
         Vector3d startPoint = this.getStartVertex().getPosition();
         double dist = point.distance(startPoint);
-        if(dist < error) {
+        if (dist < error) {
             return 2;
         }
 
         Vector3d endPoint = this.getEndVertex().getPosition();
         double dist2 = endPoint.distance(startPoint);
-        if(dist2 < error) {
+        if (dist2 < error) {
             return 3;
         }
 
@@ -345,7 +345,7 @@ public class TerrainHalfEdge {
             double dx = point.x - startPoint.x;
             double dy = point.y - startPoint.y;
             double dz = point.z - startPoint.z;
-            if((dx*dx + dy*dy + dz*dz) < error * error) {
+            if ((dx * dx + dy * dy + dz * dz) < error * error) {
                 return 2;
             }
         }
@@ -369,7 +369,7 @@ public class TerrainHalfEdge {
         double dz = point.z - projz;
 
         double distSq = dx * dx + dy * dy + dz * dz;
-        if(distSq < error * error) {
+        if (distSq < error * error) {
             intersectionType = 1;
         }
 

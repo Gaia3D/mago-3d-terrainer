@@ -37,7 +37,7 @@ public class LoggingConfiguration {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
 
         removeAllAppender(loggerConfig);
-        
+
         if (pattern == null) {
             pattern = DEFAULT_PATTERN;
         }
@@ -56,7 +56,7 @@ public class LoggingConfiguration {
         loggerConfig.setLevel(level);
         ctx.updateLoggers();
     }
-    
+
     public static void initConsoleLogger() {
         initConsoleLogger(null);
     }

@@ -29,12 +29,11 @@ import java.util.*;
 @Slf4j
 @NoArgsConstructor
 public class TerrainMesh {
+    private final Set<Integer> splittingTriangles = new HashSet<>();
     public List<TerrainVertex> vertices = new ArrayList<>();
     public List<TerrainTriangle> triangles = new ArrayList<>();
     public List<TerrainHalfEdge> halfEdges = new ArrayList<>();
-
     public int id = -1;
-    private final Set<Integer> splittingTriangles = new HashSet<>();
 
     public void deleteObjects() {
         for (TerrainVertex vertex : vertices) {
@@ -201,7 +200,7 @@ public class TerrainMesh {
         // This function returns the halfEdges that have the type and the twin is null
         List<TerrainHalfEdge> halfEdges = new ArrayList<>();
         for (TerrainHalfEdge halfEdge : this.halfEdges) {
-            if(halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED){
+            if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
             if (halfEdge.getType() == type && halfEdge.getTwin() == null) {
@@ -435,7 +434,7 @@ public class TerrainMesh {
                         } else {
                             // No valid replacement found - vertex will be isolated
                             log.debug("Vertex {} will be isolated after triangle {} deletion",
-                                     vertex.getId(), triangle.getId());
+                                    vertex.getId(), triangle.getId());
                             // Clear the outingHEdge reference and mark vertex as DELETED
                             vertex.setOutingHEdge(null);
                             vertex.setObjectStatus(TerrainObjectStatus.DELETED);
@@ -478,8 +477,8 @@ public class TerrainMesh {
         // LAST RESORT: Exhaustive search through all half-edges
         for (TerrainHalfEdge halfEdge : this.halfEdges) {
             if (halfEdge.getStartVertex() == vertex &&
-                halfEdge != excludeHEdge &&
-                halfEdge.getObjectStatus() != TerrainObjectStatus.DELETED) {
+                    halfEdge != excludeHEdge &&
+                    halfEdge.getObjectStatus() != TerrainObjectStatus.DELETED) {
                 log.debug("Found replacement outingHEdge for vertex {} via exhaustive search", vertex.getId());
                 return halfEdge;
             }
@@ -514,7 +513,7 @@ public class TerrainMesh {
             TerrainHalfEdge halfEdge = triangle.getLongestHalfEdge(listHalfEdges);
             if (halfEdge == null) {
                 log.warn("Triangle {} has no valid longest half-edge during mesh validation. Marking mesh as invalid.",
-                         triangle.getId());
+                        triangle.getId());
                 return false;
             }
             if (halfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
@@ -535,7 +534,7 @@ public class TerrainMesh {
                     listHalfEdges.clear();
                     if (adjacentTriangleLongestHalfEdge == null) {
                         log.warn("Adjacent triangle {} has no valid longest half-edge during mesh validation.",
-                                 adjacentTriangle.getId());
+                                adjacentTriangle.getId());
                         return false;
                     }
                     if (adjacentTriangleLongestHalfEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
@@ -580,426 +579,426 @@ public class TerrainMesh {
         // the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
-        if(stack == null){
+        if (stack == null) {
             stack = new int[1];
             stack[0] = 0;
         }
         splittingTriangles.add(triangle.getId());
         try {
-        byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
-        listHalfEdges.clear();
-        TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify, stack);
-        if (adjacentTriangle == null) {
-            // the triangle is border triangle, so is splittable
+            byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
             listHalfEdges.clear();
-            TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
-            if (longestHEdge == null) {
-                log.warn("Cannot split degenerate triangle {} (no edges with length > 0). Marking as deleted.",
-                         triangle.getId());
-                triangle.setObjectStatus(TerrainObjectStatus.DELETED);
-                return;
-            }
-            TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
-            TerrainHalfEdge nextHEdge = longestHEdge.getNext();
+            TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify, stack);
+            if (adjacentTriangle == null) {
+                // the triangle is border triangle, so is splittable
+                listHalfEdges.clear();
+                TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
+                if (longestHEdge == null) {
+                    log.warn("Cannot split degenerate triangle {} (no edges with length > 0). Marking as deleted.",
+                            triangle.getId());
+                    triangle.setObjectStatus(TerrainObjectStatus.DELETED);
+                    return;
+                }
+                TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
+                TerrainHalfEdge nextHEdge = longestHEdge.getNext();
 
-            // keep the twin of the longestHEdge, prevHEdge and nextHEdge
-            TerrainHalfEdge longestHEdgeTwin = longestHEdge.getTwin();
-            TerrainHalfEdge prevHEdgeTwin = prevHEdge.getTwin();
-            TerrainHalfEdge nextHEdgeTwin = nextHEdge.getTwin();
+                // keep the twin of the longestHEdge, prevHEdge and nextHEdge
+                TerrainHalfEdge longestHEdgeTwin = longestHEdge.getTwin();
+                TerrainHalfEdge prevHEdgeTwin = prevHEdge.getTwin();
+                TerrainHalfEdge nextHEdgeTwin = nextHEdge.getTwin();
 
-            // in this case, the twin is null
-            Vector3d midPosition = longestHEdge.getMidPosition();
-            double beforeZ = midPosition.z;
+                // in this case, the twin is null
+                Vector3d midPosition = longestHEdge.getMidPosition();
+                double beforeZ = midPosition.z;
 
-            // now determine the elevation of the midPoint
-            TileIndices tileIndices = triangle.getOwnerTileIndices();
+                // now determine the elevation of the midPoint
+                TileIndices tileIndices = triangle.getOwnerTileIndices();
 
-            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
-                    midPosition.x, midPosition.y, intersectionType);
+                double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                        midPosition.x, midPosition.y, intersectionType);
 
-            // check if z is valid value.
-            if (Double.isNaN(z)) {
-                log.info("getElevationBilinear: resultElevation is NaN");
-                z = beforeZ;
-            }
-
-            if(isModify){
-                if(intersectionType[0] != 1){
-                    // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                // check if z is valid value.
+                if (Double.isNaN(z)) {
+                    log.info("getElevationBilinear: resultElevation is NaN");
                     z = beforeZ;
                 }
-            }
 
-            midPosition.z = z; // assign the z value.
-            if (Double.isNaN(midPosition.z)) {
-                log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
-                         triangle.getId());
-                // Fallback: use the average of the edge endpoints (beforeZ)
-                midPosition.z = beforeZ;
-            }
-            TerrainVertex midVertex = newVertex();
-            midVertex.setPosition(midPosition);
+                if (isModify) {
+                    if (intersectionType[0] != 1) {
+                        // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                        z = beforeZ;
+                    }
+                }
 
-            // find the opposite vertex of the longestHEdge
-            // In a triangle, the opposite vertex of the longestHEdge is the startVertex of the prevHEdge of the longestHEdge
+                midPosition.z = z; // assign the z value.
+                if (Double.isNaN(midPosition.z)) {
+                    log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
+                            triangle.getId());
+                    // Fallback: use the average of the edge endpoints (beforeZ)
+                    midPosition.z = beforeZ;
+                }
+                TerrainVertex midVertex = newVertex();
+                midVertex.setPosition(midPosition);
 
-            TerrainVertex oppositeVertex = prevHEdge.getStartVertex();
+                // find the opposite vertex of the longestHEdge
+                // In a triangle, the opposite vertex of the longestHEdge is the startVertex of the prevHEdge of the longestHEdge
 
-            //                        oppositeVertex
-            //                            / \
-            //                         /       \
-            //  longestEdge_prev--->/             \<-- longestHEdge_next
-            //                   /        T          \
-            //                /                         \
-            //             /                               \
-            //          +------------------+------------------+
-            //                        midVertex    ^
-            //                                     |
-            //                                     |
-            //                                     +-- longestHEdge
+                TerrainVertex oppositeVertex = prevHEdge.getStartVertex();
 
-            // split the triangle
-            // First, create 2 new triangles
+                //                        oppositeVertex
+                //                            / \
+                //                         /       \
+                //  longestEdge_prev--->/             \<-- longestHEdge_next
+                //                   /        T          \
+                //                /                         \
+                //             /                               \
+                //          +------------------+------------------+
+                //                        midVertex    ^
+                //                                     |
+                //                                     |
+                //                                     +-- longestHEdge
 
-            //                      oppositeVertex
-            //                            / \
-            //                         /   |   \
-            //                      /      |      \
-            //                   /         |         \
-            //                /    A       |     B      \
-            //             /   halfEdgeA1 | halfEdgeB1   \
-            //          +------------------+------------------+ <-- longestHEdgeEndVertex
-            //          ^            midVertex    ^
-            //          |                         |
-            //          |                         |
-            //          |                         +-- longestHEdge
-            //          |
-            //          +-- longestHEdgeStartVertex
+                // split the triangle
+                // First, create 2 new triangles
 
-            TerrainVertex longestHEdgeStartVertex = longestHEdge.getStartVertex();
-            TerrainVertex longestHEdgeEndVertex = longestHEdge.getEndVertex();
+                //                      oppositeVertex
+                //                            / \
+                //                         /   |   \
+                //                      /      |      \
+                //                   /         |         \
+                //                /    A       |     B      \
+                //             /   halfEdgeA1 | halfEdgeB1   \
+                //          +------------------+------------------+ <-- longestHEdgeEndVertex
+                //          ^            midVertex    ^
+                //          |                         |
+                //          |                         |
+                //          |                         +-- longestHEdge
+                //          |
+                //          +-- longestHEdgeStartVertex
 
-            // TriangleA
-            TerrainHalfEdge halfEdgeA1 = newHalfEdge();
-            halfEdgeA1.setType(longestHEdge.getType());
-            TerrainHalfEdge halfEdgeA2 = newHalfEdge();
-            halfEdgeA2.setType(TerrainHalfEdgeType.INTERIOR);
-            TerrainHalfEdge halfEdgeA3 = newHalfEdge();
-            halfEdgeA3.setType(prevHEdge.getType());
+                TerrainVertex longestHEdgeStartVertex = longestHEdge.getStartVertex();
+                TerrainVertex longestHEdgeEndVertex = longestHEdge.getEndVertex();
 
-            // set vertex to the new halfEdges
-            halfEdgeA1.setStartVertex(longestHEdgeStartVertex);
-            halfEdgeA2.setStartVertex(midVertex);
-            halfEdgeA3.setStartVertex(oppositeVertex);
+                // TriangleA
+                TerrainHalfEdge halfEdgeA1 = newHalfEdge();
+                halfEdgeA1.setType(longestHEdge.getType());
+                TerrainHalfEdge halfEdgeA2 = newHalfEdge();
+                halfEdgeA2.setType(TerrainHalfEdgeType.INTERIOR);
+                TerrainHalfEdge halfEdgeA3 = newHalfEdge();
+                halfEdgeA3.setType(prevHEdge.getType());
 
-            TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeA1, halfEdgeA2, halfEdgeA3);
-            TerrainTriangle triangleA = newTriangle();
-            triangleA.setHalfEdge(halfEdgeA1);
-            triangleA.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
-            triangleA.setSplitDepth(triangle.getSplitDepth() + 1);
+                // set vertex to the new halfEdges
+                halfEdgeA1.setStartVertex(longestHEdgeStartVertex);
+                halfEdgeA2.setStartVertex(midVertex);
+                halfEdgeA3.setStartVertex(oppositeVertex);
 
-            // put the new triangle in the result list
-            resultNewTriangles.add(triangleA);
+                TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeA1, halfEdgeA2, halfEdgeA3);
+                TerrainTriangle triangleA = newTriangle();
+                triangleA.setHalfEdge(halfEdgeA1);
+                triangleA.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
+                triangleA.setSplitDepth(triangle.getSplitDepth() + 1);
 
-            // TriangleB
-            TerrainHalfEdge halfEdgeB1 = newHalfEdge();
-            halfEdgeB1.setType(longestHEdge.getType());
-            TerrainHalfEdge halfEdgeB2 = newHalfEdge();
-            halfEdgeB2.setType(nextHEdge.getType());
-            TerrainHalfEdge halfEdgeB3 = newHalfEdge();
-            halfEdgeB3.setType(TerrainHalfEdgeType.INTERIOR);
+                // put the new triangle in the result list
+                resultNewTriangles.add(triangleA);
 
-            // set vertex to the new halfEdges
-            halfEdgeB1.setStartVertex(midVertex);
-            halfEdgeB2.setStartVertex(longestHEdgeEndVertex);
-            halfEdgeB3.setStartVertex(oppositeVertex);
+                // TriangleB
+                TerrainHalfEdge halfEdgeB1 = newHalfEdge();
+                halfEdgeB1.setType(longestHEdge.getType());
+                TerrainHalfEdge halfEdgeB2 = newHalfEdge();
+                halfEdgeB2.setType(nextHEdge.getType());
+                TerrainHalfEdge halfEdgeB3 = newHalfEdge();
+                halfEdgeB3.setType(TerrainHalfEdgeType.INTERIOR);
 
-            TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeB1, halfEdgeB2, halfEdgeB3);
-            TerrainTriangle triangleB = newTriangle();
-            triangleB.setHalfEdge(halfEdgeB1);
-            triangleB.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
-            triangleB.setSplitDepth(triangle.getSplitDepth() + 1);
+                // set vertex to the new halfEdges
+                halfEdgeB1.setStartVertex(midVertex);
+                halfEdgeB2.setStartVertex(longestHEdgeEndVertex);
+                halfEdgeB3.setStartVertex(oppositeVertex);
 
-            // put the new triangle in the result list
-            resultNewTriangles.add(triangleB);
+                TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeB1, halfEdgeB2, halfEdgeB3);
+                TerrainTriangle triangleB = newTriangle();
+                triangleB.setHalfEdge(halfEdgeB1);
+                triangleB.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
+                triangleB.setSplitDepth(triangle.getSplitDepth() + 1);
 
-            // now, set the twins
-            // the halfEdgeA1 and halfEdgeB1 has no twins
-            halfEdgeA2.setTwin(halfEdgeB3);
-            halfEdgeA3.setTwin(prevHEdgeTwin);
-            halfEdgeB2.setTwin(nextHEdgeTwin);
+                // put the new triangle in the result list
+                resultNewTriangles.add(triangleB);
 
-            // now set the triangles of halfEdges
-            halfEdgeA1.setTriangle(triangleA);
-            halfEdgeA2.setTriangle(triangleA);
-            halfEdgeA3.setTriangle(triangleA);
+                // now, set the twins
+                // the halfEdgeA1 and halfEdgeB1 has no twins
+                halfEdgeA2.setTwin(halfEdgeB3);
+                halfEdgeA3.setTwin(prevHEdgeTwin);
+                halfEdgeB2.setTwin(nextHEdgeTwin);
 
-            halfEdgeB1.setTriangle(triangleB);
-            halfEdgeB2.setTriangle(triangleB);
-            halfEdgeB3.setTriangle(triangleB);
+                // now set the triangles of halfEdges
+                halfEdgeA1.setTriangle(triangleA);
+                halfEdgeA2.setTriangle(triangleA);
+                halfEdgeA3.setTriangle(triangleA);
 
-            // now delete the triangle
-            disableTriangle(triangle);
+                halfEdgeB1.setTriangle(triangleB);
+                halfEdgeB2.setTriangle(triangleB);
+                halfEdgeB3.setTriangle(triangleB);
 
-            longestHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
-            longestHEdge.deleteObjects();
-            prevHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
-            prevHEdge.deleteObjects();
-            nextHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
-            nextHEdge.deleteObjects();
-        } else {
-            // split the 2 triangles
-            //                                        oppVtx_T
-            //                                          / \
-            //                                       /       \
-            //                                    /             \
-            //             longestEdge_prev--->/         T         \<-- longestHEdge_next
-            //                              /                         \
-            //                           /         longestHEdge          \
-            //  longestHEdge_strVtx--> +-------------------------------------+  <-- longestHEdge_endVertex
-            //                           \       longestHEdgeAdjT         /
-            //                              \                          /
-            //                                 \       adjT         /<-- longestHEdgeAdjT_prev
-            //            longestEdgeAdjT_next--->\              /
-            //                                       \        /
-            //                                          \  /
-            //                                       oppVtx_AdjT
+                // now delete the triangle
+                disableTriangle(triangle);
 
-            listHalfEdges.clear();
-            TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
-            if (longestHEdge == null) {
-                log.warn("Cannot split degenerate triangle {} (no edges with length > 0). Marking as deleted.",
-                         triangle.getId());
-                triangle.setObjectStatus(TerrainObjectStatus.DELETED);
-                return;
-            }
-            TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
-            TerrainHalfEdge nextHEdge = longestHEdge.getNext();
+                longestHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
+                longestHEdge.deleteObjects();
+                prevHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
+                prevHEdge.deleteObjects();
+                nextHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
+                nextHEdge.deleteObjects();
+            } else {
+                // split the 2 triangles
+                //                                        oppVtx_T
+                //                                          / \
+                //                                       /       \
+                //                                    /             \
+                //             longestEdge_prev--->/         T         \<-- longestHEdge_next
+                //                              /                         \
+                //                           /         longestHEdge          \
+                //  longestHEdge_strVtx--> +-------------------------------------+  <-- longestHEdge_endVertex
+                //                           \       longestHEdgeAdjT         /
+                //                              \                          /
+                //                                 \       adjT         /<-- longestHEdgeAdjT_prev
+                //            longestEdgeAdjT_next--->\              /
+                //                                       \        /
+                //                                          \  /
+                //                                       oppVtx_AdjT
 
-            listHalfEdges.clear();
-            TerrainHalfEdge longestHEdgeAdjT = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
-            if (longestHEdgeAdjT == null) {
-                log.warn("Cannot split degenerate adjacent triangle {} (no edges with length > 0). Marking as deleted.",
-                         adjacentTriangle.getId());
-                adjacentTriangle.setObjectStatus(TerrainObjectStatus.DELETED);
-                return;
-            }
-            TerrainHalfEdge prevHEdgeAdjT = longestHEdgeAdjT.getPrev();
-            TerrainHalfEdge nextHEdgeAdjT = longestHEdgeAdjT.getNext();
+                listHalfEdges.clear();
+                TerrainHalfEdge longestHEdge = triangle.getLongestHalfEdge(listHalfEdges);
+                if (longestHEdge == null) {
+                    log.warn("Cannot split degenerate triangle {} (no edges with length > 0). Marking as deleted.",
+                            triangle.getId());
+                    triangle.setObjectStatus(TerrainObjectStatus.DELETED);
+                    return;
+                }
+                TerrainHalfEdge prevHEdge = longestHEdge.getPrev();
+                TerrainHalfEdge nextHEdge = longestHEdge.getNext();
 
-            // keep the twin of the longestHEdge, prevHEdge and nextHEdge
-            TerrainHalfEdge longestHEdge_twin = longestHEdge.getTwin();
-            TerrainHalfEdge prevHEdge_twin = prevHEdge.getTwin();
-            TerrainHalfEdge nextHEdge_twin = nextHEdge.getTwin();
+                listHalfEdges.clear();
+                TerrainHalfEdge longestHEdgeAdjT = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
+                if (longestHEdgeAdjT == null) {
+                    log.warn("Cannot split degenerate adjacent triangle {} (no edges with length > 0). Marking as deleted.",
+                            adjacentTriangle.getId());
+                    adjacentTriangle.setObjectStatus(TerrainObjectStatus.DELETED);
+                    return;
+                }
+                TerrainHalfEdge prevHEdgeAdjT = longestHEdgeAdjT.getPrev();
+                TerrainHalfEdge nextHEdgeAdjT = longestHEdgeAdjT.getNext();
 
-            // keep the twin of the longestHEdgeAdjT, prevHEdgeAdjT and nextHEdgeAdjT
-            TerrainHalfEdge longestHEdgeAdjT_twin = longestHEdgeAdjT.getTwin();
-            TerrainHalfEdge prevHEdgeAdjT_twin = prevHEdgeAdjT.getTwin();
-            TerrainHalfEdge nextHEdgeAdjT_twin = nextHEdgeAdjT.getTwin();
+                // keep the twin of the longestHEdge, prevHEdge and nextHEdge
+                TerrainHalfEdge longestHEdge_twin = longestHEdge.getTwin();
+                TerrainHalfEdge prevHEdge_twin = prevHEdge.getTwin();
+                TerrainHalfEdge nextHEdge_twin = nextHEdge.getTwin();
 
-            // need know the oppVtx_T and oppVtx_AdjT
-            TerrainVertex oppVtx_T = prevHEdge.getStartVertex();
-            TerrainVertex oppVtx_AdjT = prevHEdgeAdjT.getStartVertex();
+                // keep the twin of the longestHEdgeAdjT, prevHEdgeAdjT and nextHEdgeAdjT
+                TerrainHalfEdge longestHEdgeAdjT_twin = longestHEdgeAdjT.getTwin();
+                TerrainHalfEdge prevHEdgeAdjT_twin = prevHEdgeAdjT.getTwin();
+                TerrainHalfEdge nextHEdgeAdjT_twin = nextHEdgeAdjT.getTwin();
 
-            // need know the midVertex
-            Vector3d midPosition = longestHEdge.getMidPosition();
-            double beforeZ = midPosition.z;
-            TerrainVertex midVertex = newVertex();
+                // need know the oppVtx_T and oppVtx_AdjT
+                TerrainVertex oppVtx_T = prevHEdge.getStartVertex();
+                TerrainVertex oppVtx_AdjT = prevHEdgeAdjT.getStartVertex();
 
-            // now determine the elevation of the midPoint
-            TileIndices tileIndices = triangle.getOwnerTileIndices();
-            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
-                    midPosition.x, midPosition.y, intersectionType);
+                // need know the midVertex
+                Vector3d midPosition = longestHEdge.getMidPosition();
+                double beforeZ = midPosition.z;
+                TerrainVertex midVertex = newVertex();
 
-            // check if z is valid value.
-            if (Double.isNaN(z)) {
-                log.info("getElevationBilinear: resultElevation is NaN");
-                z = beforeZ;
-            }
+                // now determine the elevation of the midPoint
+                TileIndices tileIndices = triangle.getOwnerTileIndices();
+                double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                        midPosition.x, midPosition.y, intersectionType);
 
-            if (isModify) {
-                if (intersectionType[0] != 1) {
-                    // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                // check if z is valid value.
+                if (Double.isNaN(z)) {
+                    log.info("getElevationBilinear: resultElevation is NaN");
                     z = beforeZ;
                 }
+
+                if (isModify) {
+                    if (intersectionType[0] != 1) {
+                        // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
+                        z = beforeZ;
+                    }
+                }
+
+                midPosition.z = z; // assign the z value.
+                if (Double.isNaN(midPosition.z)) {
+                    log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
+                            triangle.getId());
+                    // Fallback: calculate average elevation from the edge endpoints
+                    TerrainVertex startVertex = longestHEdge.getStartVertex();
+                    TerrainVertex endVertex = longestHEdge.getEndVertex();
+                    midPosition.z = (startVertex.getPosition().z + endVertex.getPosition().z) / 2.0;
+                }
+                midVertex.setPosition(midPosition);
+
+                // need longEdge_startVertex and longEdge_endVertex
+                TerrainVertex longEdge_startVertex = longestHEdge.getStartVertex();
+                TerrainVertex longEdge_endVertex = longestHEdge.getEndVertex();
+
+                // A triangle is split by the longest edge
+                //                                        oppVtx_T
+                //                                           / \
+                //                                        /   |   \
+                //                longestEdge_prev---> /      |      \ <-- longestHEdge_next
+                //                                  /         |         \
+                //                               /    A       |     B      \
+                //                            /   halfEdgeA1 | halfEdgeB1   \
+                // longestHEdge_strVtx-->  +------------------+------------------+ <-- longestHEdge_endVertex
+                //                            \   halfEdge_C1 | halfEdge_D1   /
+                //                               \      C     |     D      /
+                //                                  \         |         / <-- longestHEdgeAdjT_prev
+                //            longestEdgeAdjT_next---> \      |      /
+                //                                        \   |   /
+                //                                           \ /
+                //                                        oppVtx_AdjT
+
+                // split the triangle
+                // First, create 4 new triangles
+                // triangleA
+                TerrainHalfEdge halfEdgeA1 = newHalfEdge();
+                halfEdgeA1.setType(longestHEdge.getType());
+                TerrainHalfEdge halfEdgeA2 = newHalfEdge();
+                halfEdgeA2.setType(TerrainHalfEdgeType.INTERIOR);
+                TerrainHalfEdge halfEdgeA3 = newHalfEdge();
+                halfEdgeA3.setType(prevHEdge.getType());
+
+                // set vertex to the new halfEdges
+                halfEdgeA1.setStartVertex(longEdge_startVertex);
+                halfEdgeA2.setStartVertex(midVertex);
+                halfEdgeA3.setStartVertex(oppVtx_T);
+
+                TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeA1, halfEdgeA2, halfEdgeA3);
+                TerrainTriangle triangleA = newTriangle();
+                triangleA.setHalfEdge(halfEdgeA1);
+                triangleA.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
+                triangleA.setSplitDepth(triangle.getSplitDepth() + 1);
+
+                // put the new triangle in the result list
+                resultNewTriangles.add(triangleA);
+
+                // triangleB
+                TerrainHalfEdge halfEdgeB1 = newHalfEdge();
+                halfEdgeB1.setType(longestHEdge.getType());
+                TerrainHalfEdge halfEdgeB2 = newHalfEdge();
+                halfEdgeB2.setType(nextHEdge.getType());
+                TerrainHalfEdge halfEdgeB3 = newHalfEdge();
+                halfEdgeB3.setType(TerrainHalfEdgeType.INTERIOR);
+
+                // set vertex to the new halfEdges
+                halfEdgeB1.setStartVertex(midVertex);
+                halfEdgeB2.setStartVertex(longEdge_endVertex);
+                halfEdgeB3.setStartVertex(oppVtx_T);
+
+                TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeB1, halfEdgeB2, halfEdgeB3);
+                TerrainTriangle triangleB = newTriangle();
+                triangleB.setHalfEdge(halfEdgeB1);
+                triangleB.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
+                triangleB.setSplitDepth(triangle.getSplitDepth() + 1);
+
+                // put the new triangle in the result list
+                resultNewTriangles.add(triangleB);
+
+                // triangle_C
+                TerrainHalfEdge halfEdge_C1 = newHalfEdge();
+                halfEdge_C1.setType(longestHEdgeAdjT.getType());
+                TerrainHalfEdge halfEdge_C2 = newHalfEdge();
+                halfEdge_C2.setType(nextHEdgeAdjT.getType());
+                TerrainHalfEdge halfEdge_C3 = newHalfEdge();
+                halfEdge_C3.setType(TerrainHalfEdgeType.INTERIOR);
+
+                // set vertex to the new halfEdges
+                halfEdge_C1.setStartVertex(midVertex);
+                halfEdge_C2.setStartVertex(longEdge_startVertex);
+                halfEdge_C3.setStartVertex(oppVtx_AdjT);
+
+                TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_C1, halfEdge_C2, halfEdge_C3);
+                TerrainTriangle triangleC = newTriangle();
+                triangleC.setHalfEdge(halfEdge_C1);
+                triangleC.getOwnerTileIndices().copyFrom(adjacentTriangle.getOwnerTileIndices());
+                triangleC.setSplitDepth(adjacentTriangle.getSplitDepth() + 1);
+
+                // put the new triangle in the result list
+                resultNewTriangles.add(triangleC);
+
+                // triangle_D
+                TerrainHalfEdge halfEdge_D1 = newHalfEdge();
+                halfEdge_D1.setType(longestHEdgeAdjT.getType());
+                TerrainHalfEdge halfEdge_D2 = newHalfEdge();
+                halfEdge_D2.setType(TerrainHalfEdgeType.INTERIOR);
+                TerrainHalfEdge halfEdge_D3 = newHalfEdge();
+                halfEdge_D3.setType(prevHEdgeAdjT.getType());
+
+                // set vertex to the new halfEdges
+                halfEdge_D1.setStartVertex(longEdge_endVertex);
+                halfEdge_D2.setStartVertex(midVertex);
+                halfEdge_D3.setStartVertex(oppVtx_AdjT);
+
+                TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_D1, halfEdge_D2, halfEdge_D3);
+                TerrainTriangle triangleD = newTriangle();
+                triangleD.setHalfEdge(halfEdge_D1);
+                triangleD.getOwnerTileIndices().copyFrom(adjacentTriangle.getOwnerTileIndices());
+                triangleD.setSplitDepth(adjacentTriangle.getSplitDepth() + 1);
+
+                // put the new triangle in the result list
+                resultNewTriangles.add(triangleD);
+
+                // now, set the twins
+                // here, all newHEdges has twins
+                halfEdgeA1.setTwin(halfEdge_C1);
+                halfEdgeA2.setTwin(halfEdgeB3);
+                halfEdgeA3.setTwin(prevHEdge_twin);
+
+                halfEdgeB1.setTwin(halfEdge_D1);
+                halfEdgeB2.setTwin(nextHEdge_twin);
+                //halfEdgeB3.setTwin(halfEdgeA2); // redundant
+
+                //halfEdge_C1.setTwin(halfEdgeA1); // redundant
+                halfEdge_C2.setTwin(nextHEdgeAdjT_twin);
+                halfEdge_C3.setTwin(halfEdge_D2);
+
+                //halfEdge_D1.setTwin(halfEdgeB1); // redundant
+                //halfEdge_D2.setTwin(halfEdge_C3); // redundant
+                halfEdge_D3.setTwin(prevHEdgeAdjT_twin);
+
+                // now set the triangles of halfEdges
+                halfEdgeA1.setTriangle(triangleA);
+                halfEdgeA2.setTriangle(triangleA);
+                halfEdgeA3.setTriangle(triangleA);
+
+                halfEdgeB1.setTriangle(triangleB);
+                halfEdgeB2.setTriangle(triangleB);
+                halfEdgeB3.setTriangle(triangleB);
+
+                halfEdge_C1.setTriangle(triangleC);
+                halfEdge_C2.setTriangle(triangleC);
+                halfEdge_C3.setTriangle(triangleC);
+
+                halfEdge_D1.setTriangle(triangleD);
+                halfEdge_D2.setTriangle(triangleD);
+                halfEdge_D3.setTriangle(triangleD);
+
+                // now delete the triangles
+                disableTriangle(triangle);
+                disableTriangle(adjacentTriangle);
+
+                // disable hedges
+                longestHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
+                longestHEdge.deleteObjects();
+                prevHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
+                prevHEdge.deleteObjects();
+                nextHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
+                nextHEdge.deleteObjects();
+
+                longestHEdgeAdjT.setObjectStatus(TerrainObjectStatus.DELETED);
+                longestHEdgeAdjT.deleteObjects();
+                prevHEdgeAdjT.setObjectStatus(TerrainObjectStatus.DELETED);
+                prevHEdgeAdjT.deleteObjects();
+                nextHEdgeAdjT.setObjectStatus(TerrainObjectStatus.DELETED);
+                nextHEdgeAdjT.deleteObjects();
             }
-
-            midPosition.z = z; // assign the z value.
-            if (Double.isNaN(midPosition.z)) {
-                log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
-                         triangle.getId());
-                // Fallback: calculate average elevation from the edge endpoints
-                TerrainVertex startVertex = longestHEdge.getStartVertex();
-                TerrainVertex endVertex = longestHEdge.getEndVertex();
-                midPosition.z = (startVertex.getPosition().z + endVertex.getPosition().z) / 2.0;
-            }
-            midVertex.setPosition(midPosition);
-
-            // need longEdge_startVertex and longEdge_endVertex
-            TerrainVertex longEdge_startVertex = longestHEdge.getStartVertex();
-            TerrainVertex longEdge_endVertex = longestHEdge.getEndVertex();
-
-            // A triangle is split by the longest edge
-            //                                        oppVtx_T
-            //                                           / \
-            //                                        /   |   \
-            //                longestEdge_prev---> /      |      \ <-- longestHEdge_next
-            //                                  /         |         \
-            //                               /    A       |     B      \
-            //                            /   halfEdgeA1 | halfEdgeB1   \
-            // longestHEdge_strVtx-->  +------------------+------------------+ <-- longestHEdge_endVertex
-            //                            \   halfEdge_C1 | halfEdge_D1   /
-            //                               \      C     |     D      /
-            //                                  \         |         / <-- longestHEdgeAdjT_prev
-            //            longestEdgeAdjT_next---> \      |      /
-            //                                        \   |   /
-            //                                           \ /
-            //                                        oppVtx_AdjT
-
-            // split the triangle
-            // First, create 4 new triangles
-            // triangleA
-            TerrainHalfEdge halfEdgeA1 = newHalfEdge();
-            halfEdgeA1.setType(longestHEdge.getType());
-            TerrainHalfEdge halfEdgeA2 = newHalfEdge();
-            halfEdgeA2.setType(TerrainHalfEdgeType.INTERIOR);
-            TerrainHalfEdge halfEdgeA3 = newHalfEdge();
-            halfEdgeA3.setType(prevHEdge.getType());
-
-            // set vertex to the new halfEdges
-            halfEdgeA1.setStartVertex(longEdge_startVertex);
-            halfEdgeA2.setStartVertex(midVertex);
-            halfEdgeA3.setStartVertex(oppVtx_T);
-
-            TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeA1, halfEdgeA2, halfEdgeA3);
-            TerrainTriangle triangleA = newTriangle();
-            triangleA.setHalfEdge(halfEdgeA1);
-            triangleA.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
-            triangleA.setSplitDepth(triangle.getSplitDepth() + 1);
-
-            // put the new triangle in the result list
-            resultNewTriangles.add(triangleA);
-
-            // triangleB
-            TerrainHalfEdge halfEdgeB1 = newHalfEdge();
-            halfEdgeB1.setType(longestHEdge.getType());
-            TerrainHalfEdge halfEdgeB2 = newHalfEdge();
-            halfEdgeB2.setType(nextHEdge.getType());
-            TerrainHalfEdge halfEdgeB3 = newHalfEdge();
-            halfEdgeB3.setType(TerrainHalfEdgeType.INTERIOR);
-
-            // set vertex to the new halfEdges
-            halfEdgeB1.setStartVertex(midVertex);
-            halfEdgeB2.setStartVertex(longEdge_endVertex);
-            halfEdgeB3.setStartVertex(oppVtx_T);
-
-            TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdgeB1, halfEdgeB2, halfEdgeB3);
-            TerrainTriangle triangleB = newTriangle();
-            triangleB.setHalfEdge(halfEdgeB1);
-            triangleB.getOwnerTileIndices().copyFrom(triangle.getOwnerTileIndices());
-            triangleB.setSplitDepth(triangle.getSplitDepth() + 1);
-
-            // put the new triangle in the result list
-            resultNewTriangles.add(triangleB);
-
-            // triangle_C
-            TerrainHalfEdge halfEdge_C1 = newHalfEdge();
-            halfEdge_C1.setType(longestHEdgeAdjT.getType());
-            TerrainHalfEdge halfEdge_C2 = newHalfEdge();
-            halfEdge_C2.setType(nextHEdgeAdjT.getType());
-            TerrainHalfEdge halfEdge_C3 = newHalfEdge();
-            halfEdge_C3.setType(TerrainHalfEdgeType.INTERIOR);
-
-            // set vertex to the new halfEdges
-            halfEdge_C1.setStartVertex(midVertex);
-            halfEdge_C2.setStartVertex(longEdge_startVertex);
-            halfEdge_C3.setStartVertex(oppVtx_AdjT);
-
-            TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_C1, halfEdge_C2, halfEdge_C3);
-            TerrainTriangle triangleC = newTriangle();
-            triangleC.setHalfEdge(halfEdge_C1);
-            triangleC.getOwnerTileIndices().copyFrom(adjacentTriangle.getOwnerTileIndices());
-            triangleC.setSplitDepth(adjacentTriangle.getSplitDepth() + 1);
-
-            // put the new triangle in the result list
-            resultNewTriangles.add(triangleC);
-
-            // triangle_D
-            TerrainHalfEdge halfEdge_D1 = newHalfEdge();
-            halfEdge_D1.setType(longestHEdgeAdjT.getType());
-            TerrainHalfEdge halfEdge_D2 = newHalfEdge();
-            halfEdge_D2.setType(TerrainHalfEdgeType.INTERIOR);
-            TerrainHalfEdge halfEdge_D3 = newHalfEdge();
-            halfEdge_D3.setType(prevHEdgeAdjT.getType());
-
-            // set vertex to the new halfEdges
-            halfEdge_D1.setStartVertex(longEdge_endVertex);
-            halfEdge_D2.setStartVertex(midVertex);
-            halfEdge_D3.setStartVertex(oppVtx_AdjT);
-
-            TerrainHalfEdgeUtils.concatenate3HalfEdgesLoop(halfEdge_D1, halfEdge_D2, halfEdge_D3);
-            TerrainTriangle triangleD = newTriangle();
-            triangleD.setHalfEdge(halfEdge_D1);
-            triangleD.getOwnerTileIndices().copyFrom(adjacentTriangle.getOwnerTileIndices());
-            triangleD.setSplitDepth(adjacentTriangle.getSplitDepth() + 1);
-
-            // put the new triangle in the result list
-            resultNewTriangles.add(triangleD);
-
-            // now, set the twins
-            // here, all newHEdges has twins
-            halfEdgeA1.setTwin(halfEdge_C1);
-            halfEdgeA2.setTwin(halfEdgeB3);
-            halfEdgeA3.setTwin(prevHEdge_twin);
-
-            halfEdgeB1.setTwin(halfEdge_D1);
-            halfEdgeB2.setTwin(nextHEdge_twin);
-            //halfEdgeB3.setTwin(halfEdgeA2); // redundant
-
-            //halfEdge_C1.setTwin(halfEdgeA1); // redundant
-            halfEdge_C2.setTwin(nextHEdgeAdjT_twin);
-            halfEdge_C3.setTwin(halfEdge_D2);
-
-            //halfEdge_D1.setTwin(halfEdgeB1); // redundant
-            //halfEdge_D2.setTwin(halfEdge_C3); // redundant
-            halfEdge_D3.setTwin(prevHEdgeAdjT_twin);
-
-            // now set the triangles of halfEdges
-            halfEdgeA1.setTriangle(triangleA);
-            halfEdgeA2.setTriangle(triangleA);
-            halfEdgeA3.setTriangle(triangleA);
-
-            halfEdgeB1.setTriangle(triangleB);
-            halfEdgeB2.setTriangle(triangleB);
-            halfEdgeB3.setTriangle(triangleB);
-
-            halfEdge_C1.setTriangle(triangleC);
-            halfEdge_C2.setTriangle(triangleC);
-            halfEdge_C3.setTriangle(triangleC);
-
-            halfEdge_D1.setTriangle(triangleD);
-            halfEdge_D2.setTriangle(triangleD);
-            halfEdge_D3.setTriangle(triangleD);
-
-            // now delete the triangles
-            disableTriangle(triangle);
-            disableTriangle(adjacentTriangle);
-
-            // disable hedges
-            longestHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
-            longestHEdge.deleteObjects();
-            prevHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
-            prevHEdge.deleteObjects();
-            nextHEdge.setObjectStatus(TerrainObjectStatus.DELETED);
-            nextHEdge.deleteObjects();
-
-            longestHEdgeAdjT.setObjectStatus(TerrainObjectStatus.DELETED);
-            longestHEdgeAdjT.deleteObjects();
-            prevHEdgeAdjT.setObjectStatus(TerrainObjectStatus.DELETED);
-            prevHEdgeAdjT.deleteObjects();
-            nextHEdgeAdjT.setObjectStatus(TerrainObjectStatus.DELETED);
-            nextHEdgeAdjT.deleteObjects();
-        }
         } finally {
             // Remove triangle from splitting set when done
             splittingTriangles.remove(triangle.getId());
@@ -1014,7 +1013,7 @@ public class TerrainMesh {
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
         // If the adjacentTriangle is null, then the triangle is splittable
 
-        if(stack == null){
+        if (stack == null) {
             stack = new int[1];
             stack[0] = 0;
         }
@@ -1025,7 +1024,7 @@ public class TerrainMesh {
         TerrainHalfEdge longestHEdge = targetTriangle.getLongestHalfEdge(listHalfEdges);
         if (longestHEdge == null) {
             log.warn("Target triangle {} has no valid longest half-edge (degenerate triangle).",
-                     targetTriangle.getId());
+                    targetTriangle.getId());
             return null;
         }
         if (longestHEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
@@ -1043,7 +1042,7 @@ public class TerrainMesh {
         // This prevents thousands of "Deadlock detected: Triangle -1 and adjacent triangle -1" messages
         if (adjacentTriangle == null || adjacentTriangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
             log.debug("Adjacent triangle {} is already DELETED. Treating target triangle {} as border triangle.",
-                      adjacentTriangle.getId(), targetTriangle.getId());
+                    adjacentTriangle.getId(), targetTriangle.getId());
             return null;
         }
 
@@ -1053,18 +1052,18 @@ public class TerrainMesh {
         TerrainHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
 
         // Defensive null check: Handle degenerate triangles
-        if (longestHEdgeOfAdjacentTriangle == null  || longestHEdgeOfAdjacentTriangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
+        if (longestHEdgeOfAdjacentTriangle == null || longestHEdgeOfAdjacentTriangle.getObjectStatus() == TerrainObjectStatus.DELETED) {
             log.warn("Adjacent triangle {} has no valid longest half-edge (degenerate triangle). " +
-                     "Marking as deleted and treating target triangle as border triangle.",
-                     adjacentTriangle.getId());
+                            "Marking as deleted and treating target triangle as border triangle.",
+                    adjacentTriangle.getId());
             adjacentTriangle.setObjectStatus(TerrainObjectStatus.DELETED);
             return null;
         }
 
-        if(longestHEdgeOfAdjacentTriangle.getSquaredLength() <= vertexCoincidentError * vertexCoincidentError){
+        if (longestHEdgeOfAdjacentTriangle.getSquaredLength() <= vertexCoincidentError * vertexCoincidentError) {
             log.warn("Adjacent triangle {} has a longest half-edge with length <= vertexCoincidentError. " +
-                     "Marking as deleted and treating target triangle as border triangle.",
-                     adjacentTriangle.getId());
+                            "Marking as deleted and treating target triangle as border triangle.",
+                    adjacentTriangle.getId());
             adjacentTriangle.setObjectStatus(TerrainObjectStatus.DELETED);
             return null;
         }
@@ -1074,10 +1073,10 @@ public class TerrainMesh {
         } else if (longestHEdgeOfAdjacentTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError)) {
             // here is error
         } else {
-            if(stack[0] > 40){
+            if (stack[0] > 40) {
                 log.error("Stack overflow risk: excessive recursion depth when searching for splittable adjacent triangle. " +
-                          "Current stack depth: {}. Aborting search to prevent crash.",
-                          stack[0]);
+                                "Current stack depth: {}. Aborting search to prevent crash.",
+                        stack[0]);
                 return null;
             }
             // first split the adjacentTriangle;
@@ -1404,7 +1403,6 @@ public class TerrainMesh {
     /**
      * Attempts to repair corrupted vertex topology by ensuring edges form a valid continuous loop.
      * This addresses the issue where vertices accumulate edges from multiple tiles during consolidation.
-     *
      * @param vertex The vertex to repair
      * @return true if repair succeeded, false if vertex remains corrupted
      */
@@ -1423,13 +1421,13 @@ public class TerrainMesh {
 
         // If vertex has no outingHEdge or it's deleted, try to find a valid one
         if (vertex.getOutingHEdge() == null ||
-            vertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
+                vertex.getOutingHEdge().getObjectStatus() == TerrainObjectStatus.DELETED) {
 
             // Search for any half-edge starting from this vertex
             TerrainHalfEdge validEdge = null;
             for (TerrainHalfEdge edge : this.halfEdges) {
                 if (edge.getObjectStatus() != TerrainObjectStatus.DELETED &&
-                    edge.getStartVertex() == vertex) {
+                        edge.getStartVertex() == vertex) {
                     validEdge = edge;
                     break;
                 }
@@ -1457,7 +1455,7 @@ public class TerrainMesh {
         // This is a fallback - we accept non-manifold vertices at tile boundaries
         if (validation.edgeCount > 10 || validation.hasMultipleLoops) {
             log.warn("Vertex {} has complex topology ({} edges, multiloop={}). " +
-                    "Marking as boundary vertex (non-manifold accepted at tile boundaries).",
+                            "Marking as boundary vertex (non-manifold accepted at tile boundaries).",
                     vertex.getId(), validation.edgeCount, validation.hasMultipleLoops);
             // The vertex remains functional but flagged as having non-standard topology
             return true; // Accept as "repaired" with caveat
@@ -1471,7 +1469,6 @@ public class TerrainMesh {
     /**
      * Batch repair for all corrupted vertices in the mesh.
      * Used after tile consolidation to fix topology issues before refinement.
-     *
      * @return Number of successfully repaired vertices
      */
     public int repairMeshTopology() {

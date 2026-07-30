@@ -117,7 +117,7 @@ public class Mago3DTerrainerMain {
         log.info("[Pre][AvailableTileSet] Finished calculating available tiles for each depth.");
 
         boolean skipStandardizationAndResize = globalOptions.isSkipStandardizationAndResize();
-        if(!skipStandardizationAndResize) {
+        if (!skipStandardizationAndResize) {
             log.info("[Pre][Standardization] Start GeoTiff Standardization files.");
             tileWgs84Manager.processStandardizeRasters();
             log.info("[Pre][Standardization] Finished GeoTiff Standardization files.");
@@ -148,7 +148,7 @@ public class Mago3DTerrainerMain {
         //*******************************************************************
         if (isContinue) {
             processType = 2;
-        } else if(isModify){
+        } else if (isModify) {
             processType = 3;
         }
 
@@ -156,11 +156,11 @@ public class Mago3DTerrainerMain {
             log.info("[Tile] Continuing making tile meshes.");
             tileWgs84Manager.makeTileMeshesContinueCustom();
             log.info("[Tile] Finished making tile meshes.");
-        } else if (processType == 1){
+        } else if (processType == 1) {
             log.info("[Tile] Start making tile meshes.");
             tileWgs84Manager.makeTileMeshesCustom(); // New.****************
             log.info("[Tile] Finished making tile meshes.");
-        } else if (processType == 3){
+        } else if (processType == 3) {
             log.info("[Tile] Start making tile meshes.");
             tileWgs84Manager.makeTileMeshesCustomModifyMode();
             log.info("[Tile] Finished making tile meshes.");

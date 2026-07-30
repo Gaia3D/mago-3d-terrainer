@@ -68,7 +68,7 @@ public class PreReleaseTest {
                 "-output", outputPath.getAbsolutePath() + "_geoid",
                 "-interpolation", "nearest",
                 "-calculateNormals",
-                "-geoid", "EGM96",
+                "-geoid", "EGM2008",
         };
         Mago3DTerrainerMain.main(args);
     }

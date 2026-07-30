@@ -149,7 +149,7 @@ public class TerrainVertex {
                 break;
             }
 
-            if(mapUniqueHalfEdges.containsKey(nextHalfEdge)) {
+            if (mapUniqueHalfEdges.containsKey(nextHalfEdge)) {
                 log.warn("This vertex has duplicated outing halfEdges. id : {}, halfEdge id : {}", this.id, nextHalfEdge.getId());
 //                finished = true;
 //                break;
@@ -168,8 +168,8 @@ public class TerrainVertex {
             // Safety check: prevent infinite loops in corrupted mesh topology
             if (counter >= maxIterations) {
                 log.warn("Vertex {} has exceeded maximum iteration limit ({}) for outgoing half-edges. " +
-                         "Mesh topology may be corrupted. Breaking loop.",
-                         this.id, maxIterations);
+                                "Mesh topology may be corrupted. Breaking loop.",
+                        this.id, maxIterations);
                 finished = true;
                 break;
             }
@@ -204,34 +204,7 @@ public class TerrainVertex {
     }
 
     /**
-     * Result class for topology validation
-     */
-    public static class TopologyValidationResult {
-        public final boolean isValid;
-        public final int edgeCount;
-        public final boolean hasMultipleLoops;
-        public final LoopClosureType loopClosureType;
-        public final boolean hitIterationLimit;
-
-        public TopologyValidationResult(boolean isValid, int edgeCount, boolean hasMultipleLoops,
-                                       LoopClosureType loopClosureType, boolean hitIterationLimit) {
-            this.isValid = isValid;
-            this.edgeCount = edgeCount;
-            this.hasMultipleLoops = hasMultipleLoops;
-            this.loopClosureType = loopClosureType;
-            this.hitIterationLimit = hitIterationLimit;
-        }
-
-        public enum LoopClosureType {
-            INTERIOR,    // Closed loop (interior vertex)
-            BOUNDARY,    // Open edges (boundary vertex)
-            CORRUPTED    // Hit iteration limit or other anomaly
-        }
-    }
-
-    /**
      * Validates that this vertex has proper topology (single continuous edge loop for manifold mesh)
-     *
      * @param maxExpectedEdges Maximum expected edges (typically 6-10 for manifold, max 15 for tile boundaries)
      * @return TopologyValidationResult with validation metrics
      */
@@ -306,7 +279,6 @@ public class TerrainVertex {
                 closureType, hitIterationLimit);
     }
 
-
     public void saveDataOutputStream(BigEndianDataOutputStream dataOutputStream) {
         try {
             // First, save id
@@ -333,5 +305,31 @@ public class TerrainVertex {
         this.getPosition().z = dataInputStream.readDouble();
 
         this.outingHEdgeId = dataInputStream.readInt();
+    }
+
+    /**
+     * Result class for topology validation
+     */
+    public static class TopologyValidationResult {
+        public final boolean isValid;
+        public final int edgeCount;
+        public final boolean hasMultipleLoops;
+        public final LoopClosureType loopClosureType;
+        public final boolean hitIterationLimit;
+
+        public TopologyValidationResult(boolean isValid, int edgeCount, boolean hasMultipleLoops,
+                                        LoopClosureType loopClosureType, boolean hitIterationLimit) {
+            this.isValid = isValid;
+            this.edgeCount = edgeCount;
+            this.hasMultipleLoops = hasMultipleLoops;
+            this.loopClosureType = loopClosureType;
+            this.hitIterationLimit = hitIterationLimit;
+        }
+
+        public enum LoopClosureType {
+            INTERIOR,    // Closed loop (interior vertex)
+            BOUNDARY,    // Open edges (boundary vertex)
+            CORRUPTED    // Hit iteration limit or other anomaly
+        }
     }
 }
