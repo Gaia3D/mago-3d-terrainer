@@ -701,7 +701,6 @@ public class GltfWriter {
 
         Image image = new Image();
         image.setMimeType(mimeType);
-        //if (globalOptions.getTilesVersion().equals("1.0")) {
         if (gltfOptions.isUriImage()) {
             String uri = convertBufferedImageToURI(gaiaTexture.getBufferedImage(), mimeType);
             image.setUri(uri);
