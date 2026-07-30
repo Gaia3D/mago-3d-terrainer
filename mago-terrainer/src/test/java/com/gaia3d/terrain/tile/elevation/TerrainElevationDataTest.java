@@ -10,6 +10,9 @@ import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.command.LoggingConfiguration;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.types.InterpolationType;
+import com.gaia3d.terrain.tile.raster.TerrainRasterData;
+import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
+import com.gaia3d.terrain.tile.raster.TerrainRasterWriter;
 import org.eclipse.imagen.RasterFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -25,6 +28,8 @@ import java.awt.*;
 import java.awt.image.*;
 import java.util.List;
 import java.util.Vector;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,6 +39,31 @@ class TerrainElevationDataTest {
 
     static {
         LoggingConfiguration.initConsoleLogger();
+    }
+
+    @Test
+    @Tag("default")
+    void getElevationReadsTerrainRasterWithoutCoverage() throws Exception {
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        globalOptions.setInterpolationType(InterpolationType.BILINEAR);
+        globalOptions.setNoDataValue(-9999.0);
+
+        Path path = Files.createTempFile("elevation-", TerrainRasterFormat.EXTENSION);
+        try {
+            new TerrainRasterWriter().write(path, new TerrainRasterData(
+                    2, 2, 0.0, 0.0, 2.0, 2.0, -32768.0f,
+                    new float[]{0.0f, 10.0f, 20.0f, 30.0f}));
+            TerrainElevationData elevationData = new TerrainElevationData(null);
+            elevationData.setGeotiffFilePath(path.toString());
+            elevationData.setGeographicExtension(createExtension());
+
+            boolean[] intersects = new boolean[1];
+            assertEquals(15.0, elevationData.getElevation(0.5, 1.5, intersects), 0.0001);
+            assertTrue(intersects[0]);
+            assertTrue(elevationData.isRasterLoaded());
+        } finally {
+            Files.deleteIfExists(path);
+        }
     }
 
     @Test

@@ -3,16 +3,18 @@ package com.gaia3d.terrain.tile.generation;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.tile.geotiff.GeoTiffCoverageStore;
 import com.gaia3d.terrain.tile.geotiff.RasterStandardizer;
+import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
+import com.gaia3d.terrain.tile.raster.TerrainRasterData;
+import com.gaia3d.terrain.tile.raster.TerrainRasterReader;
+import com.gaia3d.terrain.tile.raster.TerrainRasterResizer;
+import com.gaia3d.terrain.tile.raster.TerrainRasterWriter;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.util.FileUtils;
+import com.gaia3d.util.GlobeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.api.referencing.FactoryException;
-import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
-import org.geotools.api.referencing.crs.GeographicCRS;
-import org.geotools.api.referencing.crs.ProjectedCRS;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
 import org.joml.Vector2d;
 
 import java.io.File;
@@ -39,15 +41,15 @@ public class TerrainRasterPreprocessor {
         standardizeRasterFiles(rasterFileNames);
 
         File tempFolder = new File(globalOptions.getStandardizeTempPath());
-        List<String> standardizedGeoTiffPaths = new ArrayList<>();
-        FileUtils.getFilePathsByExtension(tempFolder.getAbsolutePath(), ".tif", standardizedGeoTiffPaths, true);
-        if (standardizedGeoTiffPaths.isEmpty()) {
-            throw new RuntimeException("No standardized GeoTiff files found in the standardization temp path: " + tempFolder.getAbsolutePath());
+        List<String> standardizedRasterPaths = new ArrayList<>();
+        FileUtils.getFilePathsByExtension(tempFolder.getAbsolutePath(), TerrainRasterFormat.EXTENSION, standardizedRasterPaths, true);
+        if (standardizedRasterPaths.isEmpty()) {
+            throw new RuntimeException("No standardized terrain raster files found in: " + tempFolder.getAbsolutePath());
         }
 
         manager.getStandardizedGeoTiffFiles().clear();
-        for (String standardizedGeoTiffPath : standardizedGeoTiffPaths) {
-            manager.getStandardizedGeoTiffFiles().add(new File(standardizedGeoTiffPath));
+        for (String standardizedRasterPath : standardizedRasterPaths) {
+            manager.getStandardizedGeoTiffFiles().add(new File(standardizedRasterPath));
         }
     }
 
@@ -111,43 +113,36 @@ public class TerrainRasterPreprocessor {
             throw new RuntimeException("Error: terrainElevationDataFolder is not a directory: " + terrainElevationDataFolderPath);
         }
 
-        List<String> geoTiffFilePaths = new ArrayList<>();
-        FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, "tif", geoTiffFilePaths, true);
+        List<String> rasterFilePaths = new ArrayList<>();
+        FileUtils.getFilePathsByExtension(terrainElevationDataFolderPath, TerrainRasterFormat.EXTENSION, rasterFilePaths, true);
 
-        int geotiffCount = geoTiffFilePaths.size();
-        manager.setGeoTiffFilesCount(geotiffCount);
+        manager.setGeoTiffFilesCount(rasterFilePaths.size());
 
-        log.info("[Pre][Resize GeoTiff] resizing geoTiffs Count : {} ", geotiffCount);
+        log.info("[Pre][Resize] Resizing terrain rasters count: {}", rasterFilePaths.size());
         resizeRastersByDepth(terrainElevationDataFolderPath, currentFolderPath);
     }
 
     public void resizeRastersByDepth(String terrainElevationDataFolderPath, String currentFolderPath) throws IOException, FactoryException {
-        List<String> geoTiffFileNames = new ArrayList<>();
-        FileUtils.getFileNames(terrainElevationDataFolderPath, ".tif", geoTiffFileNames);
+        List<String> rasterFileNames = new ArrayList<>();
+        FileUtils.getFileNames(terrainElevationDataFolderPath, TerrainRasterFormat.EXTENSION, rasterFileNames);
 
         if (currentFolderPath == null) {
             currentFolderPath = "";
         }
 
-        int geoTiffFilesSize = geoTiffFileNames.size();
-        int geoTiffFilesCount = 0;
+        int rasterFilesCount = 0;
 
-        for (String geoTiffFileName : geoTiffFileNames) {
-            log.info("[Pre][Resize GeoTiff][{}/{}] resizing geoTiff : {} ", ++geoTiffFilesCount, geoTiffFilesSize, geoTiffFileName);
-            String geoTiffFilePath = terrainElevationDataFolderPath + File.separator + geoTiffFileName;
+        for (String rasterFileName : rasterFileNames) {
+            log.info("[Pre][Resize][{}/{}] Resizing terrain raster: {}", ++rasterFilesCount, rasterFileNames.size(), rasterFileName);
+            File sourceFile = new File(terrainElevationDataFolderPath, rasterFileName);
+            String rasterFilePath = sourceFile.getAbsolutePath();
 
-            if (manager.getMapNoUsableGeotiffPaths().containsKey(geoTiffFilePath)) {
+            if (manager.getMapNoUsableGeotiffPaths().containsKey(rasterFilePath)) {
                 continue;
             }
 
-            GridCoverage2D originalGridCoverage2D = getGeoTiffCoverageStore().loadGeoTiffGridCoverage2D(geoTiffFilePath);
-            CoordinateReferenceSystem crsTarget = originalGridCoverage2D.getCoordinateReferenceSystem2D();
-            if (!(crsTarget instanceof ProjectedCRS || crsTarget instanceof GeographicCRS)) {
-                log.error("The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems");
-                throw new GeoTiffException(null, "The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems", null);
-            }
-
-            Vector2d pixelSizeMeters = GaiaGeoTiffUtils.getPixelSizeMeters(originalGridCoverage2D);
+            TerrainRasterData source = new TerrainRasterReader().read(sourceFile.toPath());
+            Vector2d pixelSizeMeters = getPixelSizeMeters(source);
 
             int minTileDepth = globalOptions.getMinimumTileDepth();
             int maxTileDepth = globalOptions.getMaximumTileDepth();
@@ -156,30 +151,26 @@ public class TerrainRasterPreprocessor {
                 double desiredPixelSizeYinMeters = desiredPixelSizeXinMeters;
 
                 if (desiredPixelSizeXinMeters < pixelSizeMeters.x) {
-                    addDepthGeoTiffFile(depth, new File(geoTiffFilePath));
+                    addDepthGeoTiffFile(depth, sourceFile);
                     continue;
                 }
 
                 String depthStr = String.valueOf(depth);
-                String resizedGeoTiffFolderPath = resolveResizedGeoTiffFolderPath(depthStr, currentFolderPath, geoTiffFilePath);
-                String resizedGeoTiffFilePath = resizedGeoTiffFolderPath + File.separator + geoTiffFileName;
+                String resizedFolderPath = resolveResizedGeoTiffFolderPath(depthStr, currentFolderPath, rasterFilePath);
+                File resizedFile = new File(resizedFolderPath, rasterFileName);
 
-                if (FileUtils.isFileExists(resizedGeoTiffFilePath)) {
-                    addDepthGeoTiffFile(depth, new File(resizedGeoTiffFilePath));
+                if (resizedFile.isFile()) {
+                    addDepthGeoTiffFile(depth, resizedFile);
                     continue;
                 }
 
-                GridCoverage2D resizedGridCoverage2D = getGeoTiffCoverageStore().getResizedCoverage2D(geoTiffFilePath, originalGridCoverage2D, desiredPixelSizeXinMeters, desiredPixelSizeYinMeters);
-                FileUtils.createAllFoldersIfNoExist(resizedGeoTiffFolderPath);
-                getGeoTiffCoverageStore().saveGridCoverage2D(resizedGridCoverage2D, resizedGeoTiffFilePath);
-
-                resizedGridCoverage2D.dispose(true);
-
-                addDepthGeoTiffFile(depth, new File(resizedGeoTiffFilePath));
+                int targetWidth = Math.max((int) ((pixelSizeMeters.x * source.width()) / desiredPixelSizeXinMeters), 24);
+                int targetHeight = Math.max((int) ((pixelSizeMeters.y * source.height()) / desiredPixelSizeYinMeters), 24);
+                TerrainRasterData resized = new TerrainRasterResizer().resize(source, targetWidth, targetHeight);
+                new TerrainRasterWriter().write(resizedFile.toPath(), resized);
+                addDepthGeoTiffFile(depth, resizedFile);
             }
         }
-
-        getGeoTiffCoverageStore().clear();
 
         List<String> folderNames = new ArrayList<>();
         FileUtils.getFolderNames(terrainElevationDataFolderPath, folderNames);
@@ -215,15 +206,15 @@ public class TerrainRasterPreprocessor {
             throw new RuntimeException("Error: Standardization temp path does not exist: " + standardizeFolder.getAbsolutePath());
         }
 
-        List<String> standardizedGeoTiffPaths = new ArrayList<>();
-        FileUtils.getFilePathsByExtension(standardizeFolder.getAbsolutePath(), ".tif", standardizedGeoTiffPaths, true);
-        if (standardizedGeoTiffPaths.isEmpty()) {
-            throw new RuntimeException("Error: No standardized GeoTiff files found in the standardization temp path: " + standardizeFolder.getAbsolutePath());
+        List<String> standardizedRasterPaths = new ArrayList<>();
+        FileUtils.getFilePathsByExtension(standardizeFolder.getAbsolutePath(), TerrainRasterFormat.EXTENSION, standardizedRasterPaths, true);
+        if (standardizedRasterPaths.isEmpty()) {
+            throw new RuntimeException("Error: No standardized terrain raster files found in: " + standardizeFolder.getAbsolutePath());
         }
 
         manager.getStandardizedGeoTiffFiles().clear();
-        for (String standardizedGeoTiffPath : standardizedGeoTiffPaths) {
-            manager.getStandardizedGeoTiffFiles().add(new File(standardizedGeoTiffPath));
+        for (String standardizedRasterPath : standardizedRasterPaths) {
+            manager.getStandardizedGeoTiffFiles().add(new File(standardizedRasterPath));
         }
     }
 
@@ -263,7 +254,7 @@ public class TerrainRasterPreprocessor {
     private List<File> resolveExistingDepthGeoTiffFiles(File depthFolder) {
         List<String> resizedGeoTiffPaths = new ArrayList<>();
         if (depthFolder.exists() && depthFolder.isDirectory()) {
-            FileUtils.getFilePathsByExtension(depthFolder.getAbsolutePath(), ".tif", resizedGeoTiffPaths, true);
+            FileUtils.getFilePathsByExtension(depthFolder.getAbsolutePath(), TerrainRasterFormat.EXTENSION, resizedGeoTiffPaths, true);
         }
 
         List<File> result = new ArrayList<>();
@@ -274,9 +265,9 @@ public class TerrainRasterPreprocessor {
             resizedFileNames.add(resizedFile.getName());
         }
 
-        for (File standardizedGeoTiffFile : manager.getStandardizedGeoTiffFiles()) {
-            if (!resizedFileNames.contains(standardizedGeoTiffFile.getName())) {
-                result.add(standardizedGeoTiffFile);
+        for (File standardizedRasterFile : manager.getStandardizedGeoTiffFiles()) {
+            if (!resizedFileNames.contains(standardizedRasterFile.getName())) {
+                result.add(standardizedRasterFile);
             }
         }
         return result;
@@ -300,6 +291,15 @@ public class TerrainRasterPreprocessor {
         }
         relativePath.append(RasterStandardizer.sourceDirectoryName(sourceGeoTiffPath));
         return globalOptions.getResizedTiffTempPath() + File.separator + depth + File.separator + relativePath;
+    }
+
+    private Vector2d getPixelSizeMeters(TerrainRasterData data) {
+        double middleLatitude = Math.toRadians((data.minLatitude() + data.maxLatitude()) * 0.5);
+        double widthMeters = GlobeUtils.distanceBetweenLongitudesRad(middleLatitude,
+                Math.toRadians(data.minLongitude()), Math.toRadians(data.maxLongitude()));
+        double heightMeters = GlobeUtils.distanceBetweenLatitudesRad(
+                Math.toRadians(data.minLatitude()), Math.toRadians(data.maxLatitude()));
+        return new Vector2d(widthMeters / data.width(), heightMeters / data.height());
     }
 
     private GridCoverage2D prepareCoverageForStandardization(String geoTiffFilePath, GridCoverage2D originalCoverage, double maxUsefulPixelSizeMeters) {

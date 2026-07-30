@@ -7,6 +7,9 @@ import com.gaia3d.terrain.tile.layer.*;
 import com.gaia3d.terrain.tile.mesh.*;
 
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.tile.raster.TerrainRasterData;
+import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
+import com.gaia3d.terrain.tile.raster.TerrainRasterReader;
 import org.eclipse.imagen.PlanarImage;
 import org.eclipse.imagen.RasterFactory;
 import org.eclipse.imagen.TiledImage;
@@ -66,12 +69,12 @@ class RasterStandardizerTest {
         try {
             rasterStandardizer.standardize(coverage, tempDir.toFile());
 
-            long tifFileCount;
+            long rasterFileCount;
             try (var paths = Files.walk(tempDir)) {
-                tifFileCount = paths.filter(path -> path.getFileName().toString().endsWith(".tif")).count();
+                rasterFileCount = paths.filter(path -> path.getFileName().toString().endsWith(TerrainRasterFormat.EXTENSION)).count();
             }
 
-            assertEquals(4, tifFileCount);
+            assertEquals(4, rasterFileCount);
             try (var paths = Files.list(tempDir)) {
                 assertEquals(1, paths.filter(Files::isDirectory).count());
             }
@@ -108,21 +111,13 @@ class RasterStandardizerTest {
             Path outputTile;
             try (var paths = Files.walk(tempDir)) {
                 outputTile = paths
-                        .filter(path -> path.getFileName().toString().endsWith(".tif"))
-                        .filter(path -> !path.getFileName().toString().equals("geoid.tif"))
+                        .filter(path -> path.getFileName().toString().endsWith(TerrainRasterFormat.EXTENSION))
                         .findFirst()
                         .orElseThrow();
             }
 
-            GeoTiffReader reader = new GeoTiffReader(outputTile.toFile());
-            try {
-                GridCoverage2D outputCoverage = reader.read(null);
-                double sample = outputCoverage.getRenderedImage().getData().getSampleDouble(0, 0, 0);
-                assertEquals(101.0, sample, 0.0001);
-                outputCoverage.dispose(true);
-            } finally {
-                reader.dispose();
-            }
+            TerrainRasterData output = new TerrainRasterReader().read(outputTile);
+            assertEquals(101.0, output.getElevation(0, 0), 0.0001);
         } finally {
             demCoverage.dispose(true);
             geoidCoverage.dispose(true);
@@ -205,12 +200,12 @@ class RasterStandardizerTest {
         try {
             rasterStandardizer.standardize(coverage, tempDir.toFile());
 
-            long tifFileCount;
+            long rasterFileCount;
             try (var paths = Files.walk(tempDir)) {
-                tifFileCount = paths.filter(path -> path.getFileName().toString().endsWith(".tif")).count();
+                rasterFileCount = paths.filter(path -> path.getFileName().toString().endsWith(TerrainRasterFormat.EXTENSION)).count();
             }
 
-            assertEquals(0, tifFileCount);
+            assertEquals(0, rasterFileCount);
         } finally {
             coverage.dispose(true);
             deleteRecursively(tempDir);
@@ -238,25 +233,14 @@ class RasterStandardizerTest {
             Path outputTile;
             try (var paths = Files.walk(tempDir)) {
                 outputTile = paths
-                        .filter(path -> path.getFileName().toString().endsWith(".tif"))
+                        .filter(path -> path.getFileName().toString().endsWith(TerrainRasterFormat.EXTENSION))
                         .findFirst()
                         .orElseThrow();
             }
 
-            GeoTiffReader reader = new GeoTiffReader(outputTile.toFile());
-            try {
-                GridCoverage2D outputCoverage = reader.read(null);
-                NoDataContainer noDataContainer = CoverageUtilities.getNoDataProperty(outputCoverage);
-                double sample = outputCoverage.getRenderedImage().getData().getSampleDouble(0, 0, 0);
-
-                assertEquals(-32768.0, sample, 0.0001);
-                assertNotNull(noDataContainer);
-                assertEquals(-32768.0, noDataContainer.getAsSingleValue(), 0.0001);
-
-                outputCoverage.dispose(true);
-            } finally {
-                reader.dispose();
-            }
+            TerrainRasterData output = new TerrainRasterReader().read(outputTile);
+            assertEquals(-9999.0f, output.noDataValue());
+            assertEquals(-9999.0f, output.getElevation(0, 0));
         } finally {
             coverage.dispose(true);
             deleteRecursively(tempDir);

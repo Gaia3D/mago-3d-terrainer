@@ -1,5 +1,11 @@
 package com.gaia3d.terrain.tile.raster;
 
+import com.gaia3d.command.GlobalOptions;
+import org.eclipse.imagen.media.range.NoDataContainer;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.util.CoverageUtilities;
+
+import java.awt.image.Raster;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,6 +27,40 @@ public final class TerrainRasterWriter {
         }
     }
 
+    public void write(Path path, GridCoverage2D coverage) throws IOException {
+        Raster raster = coverage.getRenderedImage().getData();
+        int width = raster.getWidth();
+        int height = raster.getHeight();
+        float sourceNoDataValue = resolveNoDataValue(coverage);
+        float noDataValue = (float) GlobalOptions.getInstance().getNoDataValue();
+        float[] elevations = new float[Math.multiplyExact(width, height)];
+        int index = 0;
+        int maxX = raster.getMinX() + width;
+        int maxY = raster.getMinY() + height;
+        for (int y = raster.getMinY(); y < maxY; y++) {
+            for (int x = raster.getMinX(); x < maxX; x++) {
+                double sample = raster.getSampleDouble(x, y, 0);
+                elevations[index++] = isNoData(sample, sourceNoDataValue) ? noDataValue : (float) sample;
+            }
+        }
+
+        var bounds = coverage.getEnvelope();
+        write(path, new TerrainRasterData(width, height,
+                bounds.getMinimum(0), bounds.getMinimum(1),
+                bounds.getMaximum(0), bounds.getMaximum(1),
+                noDataValue, elevations));
+    }
+
+    private float resolveNoDataValue(GridCoverage2D coverage) {
+        NoDataContainer noData = CoverageUtilities.getNoDataProperty(coverage);
+        return noData == null ? Float.NaN : (float) noData.getAsSingleValue();
+    }
+
+    private boolean isNoData(double sample, float sourceNoDataValue) {
+        return !Double.isFinite(sample)
+                || (!Float.isNaN(sourceNoDataValue) && Double.compare(sample, sourceNoDataValue) == 0);
+    }
+
     private ByteBuffer createHeader(TerrainRasterData data) {
         ByteBuffer header = ByteBuffer.allocate(TerrainRasterFormat.HEADER_SIZE_BYTES).order(TerrainRasterFormat.BYTE_ORDER);
         header.put(TerrainRasterFormat.MAGIC);
@@ -33,7 +73,8 @@ public final class TerrainRasterWriter {
         header.putDouble(data.maxLongitude());
         header.putDouble(data.maxLatitude());
         header.putFloat(data.noDataValue());
-        header.putInt(0);
+        header.putInt(data.originalWidth());
+        header.putInt(data.originalHeight());
         return header;
     }
 

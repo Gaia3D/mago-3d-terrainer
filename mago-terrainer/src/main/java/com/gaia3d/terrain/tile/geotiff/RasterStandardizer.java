@@ -29,6 +29,8 @@ import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.gce.geotiff.GeoTiffWriteParams;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
+import com.gaia3d.terrain.tile.raster.TerrainRasterWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -100,7 +102,7 @@ public class RasterStandardizer {
                     }
 
                     File tileFile = createOutputTileFile(outputPath, tileDescriptor.tileName(), current);
-                    writeGeotiff(outputTile, tileFile);
+                    writeTerrainRaster(outputTile, tileFile);
                 } finally {
                     disposeCoverage(outputTile);
                     if (outputTile != croppedTile) {
@@ -160,7 +162,7 @@ public class RasterStandardizer {
                         ellipsoidalDem = addGeoidPreserveDemNoData(resampledTile, geoidAligned);
 
                         File tileFile = createOutputTileFile(outputPath, tileDescriptor.tileName(), current);
-                        writeGeotiff(ellipsoidalDem, tileFile);
+                        writeTerrainRaster(ellipsoidalDem, tileFile);
                     } finally {
                         disposeCoverage(ellipsoidalDem);
                         disposeCoverage(geoidAligned);
@@ -230,6 +232,17 @@ public class RasterStandardizer {
             log.error("Failed to write GeoTiff file : {}", outputFile.getAbsolutePath());
             log.error("Error : ", e);
         }
+    }
+
+    private void writeTerrainRaster(GridCoverage2D coverage, File geoTiffFile) throws IOException {
+        if (isAllNoData(coverage)) {
+            log.info("[Raster][I/O] Skip all-noData terrain raster: {}", geoTiffFile.getAbsolutePath());
+            return;
+        }
+        String fileName = geoTiffFile.getName();
+        int extensionIndex = fileName.lastIndexOf('.');
+        String baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
+        new TerrainRasterWriter().write(geoTiffFile.toPath().resolveSibling(baseName + TerrainRasterFormat.EXTENSION), coverage);
     }
 
     private PreparedCoverage prepareCoverageForWrite(GridCoverage2D coverage) {
@@ -707,7 +720,7 @@ public class RasterStandardizer {
             throw new RuntimeException("Failed to create shard directory: " + shardDirectory.getAbsolutePath());
         }
         String uniqueTileName = tileName + "-" + UUID.randomUUID();
-        return new File(shardDirectory, uniqueTileName + ".tif");
+        return new File(shardDirectory, uniqueTileName + TerrainRasterFormat.EXTENSION);
     }
 
     /**

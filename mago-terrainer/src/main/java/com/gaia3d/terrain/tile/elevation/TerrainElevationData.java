@@ -3,6 +3,9 @@ package com.gaia3d.terrain.tile.elevation;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.types.InterpolationType;
+import com.gaia3d.terrain.tile.raster.TerrainRasterData;
+import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
+import com.gaia3d.terrain.tile.raster.TerrainRasterReader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,7 @@ import java.awt.image.*;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Locale;
 
 @Slf4j
 @Getter
@@ -40,6 +44,7 @@ public class TerrainElevationData {
     private Vector2d pixelSizeMeters;
     private TerrainElevationModeler terrainElevDataManager = null;
     private String geotiffFilePath = "";
+    private boolean terrainRasterFile = false;
     private String geotiffFileName = "";
     private GeographicExtension geographicExtension = new GeographicExtension();
     private GeoTiffReader geoTiffReader = null;
@@ -96,9 +101,16 @@ public class TerrainElevationData {
     private int[] rasterIntData = null;
     private short[] rasterShortData = null;
     private byte[] rasterByteData = null;
+    private TerrainRasterData terrainRasterData = null;
 
     public TerrainElevationData(TerrainElevationModeler terrainElevationModeler) {
         this.terrainElevDataManager = terrainElevationModeler;
+    }
+
+    public void setGeotiffFilePath(String geotiffFilePath) {
+        this.geotiffFilePath = geotiffFilePath;
+        this.terrainRasterFile = geotiffFilePath != null
+                && geotiffFilePath.toLowerCase(Locale.ROOT).endsWith(TerrainRasterFormat.EXTENSION);
     }
 
     public void deleteCoverage() {
@@ -144,6 +156,7 @@ public class TerrainElevationData {
         this.rasterIntData = null;
         this.rasterShortData = null;
         this.rasterByteData = null;
+        this.terrainRasterData = null;
         clearTileRasterCache();
     }
 
@@ -188,6 +201,7 @@ public class TerrainElevationData {
         this.deleteCoverage();
         this.terrainElevDataManager = null;
         this.geotiffFilePath = null;
+        this.terrainRasterFile = false;
         if (this.geographicExtension != null) {
             this.geographicExtension.deleteObjects();
             this.geographicExtension = null;
@@ -202,13 +216,13 @@ public class TerrainElevationData {
     }
 
     public void getPixelSizeDegree(Vector2d resultPixelSize) {
-        if (!ensureRasterInitialized() || this.renderedImage == null) {
+        if (!ensureRasterInitialized()) {
             resultPixelSize.set(0.0, 0.0);
             return;
         }
 
-        double imageWidth = this.renderedImage.getWidth();
-        double imageHeight = this.renderedImage.getHeight();
+        double imageWidth = terrainRasterData != null ? terrainRasterData.width() : this.renderedImage.getWidth();
+        double imageHeight = terrainRasterData != null ? terrainRasterData.height() : this.renderedImage.getHeight();
         double longitudeRange = this.geographicExtension.getLongitudeRangeDegree();
         double latitudeRange = this.geographicExtension.getLatitudeRangeDegree();
         double pixelSizeX = longitudeRange / imageWidth;
@@ -217,6 +231,14 @@ public class TerrainElevationData {
     }
 
     public double getGridValue(int x, int y) {
+        if (isTerrainRasterFile()) {
+            if (!ensureRasterInitialized() || x < 0 || y < 0 || x >= terrainRasterData.width() || y >= terrainRasterData.height()) {
+                return globalOptions.getNoDataValue();
+            }
+            float value = terrainRasterData.getElevation(x, y);
+            return Float.isNaN(value) || Float.compare(value, terrainRasterData.noDataValue()) == 0
+                    ? globalOptions.getNoDataValue() : value;
+        }
         double value = 0.0;
         if (!ensureTileForPixel(x, y)) {
             return globalOptions.getNoDataValue();
@@ -259,7 +281,13 @@ public class TerrainElevationData {
             return 0.0;
         }
 
-        if (gridCoverage2DSize == null) {
+        if (gridCoverage2DSize == null && isTerrainRasterFile()) {
+            if (!ensureRasterInitialized()) {
+                intersects[0] = false;
+                return globalOptions.getNoDataValue();
+            }
+            gridCoverage2DSize = new Vector2i(terrainRasterData.width(), terrainRasterData.height());
+        } else if (gridCoverage2DSize == null) {
             gridCoverage2DSize = this.terrainElevDataManager.getGaiaGeoTiffManager().getGridCoverage2DSize(this.geotiffFilePath);
         }
         Vector2i size = gridCoverage2DSize;
@@ -383,6 +411,20 @@ public class TerrainElevationData {
     }
 
     private boolean ensureRasterInitialized() {
+        if (isTerrainRasterFile()) {
+            if (terrainRasterData != null) {
+                return true;
+            }
+            try {
+                terrainRasterData = new TerrainRasterReader().read(Path.of(geotiffFilePath));
+                hasCoverageNoData = true;
+                coverageNoDataValue = terrainRasterData.noDataValue();
+                return true;
+            } catch (Exception e) {
+                log.error("Failed to open terrain raster {}", geotiffFilePath, e);
+                return false;
+            }
+        }
         if (this.renderedImage != null) {
             if (this.imageTileWidth <= 0 || this.imageTileHeight <= 0) {
                 initializeRenderedImageAccessor();
@@ -627,6 +669,9 @@ public class TerrainElevationData {
     }
 
     private double readGridValueFast(int x, int y) {
+        if (terrainRasterData != null) {
+            return getGridValue(x, y);
+        }
         if (materializedRasterData != null) {
             return readMaterializedGridValue(x, y);
         }
@@ -682,10 +727,17 @@ public class TerrainElevationData {
     }
 
     public boolean isRasterLoaded() {
-        return this.renderedImage != null || this.raster != null;
+        return this.terrainRasterData != null || this.renderedImage != null || this.raster != null;
+    }
+
+    private boolean isTerrainRasterFile() {
+        return terrainRasterFile;
     }
 
     public long estimateRasterBytes() {
+        if (this.terrainRasterData != null) {
+            return (long) this.terrainRasterData.width() * this.terrainRasterData.height() * Float.BYTES;
+        }
         if (this.materializedRasterData != null) {
             return (long) this.materializedRasterData.length * Float.BYTES;
         }

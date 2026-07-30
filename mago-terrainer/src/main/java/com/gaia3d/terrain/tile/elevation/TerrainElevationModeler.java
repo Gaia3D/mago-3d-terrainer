@@ -8,6 +8,10 @@ import com.gaia3d.terrain.tile.core.TileIndices;
 import com.gaia3d.terrain.tile.core.TileRange;
 import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.tile.geotiff.GeoTiffCoverageStore;
+import com.gaia3d.terrain.tile.raster.TerrainRasterData;
+import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
+import com.gaia3d.terrain.tile.raster.TerrainRasterReader;
+import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
@@ -26,6 +30,7 @@ import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -392,6 +397,11 @@ public class TerrainElevationModeler {
             }
 
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
+            if (geoTiffFilePath.toLowerCase().endsWith(TerrainRasterFormat.EXTENSION)) {
+                loadTerrainRasterMetadata(new File(geoTiffFilePath), terrainElevationData);
+                rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
+                continue;
+            }
             GridCoverage2D gridCoverage2D = geoTiffManager.loadGeoTiffGridCoverage2D(geoTiffFilePath);
             terrainElevationData.setGeotiffFilePath(geoTiffFilePath);
             terrainElevationData.setGeotiffFileName(geoTiffFileName);
@@ -414,6 +424,26 @@ public class TerrainElevationModeler {
 
             rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
             // Important: Do not dispose the gridCoverage2D here, because it can be stored in the myGaiaGeoTiffManager cache map.
+        }
+    }
+
+    private void loadTerrainRasterMetadata(File rasterFile, TerrainElevationData elevationData) {
+        try {
+            TerrainRasterData data = new TerrainRasterReader().read(rasterFile.toPath());
+            elevationData.setGeotiffFilePath(rasterFile.getAbsolutePath());
+            elevationData.setGeotiffFileName(rasterFile.getName());
+            elevationData.getGeographicExtension().setDegrees(
+                    data.minLongitude(), data.minLatitude(), 0.0,
+                    data.maxLongitude(), data.maxLatitude(), 0.0);
+
+            double middleLatitude = Math.toRadians((data.minLatitude() + data.maxLatitude()) * 0.5);
+            double pixelWidth = GlobeUtils.distanceBetweenLongitudesRad(middleLatitude,
+                    Math.toRadians(data.minLongitude()), Math.toRadians(data.maxLongitude())) / data.originalWidth();
+            double pixelHeight = GlobeUtils.distanceBetweenLatitudesRad(
+                    Math.toRadians(data.minLatitude()), Math.toRadians(data.maxLatitude())) / data.originalHeight();
+            elevationData.setPixelSizeMeters(new Vector2d(pixelWidth, pixelHeight));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read terrain raster metadata: " + rasterFile, e);
         }
     }
 

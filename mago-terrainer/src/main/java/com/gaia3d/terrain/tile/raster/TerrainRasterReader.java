@@ -42,7 +42,8 @@ public final class TerrainRasterReader {
         double maxLongitude = header.getDouble();
         double maxLatitude = header.getDouble();
         float noDataValue = header.getFloat();
-        header.getInt();
+        int originalWidth = header.getInt();
+        int originalHeight = header.getInt();
 
         long sampleCount = (long) width * (long) height;
         if (width <= 0 || height <= 0 || sampleCount > Integer.MAX_VALUE) {
@@ -56,7 +57,8 @@ public final class TerrainRasterReader {
 
         float[] elevations = readPayload(path, (int) sampleCount);
 
-        return new TerrainRasterData(width, height, minLongitude, minLatitude, maxLongitude, maxLatitude, noDataValue, elevations);
+        return new TerrainRasterData(width, height, originalWidth, originalHeight,
+                minLongitude, minLatitude, maxLongitude, maxLatitude, noDataValue, elevations);
     }
 
     private byte[] readHeader(Path path) throws IOException {

@@ -1332,7 +1332,7 @@ public class TileMatrix {
             }
         }
 
-        log.info("[RefineMesh] Refinement complete: {} iterations, final triangle count: {}", splitCount, mesh.triangles.size());
+        log.debug("[RefineMesh] Refinement complete: {} iterations, final triangle count: {}", splitCount, mesh.triangles.size());
 
         // Log final memory state for debugging and capacity planning
         MemoryMonitor.MemoryState finalMemState = MemoryMonitor.checkMemory("RefineMesh-Complete");

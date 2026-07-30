@@ -32,6 +32,8 @@ class TerrainRasterReaderWriterTest {
 
             assertEquals(3, read.width());
             assertEquals(2, read.height());
+            assertEquals(3, read.originalWidth());
+            assertEquals(2, read.originalHeight());
             assertEquals(126.0, read.minLongitude());
             assertEquals(37.0, read.minLatitude());
             assertEquals(127.0, read.maxLongitude());

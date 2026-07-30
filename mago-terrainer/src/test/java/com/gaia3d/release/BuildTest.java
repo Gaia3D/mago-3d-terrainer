@@ -71,8 +71,8 @@ public class BuildTest {
     }
 
     @Test
-    void koreaWithGeoid100m() {
-        String name = "korea-mini-terrain";
+    void southKorea100mWithEGM96() {
+        String name = "korea-100m-terrain-with-geoid";
         File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample/", "korea-compressed.tif");
         File outputPath = MagoTestConfig.getOutputPath(name + "_nodata_geoid");
         String[] args = new String[]{
@@ -80,6 +80,20 @@ public class BuildTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-calculateNormals",
                 "-geoid", "EGM96",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void southKorea100m() {
+        String name = "korea-100m-terrain";
+        File inputPath = new File("D:/data/mago-3d-tiler/terrain-sample/", "korea-compressed.tif");
+        File outputPath = MagoTestConfig.getOutputPath(name + "_nodata_geoid");
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "--skipStandardizationResize",
+                "-calculateNormals",
         };
         Mago3DTerrainerMain.main(args);
     }
