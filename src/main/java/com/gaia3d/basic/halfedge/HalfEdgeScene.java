@@ -12,9 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.joml.Vector3d;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,50 +30,6 @@ public class HalfEdgeScene implements Serializable {
     private List<HalfEdgeNode> nodes = new ArrayList<>();
     private List<GaiaMaterial> materials = new ArrayList<>();
     private GaiaBoundingBox boundingBox = null;
-
-    public static HalfEdgeScene readFile(String folderPathString, String fileName) throws FileNotFoundException {
-        Path folderPath = Paths.get(folderPathString);
-        Path filePath = folderPath.resolve(fileName);
-        File file = filePath.toFile();
-        try {
-            HalfEdgeScene halfEdgeScene = new HalfEdgeScene();
-            FileInputStream fileInputStream = new FileInputStream(file);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-            ObjectInputStream inputStream = new ObjectInputStream(bufferedInputStream);
-
-            // read originalPath, gaiaBoundingBox, attribute
-            String originalPath = inputStream.readUTF();
-            halfEdgeScene.originalPath = Paths.get(originalPath);
-
-            halfEdgeScene.gaiaBoundingBox = (GaiaBoundingBox) inputStream.readObject();
-            halfEdgeScene.attribute = (GaiaAttribute) inputStream.readObject();
-
-            // Read nodes
-            int nodesSize = inputStream.readInt();
-            for (int i = 0; i < nodesSize; i++) {
-                HalfEdgeNode node = new HalfEdgeNode();
-                node.readFile(inputStream);
-                halfEdgeScene.nodes.add(node);
-            }
-
-            // Read materials
-            int materialsSize = inputStream.readInt();
-            for (int i = 0; i < materialsSize; i++) {
-                GaiaMaterial material = (GaiaMaterial) inputStream.readObject();
-                halfEdgeScene.materials.add(material);
-            }
-
-            inputStream.close();
-            bufferedInputStream.close();
-            fileInputStream.close();
-
-            return halfEdgeScene;
-        } catch (Exception e) {
-            log.error("[ERROR] GaiaSet Read Error : ", e);
-        }
-
-        return null;
-    }
 
     public List<GaiaMaterial> getCopyMaterials() {
         List<GaiaMaterial> copyMaterials = new ArrayList<>();
@@ -123,12 +80,6 @@ public class HalfEdgeScene implements Serializable {
         }
     }
 
-    public void checkSandClockFaces() {
-        for (HalfEdgeNode node : nodes) {
-            node.checkSandClockFaces();
-        }
-    }
-
     public void spendTransformationMatrix() {
         for (HalfEdgeNode node : nodes) {
             node.spendTransformationMatrix();
@@ -138,31 +89,6 @@ public class HalfEdgeScene implements Serializable {
     public void deleteFacesWithClassifyId(int classifyId) {
         for (HalfEdgeNode node : nodes) {
             node.deleteFacesWithClassifyId(classifyId);
-        }
-    }
-
-    public void TEST_cutScene() {
-        // Test
-        GaiaBoundingBox bbox = getBoundingBox();
-        Vector3d center = bbox.getCenter();
-        double error = 1e-8;
-//        if (error < 1)
-//        {
-//            return;
-//        }
-        PlaneType planeType = PlaneType.YZ;
-        cutByPlane(planeType, center, error);
-        classifyFacesIdByPlane(planeType, center);
-
-        // check if there are no used vertices
-        List<HalfEdgeSurface> resultHalfEdgeSurfaces = new ArrayList<>();
-        extractSurfaces(resultHalfEdgeSurfaces);
-        List<HalfEdgeVertex> noUsedVertices = new ArrayList<>();
-        for (HalfEdgeSurface surface : resultHalfEdgeSurfaces) {
-            noUsedVertices.clear();
-            if (surface.existNoUsedVertices(noUsedVertices)) {
-                log.error("[ERROR] existNoUsedVertices.");
-            }
         }
     }
 
@@ -310,57 +236,6 @@ public class HalfEdgeScene implements Serializable {
         }
     }
 
-    public void writeFile(String folderPathString, String fileName) throws FileNotFoundException {
-        Path folderPath = Paths.get(folderPathString);
-        Path filePath = folderPath.resolve(fileName);
-        File file = filePath.toFile();
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-            ObjectOutputStream outputStream = new ObjectOutputStream(bufferedOutputStream);
-            /*
-            private Path originalPath;
-            private GaiaBoundingBox gaiaBoundingBox;
-            private GaiaAttribute attribute;
-            private List<HalfEdgeNode> nodes = new ArrayList<>();
-            private List<GaiaMaterial> materials = new ArrayList<>();
-            private GaiaBoundingBox boundingBox = null;
-             */
-
-            // write originalPath, gaiaBoundingBox, attribute
-            String originalPath = this.originalPath.toString();
-            outputStream.writeUTF(originalPath);
-
-            outputStream.writeObject(gaiaBoundingBox);
-            outputStream.writeObject(attribute);
-
-            // Write nodes
-            outputStream.writeInt(nodes.size());
-            for (HalfEdgeNode node : nodes) {
-                node.writeFile(outputStream);
-            }
-
-            // Write materials
-            outputStream.writeInt(materials.size());
-            for (GaiaMaterial material : materials) {
-                outputStream.writeObject(material);
-            }
-
-            // Copy images to the temp directory
-            for (GaiaMaterial material : materials) {
-                copyTextures(material, folderPath);
-            }
-
-            outputStream.close();
-            bufferedOutputStream.close();
-            fileOutputStream.close();
-
-        } catch (Exception e) {
-            log.error("[ERROR] GaiaSet Write Error : ", e);
-            file.delete();
-        }
-    }
-
     public HalfEdgeScene clone() {
         HalfEdgeScene clonedScene = new HalfEdgeScene();
         clonedScene.originalPath = originalPath;
@@ -504,12 +379,6 @@ public class HalfEdgeScene implements Serializable {
         }
     }
 
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgeNode node : nodes) {
-            node.decimate(decimateParameters);
-        }
-    }
-
     public void updateVerticesList() {
         for (HalfEdgeNode node : nodes) {
             node.updateVerticesList();
@@ -550,10 +419,6 @@ public class HalfEdgeScene implements Serializable {
         if (westVertices.size() > 1) {
             for (HalfEdgeVertex vertex : westVertices) {
                 Vector3d normal = vertex.calculateNormal();
-
-//                Vector3d position = vertex.getPosition();
-//                position.x -= expandDistance * normal.z;
-//                position.z += expandDistance * normal.x;
 
                 if (Math.abs(normal.dot(-1, 0, 0)) < dotLimit) {
                     Vector3d position = vertex.getPosition();

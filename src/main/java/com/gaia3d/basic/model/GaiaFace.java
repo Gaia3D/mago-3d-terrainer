@@ -38,8 +38,6 @@ public class GaiaFace extends FaceStructure implements Serializable {
             GaiaVertex vertex3 = vertices.get(indices3);
             this.faceNormal = calcNormal(vertex1, vertex2, vertex3);
         }
-//        Vector3d firstNormal = vertices.get(0).getNormal();
-//        this.faceNormal = new Vector3d(firstNormal);
     }
 
     public GaiaBoundingBox getBoundingBox(List<GaiaVertex> vertices, GaiaBoundingBox resultBoundingBox) {
@@ -53,18 +51,52 @@ public class GaiaFace extends FaceStructure implements Serializable {
         return resultBoundingBox;
     }
 
+    public void copyFrom(GaiaFace sourceFace) {
+        this.id = sourceFace.id;
+        this.classifyId = sourceFace.classifyId;
+        if (sourceFace.indices != null) {
+            this.indices = sourceFace.indices.clone();
+        } else {
+            this.indices = null;
+        }
+        if (sourceFace.faceNormal != null) {
+            this.faceNormal = new Vector3d(sourceFace.faceNormal);
+        } else {
+            this.faceNormal = null;
+        }
+    }
+
     public boolean validateNormal(Vector3d normal) {
         return !Double.isNaN(normal.lengthSquared()) && !Double.isNaN(normal.x()) && !Double.isNaN(normal.y()) && !Double.isNaN(normal.z()) && !Float.isNaN((float) normal.x()) && !Float.isNaN((float) normal.y()) && !Float.isNaN((float) normal.z());
     }
 
     public Vector3d calcNormal(Vector3d p1, Vector3d p2, Vector3d p3) {
-        Vector3d p2SubP1 = new Vector3d(p2).sub(p1);
-        Vector3d p3SubP2 = new Vector3d(p3).sub(p2);
-        Vector3d normal = new Vector3d(p2SubP1).cross(p3SubP2);
-        normal.normalize();
-        p3SubP2 = null;
-        p2SubP1 = null;
-        return normal;
+        double ax = p2.x - p1.x;
+        double ay = p2.y - p1.y;
+        double az = p2.z - p1.z;
+
+        double bx = p3.x - p1.x;
+        double by = p3.y - p1.y;
+        double bz = p3.z - p1.z;
+
+        double nx = ay * bz - az * by;
+        double ny = az * bx - ax * bz;
+        double nz = ax * by - ay * bx;
+
+        double len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+
+        if (this.faceNormal == null) {
+            this.faceNormal = new Vector3d();
+        }
+
+        if (len > 1e-12) {
+            double invLen = 1.0 / len;
+            this.faceNormal.set(nx * invLen, ny * invLen, nz * invLen);
+        } else {
+            this.faceNormal.set(0.0, 0.0, 0.0);
+        }
+
+        return this.faceNormal;
     }
 
     public Vector3d calcNormal(GaiaVertex vertex1, GaiaVertex vertex2, GaiaVertex vertex3) {
@@ -148,17 +180,10 @@ public class GaiaFace extends FaceStructure implements Serializable {
             Vector3d vectorB = vertex2.getPosition();
             Vector3d vectorC = vertex3.getPosition();
 
-            if (vectorA.distance(vectorB) < error || vectorA.distance(vectorC) < error || vectorB.distance(vectorC) < error) {
-                return true;
-            }
-
-            // check if the area of the triangle is zero.
-            double area = GeometryUtils.getTriangleArea(vertex1, vertex2, vertex3);
-            if (area < error) {
+            if (vectorA.distance(vectorB) == 0.0 || vectorA.distance(vectorC) == 0.0 || vectorB.distance(vectorC) == 0.0) {
                 return true;
             }
         }
-
 
         return false;
     }

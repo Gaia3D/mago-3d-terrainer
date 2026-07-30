@@ -1,5 +1,6 @@
 package com.gaia3d.util;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.ByteBuffer;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.Vector;
 
 @Slf4j
+@UtilityClass
 public class StringUtils {
     public static String doPadding4Bytes(String text) {
         return doPaddingBytes(text, 4);
@@ -27,6 +29,15 @@ public class StringUtils {
             featureTableText.append(" ".repeat(Math.max(0, padding)));
         }
         return featureTableText.toString();
+    }
+
+    public static boolean isConvertibleToInt(String word) {
+        try {
+            Integer.parseInt(word);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     public static void splitString(String wordToSplit, String delimiter, Vector<String> resultSplittedStrings, boolean skipEmptyStrings) {

@@ -6,9 +6,6 @@ import lombok.Setter;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,17 +14,12 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class HalfEdge implements Serializable {
-    public String note = null;
     private HalfEdge twin = null;
     private HalfEdge next = null;
     private HalfEdgeVertex startVertex = null;
     private HalfEdgeFace face = null;
     private ObjectStatus status = ObjectStatus.ACTIVE;
     private int id = -1;
-    private int twinId = -1;
-    private int nextId = -1;
-    private int startVertexId = -1;
-    private int faceId = -1;
     private int classifyId = -1; // auxiliary variable
 
     public void setStartVertex(HalfEdgeVertex startVertex) {
@@ -254,15 +246,6 @@ public class HalfEdge implements Serializable {
             return false;
         }
 
-//        // check if the halfEdge is parallel to the plane
-//        Vector3d hedgeDir = this.getVector(null);
-//        hedgeDir.normalize();
-//        Vector3d planeNormal = new Vector3d(0, 0, 1);
-//        double dot = hedgeDir.dot(planeNormal);
-//        double angDeg = Math.toDegrees(Math.acos(dot));
-//        if (angDeg > 70.0) {
-//            return false;
-//        }
         if (Math.abs(startVertexPosition.z - endVertexPosition.z) < error) {
             return false;
         }
@@ -337,14 +320,6 @@ public class HalfEdge implements Serializable {
         }
 
         // check if the halfEdge is parallel to the plane
-//        Vector3d hedgeDir = this.getVector(null);
-//        hedgeDir.normalize();
-//        Vector3d planeNormal = new Vector3d(1, 0, 0);
-//        double dot = hedgeDir.dot(planeNormal);
-//        double angDeg = Math.toDegrees(Math.acos(dot));
-//        if (angDeg > 70.0) {
-//            return false;
-//        }
         if (Math.abs(startVertexPosition.x - endVertexPosition.x) < error) {
             return false;
         }
@@ -421,14 +396,6 @@ public class HalfEdge implements Serializable {
         }
 
 //        // check if the halfEdge is parallel to the plane
-//        Vector3d hedgeDir = this.getVector(null);
-//        hedgeDir.normalize();
-//        Vector3d planeNormal = new Vector3d(0, 1, 0);
-//        double dot = hedgeDir.dot(planeNormal);
-//        double angDeg = Math.toDegrees(Math.acos(dot));
-//        if (angDeg > 70.0) {
-//            return false;
-//        }
         if (Math.abs(startVertexPosition.y - endVertexPosition.y) < error) {
             return false;
         }
@@ -481,60 +448,6 @@ public class HalfEdge implements Serializable {
         }
 
         return true;
-    }
-
-    public void writeFile(ObjectOutputStream outputStream) {
-        /*
-        public String note = null;
-        private HalfEdge twin = null;
-        private HalfEdge next = null;
-        private HalfEdgeVertex startVertex = null;
-        private HalfEdgeFace face = null;
-        private ObjectStatus status = ObjectStatus.ACTIVE;
-        private int id = -1;
-        private int twinId = -1;
-        private int nextId = -1;
-        private int startVertexId = -1;
-        private int faceId = -1;
-         */
-
-        try {
-            // twinId
-            int twinId = twin == null ? -1 : twin.id;
-            outputStream.writeInt(twinId);
-            // nextId
-            int nextId = next == null ? -1 : next.id;
-            outputStream.writeInt(nextId);
-            // startVertexId
-            int startVertexId = startVertex == null ? -1 : startVertex.getId();
-            outputStream.writeInt(startVertexId);
-            // faceId
-            int faceId = face == null ? -1 : face.getId();
-            outputStream.writeInt(faceId);
-            // status
-            outputStream.writeObject(status);
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void readFile(ObjectInputStream inputStream) {
-        try {
-            // twinId
-            twinId = inputStream.readInt();
-            // nextId
-            nextId = inputStream.readInt();
-            // startVertexId
-            startVertexId = inputStream.readInt();
-            // faceId
-            faceId = inputStream.readInt();
-            // status
-            status = (ObjectStatus) inputStream.readObject();
-
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public boolean intersectsPlane(PlaneType planeType, Vector3d planePosition, double error) {

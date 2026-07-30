@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,13 +46,11 @@ public class HalfEdgePrimitive implements Serializable {
             surface.deleteObjects();
         }
         surfaces.clear();
-        vertices.clear();
-    }
-
-    public void checkSandClockFaces() {
-        for (HalfEdgeSurface surface : surfaces) {
-            surface.checkSandClockFaces();
+        // delete vertices.
+        for (HalfEdgeVertex vertex : vertices) {
+            vertex.deleteObjects();
         }
+        vertices.clear();
     }
 
     public void transformPoints(Matrix4d finalMatrix) {
@@ -108,48 +104,6 @@ public class HalfEdgePrimitive implements Serializable {
     public void setObjectIdsInList() {
         for (HalfEdgeSurface surface : surfaces) {
             surface.setObjectIdsInList();
-        }
-    }
-
-    public void writeFile(ObjectOutputStream outputStream) {
-        /*
-        private Integer accessorIndices = -1;
-        private Integer materialIndex = -1;
-        private List<HalfEdgeSurface> surfaces = new ArrayList<>();
-        private List<HalfEdgeVertex> vertices = new ArrayList<>(); // vertices of all surfaces
-        private GaiaBoundingBox boundingBox = null;
-         */
-
-        try {
-            // accessorIndices
-            outputStream.writeInt(accessorIndices);
-            // materialIndex
-            outputStream.writeInt(materialIndex);
-            // surfaces
-            outputStream.writeInt(surfaces.size());
-            for (HalfEdgeSurface surface : surfaces) {
-                surface.writeFile(outputStream);
-            }
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
-        }
-    }
-
-    public void readFile(ObjectInputStream inputStream) {
-        try {
-            // accessorIndices
-            accessorIndices = inputStream.readInt();
-            // materialIndex
-            materialIndex = inputStream.readInt();
-            // surfaces
-            int surfacesCount = inputStream.readInt();
-            for (int i = 0; i < surfacesCount; i++) {
-                HalfEdgeSurface surface = new HalfEdgeSurface();
-                surface.readFile(inputStream);
-                surfaces.add(surface);
-            }
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
         }
     }
 
@@ -265,12 +219,6 @@ public class HalfEdgePrimitive implements Serializable {
     public void translate(Vector3d translation) {
         for (HalfEdgeSurface surface : surfaces) {
             surface.translate(translation);
-        }
-    }
-
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgeSurface surface : surfaces) {
-            surface.decimate(decimateParameters);
         }
     }
 

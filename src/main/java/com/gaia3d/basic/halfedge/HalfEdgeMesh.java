@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,12 +24,6 @@ public class HalfEdgeMesh implements Serializable {
             primitive.deleteObjects();
         }
         primitives.clear();
-    }
-
-    public void checkSandClockFaces() {
-        for (HalfEdgePrimitive primitive : primitives) {
-            primitive.checkSandClockFaces();
-        }
     }
 
     public void transformPoints(Matrix4d finalMatrix) {
@@ -81,35 +73,6 @@ public class HalfEdgeMesh implements Serializable {
     public void classifyFacesIdByPlane(PlaneType planeType, Vector3d planePosition) {
         for (HalfEdgePrimitive primitive : primitives) {
             primitive.classifyFacesIdByPlane(planeType, planePosition);
-        }
-    }
-
-    public void writeFile(ObjectOutputStream outputStream) {
-        /*
-        private List<HalfEdgePrimitive> primitives = new ArrayList<>();
-        private GaiaBoundingBox boundingBox = null;
-         */
-
-        try {
-            outputStream.writeInt(primitives.size());
-            for (HalfEdgePrimitive primitive : primitives) {
-                primitive.writeFile(outputStream);
-            }
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
-        }
-    }
-
-    public void readFile(ObjectInputStream inputStream) {
-        try {
-            int primitivesSize = inputStream.readInt();
-            for (int i = 0; i < primitivesSize; i++) {
-                HalfEdgePrimitive primitive = new HalfEdgePrimitive();
-                primitive.readFile(inputStream);
-                primitives.add(primitive);
-            }
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
         }
     }
 
@@ -200,12 +163,6 @@ public class HalfEdgeMesh implements Serializable {
     public void translate(Vector3d translation) {
         for (HalfEdgePrimitive primitive : primitives) {
             primitive.translate(translation);
-        }
-    }
-
-    public void decimate(DecimateParameters decimateParameters) {
-        for (HalfEdgePrimitive primitive : primitives) {
-            primitive.decimate(decimateParameters);
         }
     }
 

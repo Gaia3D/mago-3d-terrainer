@@ -4,6 +4,7 @@ import com.gaia3d.basic.model.GaiaFace;
 import com.gaia3d.basic.model.GaiaPrimitive;
 import com.gaia3d.basic.model.GaiaSurface;
 import com.gaia3d.basic.model.GaiaVertex;
+import lombok.experimental.UtilityClass;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@UtilityClass
 public class GaiaPrimitiveUtils {
 
     public static void mergePrimitives(GaiaPrimitive primitiveMaster, GaiaPrimitive primitive) {
@@ -82,6 +84,7 @@ public class GaiaPrimitiveUtils {
         return primitive;
     }
 
+    @Deprecated
     public static void getWeldableVertexMap(Map<GaiaVertex, GaiaVertex> mapVertexToVertexMaster, List<GaiaVertex> vertices, double error, boolean checkTexCoord, boolean checkNormal, boolean checkColor, boolean checkBatchId) {
         Map<GaiaVertex, GaiaVertex> visitedMap = new HashMap<>();
         int verticesCount = vertices.size();
@@ -108,7 +111,7 @@ public class GaiaPrimitiveUtils {
         }
     }
 
-
+    @Deprecated
     public static int calculateConvexity(GaiaVertex vertex, Vector3d normal, List<GaiaVertex> neighborVertices, double error) {
         int convexity = 1;
         Vector3d vertexPosition = vertex.getPosition();

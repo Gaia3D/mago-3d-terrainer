@@ -1,6 +1,7 @@
 package com.gaia3d.basic.legend;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,11 +11,9 @@ import java.util.TreeMap;
 @Slf4j
 @Getter
 @Setter
+@NoArgsConstructor
 public class LegendColors {
-    private TreeMap<Double,GaiaColor> colorMap = new TreeMap<>();
-
-    public LegendColors() {
-    }
+    private TreeMap<Double, GaiaColor> colorMap = new TreeMap<>();
 
     public void clear() {
         colorMap.clear();
@@ -28,7 +27,7 @@ public class LegendColors {
     }
 
     public void setValueAndColor(double value, double r, double g, double b, double a) {
-        GaiaColor color = new GaiaColor((float)r, (float)g, (float)b, (float)a);
+        GaiaColor color = new GaiaColor((float) r, (float) g, (float) b, (float) a);
         setValueAndColor(value, color);
     }
 
@@ -47,7 +46,7 @@ public class LegendColors {
         }
 
         Map.Entry<Double, GaiaColor> lowerEntry = colorMap.lowerEntry(value);
-        Map.Entry<Double, GaiaColor> higherEntry = colorMap.ceilingEntry(value);
+        Map.Entry<Double, GaiaColor> higherEntry = colorMap.higherEntry(value);
 
         if (lowerEntry == null) {
             return higherEntry.getValue(); // Return the first color if no lower entry exists

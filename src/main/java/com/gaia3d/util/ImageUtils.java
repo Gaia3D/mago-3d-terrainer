@@ -1,11 +1,13 @@
 package com.gaia3d.util;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
+import javax.imageio.*;
+import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -16,12 +18,14 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.Locale;
 
 /**
  * Utility class for image operations.
  */
 @SuppressWarnings("ALL")
 @Slf4j
+@UtilityClass
 public class ImageUtils {
 
     private final int MAX_IMAGE_SIZE = 16384;
@@ -110,7 +114,7 @@ public class ImageUtils {
                     buffer = new byte[is.available()];
                 }
             }
-            if (flip) byteBuffer.flip();
+            if (flip) {byteBuffer.flip();}
             return byteBuffer;
         } catch (IOException e) {
             log.error("[ERROR] :", e);
@@ -119,29 +123,16 @@ public class ImageUtils {
     }
 
     public static File getChildFile(File parent, String path) {
-        File file = new File(parent, path);
-        String name = FilenameUtils.getBaseName(path);
-        String ext = FilenameUtils.getExtension(path);
-        if (file.exists() && file.isFile()) {
-            return file;
+        File file = resolveCaseInsensitive(parent, new File(path));
+        return file != null && file.isFile() ? file : null;
+    }
+
+    public static String getChildPath(File parent, String path) {
+        File file = getChildFile(parent, path);
+        if (file == null) {
+            return null;
         }
-        file = new File(parent, name.toLowerCase() + "." + ext.toLowerCase());
-        if (file.exists() && file.isFile()) {
-            return file;
-        }
-        file = new File(parent, name.toUpperCase() + "." + ext.toUpperCase());
-        if (file.exists() && file.isFile()) {
-            return file;
-        }
-        file = new File(parent, name.toLowerCase() + "." + ext.toUpperCase());
-        if (file.exists() && file.isFile()) {
-            return file;
-        }
-        file = new File(parent, name.toUpperCase() + "." + ext.toLowerCase());
-        if (file.exists() && file.isFile()) {
-            return file;
-        }
-        return null;
+        return getRelativePath(parent, file);
     }
 
     public static File correctFile(File file) {
@@ -187,7 +178,7 @@ public class ImageUtils {
         }
 
         input = new File(parent, file.getPath());
-        result = correctFile(input);
+        result = resolveCaseInsensitive(parent, file);
         if (result != null && result.exists() && result.isFile()) {
             log.debug("Original Path: {}", file.getPath());
             log.debug("Corrected Path: {}", result.getPath());
@@ -203,6 +194,58 @@ public class ImageUtils {
         }
 
         throw new FileNotFoundException("File not found : " + file.getAbsolutePath());
+    }
+
+    private static File resolveCaseInsensitive(File parent, File file) {
+        File input = file.isAbsolute() ? file : new File(parent, file.getPath());
+        if (input.exists()) {
+            return input;
+        }
+
+        File correctedFile = correctFile(input);
+        if (correctedFile != null) {
+            return correctedFile;
+        }
+
+        File root = file.isAbsolute() ? input.toPath().getRoot().toFile() : parent;
+        File resolved = root;
+        Path relativePath = file.isAbsolute() ? input.toPath().getRoot().relativize(input.toPath()) : file.toPath();
+        for (Path segmentPath : relativePath) {
+            String segment = segmentPath.toString();
+            File exact = new File(resolved, segment);
+            if (exact.exists()) {
+                resolved = exact;
+                continue;
+            }
+
+            File[] children = resolved.listFiles();
+            if (children == null) {
+                return null;
+            }
+
+            File matched = null;
+            for (File child : children) {
+                if (child.getName().equalsIgnoreCase(segment)) {
+                    matched = child;
+                    break;
+                }
+            }
+            if (matched == null) {
+                return null;
+            }
+            resolved = matched;
+        }
+        return resolved.exists() ? resolved : null;
+    }
+
+    private static String getRelativePath(File parent, File child) {
+        try {
+            Path parentPath = parent.toPath().toAbsolutePath().normalize();
+            Path childPath = child.toPath().toAbsolutePath().normalize();
+            return parentPath.relativize(childPath).toString();
+        } catch (IllegalArgumentException e) {
+            return child.getName();
+        }
     }
 
     public static int[] readImageSize(String imagePath) {
@@ -366,32 +409,258 @@ public class ImageUtils {
         return newImage;
     }
 
-    public static BufferedImage changeBackgroundColor(BufferedImage image, Color oldColor, Color newColor) {
-        log.debug("Change Background Color");
+    public static BufferedImage fillColor(BufferedImage image, Color newColor) {
         int width = image.getWidth();
         int height = image.getHeight();
         BufferedImage newImage = new BufferedImage(width, height, image.getType());
+        //boolean hasAlpha = image.getColorModel().hasAlpha();
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                Color pixel = new Color(image.getRGB(i, j), true);
-                if (pixel.getRGB() == oldColor.getRGB()) {
-                    newImage.setRGB(i, j, newColor.getRGB());
-                } else {
-                    newImage.setRGB(i, j, image.getRGB(i, j));
-                }
+                newImage.setRGB(i, j, newColor.getRGB());
             }
         }
         newImage.flush();
         return newImage;
     }
 
-    public static void saveBufferedImage(BufferedImage image, String format, String path) {
-        try {
-            File file = new File(path);
-            ImageIO.write(image, format, new File(path));
-        } catch (IOException e) {
-            log.error("[ERROR] :", e);
+    public static BufferedImage changeBackgroundColor(
+            BufferedImage image,
+            Color oldColor,
+            Color newColor
+    ) {
+        if (image == null || oldColor == null || newColor == null) {
+            return image;
         }
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        int oldRGB = oldColor.getRGB() & 0x00FFFFFF;
+        int newRGB = newColor.getRGB() & 0x00FFFFFF;
+
+        boolean hasAlpha = image.getColorModel().hasAlpha();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int argb = image.getRGB(x, y);
+                int rgb = argb & 0x00FFFFFF;
+
+                if (rgb == oldRGB) {
+                    if (hasAlpha) {
+                        int alpha = argb & 0xFF000000;
+                        image.setRGB(x, y, alpha | newRGB);
+                    } else {
+                        image.setRGB(x, y, 0xFF000000 | newRGB);
+                    }
+                }
+            }
+        }
+
+        return image;
+    }
+
+//    public static void saveBufferedImage(BufferedImage image, String format, String path) {
+//        try {
+//            File file = new File(path);
+//            ImageIO.write(image, format, new File(path));
+//        } catch (IOException e) {
+//            log.error("[ERROR] :", e);
+//        }
+//    }
+
+    /**
+     * @param savePath Ruta de destino.
+     * @param fastPng true para priorizar velocidad sobre tamaño del PNG.
+     * @param jpegQuality Calidad JPEG entre 0.0 y 1.0.
+     * @return true cuando la imagen se escribió correctamente.
+     */
+    public static boolean saveBufferedImage(
+            BufferedImage bufferedImage,
+            String savePath,
+            boolean fastPng,
+            float jpegQuality
+    ) {
+        if (bufferedImage == null) {
+            log.warn("GaiaTexture.saveImage(): bufferedImage is null.");
+            return false;
+        }
+
+        if (savePath == null || savePath.isBlank()) {
+            log.warn("GaiaTexture.saveImage(): savePath is null or empty.");
+            return false;
+        }
+
+        String imageFormat = getImageFormat(savePath);
+
+        if (imageFormat == null) {
+            log.error(
+                    "GaiaTexture.saveImage(): destination has no valid extension: {}",
+                    savePath
+            );
+            return false;
+        }
+
+        Path outputPath = Path.of(savePath);
+        Path parent = outputPath.getParent();
+
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+        } catch (IOException e) {
+            log.error(
+                    "GaiaTexture.saveImage(): could not create directory: {}",
+                    parent,
+                    e
+            );
+            return false;
+        }
+
+        Iterator<ImageWriter> writers =
+                ImageIO.getImageWritersByFormatName(imageFormat);
+
+        if (!writers.hasNext()) {
+            log.error(
+                    "GaiaTexture.saveImage(): no ImageWriter found for format: {}",
+                    imageFormat
+            );
+            return false;
+        }
+
+        ImageWriter writer = writers.next();
+
+        try (
+                ImageOutputStream output =
+                        new FileImageOutputStream(outputPath.toFile())
+        ) {
+            writer.setOutput(output);
+
+            ImageWriteParam writeParam =
+                    writer.getDefaultWriteParam();
+
+            configureCompression(
+                    writeParam,
+                    imageFormat,
+                    fastPng,
+                    jpegQuality
+            );
+
+            IIOImage outputImage = new IIOImage(
+                    bufferedImage,
+                    null,
+                    null
+            );
+
+            writer.write(
+                    null,
+                    outputImage,
+                    writeParam
+            );
+
+            output.flush();
+            return true;
+
+        } catch (IOException | RuntimeException e) {
+            log.error(
+                    "GaiaTexture.saveImage(): failed to write image: {}",
+                    savePath,
+                    e
+            );
+            return false;
+
+        } finally {
+            writer.dispose();
+        }
+    }
+
+    private static void configureCompression(
+            ImageWriteParam writeParam,
+            String imageFormat,
+            boolean fastPng,
+            float jpegQuality
+    ) {
+        if (!writeParam.canWriteCompressed()) {
+            return;
+        }
+
+        writeParam.setCompressionMode(
+                ImageWriteParam.MODE_EXPLICIT
+        );
+
+        /*
+         * Algunos writers exigen seleccionar un tipo de compresión
+         * antes de configurar su calidad.
+         */
+        String[] compressionTypes =
+                writeParam.getCompressionTypes();
+
+        if (compressionTypes != null
+                && compressionTypes.length > 0
+                && writeParam.getCompressionType() == null) {
+
+            writeParam.setCompressionType(
+                    compressionTypes[0]
+            );
+        }
+
+        switch (imageFormat) {
+            case "png" -> {
+                /*
+                 * PNG continúa siendo lossless.
+                 *
+                 * Un valor alto prioriza velocidad y menor trabajo
+                 * de compresión, normalmente a cambio de archivos
+                 * de mayor tamaño.
+                 */
+                if (fastPng) {
+                    writeParam.setCompressionQuality(0.9f);
+                }
+            }
+
+            case "jpg", "jpeg" -> {
+                float clampedQuality = Math.max(
+                        0.0f,
+                        Math.min(1.0f, jpegQuality)
+                );
+
+                writeParam.setCompressionQuality(
+                        clampedQuality
+                );
+
+                if (writeParam.canWriteProgressive()) {
+                    writeParam.setProgressiveMode(
+                            ImageWriteParam.MODE_DISABLED
+                    );
+                }
+            }
+
+            default -> {
+                /*
+                 * Mantener la configuración explícita predeterminada
+                 * del writer para otros formatos.
+                 */
+            }
+        }
+    }
+
+    private static String getImageFormat(String savePath) {
+        int dotIndex = savePath.lastIndexOf('.');
+
+        if (dotIndex < 0 || dotIndex == savePath.length() - 1) {
+            return null;
+        }
+
+        String extension = savePath
+                .substring(dotIndex + 1)
+                .toLowerCase(Locale.ROOT);
+
+        return switch (extension) {
+            case "jpg", "jpeg" -> "jpeg";
+            case "png" -> "png";
+            case "bmp" -> "bmp";
+            case "gif" -> "gif";
+            default -> extension;
+        };
     }
 
     public static boolean isImageFullyTransparent(BufferedImage img) {
@@ -417,6 +686,134 @@ public class ImageUtils {
             }
         }
         return true;
+    }
+
+    public static BufferedImage correctGammaSaturation(BufferedImage src, double gamma, float saturationFactor) {
+        int w = src.getWidth();
+        int h = src.getHeight();
+
+        boolean hasAlpha = src.getColorModel().hasAlpha();
+
+        BufferedImage result = new BufferedImage(
+                w,
+                h,
+                hasAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB
+        );
+
+        // -------- LUT gamma --------
+        double invGamma = 1.0 / gamma;
+        int[] gammaLUT = new int[256];
+        for (int i = 0; i < 256; i++) {
+            gammaLUT[i] = (int) (Math.pow(i / 255.0, invGamma) * 255.0 + 0.5);
+        }
+
+        float[] hsb = new float[3];
+
+        // -------- Loop principal --------
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+
+                int argb = src.getRGB(x, y);
+
+                int a = (argb >>> 24);
+
+                // 1️⃣ Gamma primero
+                int r = gammaLUT[(argb >> 16) & 0xff];
+                int g = gammaLUT[(argb >> 8) & 0xff];
+                int b = gammaLUT[argb & 0xff];
+
+                // 2️⃣ Contraste suave tipo HDR natural
+                r = clamp((int) ((r - 128) * 1.05 + 128));
+                g = clamp((int) ((g - 128) * 1.05 + 128));
+                b = clamp((int) ((b - 128) * 1.05 + 128));
+
+                // 3️⃣ Pasar a HSB
+                Color.RGBtoHSB(r, g, b, hsb);
+
+                float hue = hsb[0];
+                float sat = hsb[1];
+                float bri = hsb[2];
+
+                // 4️⃣ Saturación global suave
+                sat *= saturationFactor;
+
+                // 5️⃣ Mejora específica de verdes (árboles)
+                if (hue > 0.25f && hue < 0.45f && sat > 0.15f) {
+
+                    // más vida al verde
+                    sat *= 1.10f;
+                    if (sat > 1f) {sat = 1f;}
+
+                    // verde más claro natural
+                    bri += (1f - bri) * 0.08f;
+
+                    // pequeño shift para evitar verde oliva
+                    hue -= 0.01f;
+                    if (hue < 0f) {hue += 1f;}
+                }
+
+                if (sat > 1f) {sat = 1f;}
+                if (bri > 1f) {bri = 1f;}
+
+                int rgb = Color.HSBtoRGB(hue, sat, bri);
+
+                int newArgb = (a << 24) | (rgb & 0x00ffffff);
+                result.setRGB(x, y, newArgb);
+            }
+        }
+        return result;
+    }
+
+    private static int clamp(int v) {
+        return v < 0 ? 0 : (v > 255 ? 255 : v);
+    }
+
+    public static BufferedImage correctGammaSaturation_original(BufferedImage src, double gamma, float saturationFactor) {
+        int w = src.getWidth();
+        int h = src.getHeight();
+
+        boolean hasAlpha = src.getColorModel().hasAlpha();
+
+        BufferedImage result = new BufferedImage(
+                w,
+                h,
+                hasAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB
+        );
+
+        // Precompute gamma correction lookup table
+        double invGamma = 1.0 / gamma;
+        int[] gammaLUT = new int[256];
+        for (int i = 0; i < 256; i++) {
+            //gammaLUT[i] = (int) Math.min(255, Math.max(0, Math.pow(i / 255.0, gamma) * 255.0 + 0.5));
+            gammaLUT[i] = (int) (Math.pow(i / 255.0, invGamma) * 255.0 + 0.5);
+        }
+
+        float[] hsb = new float[3];
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+
+                int argb = src.getRGB(x, y);
+
+                int a = (argb >>> 24);
+                int r = gammaLUT[(argb >> 16) & 0xff];
+                int g = gammaLUT[(argb >> 8) & 0xff];
+                int b = gammaLUT[argb & 0xff];
+
+                // --- RGB → HSB ---
+                Color.RGBtoHSB(r, g, b, hsb);
+
+                // subir saturación
+                hsb[1] *= saturationFactor;
+                if (hsb[1] > 1f) {hsb[1] = 1f;}
+
+                int rgb = Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
+
+                int newArgb = (a << 24) | (rgb & 0x00ffffff);
+                result.setRGB(x, y, newArgb);
+            }
+        }
+        return result;
     }
 
     public static BufferedImage expandWithBorderFast(BufferedImage src, int n, boolean bordeCopiado) {

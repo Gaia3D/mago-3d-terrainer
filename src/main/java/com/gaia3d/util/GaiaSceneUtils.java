@@ -1,8 +1,9 @@
 package com.gaia3d.util;
 
-import com.gaia3d.basic.geometry.octree.GaiaOctreeVertices;
+import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.model.*;
 import com.gaia3d.basic.model.structure.GaiaFaceExplicit;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
+@UtilityClass
 public class GaiaSceneUtils {
     public static GaiaScene getSceneRectangularNet(int numCols, int numRows, double width, double height, boolean calculateTexCoords) {
         GaiaScene scene = new GaiaScene();
@@ -27,6 +29,26 @@ public class GaiaSceneUtils {
         GaiaPrimitive primitive = GaiaPrimitiveUtils.getRectangularNet(numCols, numRows, width, height, calculateTexCoords);
         mesh.getPrimitives().add(primitive);
         return scene;
+    }
+
+    public static GaiaBoundingBox calculateBBoxOfFaces(List<GaiaFace> faces, List<GaiaVertex> vertices) {
+        GaiaBoundingBox boundingBox = null;
+        int facesCount = faces.size();
+        for (GaiaFace face : faces) {
+            int[] indices = face.getIndices();
+            int indicesCount = indices.length;
+            for (int i = 0; i < indicesCount; i++) {
+                GaiaVertex vertex = vertices.get(indices[i]);
+                Vector3d position = vertex.getPosition();
+
+                if (boundingBox == null) {
+                    boundingBox = new GaiaBoundingBox();
+                }
+
+                boundingBox.addPoint(position);
+            }
+        }
+        return boundingBox;
     }
 
     public static boolean checkSceneMaterials(GaiaScene scene) {
@@ -45,8 +67,7 @@ public class GaiaSceneUtils {
     }
 
     public static Map<GaiaVertex, List<GaiaFaceExplicit>> getMapVertexToFaceExplicits(List<GaiaFaceExplicit> faces, Map<GaiaVertex, List<GaiaFaceExplicit>> resultMapVertexToFace) {
-        if (resultMapVertexToFace == null)
-            resultMapVertexToFace = new HashMap<>();
+        if (resultMapVertexToFace == null) {resultMapVertexToFace = new HashMap<>();}
 
         for (GaiaFaceExplicit face : faces) {
             GaiaVertex vertex1 = face.getVertex1();
@@ -64,8 +85,7 @@ public class GaiaSceneUtils {
     }
 
     public static List<GaiaFaceExplicit> getGaiaFacesExplicit(GaiaSurface surface, List<GaiaVertex> vertices, List<GaiaFaceExplicit> resultGaiaFaceExplicits) {
-        if (resultGaiaFaceExplicits == null)
-            resultGaiaFaceExplicits = new ArrayList<>();
+        if (resultGaiaFaceExplicits == null) {resultGaiaFaceExplicits = new ArrayList<>();}
         List<GaiaFace> faces = surface.getFaces();
         for (GaiaFace face : faces) {
             GaiaFaceExplicit gaiaFaceExplicit = new GaiaFaceExplicit();

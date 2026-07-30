@@ -7,10 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A class that represents a face of a Gaia object.
@@ -99,7 +96,9 @@ public class GaiaSurface extends SurfaceStructure implements Serializable {
         return clonedSurface;
     }
 
-    private boolean getFacesWeldedWithFaces(List<GaiaFace> masterFaces, List<GaiaFace> resultFaces, Map<GaiaFace, GaiaFace> mapVisitedFaces) {
+    private boolean getFacesWeldedWithFaces(List<GaiaFace> masterFaces,
+                                            List<GaiaFace> resultFaces,
+                                            Map<GaiaFace, GaiaFace> mapVisitedFaces) {
         boolean newFaceAdded = false;
         Map<Integer, Integer> mapIndices = new HashMap<>();
 
@@ -173,7 +172,7 @@ public class GaiaSurface extends SurfaceStructure implements Serializable {
     }
 
     public int deleteDegeneratedFaces(List<GaiaVertex> vertices) {
-        List<GaiaFace> facesToDelete = new ArrayList<>();
+        Set<GaiaFace> facesToDelete = new HashSet<>();
         for (GaiaFace face : faces) {
             if (face.isDegenerated(vertices)) {
                 facesToDelete.add(face);

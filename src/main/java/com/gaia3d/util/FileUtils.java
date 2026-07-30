@@ -1,5 +1,6 @@
 package com.gaia3d.util;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -8,6 +9,7 @@ import java.util.List;
 
 @SuppressWarnings("ALL")
 @Slf4j
+@UtilityClass
 public class FileUtils {
 
     public static boolean isFileExists(String filePath) {
@@ -79,6 +81,24 @@ public class FileUtils {
                 String subFolderPath = folderPath + File.separator + folderName;
                 FileUtils.getFilePathsByExtension(subFolderPath, extension, fileNames, isRecursive);
             }
+        }
+    }
+
+    public static void deleteDirectory(File depthTempFolder) {
+        if (depthTempFolder.isDirectory()) {
+            File[] children = depthTempFolder.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteDirectory(child);
+                }
+            }
+        } else if (depthTempFolder.isFile()) {
+            if (!depthTempFolder.delete()) {
+                log.warn("Failed to delete file: " + depthTempFolder.getAbsolutePath());
+            }
+        }
+        if (!depthTempFolder.delete()) {
+            log.warn("Failed to delete file or folder: " + depthTempFolder.getAbsolutePath());
         }
     }
 }

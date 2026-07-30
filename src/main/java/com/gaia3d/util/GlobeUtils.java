@@ -1,6 +1,11 @@
 package com.gaia3d.util;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.geotools.api.referencing.FactoryException;
+import org.geotools.api.referencing.ReferenceIdentifier;
+import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.joml.Matrix4d;
@@ -10,10 +15,6 @@ import org.locationtech.proj4j.BasicCoordinateTransform;
 import org.locationtech.proj4j.CRSFactory;
 import org.locationtech.proj4j.CoordinateReferenceSystem;
 import org.locationtech.proj4j.ProjCoordinate;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.ReferenceIdentifier;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ import java.util.List;
  * Utility class for converting between geographic and cartesian coordinates.
  */
 @Slf4j
+@UtilityClass
 public class GlobeUtils {
     public static final double DEGREE_TO_RADIAN_FACTOR = 0.017453292519943296d; // 3.141592653589793 / 180.0;
     public static final double EQUATORIAL_RADIUS = 6378137.0d;
@@ -31,7 +33,9 @@ public class GlobeUtils {
     private static final CRSFactory factory = new CRSFactory();
     public static final CoordinateReferenceSystem wgs84 = factory.createFromParameters("WGS84", "+proj=longlat +datum=WGS84 +no_defs");
 
-    public static double[] geographicToCartesianWgs84(double longitude, double latitude, double altitude) {
+    // --- Body-parameterized methods ---
+
+    public static double[] geographicToCartesian(double longitude, double latitude, double altitude, CelestialBody body) {
         double[] result = new double[3];
         double lonRad = longitude * DEGREE_TO_RADIAN_FACTOR;
         double latRad = latitude * DEGREE_TO_RADIAN_FACTOR;
@@ -39,55 +43,74 @@ public class GlobeUtils {
         double cosLat = Math.cos(latRad);
         double sinLon = Math.sin(lonRad);
         double sinLat = Math.sin(latRad);
-        double e2 = FIRST_ECCENTRICITY_SQUARED;
-        double v = EQUATORIAL_RADIUS / Math.sqrt(1.0 - e2 * sinLat * sinLat);
+        double e2 = body.getFirstEccentricitySquared();
+        double equatorialRadius = body.getEquatorialRadius();
+        double v = equatorialRadius / Math.sqrt(1.0 - e2 * sinLat * sinLat);
         result[0] = (v + altitude) * cosLat * cosLon;
         result[1] = (v + altitude) * cosLat * sinLon;
         result[2] = (v * (1.0 - e2) + altitude) * sinLat;
         return result;
     }
 
-    public static double radiusAtLatitudeRad(double latRad) {
-        double cosLat = Math.cos(latRad);
-        double sinLat = Math.sin(latRad);
-        /*
-        double numerator = Math.pow(EARTH_RADIUS_EQUATOR * cosLat, 2) + Math.pow(EARTH_RADIUS_POLAR * sinLat, 2);
-        double denominator = Math.pow(EARTH_RADIUS_EQUATOR * cosLat, 2) + Math.pow(EARTH_RADIUS_POLAR * sinLat, 2);
-        return Math.sqrt(numerator / denominator);
-         */
-        return EQUATORIAL_RADIUS / Math.sqrt(1.0 - FIRST_ECCENTRICITY_SQUARED * sinLat * sinLat);
-    }
-
-    public static double distanceBetweenLatitudesRad(double minLatRad, double maxLatRad) {
-        double radiusMin = radiusAtLatitudeRad(minLatRad);
-        double radiusMax = radiusAtLatitudeRad(maxLatRad);
-        double avgRadius = (radiusMin + radiusMax) / 2.0;
-
-        return avgRadius * (maxLatRad - minLatRad);
-    }
-
-    public static double distanceBetweenLongitudesRad(double latRad, double minLonRad, double maxLonRad) {
-        double radius = radiusAtLatitudeRad(latRad);
-        return radius * Math.cos(latRad) * (maxLonRad - minLonRad);
-    }
-
-    public static double angRadLatitudeForDistance(double latRad, double distance) {
-        double radius = radiusAtLatitudeRad(latRad);
-        return distance / radius;
-    }
-
-    public static double angRadLongitudeForDistance(double latRad, double distance) {
-        double radius = radiusAtLatitudeRad(latRad);
-        return distance / (radius * Math.cos(latRad));
-    }
-
-    public static Vector3d geographicToCartesianWgs84(Vector3d position) {
-        double[] result = geographicToCartesianWgs84(position.x, position.y, position.z);
+    public static Vector3d geographicToCartesian(Vector3d position, CelestialBody body) {
+        double[] result = geographicToCartesian(position.x, position.y, position.z, body);
         return new Vector3d(result[0], result[1], result[2]);
     }
 
-    public static Matrix4d transformMatrixAtCartesianPointWgs84(double x, double y, double z) {
-        Vector3d zAxis = normalAtCartesianPointWgs84(x, y, z);
+    public static double radiusAtLatitudeRad(double latRad, CelestialBody body) {
+        double sinLat = Math.sin(latRad);
+        double e2 = body.getFirstEccentricitySquared();
+        return body.getEquatorialRadius() / Math.sqrt(1.0 - e2 * sinLat * sinLat);
+    }
+
+    public static double distanceBetweenLatitudesRad(double minLatRad, double maxLatRad, CelestialBody body) {
+        double radiusMin = radiusAtLatitudeRad(minLatRad, body);
+        double radiusMax = radiusAtLatitudeRad(maxLatRad, body);
+        double avgRadius = (radiusMin + radiusMax) / 2.0;
+        return avgRadius * (maxLatRad - minLatRad);
+    }
+
+    public static double[] distanceBetweenDegrees(double[] minDegrees, double[] maxDegrees, CelestialBody body) {
+        double minLatRad = minDegrees[1] * DEGREE_TO_RADIAN_FACTOR;
+        double maxLatRad = maxDegrees[1] * DEGREE_TO_RADIAN_FACTOR;
+        double minLonRad = minDegrees[0] * DEGREE_TO_RADIAN_FACTOR;
+        double maxLonRad = maxDegrees[0] * DEGREE_TO_RADIAN_FACTOR;
+
+        double latDistance = distanceBetweenLatitudesRad(minLatRad, maxLatRad, body);
+        double lonDistance = distanceBetweenLongitudesRad((minLatRad + maxLatRad) / 2.0, minLonRad, maxLonRad, body);
+
+        return new double[]{lonDistance, latDistance};
+    }
+
+    public static double distanceBetweenLongitudesRad(double latRad, double minLonRad, double maxLonRad, CelestialBody body) {
+        double radius = radiusAtLatitudeRad(latRad, body);
+        return radius * Math.cos(latRad) * (maxLonRad - minLonRad);
+    }
+
+    public static double angRadLatitudeForDistance(double latRad, double distance, CelestialBody body) {
+        double radius = radiusAtLatitudeRad(latRad, body);
+        return distance / radius;
+    }
+
+    public static double angRadLongitudeForDistance(double latRad, double distance, CelestialBody body) {
+        double radius = radiusAtLatitudeRad(latRad, body);
+        return distance / (radius * Math.cos(latRad));
+    }
+
+    public static Vector3d normalAtCartesianPoint(double x, double y, double z, CelestialBody body) {
+        double eqRadSq = body.getEquatorialRadiusSquared();
+        double polRadSq = body.getPolarRadiusSquared();
+        Vector3d zAxis = new Vector3d(x / eqRadSq, y / eqRadSq, z / polRadSq);
+        zAxis.normalize();
+        return zAxis;
+    }
+
+    public static Vector3d normalAtCartesianPoint(Vector3d cartesian, CelestialBody body) {
+        return normalAtCartesianPoint(cartesian.x, cartesian.y, cartesian.z, body);
+    }
+
+    public static Matrix4d transformMatrixAtCartesianPoint(double x, double y, double z, CelestialBody body) {
+        Vector3d zAxis = normalAtCartesianPoint(x, y, z, body);
         Vector3d xAxis = new Vector3d(-y, +x, 0.0);
         xAxis.normalize();
         Vector3d yAxis = zAxis.cross(xAxis, new Vector3d());
@@ -119,34 +142,24 @@ public class GlobeUtils {
         return transformMatrix;
     }
 
-    public static Vector3d normalAtCartesianPointWgs84(Vector3d cartesian) {
-        return normalAtCartesianPointWgs84(cartesian.x, cartesian.y, cartesian.z);
+    public static Matrix4d transformMatrixAtCartesianPoint(Vector3d position, CelestialBody body) {
+        return transformMatrixAtCartesianPoint(position.x, position.y, position.z, body);
     }
 
-    public static Vector3d normalAtCartesianPointWgs84(double x, double y, double z) {
-        Vector3d zAxis = new Vector3d(x / EQUATORIAL_RADIUS_SQUARED, y / EQUATORIAL_RADIUS_SQUARED, z / POLAR_RADIUS_SQUARED);
-        zAxis.normalize();
-        return zAxis;
+    public static Vector3d cartesianToGeographic(double x, double y, double z, CelestialBody body) {
+        return cartesianToGeographic(new Vector3d(x, y, z), body);
     }
 
-    public static Matrix4d transformMatrixAtCartesianPointWgs84(Vector3d position) {
-        return transformMatrixAtCartesianPointWgs84(position.x, position.y, position.z);
-    }
-
-    public static Vector3d cartesianToGeographicWgs84(double x, double y, double z) {
-        return cartesianToGeographicWgs84(new Vector3d(x, y, z));
-    }
-
-    public static Vector3d cartesianToGeographicWgs84(Vector3d cartographic) {
+    public static Vector3d cartesianToGeographic(Vector3d cartographic, CelestialBody body) {
         double x = cartographic.x;
         double y = cartographic.y;
         double z = cartographic.z;
 
         double xxpyy = x * x + y * y;
         double sqrtXXpYY = Math.sqrt(xxpyy);
-        double a = EQUATORIAL_RADIUS;
+        double a = body.getEquatorialRadius();
         double ra2 = 1.0 / (a * a);
-        double e2 = FIRST_ECCENTRICITY_SQUARED;
+        double e2 = body.getFirstEccentricitySquared();
         double e4 = e2 * e2;
         double p = xxpyy * ra2;
         double q = z * z * (1.0 - e2) * ra2;
@@ -202,14 +215,101 @@ public class GlobeUtils {
         return new Vector3d(factor * lambda, factor * phi, h);
     }
 
+    public static double getRadiusAtLatitude(double latitude, CelestialBody body) {
+        double latRad = latitude * DEGREE_TO_RADIAN_FACTOR;
+        double sinLat = Math.sin(latRad);
+        double e2 = body.getFirstEccentricitySquared();
+        return body.getEquatorialRadius() / Math.sqrt(1.0 - e2 * sinLat * sinLat);
+    }
+
+    // --- Backward-compatible WGS84 wrappers ---
+
+    public static double[] geographicToCartesianWgs84(double longitude, double latitude, double altitude) {
+        return geographicToCartesian(longitude, latitude, altitude, CelestialBody.EARTH);
+    }
+
+    public static Vector3d geographicToCartesianWgs84(Vector3d position) {
+        return geographicToCartesian(position, CelestialBody.EARTH);
+    }
+
+    public static double radiusAtLatitudeRad(double latRad) {
+        return radiusAtLatitudeRad(latRad, CelestialBody.EARTH);
+    }
+
+    public static double distanceBetweenLatitudesRad(double minLatRad, double maxLatRad) {
+        return distanceBetweenLatitudesRad(minLatRad, maxLatRad, CelestialBody.EARTH);
+    }
+
+    public static double[] distanceBetweenDegrees(double[] minDegrees, double[] maxDegrees) {
+        return distanceBetweenDegrees(minDegrees, maxDegrees, CelestialBody.EARTH);
+    }
+
+    public static double distanceBetweenLongitudesRad(double latRad, double minLonRad, double maxLonRad) {
+        return distanceBetweenLongitudesRad(latRad, minLonRad, maxLonRad, CelestialBody.EARTH);
+    }
+
+    public static double angRadLatitudeForDistance(double latRad, double distance) {
+        return angRadLatitudeForDistance(latRad, distance, CelestialBody.EARTH);
+    }
+
+    public static double angRadLongitudeForDistance(double latRad, double distance) {
+        return angRadLongitudeForDistance(latRad, distance, CelestialBody.EARTH);
+    }
+
+    public static Matrix4d transformMatrixAtCartesianPointWgs84(double x, double y, double z) {
+        return transformMatrixAtCartesianPoint(x, y, z, CelestialBody.EARTH);
+    }
+
+    public static Matrix4d transformMatrixAtCartesianPointWgs84(Vector3d position) {
+        return transformMatrixAtCartesianPoint(position, CelestialBody.EARTH);
+    }
+
+    public static Vector3d normalAtCartesianPointWgs84(Vector3d cartesian) {
+        return normalAtCartesianPoint(cartesian, CelestialBody.EARTH);
+    }
+
+    public static Vector3d normalAtCartesianPointWgs84(double x, double y, double z) {
+        return normalAtCartesianPoint(x, y, z, CelestialBody.EARTH);
+    }
+
+    public static Vector3d cartesianToGeographicWgs84(double x, double y, double z) {
+        return cartesianToGeographic(x, y, z, CelestialBody.EARTH);
+    }
+
+    public static Vector3d cartesianToGeographicWgs84(Vector3d cartographic) {
+        return cartesianToGeographic(cartographic, CelestialBody.EARTH);
+    }
+
+    public static double getRadiusAtLatitude(double latitude) {
+        return getRadiusAtLatitude(latitude, CelestialBody.EARTH);
+    }
+
+    // --- Proj4j / GeoTools transform methods (unchanged) ---
+
     public static ProjCoordinate transform(CoordinateReferenceSystem source, ProjCoordinate coordinate) {
-        BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, wgs84);
+        return transform(source, wgs84, coordinate);
+    }
+
+    public static ProjCoordinate transform(CoordinateReferenceSystem source, CoordinateReferenceSystem target, ProjCoordinate coordinate) {
+        BasicCoordinateTransform transformer = new BasicCoordinateTransform(source, target);
         return transformer.transform(coordinate, new ProjCoordinate());
     }
 
-    public static Coordinate transformOnGeotools(org.opengis.referencing.crs.CoordinateReferenceSystem source, Coordinate coordinate) {
+    public static Vector3d transform(CoordinateReferenceSystem source, Vector3d coordinate) {
+        ProjCoordinate srcCoord = new ProjCoordinate(coordinate.x, coordinate.y, coordinate.z);
+        ProjCoordinate dstCoord = transform(source, srcCoord);
+        return new Vector3d(dstCoord.x, dstCoord.y, dstCoord.z);
+    }
+
+    public static Vector3d transform(CoordinateReferenceSystem source, CoordinateReferenceSystem target, Vector3d coordinate) {
+        ProjCoordinate srcCoord = new ProjCoordinate(coordinate.x, coordinate.y, coordinate.z);
+        ProjCoordinate dstCoord = transform(source, target, srcCoord);
+        return new Vector3d(dstCoord.x, dstCoord.y, dstCoord.z);
+    }
+
+    public static Coordinate transformOnGeotools(org.geotools.api.referencing.crs.CoordinateReferenceSystem source, Coordinate coordinate) {
         try {
-            org.opengis.referencing.crs.CoordinateReferenceSystem wgs84 = CRS.decode("EPSG:4326");
+            org.geotools.api.referencing.crs.CoordinateReferenceSystem wgs84 = CRS.decode("EPSG:4326");
 
             MathTransform transform = CRS.findMathTransform(source, wgs84, false);
             return JTS.transform(coordinate, coordinate, transform);
@@ -219,14 +319,7 @@ public class GlobeUtils {
         }
     }
 
-    public static double getRadiusAtLatitude(double latitude) {
-        double latRad = latitude * DEGREE_TO_RADIAN_FACTOR;
-        double sinLat = Math.sin(latRad);
-        double e2 = FIRST_ECCENTRICITY_SQUARED;
-        return EQUATORIAL_RADIUS / Math.sqrt(1.0 - e2 * sinLat * sinLat);
-    }
-
-    public static org.opengis.referencing.crs.CoordinateReferenceSystem convertWkt(String wkt) {
+    public static org.geotools.api.referencing.crs.CoordinateReferenceSystem convertWkt(String wkt) {
         try {
             return CRS.parseWKT(wkt);
         } catch (FactoryException e) {
@@ -253,9 +346,9 @@ public class GlobeUtils {
         }
     }
 
-    public static CoordinateReferenceSystem convertProj4jCrsFromGeotoolsCrs(org.opengis.referencing.crs.CoordinateReferenceSystem crs) {
+    public static CoordinateReferenceSystem convertProj4jCrsFromGeotoolsCrs(org.geotools.api.referencing.crs.CoordinateReferenceSystem crs) {
         String epsg = null;
-        List<ReferenceIdentifier> identifiers =  crs.getIdentifiers().stream().toList();
+        List<ReferenceIdentifier> identifiers = crs.getIdentifiers().stream().toList();
         if (!identifiers.isEmpty()) {
             ReferenceIdentifier identifier = identifiers.get(0);
             if (identifier.getCodeSpace().equalsIgnoreCase("EPSG")) {
@@ -283,12 +376,18 @@ public class GlobeUtils {
             return null;
         } else {
             String epsgCode = "EPSG:" + epsg;
-            CoordinateReferenceSystem crsWgs84 = factory.createFromName(epsgCode);
-            if (crsWgs84 == null) {
-                log.error("[ERROR] Failed to create CRS from EPSG code: {}", epsgCode);
+            CoordinateReferenceSystem testCrs;
+            try {
+                testCrs = factory.createFromName(epsgCode);
+                if (testCrs == null) {
+                    log.error("[ERROR] Failed to create CRS from EPSG code: {}", epsgCode);
+                    return null;
+                }
+            } catch (RuntimeException e) {
+                log.error("[ERROR] Failed to create CRS from EPSG code: {}", epsgCode, e);
                 return null;
             }
-            return crsWgs84;
+            return testCrs;
         }
     }
 }
