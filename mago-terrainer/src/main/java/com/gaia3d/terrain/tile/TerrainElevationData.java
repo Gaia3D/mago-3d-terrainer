@@ -420,13 +420,7 @@ public class TerrainElevationData {
 
         if (!rasterInitializationLogged) {
             rasterInitializationLogged = true;
-            log.info("[Raster][SampleInit] Prepared rendered image for {} (image={}x{}, tile={}x{}, materialized={})",
-                    geotiffFilePath,
-                    this.renderedImage.getWidth(),
-                    this.renderedImage.getHeight(),
-                    this.renderedImage.getTileWidth(),
-                    this.renderedImage.getTileHeight(),
-                    this.materializedRasterData != null);
+            log.info("[Raster][SampleInit] Prepared rendered image for {} (image={}x{}, tile={}x{}, materialized={})", geotiffFilePath, this.renderedImage.getWidth(), this.renderedImage.getHeight(), this.renderedImage.getTileWidth(), this.renderedImage.getTileHeight(), this.materializedRasterData != null);
         }
         return true;
     }
@@ -449,10 +443,7 @@ public class TerrainElevationData {
         long availableMemory = runtime.maxMemory() - usedMemory;
         long requiredHeadroom = estimatedBytes * 3L;
         if (availableMemory < requiredHeadroom) {
-            log.debug("[Raster][SampleInit] Skip materializing {} (estimated={} MB, available={} MB).",
-                    geotiffFilePath,
-                    estimatedBytes / (1024 * 1024),
-                    availableMemory / (1024 * 1024));
+            log.debug("[Raster][SampleInit] Skip materializing {} (estimated={} MB, available={} MB).", geotiffFilePath, estimatedBytes / (1024 * 1024), availableMemory / (1024 * 1024));
             return;
         }
 
@@ -629,11 +620,7 @@ public class TerrainElevationData {
     }
 
     private boolean isPixelInCurrentRaster(int x, int y) {
-        return this.raster != null
-                && x >= rasterMinX
-                && y >= rasterMinY
-                && x < rasterMinX + rasterWidth
-                && y < rasterMinY + rasterHeight;
+        return this.raster != null && x >= rasterMinX && y >= rasterMinY && x < rasterMinX + rasterWidth && y < rasterMinY + rasterHeight;
     }
 
     private double readGridValueFast(int x, int y) {
@@ -656,10 +643,7 @@ public class TerrainElevationData {
     }
 
     private double readMaterializedGridValue(int x, int y) {
-        if (x < materializedRasterMinX
-                || y < materializedRasterMinY
-                || x >= materializedRasterMinX + materializedRasterWidth
-                || y >= materializedRasterMinY + materializedRasterHeight) {
+        if (x < materializedRasterMinX || y < materializedRasterMinY || x >= materializedRasterMinX + materializedRasterWidth || y >= materializedRasterMinY + materializedRasterHeight) {
             return globalOptions.getNoDataValue();
         }
 

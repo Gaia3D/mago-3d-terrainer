@@ -31,7 +31,7 @@ class ManagerCleanupTest {
         manager.getTrianglesArray().add(new TerrainTriangle());
         manager.getGridAreaMap().put("dem.tif", 1.0);
         manager.getGeoTiffFileNames().add("dem.tif");
-        manager.setMyGaiaGeoTiffManager(new GaiaGeoTiffManager());
+        manager.setGeoTiffManager(new GaiaGeoTiffManager());
 
         manager.deleteObjects();
 
@@ -39,7 +39,7 @@ class ManagerCleanupTest {
         assertTrue(manager.getTrianglesArray().isEmpty());
         assertTrue(manager.getGridAreaMap().isEmpty());
         assertTrue(manager.getGeoTiffFileNames().isEmpty());
-        assertNull(manager.getMyGaiaGeoTiffManager());
+        assertNull(manager.getGeoTiffManager());
         assertNull(manager.getTileWgs84Manager());
     }
 

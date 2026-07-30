@@ -76,11 +76,9 @@ public class TileWgs84Manager {
     // Available tileset
     private AvailableTileSet availableTileSet = new AvailableTileSet();
 
-    // constructor
     public TileWgs84Manager() {
         double intensity = globalOptions.getIntensity();
 
-        // Init default values
         // init the maxTriangleSizeForTileDepthMap
         for (int i = 0; i < 28; i++) {
             double tileSizeMeters = TileWgs84Utils.getTileSizeInMetersByDepth(i);
@@ -273,7 +271,6 @@ public class TileWgs84Manager {
                 // check if exists qMeshFullPath.
                 File qMeshFile = new File(qMeshFullPath);
                 if (!qMeshFile.exists()) {
-                    // in this case make it.
                     log.info("Quantized mesh file does not exist: {}", qMeshFullPath);
                     continue;
                 }

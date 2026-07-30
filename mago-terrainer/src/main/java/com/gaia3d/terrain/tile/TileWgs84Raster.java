@@ -188,14 +188,7 @@ public class TileWgs84Raster {
                     blockMaxLonDeg = swap;
                 }
 
-                activeBlock.setDegrees(
-                        blockMinLonDeg,
-                        blockMinLatDeg,
-                        0.0,
-                        blockMaxLonDeg,
-                        blockMaxLatDeg,
-                        0.0
-                );
+                activeBlock.setDegrees(blockMinLonDeg, blockMinLatDeg, 0.0, blockMaxLonDeg, blockMaxLatDeg, 0.0);
                 terrainElevationDataManager.releaseTerrainElevationRastersOutsideGeographicExtension(resultTerrainElevDataArray, activeBlock);
                 filterTerrainElevationDataForBlock(resultTerrainElevDataArray, activeBlock, blockTerrainElevDataArray);
 
@@ -212,11 +205,7 @@ public class TileWgs84Raster {
 
     }
 
-    private void filterTerrainElevationDataForBlock(
-            List<TerrainElevationData> sourceTerrainElevDataArray,
-            GeographicExtension activeBlock,
-            List<TerrainElevationData> resultTerrainElevDataArray
-    ) {
+    private void filterTerrainElevationDataForBlock(List<TerrainElevationData> sourceTerrainElevDataArray, GeographicExtension activeBlock, List<TerrainElevationData> resultTerrainElevDataArray) {
         resultTerrainElevDataArray.clear();
         for (TerrainElevationData terrainElevationData : sourceTerrainElevDataArray) {
             if (activeBlock.intersects(terrainElevationData.getGeographicExtension())) {
@@ -231,12 +220,7 @@ public class TileWgs84Raster {
         return rasterTriangle;
     }
 
-    public void populateRasterTriangle(
-            TerrainTriangle triangle,
-            List<TerrainVertex> vertices,
-            List<TerrainHalfEdge> listHalfEdges,
-            RasterTriangle rasterTriangle
-    ) {
+    public void populateRasterTriangle(TerrainTriangle triangle, List<TerrainVertex> vertices, List<TerrainHalfEdge> listHalfEdges, RasterTriangle rasterTriangle) {
         if (vertices == null) {
             vertices = new ArrayList<>();
         }
@@ -249,11 +233,7 @@ public class TileWgs84Raster {
         Vector3d pos1 = vertices.get(1).getPosition();
         Vector3d pos2 = vertices.get(2).getPosition();
 
-        rasterTriangle.setVertices(
-                getColumn(pos0.x), getRow(pos0.y),
-                getColumn(pos1.x), getRow(pos1.y),
-                getColumn(pos2.x), getRow(pos2.y)
-        );
+        rasterTriangle.setVertices(getColumn(pos0.x), getRow(pos0.y), getColumn(pos1.x), getRow(pos1.y), getColumn(pos2.x), getRow(pos2.y));
     }
 
 }
