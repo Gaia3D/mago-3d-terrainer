@@ -1,5 +1,4 @@
-package com.gaia3d.terrain.tile;
-
+package com.gaia3d.terrain.tile.mesh;
 
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.command.GlobalOptions;
@@ -7,10 +6,13 @@ import com.gaia3d.io.LittleEndianDataOutputStream;
 import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
+import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import com.gaia3d.terrain.util.MemoryMonitor;
 import com.gaia3d.terrain.util.TerrainMeshUtils;
-import com.gaia3d.terrain.util.TileWgs84Utils;
 import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.GeometryUtils;
@@ -36,23 +38,23 @@ import static java.lang.Math.abs;
 @Slf4j
 public class TileMatrix {
     private final TileRange tilesRange;
-    private final List<List<TileWgs84>> tilesMatrixRowCol = new ArrayList<>();
+    private final List<List<GeographicTerrainTile>> tilesMatrixRowCol = new ArrayList<>();
     private final Vector3d barycenterScratch = new Vector3d();
     private final RasterTriangle rasterTriangleScratch = new RasterTriangle();
-    public TileWgs84Manager manager = null;
+    private final GlobalOptions globalOptions = GlobalOptions.getInstance();
+    public TerrainTilesetGenerator manager = null;
     // the tilesMatrixRowCol is a matrix of tiles
     List<TerrainVertex> listVertices = new ArrayList<>();
     List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
-    private final GlobalOptions globalOptions = GlobalOptions.getInstance();
 
-    public TileMatrix(TileRange tilesRange, TileWgs84Manager manager) {
+    public TileMatrix(TileRange tilesRange, TerrainTilesetGenerator manager) {
         this.tilesRange = tilesRange;
         this.manager = manager;
     }
 
     public void deleteObjects() {
-        for (List<TileWgs84> row : tilesMatrixRowCol) {
-            for (TileWgs84 tile : row) {
+        for (List<GeographicTerrainTile> row : tilesMatrixRowCol) {
+            for (GeographicTerrainTile tile : row) {
                 if (tile != null) {tile.deleteObjects();}
             }
         }
@@ -163,7 +165,7 @@ public class TileMatrix {
                         TerrainTriangle triangle = hEdge.getTriangle();
                         try {
                             this.listHalfEdges.clear();
-                            meshToRefine.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
+                            meshToRefine.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
                             this.listHalfEdges.clear();
                             splitCount++;
                         } catch (Exception e) {
@@ -343,19 +345,19 @@ public class TileMatrix {
         int minTileY = tilesRange.getMinTileY() - 1;
         int maxTileY = tilesRange.getMaxTileY() + 1;
         // Note : the minTileX, minTileY, maxTileX, maxTileY are no necessary to verify if the values are out of the limits
-        // It is verified in the TileWgs84Manager
+        // It is verified in the TerrainTilesetGenerator
 
         int totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
 
         int counter = 0;
         int counterAux = 0;
         for (int Y = minTileY; Y <= maxTileY; Y++) {
-            List<TileWgs84> tilesListRow = new ArrayList<>();
+            List<GeographicTerrainTile> tilesListRow = new ArrayList<>();
             for (int X = minTileX; X <= maxTileX; X++) {
                 tileIndices.set(X, Y, tilesRange.getTileDepth());
 
                 // In MODIFY_MODE always load or create the tile file.
-                TileWgs84 tile = this.manager.loadOrCreateTileWgs84(tileIndices);
+                GeographicTerrainTile tile = this.manager.loadOrCreateGeographicTerrainTile(tileIndices);
                 if (counter >= 100) {
                     counter = 0;
                     log.debug("Loading Tile Level : {}, i : {}/{}", tileIndices.getL(), counterAux, totalTiles);
@@ -375,11 +377,11 @@ public class TileMatrix {
 
         List<TerrainMesh> rowMeshesList = new ArrayList<>();
         for (int i = 0; i < rowsCount; i++) {
-            List<TileWgs84> rowTilesArray = tilesMatrixRowCol.get(i);
+            List<GeographicTerrainTile> rowTilesArray = tilesMatrixRowCol.get(i);
             TerrainMesh rowMesh = null;
 
             for (int j = 0; j < colsCount; j++) {
-                TileWgs84 tile = rowTilesArray.get(j);
+                GeographicTerrainTile tile = rowTilesArray.get(j);
                 if (tile != null) {
                     TerrainMesh tileMesh = tile.getMesh();
                     if (rowMesh == null) {
@@ -534,21 +536,21 @@ public class TileMatrix {
         int minTileY = tilesRange.getMinTileY() - 1;
         int maxTileY = tilesRange.getMaxTileY() + 1;
         // Note : the minTileX, minTileY, maxTileX, maxTileY are no necessary to verify if the values are out of the limits
-        // It is verified in the TileWgs84Manager
+        // It is verified in the TerrainTilesetGenerator
 
         int totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
 
         int counter = 0;
         int counterAux = 0;
         for (int Y = minTileY; Y <= maxTileY; Y++) {
-            List<TileWgs84> tilesListRow = new ArrayList<>();
+            List<GeographicTerrainTile> tilesListRow = new ArrayList<>();
             for (int X = minTileX; X <= maxTileX; X++) {
                 tileIndices.set(X, Y, tilesRange.getTileDepth());
-                TileWgs84 tile = null;
+                GeographicTerrainTile tile = null;
                 if (isFirstGeneration) {
-                    tile = this.manager.loadOrCreateTileWgs84(tileIndices);
+                    tile = this.manager.loadOrCreateGeographicTerrainTile(tileIndices);
                 } else {
-                    tile = this.manager.loadTileWgs84(tileIndices);
+                    tile = this.manager.loadGeographicTerrainTile(tileIndices);
                 }
                 if (counter >= 100) {
                     counter = 0;
@@ -569,11 +571,11 @@ public class TileMatrix {
 
         List<TerrainMesh> rowMeshesList = new ArrayList<>();
         for (int i = 0; i < rowsCount; i++) {
-            List<TileWgs84> rowTilesArray = tilesMatrixRowCol.get(i);
+            List<GeographicTerrainTile> rowTilesArray = tilesMatrixRowCol.get(i);
             TerrainMesh rowMesh = null;
 
             for (int j = 0; j < colsCount; j++) {
-                TileWgs84 tile = rowTilesArray.get(j);
+                GeographicTerrainTile tile = rowTilesArray.get(j);
                 if (tile != null) {
                     TerrainMesh tileMesh = tile.getMesh();
                     if (rowMesh == null) {
@@ -743,10 +745,10 @@ public class TileMatrix {
             TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle
             TileIndices tileIndices = triangle.getOwnerTileIndices();
 
-            TileWgs84 tile = new TileWgs84(null, this.manager);
+            GeographicTerrainTile tile = new GeographicTerrainTile(null, this.manager);
             tile.setTileIndices(tileIndices);
             String imageryType = this.manager.getImaginaryType();
-            tile.setGeographicExtension(TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
+            tile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp));
             tile.setMesh(mesh);
 
             QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
@@ -772,7 +774,7 @@ public class TileMatrix {
             TerrainTriangle triangle = mesh.triangles.getFirst();
             TileIndices tileIndices = triangle.getOwnerTileIndices();
             String tileTempDirectory = globalOptions.getTileTempPath();
-            String tileFilePath = TileWgs84Utils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
+            String tileFilePath = GeographicTerrainTileUtils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
             String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             if (counter >= 100) {
@@ -814,7 +816,7 @@ public class TileMatrix {
 
         // now make vertices from the hashMap
         List<TerrainVertex> verticesOfCurrentTile = new ArrayList<>(mapVertices.values());
-        TerrainElevationDataManager terrainElevationDataManager = this.manager.getTerrainElevationDataManager();
+        TerrainElevationModeler terrainElevationModeler = this.manager.getTerrainElevationModeler();
 
         int verticesCount = verticesOfCurrentTile.size();
         log.debug("recalculating elevations... vertices count : " + verticesCount);
@@ -830,8 +832,8 @@ public class TileMatrix {
             // in ModifyMode, check if the position intersects with any of the geoTiff.
             // In the case of NO intersection, then do nothing.
             //********************************************************************************
-            TileWgs84Utils.selectTileIndices(currDepth, position.x, position.y, tileIndicesAux, originIsLeftUp);
-            double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndicesAux, this.manager, position.x, position.y, intersectionType);
+            GeographicTerrainTileUtils.selectTileIndices(currDepth, position.x, position.y, tileIndicesAux, originIsLeftUp);
+            double z = terrainElevationModeler.sampleBilinearElevation(tileIndicesAux, this.manager, position.x, position.y, intersectionType);
             if (skipNoDataType) {
                 //********************************************
                 // skipNoDataType is true only in MODIFY_MODE.
@@ -851,7 +853,7 @@ public class TileMatrix {
             return false;
         }
 
-        TerrainElevationDataManager terrainElevationDataManager = this.manager.getTerrainElevationDataManager();
+        TerrainElevationModeler terrainElevationModeler = this.manager.getTerrainElevationModeler();
         TileIndices tileIndices = triangle.getOwnerTileIndices();
         this.listVertices.clear();
         this.listHalfEdges.clear();
@@ -865,7 +867,7 @@ public class TileMatrix {
 
         int currL = tileIndices.getL();
 
-        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(currL);
+        double tileSize = GeographicTerrainTileUtils.getTileSizeInMetersByDepth(currL);
         double scale = bboxMaxLengthInMeters / tileSize;
 
         // Y = 0.8X + 0.2.
@@ -874,7 +876,7 @@ public class TileMatrix {
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(triangle.getOwnerTileIndices().getL());
         maxDiff *= scale; // scale the maxDiff
 
-        TileWgs84Raster tileRaster = terrainElevationDataManager.getTileWgs84Raster(tileIndices, this.manager);
+        GeographicTerrainTileRaster tileRaster = terrainElevationModeler.getGeographicTerrainTileRaster(tileIndices, this.manager);
 
         // if the triangle size is very small, then do not refine**********************
         // Calculate the maxLength of the triangle in meters
@@ -894,7 +896,7 @@ public class TileMatrix {
         }
 
         // check if the triangle intersects the terrainData
-        GeographicExtension rootGeographicExtension = terrainElevationDataManager.getRootGeographicExtension();
+        GeographicExtension rootGeographicExtension = terrainElevationModeler.getRootGeographicExtension();
         if (!rootGeographicExtension.intersectsBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY())) {
             // Need check only the 3 vertex of the triangle
             for (TerrainVertex vertex : this.listVertices) {
@@ -960,14 +962,14 @@ public class TileMatrix {
 
         tileRaster.populateRasterTriangle(triangle, this.listVertices, this.listHalfEdges, this.rasterTriangleScratch);
         RasterTriangle rasterTriangle = this.rasterTriangleScratch;
-        if (rasterTriangle == null || rasterTriangle.getP1() == null || rasterTriangle.getP2() == null || rasterTriangle.getP3() == null) {
+        if (rasterTriangle == null || rasterTriangle.p1() == null || rasterTriangle.p2() == null || rasterTriangle.p3() == null) {
             log.warn("Unable to get valid raster triangle for triangle {}. Skipping refinement check.", triangle.getId());
             triangle.setRefineChecked(true);
             return false;
         }
-        Vector2i rasterTriangleP1 = rasterTriangle.getP1();
-        Vector2i rasterTriangleP2 = rasterTriangle.getP2();
-        Vector2i rasterTriangleP3 = rasterTriangle.getP3();
+        Vector2i rasterTriangleP1 = rasterTriangle.p1();
+        Vector2i rasterTriangleP2 = rasterTriangle.p2();
+        Vector2i rasterTriangleP3 = rasterTriangle.p3();
 
         // parameters used for the barycentric coordinates
         int deltaYBC = rasterTriangleP2.y - rasterTriangleP3.y;
@@ -1078,7 +1080,7 @@ public class TileMatrix {
         return false;
     }
 
-    private float computeCosAng(TerrainTriangle triangle, TileWgs84Raster tileRaster) {
+    private float computeCosAng(TerrainTriangle triangle, GeographicTerrainTileRaster tileRaster) {
         Vector3f triangleNormalWC = triangle.getNormal();
         Vector3d triangleNormalDouble = new Vector3d(triangleNormalWC.x, triangleNormalWC.y, triangleNormalWC.z);
         GeographicExtension geographicExtension = tileRaster.getGeographicExtension();
@@ -1124,7 +1126,7 @@ public class TileMatrix {
 
                 this.manager.getTriangleList().clear();
                 this.listHalfEdges.clear();
-                mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
+                mesh.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
                 this.listHalfEdges.clear();
 
                 if (!this.manager.getTriangleList().isEmpty()) {
@@ -1220,7 +1222,7 @@ public class TileMatrix {
         // Here refine only the triangles of the tiles of TilesRange
 
         double maxDiff = this.manager.getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(tilesRange.getTileDepth());
-        log.info("[RefineMesh] Starting refinement: Tile depth={}, Initial triangles={}, MaxDiff(m)={}, Max iterations={}", tilesRange.getTileDepth(), mesh.triangles.size(), maxDiff, this.manager.getTriangleRefinementMaxIterations());
+        log.debug("[RefineMesh] Starting refinement: Tile depth={}, Initial triangles={}, MaxDiff(m)={}, Max iterations={}", tilesRange.getTileDepth(), mesh.triangles.size(), maxDiff, this.manager.getTriangleRefinementMaxIterations());
 
         // refine the mesh with convergence detection
         boolean finished = false;
@@ -1274,7 +1276,7 @@ public class TileMatrix {
 
             if (!refined) {
                 finished = true;
-                log.info("[RefineMesh] Converged naturally after {} iterations", splitCount);
+                log.debug("[RefineMesh] Converged naturally after {} iterations", splitCount);
             } else {
                 splitCount++;
 

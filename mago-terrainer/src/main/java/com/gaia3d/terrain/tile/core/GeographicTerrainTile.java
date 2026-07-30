@@ -1,8 +1,10 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.core;
 
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.util.FileUtils;
@@ -19,9 +21,9 @@ import java.util.List;
 @Getter
 @Setter
 @Slf4j
-public class TileWgs84 {
-    private TileWgs84Manager manager;
-    private TileWgs84 parentTile; // if parentTile == null, then this is the root tile.
+public class GeographicTerrainTile {
+    private TerrainTilesetGenerator manager;
+    private GeographicTerrainTile parentTile; // if parentTile == null, then this is the root tile.
     private TileIndices tileIndices = null;
     private GeographicExtension geographicExtension = null;
     private TerrainMesh mesh = null;
@@ -40,13 +42,13 @@ public class TileWgs84 {
     //  | leftDown | downTile | right    |
     //  |   Tile   |          | DownTile |
     //  +----------+----------+----------+
-    private TileWgs84[] neighborTiles = new TileWgs84[8];
-    private TileWgs84[] childTiles = new TileWgs84[4];
+    private GeographicTerrainTile[] neighborTiles = new GeographicTerrainTile[8];
+    private GeographicTerrainTile[] childTiles = new GeographicTerrainTile[4];
 
     private List<TerrainVertex> listVertices = new ArrayList<>();
     private List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
 
-    public TileWgs84(TileWgs84 parentTile, TileWgs84Manager manager) {
+    public GeographicTerrainTile(GeographicTerrainTile parentTile, TerrainTilesetGenerator manager) {
         this.parentTile = parentTile;
         this.manager = manager;
     }
@@ -93,7 +95,7 @@ public class TileWgs84 {
         TerrainVertex vertexRU = this.mesh.newVertex();
         TerrainVertex vertexLU = this.mesh.newVertex();
 
-        TerrainElevationDataManager terrainElevationDataManager = this.manager.getTerrainElevationDataManager();
+        TerrainElevationModeler terrainElevationModeler = this.manager.getTerrainElevationModeler();
 
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
@@ -103,10 +105,10 @@ public class TileWgs84 {
         byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
         // the "intersectionType" is not used in this function.
 
-        double elevMinLonMinLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, minLonDeg, minLatDeg, intersectionType);
-        double elevMaxLonMinLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, maxLonDeg, minLatDeg, intersectionType);
-        double elevMaxLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, maxLonDeg, maxLatDeg, intersectionType);
-        double elevMinLonMaxLat = terrainElevationDataManager.getElevationBilinearRasterTile(this.tileIndices, this.manager, minLonDeg, maxLatDeg, intersectionType);
+        double elevMinLonMinLat = terrainElevationModeler.sampleBilinearElevation(this.tileIndices, this.manager, minLonDeg, minLatDeg, intersectionType);
+        double elevMaxLonMinLat = terrainElevationModeler.sampleBilinearElevation(this.tileIndices, this.manager, maxLonDeg, minLatDeg, intersectionType);
+        double elevMaxLonMaxLat = terrainElevationModeler.sampleBilinearElevation(this.tileIndices, this.manager, maxLonDeg, maxLatDeg, intersectionType);
+        double elevMinLonMaxLat = terrainElevationModeler.sampleBilinearElevation(this.tileIndices, this.manager, minLonDeg, maxLatDeg, intersectionType);
 
 //        double elevMinLonMinLat = terrainElevationDataManager.getElevation(minLonDeg, minLatDeg, this.manager.getTerrainElevDataList());
 //        double elevMaxLonMinLat = terrainElevationDataManager.getElevation(maxLonDeg, minLatDeg, this.manager.getTerrainElevDataList());
@@ -223,7 +225,7 @@ public class TileWgs84 {
             log.debug("[RefineMesh] FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH");
             this.manager.getTriangleList().clear();
             this.listHalfEdges.clear();
-            mesh.splitTriangle(triangle, this.manager.getTerrainElevationDataManager(), this.manager.getTriangleList(), this.listHalfEdges, isModifyProcess, null);
+            mesh.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, isModifyProcess, null);
             this.listHalfEdges.clear();
 
             if (!this.manager.getTriangleList().isEmpty()) {

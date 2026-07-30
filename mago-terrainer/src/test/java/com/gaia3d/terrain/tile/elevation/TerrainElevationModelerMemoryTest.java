@@ -1,4 +1,10 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.elevation;
+
+import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.elevation.*;
+import com.gaia3d.terrain.tile.generation.*;
+import com.gaia3d.terrain.tile.layer.*;
+import com.gaia3d.terrain.tile.mesh.*;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -7,12 +13,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class TerrainElevationDataManagerMemoryTest {
+class TerrainElevationModelerMemoryTest {
 
     @Test
     @Tag("default")
     void preloadTerrainElevationRastersIsDisabledByDefault() {
-        TerrainElevationDataManager manager = new TerrainElevationDataManager();
+        TerrainElevationModeler manager = new TerrainElevationModeler();
         CountingTerrainElevationData elevationData = new CountingTerrainElevationData(manager);
 
         manager.preloadTerrainElevationRasters(List.of(elevationData));
@@ -23,8 +29,8 @@ class TerrainElevationDataManagerMemoryTest {
     private static class CountingTerrainElevationData extends TerrainElevationData {
         private int preloadCalls = 0;
 
-        private CountingTerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
-            super(terrainElevationDataManager);
+        private CountingTerrainElevationData(TerrainElevationModeler terrainElevationModeler) {
+            super(terrainElevationModeler);
         }
 
         @Override

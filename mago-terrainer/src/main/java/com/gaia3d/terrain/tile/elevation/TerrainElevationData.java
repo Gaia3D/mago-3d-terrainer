@@ -1,4 +1,4 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.elevation;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
@@ -16,6 +16,7 @@ import org.joml.Vector2i;
 
 import java.awt.image.*;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 @Slf4j
@@ -32,11 +33,12 @@ public class TerrainElevationData {
     private static final int RASTER_KIND_USHORT = 4;
     private static final int RASTER_KIND_SHORT = 5;
     private static final int RASTER_KIND_BYTE = 6;
+
     private final long[] tileRasterCacheKeys = new long[TILE_RASTER_CACHE_SIZE];
     private final Raster[] tileRasterCacheValues = new Raster[TILE_RASTER_CACHE_SIZE];
     private GlobalOptions globalOptions = GlobalOptions.getInstance();
     private Vector2d pixelSizeMeters;
-    private TerrainElevationDataManager terrainElevDataManager = null;
+    private TerrainElevationModeler terrainElevDataManager = null;
     private String geotiffFilePath = "";
     private String geotiffFileName = "";
     private GeographicExtension geographicExtension = new GeographicExtension();
@@ -95,8 +97,8 @@ public class TerrainElevationData {
     private short[] rasterShortData = null;
     private byte[] rasterByteData = null;
 
-    public TerrainElevationData(TerrainElevationDataManager terrainElevationDataManager) {
-        this.terrainElevDataManager = terrainElevationDataManager;
+    public TerrainElevationData(TerrainElevationModeler terrainElevationModeler) {
+        this.terrainElevDataManager = terrainElevationModeler;
     }
 
     public void deleteCoverage() {
@@ -420,7 +422,8 @@ public class TerrainElevationData {
 
         if (!rasterInitializationLogged) {
             rasterInitializationLogged = true;
-            log.info("[Raster][SampleInit] Prepared rendered image for {} (image={}x{}, tile={}x{}, materialized={})", geotiffFilePath, this.renderedImage.getWidth(), this.renderedImage.getHeight(), this.renderedImage.getTileWidth(), this.renderedImage.getTileHeight(), this.materializedRasterData != null);
+            log.debug("[Raster][SampleInit] Prepared rendered image for {} (image={}x{}, tile={}x{}, materialized={})", geotiffFilePath, this.renderedImage.getWidth(), this.renderedImage.getHeight(), this.renderedImage.getTileWidth(), this.renderedImage.getTileHeight(),
+                    this.materializedRasterData != null);
         }
         return true;
     }

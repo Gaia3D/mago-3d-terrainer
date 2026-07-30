@@ -308,28 +308,14 @@ public class TerrainVertex {
     }
 
     /**
-     * Result class for topology validation
-     */
-    public static class TopologyValidationResult {
-        public final boolean isValid;
-        public final int edgeCount;
-        public final boolean hasMultipleLoops;
-        public final LoopClosureType loopClosureType;
-        public final boolean hitIterationLimit;
-
-        public TopologyValidationResult(boolean isValid, int edgeCount, boolean hasMultipleLoops,
-                                        LoopClosureType loopClosureType, boolean hitIterationLimit) {
-            this.isValid = isValid;
-            this.edgeCount = edgeCount;
-            this.hasMultipleLoops = hasMultipleLoops;
-            this.loopClosureType = loopClosureType;
-            this.hitIterationLimit = hitIterationLimit;
-        }
+         * Result class for topology validation
+         */
+        public record TopologyValidationResult(boolean isValid, int edgeCount, boolean hasMultipleLoops, LoopClosureType loopClosureType, boolean hitIterationLimit) {
 
         public enum LoopClosureType {
-            INTERIOR,    // Closed loop (interior vertex)
-            BOUNDARY,    // Open edges (boundary vertex)
-            CORRUPTED    // Hit iteration limit or other anomaly
+                INTERIOR,    // Closed loop (interior vertex)
+                BOUNDARY,    // Open edges (boundary vertex)
+                CORRUPTED    // Hit iteration limit or other anomaly
+            }
         }
-    }
 }

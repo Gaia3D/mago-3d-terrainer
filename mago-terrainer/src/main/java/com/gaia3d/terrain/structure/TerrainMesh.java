@@ -4,9 +4,9 @@ import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.basic.geometry.GaiaRectangle;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
-import com.gaia3d.terrain.tile.TerrainElevationDataManager;
-import com.gaia3d.terrain.tile.TileIndices;
-import com.gaia3d.terrain.tile.TileRange;
+import com.gaia3d.terrain.tile.core.TileIndices;
+import com.gaia3d.terrain.tile.core.TileRange;
+import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.util.FileUtils;
@@ -572,7 +572,7 @@ public class TerrainMesh {
     }
 
 
-    public void splitTriangle(TerrainTriangle triangle, TerrainElevationDataManager terrainElevationDataManager,
+    public void splitTriangle(TerrainTriangle triangle, TerrainElevationModeler terrainElevationModeler,
                               List<TerrainTriangle> resultNewTriangles,
                               List<TerrainHalfEdge> listHalfEdges, boolean isModify, int[] stack) throws TransformException, IOException {
         // A triangle is split by the longest edge, so
@@ -587,7 +587,7 @@ public class TerrainMesh {
         try {
             byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
             listHalfEdges.clear();
-            TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationDataManager, listHalfEdges, isModify, stack);
+            TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationModeler, listHalfEdges, isModify, stack);
             if (adjacentTriangle == null) {
                 // the triangle is border triangle, so is splittable
                 listHalfEdges.clear();
@@ -613,7 +613,7 @@ public class TerrainMesh {
                 // now determine the elevation of the midPoint
                 TileIndices tileIndices = triangle.getOwnerTileIndices();
 
-                double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                double z = terrainElevationModeler.sampleBilinearElevation(tileIndices, terrainElevationModeler.getTerrainTilesetGenerator(),
                         midPosition.x, midPosition.y, intersectionType);
 
                 // check if z is valid value.
@@ -807,7 +807,7 @@ public class TerrainMesh {
 
                 // now determine the elevation of the midPoint
                 TileIndices tileIndices = triangle.getOwnerTileIndices();
-                double z = terrainElevationDataManager.getElevationBilinearRasterTile(tileIndices, terrainElevationDataManager.getTileWgs84Manager(),
+                double z = terrainElevationModeler.sampleBilinearElevation(tileIndices, terrainElevationModeler.getTerrainTilesetGenerator(),
                         midPosition.x, midPosition.y, intersectionType);
 
                 // check if z is valid value.
@@ -1006,7 +1006,7 @@ public class TerrainMesh {
     }
 
     public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle,
-                                                         TerrainElevationDataManager terrainElevationDataManager,
+                                                         TerrainElevationModeler terrainElevationModeler,
                                                          List<TerrainHalfEdge> listHalfEdges, boolean isModify, int[] stack) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
@@ -1046,7 +1046,7 @@ public class TerrainMesh {
             return null;
         }
 
-        double vertexCoincidentError = 0.0000000000001; // use the TileWgs84Manager.vertexCoincidentError
+        double vertexCoincidentError = 0.0000000000001; // use the TerrainTilesetGenerator.vertexCoincidentError
 
         listHalfEdges.clear();
         TerrainHalfEdge longestHEdgeOfAdjacentTriangle = adjacentTriangle.getLongestHalfEdge(listHalfEdges);
@@ -1080,24 +1080,24 @@ public class TerrainMesh {
                 return null;
             }
             // first split the adjacentTriangle;
-            terrainElevationDataManager.getTrianglesArray().clear();
+            terrainElevationModeler.getTrianglesArray().clear();
             listHalfEdges.clear();
-            splitTriangle(adjacentTriangle, terrainElevationDataManager, terrainElevationDataManager.getTrianglesArray(), listHalfEdges, isModify, stack);
+            splitTriangle(adjacentTriangle, terrainElevationModeler, terrainElevationModeler.getTrianglesArray(), listHalfEdges, isModify, stack);
             listHalfEdges.clear();
 
             // now search the new adjacentTriangle for the targetTriangle
 
-            int newTrianglesCount = terrainElevationDataManager.getTrianglesArray().size();
+            int newTrianglesCount = terrainElevationModeler.getTrianglesArray().size();
             for (int i = 0; i < newTrianglesCount; i++) {
-                TerrainTriangle newTriangle = terrainElevationDataManager.getTrianglesArray().get(i);
+                TerrainTriangle newTriangle = terrainElevationModeler.getTrianglesArray().get(i);
                 listHalfEdges.clear();
                 TerrainHalfEdge longestHEdgeOfNewTriangle = newTriangle.getLongestHalfEdge(listHalfEdges);
                 if (longestHEdgeOfNewTriangle != null && longestHEdgeOfNewTriangle.isHalfEdgePossibleTwin(longestHEdge, vertexCoincidentError)) {
-                    terrainElevationDataManager.getTrianglesArray().clear();
+                    terrainElevationModeler.getTrianglesArray().clear();
                     return newTriangle;
                 }
             }
-            terrainElevationDataManager.getTrianglesArray().clear();
+            terrainElevationModeler.getTrianglesArray().clear();
             // if not found, then is error.!!!
         }
 
@@ -1414,7 +1414,7 @@ public class TerrainMesh {
         // First, validate current state
         TerrainVertex.TopologyValidationResult validation = vertex.validateTopology(10);
 
-        if (validation.isValid) {
+        if (validation.isValid()) {
             // Already valid, nothing to repair
             return true;
         }
@@ -1445,24 +1445,24 @@ public class TerrainMesh {
         // Re-validate after setting outingHEdge
         validation = vertex.validateTopology(10);
 
-        if (validation.isValid) {
+        if (validation.isValid()) {
             log.info("Successfully repaired vertex {} topology - now has {} edges",
-                    vertex.getId(), validation.edgeCount);
+                    vertex.getId(), validation.edgeCount());
             return true;
         }
 
         // If still invalid due to excessive edges or multiple loops, mark as boundary vertex
         // This is a fallback - we accept non-manifold vertices at tile boundaries
-        if (validation.edgeCount > 10 || validation.hasMultipleLoops) {
+        if (validation.edgeCount() > 10 || validation.hasMultipleLoops()) {
             log.warn("Vertex {} has complex topology ({} edges, multiloop={}). " +
                             "Marking as boundary vertex (non-manifold accepted at tile boundaries).",
-                    vertex.getId(), validation.edgeCount, validation.hasMultipleLoops);
+                    vertex.getId(), validation.edgeCount(), validation.hasMultipleLoops());
             // The vertex remains functional but flagged as having non-standard topology
             return true; // Accept as "repaired" with caveat
         }
 
         log.error("Failed to repair vertex {} topology (edges={}, multiloop={})",
-                vertex.getId(), validation.edgeCount, validation.hasMultipleLoops);
+                vertex.getId(), validation.edgeCount(), validation.hasMultipleLoops());
         return false;
     }
 
@@ -1483,10 +1483,10 @@ public class TerrainMesh {
             // Validate each vertex
             TerrainVertex.TopologyValidationResult validation = vertex.validateTopology(10);
 
-            if (!validation.isValid) {
+            if (!validation.isValid()) {
                 corruptedCount++;
                 log.debug("Found corrupted vertex {} with {} edges (multiloop={})",
-                        vertex.getId(), validation.edgeCount, validation.hasMultipleLoops);
+                        vertex.getId(), validation.edgeCount(), validation.hasMultipleLoops());
 
                 // Attempt repair
                 if (repairVertexTopology(vertex)) {

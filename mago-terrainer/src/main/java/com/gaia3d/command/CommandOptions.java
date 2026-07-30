@@ -46,6 +46,7 @@ public enum CommandOptions {
     BODY("body", "b", true, "Celestial body for terrain generation (default : earth)(options: earth, moon)"),
 
     /* Debug Options */
+    VERBOSE("verbose", "vb", false, "Print verbose logs."),
     DEBUG("debug", "d", false, "[DEBUG] Print more detailed logs.");
 
     private final String longName;

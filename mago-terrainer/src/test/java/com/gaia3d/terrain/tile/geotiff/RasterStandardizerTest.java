@@ -1,5 +1,11 @@
 package com.gaia3d.terrain.tile.geotiff;
 
+import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.elevation.*;
+import com.gaia3d.terrain.tile.generation.*;
+import com.gaia3d.terrain.tile.layer.*;
+import com.gaia3d.terrain.tile.mesh.*;
+
 import com.gaia3d.command.GlobalOptions;
 import org.eclipse.imagen.PlanarImage;
 import org.eclipse.imagen.RasterFactory;
@@ -268,7 +274,7 @@ class RasterStandardizerTest {
         Path outputFile = tempDir.resolve("resized.tif");
 
         try {
-            new GaiaGeoTiffManager().saveGridCoverage2D(coverage, outputFile.toString());
+            new GeoTiffCoverageStore().saveGridCoverage2D(coverage, outputFile.toString());
 
             GeoTiffReader reader = new GeoTiffReader(outputFile.toFile());
             try {

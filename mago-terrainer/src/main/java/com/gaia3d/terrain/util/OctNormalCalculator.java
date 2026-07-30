@@ -5,7 +5,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 @UtilityClass
-public class OctNormalFactory {
+public class OctNormalCalculator {
 
     /**
      * Encode a normal vector into 2 bytes using oct encoding

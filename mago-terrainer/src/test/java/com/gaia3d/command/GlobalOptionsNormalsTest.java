@@ -1,6 +1,12 @@
 package com.gaia3d.command;
 
-import com.gaia3d.terrain.tile.TileWgs84Manager;
+import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.elevation.*;
+import com.gaia3d.terrain.tile.generation.*;
+import com.gaia3d.terrain.tile.layer.*;
+import com.gaia3d.terrain.tile.mesh.*;
+
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Tag;
@@ -91,7 +97,7 @@ class GlobalOptionsNormalsTest {
         assertEquals(List.of(inputA.toString(), inputB.toString()), GlobalOptions.getInstance().getInputPaths());
         assertEquals(inputA.toString(), GlobalOptions.getInstance().getInputPath());
 
-        List<String> rasterFileNames = new TileWgs84Manager().resolveInputRasterFileNames();
+        List<String> rasterFileNames = new TerrainTilesetGenerator().resolveInputRasterFileNames();
         assertEquals(List.of(rasterA.toAbsolutePath().toString(), rasterB.toAbsolutePath().toString()), rasterFileNames);
     }
 

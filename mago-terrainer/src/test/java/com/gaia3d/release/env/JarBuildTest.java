@@ -1,5 +1,11 @@
 package com.gaia3d.release.env;
 
+import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.elevation.*;
+import com.gaia3d.terrain.tile.generation.*;
+import com.gaia3d.terrain.tile.layer.*;
+import com.gaia3d.terrain.tile.mesh.*;
+
 import com.gaia3d.command.LoggingConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;

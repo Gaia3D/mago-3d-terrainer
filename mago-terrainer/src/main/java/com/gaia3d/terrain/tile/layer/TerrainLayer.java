@@ -1,9 +1,10 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.layer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.gaia3d.terrain.tile.core.TileRange;
 import com.gaia3d.terrain.tile.custom.AvailableTileSet;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;

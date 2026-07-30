@@ -4,8 +4,8 @@ import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.structure.TerrainMesh;
 import com.gaia3d.terrain.structure.TerrainVertex;
-import com.gaia3d.terrain.tile.TileIndices;
-import com.gaia3d.terrain.tile.TileRange;
+import com.gaia3d.terrain.tile.core.TileIndices;
+import com.gaia3d.terrain.tile.core.TileRange;
 import lombok.experimental.UtilityClass;
 
 import java.io.File;
@@ -13,11 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @UtilityClass
-public class TileWgs84Utils {
-    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+public class GeographicTerrainTileUtils {
+    private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     public static double getTileSizeInMetersByDepth(int depth) {
-        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        double angDeg = GeographicTerrainTileUtils.selectTileAngleRangeByDepth(depth);
         double angRad = angDeg * Math.PI / 180.0;
         return angRad * globalOptions.getCelestialBody().getEquatorialRadius();
     }
@@ -26,7 +26,7 @@ public class TileWgs84Utils {
         int depth = 0;
         double currTileSizeMeters = pixelSizeMeters * 256.0;
         while (true) {
-            double tileSizeMeters = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+            double tileSizeMeters = GeographicTerrainTileUtils.getTileSizeInMetersByDepth(depth);
             if (tileSizeMeters <= currTileSizeMeters) {
                 depth++;
                 break;
@@ -43,7 +43,7 @@ public class TileWgs84Utils {
     public static void clampVerticesInToTile(TerrainMesh mesh, TileIndices tileIndices, String imaginaryType, boolean originIsLeftUp) {
         // clamp the vertices in to the tile
         // Obtain the geographicExtension by tileIndices
-        GeographicExtension geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, originIsLeftUp);
+        GeographicExtension geographicExtension = GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, originIsLeftUp);
         if (geographicExtension == null) {
             return;
         }
@@ -90,7 +90,7 @@ public class TileWgs84Utils {
     }
 
     public static double getMaxDiffBetweenGeoTiffSampleAndTrianglePlane(int depth) {
-        double tileSize = TileWgs84Utils.getTileSizeInMetersByDepth(depth);
+        double tileSize = GeographicTerrainTileUtils.getTileSizeInMetersByDepth(depth);
         double result;
         if (depth < 5) {
             result = tileSize * 0.01;
@@ -150,7 +150,7 @@ public class TileWgs84Utils {
 
     public static TileIndices selectTileIndices_original(int depth, double longitude, double latitude, TileIndices resultTileIndices, boolean originIsLeftUp) {
         // Given a geographic point (longitude, latitude) & a depth, this function returns the tileIndices for the specific depth.**
-        double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        double angRange = GeographicTerrainTileUtils.selectTileAngleRangeByDepth(depth);
 
         if (resultTileIndices == null) {
             resultTileIndices = new TileIndices();
@@ -209,9 +209,9 @@ public class TileWgs84Utils {
     public static void selectTileIndicesArray(int depth, double minLon, double maxLon, double minLat, double maxLat, TileRange tilesRange, boolean originIsLeftUp) {
         // Given a geographic rectangle (minLon, minLat, maxLon, maxLat) & a depth, this function returns all
         // tilesIndices intersected by the rectangle for the specific depth.**
-        TileIndices leftDownTileName = TileWgs84Utils.selectTileIndices(depth, minLon, minLat, null, originIsLeftUp);
-        TileIndices rightDownTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, minLat, null, originIsLeftUp);
-        TileIndices rightUpTileName = TileWgs84Utils.selectTileIndices(depth, maxLon, maxLat, null, originIsLeftUp);
+        TileIndices leftDownTileName = GeographicTerrainTileUtils.selectTileIndices(depth, minLon, minLat, null, originIsLeftUp);
+        TileIndices rightDownTileName = GeographicTerrainTileUtils.selectTileIndices(depth, maxLon, minLat, null, originIsLeftUp);
+        TileIndices rightUpTileName = GeographicTerrainTileUtils.selectTileIndices(depth, maxLon, maxLat, null, originIsLeftUp);
 
         int minX = leftDownTileName.getX();
         int maxX = rightDownTileName.getX();
@@ -232,7 +232,7 @@ public class TileWgs84Utils {
         double xMin = -180.0;
         double yMin = -90.0;
 
-        double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(depth);
+        double angRange = GeographicTerrainTileUtils.selectTileAngleRangeByDepth(depth);
         int xIndexMax = (int) Math.round((maxLon - xMin) / angRange);
         int yIndexMax = (int) Math.round((maxLat - yMin) / angRange);
 
@@ -339,7 +339,7 @@ public class TileWgs84Utils {
 
     public static boolean isValidTileIndices(int L, int X, int Y) {
         // calculate the minX & minY, maxX & maxY for the tile depth(L)
-        double angDeg = TileWgs84Utils.selectTileAngleRangeByDepth(L);
+        double angDeg = GeographicTerrainTileUtils.selectTileAngleRangeByDepth(L);
 
         // in longitude, the range is (-180, 180)
         int numTilesX = (int) (360.0 / angDeg);
@@ -358,7 +358,7 @@ public class TileWgs84Utils {
         }
 
         if (imageryType.equals("CRS84")) {
-            double angRange = TileWgs84Utils.selectTileAngleRangeByDepth(L);
+            double angRange = GeographicTerrainTileUtils.selectTileAngleRangeByDepth(L);
             double minLon = angRange * (double) X - 180.0;
             double maxLon = angRange * ((double) X + 1.0) - 180.0;
             double minLat = 90.0 - angRange * ((double) Y + 1.0);

@@ -1,9 +1,12 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.core;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.*;
+import com.gaia3d.terrain.tile.elevation.TerrainElevationData;
+import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.types.PriorityType;
-import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +19,11 @@ import java.util.List;
 @Slf4j
 @Getter
 @Setter
-public class TileWgs84Raster {
+public class GeographicTerrainTileRaster {
     private static final int RASTER_RELEASE_ROW_BLOCK_SIZE = 32;
     private static final int RASTER_RELEASE_COLUMN_BLOCK_SIZE = 32;
 
-    private TileWgs84Manager manager = null;
+    private TerrainTilesetGenerator manager = null;
     private TileIndices tileIndices = null;
     private GeographicExtension geographicExtension = null;
     private float[] elevations = null;
@@ -29,13 +32,13 @@ public class TileWgs84Raster {
     private double deltaLonDeg = 0;
     private double deltaLatDeg = 0;
 
-    public TileWgs84Raster(TileIndices tileIndices, TileWgs84Manager manager) {
+    public GeographicTerrainTileRaster(TileIndices tileIndices, TerrainTilesetGenerator manager) {
         this.tileIndices = tileIndices;
         this.manager = manager;
 
         String imageryType = manager.getImaginaryType();
         boolean originIsLeftUp = manager.isOriginIsLeftUp();
-        this.geographicExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
+        this.geographicExtension = GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
     }
 
     public int getColumn(double lonDeg) {
@@ -129,7 +132,7 @@ public class TileWgs84Raster {
         this.elevations = null;
     }
 
-    public void makeElevations(TerrainElevationDataManager terrainElevationDataManager, int rasterWidth, int rasterHeight) {
+    public void generateElevations(TerrainElevationModeler terrainElevationModeler, int rasterWidth, int rasterHeight) {
         this.rasterWidth = rasterWidth;
         this.rasterHeight = rasterHeight;
 
@@ -154,11 +157,11 @@ public class TileWgs84Raster {
         // make intersected terrainElevationDataList
         GeographicExtension geoExtension = this.getGeographicExtension();
         List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
-        terrainElevationDataManager.getTerrainElevationDataArray(geoExtension, resultTerrainElevDataArray);
+        terrainElevationModeler.collectTerrainElevationData(geoExtension, resultTerrainElevDataArray);
         if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
             resultTerrainElevDataArray.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
         }
-        terrainElevationDataManager.preloadTerrainElevationRasters(resultTerrainElevDataArray);
+        terrainElevationModeler.preloadTerrainElevationRasters(resultTerrainElevDataArray);
 
         double[] longitudes = new double[rasterWidth];
         for (int col = 0; col < rasterWidth; col++) {
@@ -189,7 +192,7 @@ public class TileWgs84Raster {
                 }
 
                 activeBlock.setDegrees(blockMinLonDeg, blockMinLatDeg, 0.0, blockMaxLonDeg, blockMaxLatDeg, 0.0);
-                terrainElevationDataManager.releaseTerrainElevationRastersOutsideGeographicExtension(resultTerrainElevDataArray, activeBlock);
+                terrainElevationModeler.releaseTerrainElevationRastersOutsideGeographicExtension(resultTerrainElevDataArray, activeBlock);
                 filterTerrainElevationDataForBlock(resultTerrainElevDataArray, activeBlock, blockTerrainElevDataArray);
 
                 for (int row = rowStart; row < rowEndExclusive; row++) {
@@ -197,12 +200,20 @@ public class TileWgs84Raster {
                     int rowOffset = row * rasterWidth;
                     for (int col = colStart; col < colEndExclusive; col++) {
                         double lonDeg = longitudes[col];
-                        elevations[rowOffset + col] = (float) terrainElevationDataManager.getElevation(lonDeg, latDeg, blockTerrainElevDataArray);
+                        elevations[rowOffset + col] = (float) terrainElevationModeler.getElevation(lonDeg, latDeg, blockTerrainElevDataArray);
                     }
                 }
             }
         }
 
+    }
+
+    /**
+     * @deprecated use {@link #generateElevations(TerrainElevationModeler, int, int)}
+     */
+    @Deprecated
+    public void makeElevations(TerrainElevationModeler terrainElevationModeler, int rasterWidth, int rasterHeight) {
+        generateElevations(terrainElevationModeler, rasterWidth, rasterHeight);
     }
 
     private void filterTerrainElevationDataForBlock(List<TerrainElevationData> sourceTerrainElevDataArray, GeographicExtension activeBlock, List<TerrainElevationData> resultTerrainElevDataArray) {

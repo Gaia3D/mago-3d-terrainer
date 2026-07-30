@@ -3,11 +3,11 @@ package com.gaia3d.quantized.mesh;
 import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.*;
-import com.gaia3d.terrain.tile.TileIndices;
-import com.gaia3d.terrain.tile.TileWgs84;
-import com.gaia3d.terrain.tile.TileWgs84Manager;
-import com.gaia3d.terrain.util.OctNormalFactory;
-import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.terrain.tile.core.GeographicTerrainTile;
+import com.gaia3d.terrain.tile.core.TileIndices;
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
+import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
+import com.gaia3d.terrain.util.OctNormalCalculator;
 import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.GlobeUtils;
 import org.joml.Vector3d;
@@ -25,19 +25,19 @@ public class QuantizedMeshManager {
     private final List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
     private List<TerrainVertex> listVertices = new ArrayList<>();
 
-    public TileWgs84 getTileWgs84FromQuantizedMesh(QuantizedMesh quantizedMesh, TileIndices tileIndices, TileWgs84Manager tileManager) {
+    public GeographicTerrainTile getGeographicTerrainTileFromQuantizedMesh(QuantizedMesh quantizedMesh, TileIndices tileIndices, TerrainTilesetGenerator tileManager) {
         // First get the quantized mesh header
         QuantizedMeshHeader header = quantizedMesh.getHeader();
         if (header == null) {return null;}
 
         // calculate the geographic extension by tileIndices
         String imaginaryType = tileManager.getImaginaryType();
-        GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, tileManager.originIsLeftUp());
+        GeographicExtension geoExtension = GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imaginaryType, tileManager.originIsLeftUp());
         if (geoExtension == null) {
             return null;
         }
 
-        TileWgs84 resultTile = new TileWgs84(null, tileManager);
+        GeographicTerrainTile resultTile = new GeographicTerrainTile(null, tileManager);
         TerrainMesh mesh = new TerrainMesh();
         resultTile.setMesh(mesh);
         List<TerrainVertex> vertices = mesh.getVertices();
@@ -185,7 +185,7 @@ public class QuantizedMeshManager {
         return resultTile;
     }
 
-    public QuantizedMesh getQuantizedMeshFromTile(TileWgs84 tile, boolean calculateNormals) {
+    public QuantizedMesh getQuantizedMeshFromTile(GeographicTerrainTile tile, boolean calculateNormals) {
         // First get the quantized mesh header
         QuantizedMeshHeader header = new QuantizedMeshHeader();
         TerrainMesh mesh = tile.getMesh();
@@ -348,7 +348,7 @@ public class QuantizedMeshManager {
                 }
 
                 //Vector2f octNormal = encodeOctNormal(normal);
-                byte[] octNormalBytes = OctNormalFactory.encodeOctNormalByte(normal);
+                byte[] octNormalBytes = OctNormalCalculator.encodeOctNormalByte(normal);
                 quantizedMesh.getOctEncodedNormals()[i * 2] = octNormalBytes[0];
                 quantizedMesh.getOctEncodedNormals()[i * 2 + 1] = octNormalBytes[1];
             }

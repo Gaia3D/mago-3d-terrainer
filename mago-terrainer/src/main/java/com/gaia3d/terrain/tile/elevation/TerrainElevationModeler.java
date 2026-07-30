@@ -1,12 +1,16 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.elevation;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
 import com.gaia3d.terrain.structure.TerrainTriangle;
-import com.gaia3d.terrain.tile.geotiff.GaiaGeoTiffManager;
+import com.gaia3d.terrain.tile.core.GeographicTerrainTileRaster;
+import com.gaia3d.terrain.tile.core.TileIndices;
+import com.gaia3d.terrain.tile.core.TileRange;
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
+import com.gaia3d.terrain.tile.geotiff.GeoTiffCoverageStore;
 import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
-import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import com.gaia3d.util.FileUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,7 +26,6 @@ import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +35,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @Slf4j
-public class TerrainElevationDataManager {
+public class TerrainElevationModeler {
     private static final boolean PRELOAD_TERRAIN_RASTERS = false;
     private static final long MIN_PRELOAD_BUDGET_BYTES = 128L * 1024L * 1024L;
     private static final long MAX_PRELOAD_BUDGET_BYTES = 1024L * 1024L * 1024L;
@@ -42,10 +45,10 @@ public class TerrainElevationDataManager {
 
     private GlobalOptions globalOptions = GlobalOptions.getInstance();
 
-    private TileWgs84Manager tileWgs84Manager = null;
+    private TerrainTilesetGenerator terrainTilesetGenerator = null;
     private List<TerrainElevationData> terrainElevationDataArray = new ArrayList<>();
     private List<TerrainTriangle> trianglesArray = new ArrayList<>();
-    private Map<Long, TileWgs84Raster> mapIndicesTileRaster = new HashMap<>();
+    private Map<Long, GeographicTerrainTileRaster> mapIndicesTileRaster = new HashMap<>();
     private Map<String, Double> gridAreaMap = new HashMap<>();
     private Map<String, Vector2d> priorityPixelSizeByGeoTiffName = new HashMap<>();
 
@@ -57,43 +60,49 @@ public class TerrainElevationDataManager {
     // if there are multiple geoTiff files, use this
     private int quadtreeMaxDepth = 10;
     private TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree = null;
-    private GaiaGeoTiffManager geoTiffManager = null;
+    private GeoTiffCoverageStore geoTiffManager = null;
     private boolean[] intersects = {false};
     private List<String> geoTiffFileNames = new ArrayList<>();
     private int terrainElevationDataQueryMark = 1;
 
-    public void makeTerrainQuadTree(int depth) throws FactoryException, TransformException, IOException {
-        List<File> standardizedGeoTiffFiles = tileWgs84Manager.getStandardizedGeoTiffFiles();
-
-        // load all geoTiffFiles & make a quadTree
-        loadAllGeoTiff(resolveTerrainElevationDataFiles(), standardizedGeoTiffFiles);
+    public void generateTerrainQuadTree(int depth) throws FactoryException, TransformException {
+        List<File> standardizedGeoTiffFiles = terrainTilesetGenerator.getStandardizedGeoTiffFiles();
+        loadTerrainElevationData(resolveConfiguredElevationFiles(), standardizedGeoTiffFiles);
         rootTerrainElevationDataQuadTree.makeQuadTree(quadtreeMaxDepth);
     }
 
-    public GaiaGeoTiffManager getGaiaGeoTiffManager() {
-        if (tileWgs84Manager != null) {
-            return tileWgs84Manager.getGaiaGeoTiffManager();
+    /**
+     * @deprecated use {@link #generateTerrainQuadTree(int)}
+     */
+    @Deprecated
+    public void makeTerrainQuadTree(int depth) throws FactoryException, TransformException {
+        generateTerrainQuadTree(depth);
+    }
+
+    public GeoTiffCoverageStore getGaiaGeoTiffManager() {
+        if (terrainTilesetGenerator != null) {
+            return terrainTilesetGenerator.getGeoTiffCoverageStore();
         }
         if (geoTiffManager == null) {
-            geoTiffManager = new GaiaGeoTiffManager();
+            geoTiffManager = new GeoTiffCoverageStore();
         }
         return geoTiffManager;
     }
 
-    public TileWgs84Raster getTileWgs84Raster(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager) {
+    public GeographicTerrainTileRaster getGeographicTerrainTileRaster(TileIndices tileIndices, TerrainTilesetGenerator terrainTilesetGenerator) {
         long tileKey = tileIndices.toCacheKey();
-        TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileKey);
-        if (tileWgs84Raster == null) {
-            tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
-            int tileRasterWidth = tileWgs84Manager.getRasterTileSize();
-            int tileRasterHeight = tileWgs84Manager.getRasterTileSize();
-            tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
-            mapIndicesTileRaster.put(tileKey, tileWgs84Raster);
+        GeographicTerrainTileRaster GeographicTerrainTileRaster = mapIndicesTileRaster.get(tileKey);
+        if (GeographicTerrainTileRaster == null) {
+            GeographicTerrainTileRaster = new GeographicTerrainTileRaster(tileIndices, terrainTilesetGenerator);
+            int tileRasterWidth = terrainTilesetGenerator.getRasterTileSize();
+            int tileRasterHeight = terrainTilesetGenerator.getRasterTileSize();
+            GeographicTerrainTileRaster.generateElevations(this, tileRasterWidth, tileRasterHeight);
+            mapIndicesTileRaster.put(tileKey, GeographicTerrainTileRaster);
         }
-        return tileWgs84Raster;
+        return GeographicTerrainTileRaster;
     }
 
-    public void makeAllTileWgs84Raster(TileRange tileRange, TileWgs84Manager tileWgs84Manager) {
+    public void prepareTileRastersForRange(TileRange tileRange, TerrainTilesetGenerator terrainTilesetGenerator) {
         List<TileIndices> tileIndicesList = tileRange.getTileIndices(null);
 
         // 1rst, delete from the mapIndicesTileRaster the tiles that are not in the tileIndicesList
@@ -109,8 +118,8 @@ public class TerrainElevationDataManager {
             if (requestedTileKeys.containsKey(tileKey)) {
                 reusedRasterTilesCount++;
             } else {
-                TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileKey);
-                tileWgs84Raster.deleteObjects();
+                GeographicTerrainTileRaster GeographicTerrainTileRaster = mapIndicesTileRaster.get(tileKey);
+                GeographicTerrainTileRaster.deleteObjects();
                 mapIndicesTileRaster.remove(tileKey);
             }
         }
@@ -120,9 +129,9 @@ public class TerrainElevationDataManager {
         // now, delete TerrainElevationData's coverage that are not intersecting with the tileRange
         GeographicExtension geoExtensionTotal = null;
         for (TileIndices tileIndices : tileIndicesList) {
-            String imageryType = tileWgs84Manager.getImaginaryType();
-            boolean originIsLeftUp = tileWgs84Manager.isOriginIsLeftUp();
-            GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
+            String imageryType = terrainTilesetGenerator.getImaginaryType();
+            boolean originIsLeftUp = terrainTilesetGenerator.isOriginIsLeftUp();
+            GeographicExtension geoExtension = GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
             if (geoExtensionTotal == null) {
                 geoExtensionTotal = new GeographicExtension();
                 geoExtensionTotal.copyFrom(geoExtension);
@@ -136,22 +145,30 @@ public class TerrainElevationDataManager {
 
         for (TileIndices tileIndices : tileIndicesList) {
             long tileKey = tileIndices.toCacheKey();
-            TileWgs84Raster tileWgs84Raster = mapIndicesTileRaster.get(tileKey);
-            if (tileWgs84Raster == null) {
-                tileWgs84Raster = new TileWgs84Raster(tileIndices, tileWgs84Manager);
-                int tileRasterWidth = tileWgs84Manager.getRasterTileSize();
-                int tileRasterHeight = tileWgs84Manager.getRasterTileSize();
-                tileWgs84Raster.makeElevations(this, tileRasterWidth, tileRasterHeight);
-                mapIndicesTileRaster.put(tileKey, tileWgs84Raster);
-                enforceLiveRasterBudget(geoExtensionTotal, tileWgs84Raster.getGeographicExtension());
+            GeographicTerrainTileRaster GeographicTerrainTileRaster = mapIndicesTileRaster.get(tileKey);
+            if (GeographicTerrainTileRaster == null) {
+                GeographicTerrainTileRaster = new GeographicTerrainTileRaster(tileIndices, terrainTilesetGenerator);
+                int tileRasterWidth = terrainTilesetGenerator.getRasterTileSize();
+                int tileRasterHeight = terrainTilesetGenerator.getRasterTileSize();
+                GeographicTerrainTileRaster.generateElevations(this, tileRasterWidth, tileRasterHeight);
+                mapIndicesTileRaster.put(tileKey, GeographicTerrainTileRaster);
+                enforceLiveRasterBudget(geoExtensionTotal, GeographicTerrainTileRaster.getGeographicExtension());
             }
         }
 
     }
 
+    /**
+     * @deprecated use {@link #prepareTileRastersForRange(TileRange, TerrainTilesetGenerator)}
+     */
+    @Deprecated
+    public void makeAllGeographicTerrainTileRaster(TileRange tileRange, TerrainTilesetGenerator terrainTilesetGenerator) {
+        prepareTileRastersForRange(tileRange, terrainTilesetGenerator);
+    }
+
     public void deleteTileRaster() {
-        for (TileWgs84Raster tileWgs84Raster : mapIndicesTileRaster.values()) {
-            tileWgs84Raster.deleteObjects();
+        for (GeographicTerrainTileRaster GeographicTerrainTileRaster : mapIndicesTileRaster.values()) {
+            GeographicTerrainTileRaster.deleteObjects();
         }
 
         mapIndicesTileRaster.clear();
@@ -183,7 +200,7 @@ public class TerrainElevationDataManager {
     public void deleteObjects() {
         this.deleteTileRaster();
         this.deleteCoverage();
-        if (geoTiffManager != null && tileWgs84Manager == null) {
+        if (geoTiffManager != null && terrainTilesetGenerator == null) {
             geoTiffManager.deleteObjects();
         }
         geoTiffManager = null;
@@ -200,22 +217,30 @@ public class TerrainElevationDataManager {
         priorityPixelSizeByGeoTiffName.clear();
         geoTiffFileNames.clear();
         terrainElevationDataFiles = new ArrayList<>();
-        tileWgs84Manager = null;
+        terrainTilesetGenerator = null;
     }
 
     public void setTerrainElevationDataFiles(List<File> terrainElevationDataFiles) {
         this.terrainElevationDataFiles = terrainElevationDataFiles == null ? new ArrayList<>() : new ArrayList<>(terrainElevationDataFiles);
     }
 
-    public double getElevationBilinearRasterTile(TileIndices tileIndices, TileWgs84Manager tileWgs84Manager, double lonDeg, double latDeg, byte[] intersectionType) {
+    public double sampleBilinearElevation(TileIndices tileIndices, TerrainTilesetGenerator terrainTilesetGenerator, double lonDeg, double latDeg, byte[] intersectionType) {
         double resultElevation = 0.0;
-        TileWgs84Raster tileWgs84Raster = null;
-        tileWgs84Raster = this.getTileWgs84Raster(tileIndices, tileWgs84Manager);
-        resultElevation = tileWgs84Raster.getElevationBilinear(lonDeg, latDeg);
+        GeographicTerrainTileRaster GeographicTerrainTileRaster = null;
+        GeographicTerrainTileRaster = this.getGeographicTerrainTileRaster(tileIndices, terrainTilesetGenerator);
+        resultElevation = GeographicTerrainTileRaster.getElevationBilinear(lonDeg, latDeg);
         return resultElevation;
     }
 
-    public Map<TerrainElevationData, TerrainElevationData> getTerrainElevationDataArray(GeographicExtension geoExtension, Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap) {
+    /**
+     * @deprecated use {@link #sampleBilinearElevation(TileIndices, TerrainTilesetGenerator, double, double, byte[])}
+     */
+    @Deprecated
+    public double getElevationBilinearRasterTile(TileIndices tileIndices, TerrainTilesetGenerator terrainTilesetGenerator, double lonDeg, double latDeg, byte[] intersectionType) {
+        return sampleBilinearElevation(tileIndices, terrainTilesetGenerator, lonDeg, latDeg, intersectionType);
+    }
+
+    public Map<TerrainElevationData, TerrainElevationData> collectTerrainElevationData(GeographicExtension geoExtension, Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap) {
         if (rootTerrainElevationDataQuadTree == null) {
             return terrainElevDataMap;
         }
@@ -228,7 +253,7 @@ public class TerrainElevationDataManager {
         return terrainElevDataMap;
     }
 
-    public List<TerrainElevationData> getTerrainElevationDataArray(GeographicExtension geoExtension, List<TerrainElevationData> resultTerrainElevDataArray) {
+    public List<TerrainElevationData> collectTerrainElevationData(GeographicExtension geoExtension, List<TerrainElevationData> resultTerrainElevDataArray) {
         if (rootTerrainElevationDataQuadTree == null) {
             return resultTerrainElevDataArray;
         }
@@ -241,6 +266,22 @@ public class TerrainElevationDataManager {
 
         rootTerrainElevationDataQuadTree.getTerrainElevationDataArray(geoExtension, resultTerrainElevDataArray, nextTerrainElevationDataQueryMark());
         return resultTerrainElevDataArray;
+    }
+
+    /**
+     * @deprecated use {@link #collectTerrainElevationData(GeographicExtension, Map)}
+     */
+    @Deprecated
+    public Map<TerrainElevationData, TerrainElevationData> getTerrainElevationDataArray(GeographicExtension geoExtension, Map<TerrainElevationData, TerrainElevationData> terrainElevDataMap) {
+        return collectTerrainElevationData(geoExtension, terrainElevDataMap);
+    }
+
+    /**
+     * @deprecated use {@link #collectTerrainElevationData(GeographicExtension, List)}
+     */
+    @Deprecated
+    public List<TerrainElevationData> getTerrainElevationDataArray(GeographicExtension geoExtension, List<TerrainElevationData> resultTerrainElevDataArray) {
+        return collectTerrainElevationData(geoExtension, resultTerrainElevDataArray);
     }
 
     private int nextTerrainElevationDataQueryMark() {
@@ -286,7 +327,7 @@ public class TerrainElevationDataManager {
         return resultElevation;
     }
 
-    private List<File> resolveTerrainElevationDataFiles() {
+    private List<File> resolveConfiguredElevationFiles() {
         if (terrainElevationDataFiles != null && !terrainElevationDataFiles.isEmpty()) {
             return terrainElevationDataFiles;
         }
@@ -304,7 +345,7 @@ public class TerrainElevationDataManager {
         return result;
     }
 
-    private void loadAllGeoTiff(List<File> geoTiffFiles, List<File> standardizedGeoTiffFiles) throws FactoryException, TransformException {
+    private void loadTerrainElevationData(List<File> geoTiffFiles, List<File> standardizedGeoTiffFiles) throws FactoryException, TransformException {
         geoTiffFileNames.clear();
 
         Map<String, File> standardizedGeoTiffByName = new HashMap<>();
@@ -312,10 +353,10 @@ public class TerrainElevationDataManager {
             standardizedGeoTiffByName.putIfAbsent(standardizedGeoTiffFile.getName(), standardizedGeoTiffFile);
         }
 
-        loadAllGeoTiff(geoTiffFiles, standardizedGeoTiffByName);
+        loadTerrainElevationData(geoTiffFiles, standardizedGeoTiffByName);
     }
 
-    private void loadAllGeoTiff(List<File> geoTiffFiles, Map<String, File> standardizedGeoTiffByName) throws FactoryException, TransformException {
+    private void loadTerrainElevationData(List<File> geoTiffFiles, Map<String, File> standardizedGeoTiffByName) throws FactoryException, TransformException {
         if (geoTiffManager == null) {
             geoTiffManager = this.getGaiaGeoTiffManager();
         }
@@ -331,7 +372,7 @@ public class TerrainElevationDataManager {
         CoordinateReferenceSystem crsOutput = globalOptions.getOutputCRS();
         MathTransform targetToOutput = null;
 
-        Map<String, String> mapNoUsableGeotiffPaths = this.tileWgs84Manager.getMapNoUsableGeotiffPaths();
+        Map<String, String> mapNoUsableGeotiffPaths = this.terrainTilesetGenerator.getMapNoUsableGeotiffPaths();
 
         for (File currentFolderGeoTiffFile : geoTiffFiles) {
             String geoTiffFileName = currentFolderGeoTiffFile.getName();
@@ -376,7 +417,7 @@ public class TerrainElevationDataManager {
         }
     }
 
-    public Double putAndGetGridAreaMap(String fileName, String path) {
+    public Double getOrCachePixelArea(String fileName, String path) {
         if (gridAreaMap.containsKey(fileName)) {
             return gridAreaMap.get(fileName);
         }
@@ -387,8 +428,8 @@ public class TerrainElevationDataManager {
 
         if (tempFile.exists()) {
             try {
-                GaiaGeoTiffManager gaiaGeoTiffManager = this.getGaiaGeoTiffManager();
-                GridCoverage2D coverage = gaiaGeoTiffManager.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
+                GeoTiffCoverageStore geoTiffCoverageStore = this.getGaiaGeoTiffManager();
+                GridCoverage2D coverage = geoTiffCoverageStore.loadGeoTiffGridCoverage2D(tempFile.getAbsolutePath());
                 Vector2d originalArea = GaiaGeoTiffUtils.getPixelSizeMeters(coverage);
                 pixelArea = originalArea.x * originalArea.y;
             } catch (FactoryException e) {
@@ -399,8 +440,16 @@ public class TerrainElevationDataManager {
         return gridAreaMap.get(fileName);
     }
 
+    /**
+     * @deprecated use {@link #getOrCachePixelArea(String, String)}
+     */
+    @Deprecated
+    public Double putAndGetGridAreaMap(String fileName, String path) {
+        return getOrCachePixelArea(fileName, path);
+    }
+
     public void deleteGeoTiffManager() {
-        if (geoTiffManager != null && tileWgs84Manager == null) {
+        if (geoTiffManager != null && terrainTilesetGenerator == null) {
             geoTiffManager.clear();
         }
         geoTiffManager = null;
@@ -505,7 +554,7 @@ public class TerrainElevationDataManager {
     }
 
     private long estimateLoadedRasterBytes(GeographicExtension geographicExtension) {
-        List<TerrainElevationData> terrainElevDataArray = getTerrainElevationDataArray(geographicExtension, (List<TerrainElevationData>) null);
+        List<TerrainElevationData> terrainElevDataArray = collectTerrainElevationData(geographicExtension, (List<TerrainElevationData>) null);
         if (terrainElevDataArray == null || terrainElevDataArray.isEmpty()) {
             return 0L;
         }

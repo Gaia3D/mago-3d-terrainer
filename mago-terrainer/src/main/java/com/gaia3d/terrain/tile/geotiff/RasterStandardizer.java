@@ -734,7 +734,7 @@ public class RasterStandardizer {
         }
         // Handle unknown source CRS (e.g., lunar GeoTIFFs without IAU authority):
         // If the source has no identifiers but both are geographic CRS with matching ellipsoids,
-        // treat them as equivalent — the data is already in the correct coordinate space.
+        // treat them as equivalent ??the data is already in the correct coordinate space.
         if (!sourceCRSIterator.hasNext() && sourceCRS instanceof GeographicCRS && targetCRS instanceof GeographicCRS) {
             Ellipsoid sourceEllipsoid = ((GeographicCRS) sourceCRS).getDatum().getEllipsoid();
             Ellipsoid targetEllipsoid = ((GeographicCRS) targetCRS).getDatum().getEllipsoid();
@@ -742,9 +742,7 @@ public class RasterStandardizer {
             double targetSemiMajor = targetEllipsoid.getSemiMajorAxis();
             double sourceSemiMinor = sourceEllipsoid.getSemiMinorAxis();
             double targetSemiMinor = targetEllipsoid.getSemiMinorAxis();
-            if (Math.abs(sourceSemiMajor - targetSemiMajor) < 1.0 && Math.abs(sourceSemiMinor - targetSemiMinor) < 1.0) {
-                return true;
-            }
+            return Math.abs(sourceSemiMajor - targetSemiMajor) < 1.0 && Math.abs(sourceSemiMinor - targetSemiMinor) < 1.0;
         }
         return false;
     }

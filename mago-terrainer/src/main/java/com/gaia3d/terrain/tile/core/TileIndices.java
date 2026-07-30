@@ -1,8 +1,8 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.core;
 
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
-import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -70,7 +70,7 @@ public class TileIndices {
 
     public boolean isValid() {
         // for each tile depth (L), there are minX & maxX, minY & maxY
-        return TileWgs84Utils.isValidTileIndices(L, X, Y);
+        return GeographicTerrainTileUtils.isValidTileIndices(L, X, Y);
     }
 
     public TileIndices getLeftDownTileIndices(boolean originIsLeftUp) {

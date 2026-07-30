@@ -1,9 +1,9 @@
 package com.gaia3d.terrain.tile.custom;
 
 import com.gaia3d.terrain.structure.GeographicExtension;
-import com.gaia3d.terrain.tile.TileRange;
+import com.gaia3d.terrain.tile.core.TileRange;
 import com.gaia3d.terrain.tile.geotiff.TileRangeIntersectionType;
-import com.gaia3d.terrain.util.TileWgs84Utils;
+import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class AvailableTileSet {
     }
 
     public void addAvailableExtensions(double pixelSizeMeters, GeographicExtension extension) {
-        int maxDepth = TileWgs84Utils.getMaxTileDepthByPixelSizeMeters(pixelSizeMeters);
+        int maxDepth = GeographicTerrainTileUtils.getMaxTileDepthByPixelSizeMeters(pixelSizeMeters);
         boolean originIsLeftUp = false;
         for (int depth = 0; depth <= maxDepth; depth++) {
             List<TileRange> tileRanges = mapDepthAvailableTileRanges.computeIfAbsent(depth, k -> new java.util.ArrayList<>());
@@ -47,7 +47,7 @@ public class AvailableTileSet {
             double minLat = extension.getMinLatitudeDeg();
             double maxLat = extension.getMaxLatitudeDeg();
             TileRange tilesRange = new TileRange();
-            TileWgs84Utils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
+            GeographicTerrainTileUtils.selectTileIndicesArray(depth, minLon, maxLon, minLat, maxLat, tilesRange, originIsLeftUp);
 
             tilesRange = tilesRange.expand(1); // add one tile margin to avoid big difference on edges between different depth tiles.
             tileRanges.add(tilesRange);
@@ -117,19 +117,14 @@ public class AvailableTileSet {
                     //     |             |
                     //     +-------------+
 
-                    if (tileRangeIntersectionType == TileRangeIntersectionType.PARTIAL_OVERLAP ||
-                            tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_B ||
-                            tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_A ||
-                            tileRangeIntersectionType == TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING ||
-                            tileRangeIntersectionType == TileRangeIntersectionType.VERTICAL_FULL_TOUCHING) {
+                    if (tileRangeIntersectionType == TileRangeIntersectionType.PARTIAL_OVERLAP || tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_B || tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_A || tileRangeIntersectionType == TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING || tileRangeIntersectionType == TileRangeIntersectionType.VERTICAL_FULL_TOUCHING) {
                         // In this case we can unify both ranges
                         tileRangeA.union(tileRangeB);
                         noIntersectedTileRanges.remove(tileRangeB);
                         //j--;
                         i = -1;
                         break;
-                    } else if (tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_2_B_0 ||
-                            tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_2_B_1) {
+                    } else if (tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_2_B_0 || tileRangeIntersectionType == TileRangeIntersectionType.A_CONTAINS_2_B_1) {
                         // In this case must split the tiles.
                         List<TileRange> splitTileRanges = split2ZonesTileRange(tileRangeA, tileRangeB, tileRangeIntersectionType);
                         noIntersectedTileRanges.remove(tileRangeA);
@@ -137,8 +132,7 @@ public class AvailableTileSet {
                         noIntersectedTileRanges.addAll(splitTileRanges);
                         i = -1;
                         break;
-                    } else if (tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_2_A_0 ||
-                            tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_2_A_1) {
+                    } else if (tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_2_A_0 || tileRangeIntersectionType == TileRangeIntersectionType.B_CONTAINS_2_A_1) {
                         // In this case must split the tiles.
                         List<TileRange> splitTileRanges = split2ZonesTileRange(tileRangeB, tileRangeA, tileRangeIntersectionType);
                         noIntersectedTileRanges.remove(tileRangeA);
@@ -159,8 +153,7 @@ public class AvailableTileSet {
                 } else {
                     // check touching cases
                     TileRangeIntersectionType tileRangeIntersectionType = tileRangeA.getIntersectionType(tileRangeB);
-                    if (tileRangeIntersectionType == TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING ||
-                            tileRangeIntersectionType == TileRangeIntersectionType.VERTICAL_FULL_TOUCHING) {
+                    if (tileRangeIntersectionType == TileRangeIntersectionType.HORIZONTAL_FULL_TOUCHING || tileRangeIntersectionType == TileRangeIntersectionType.VERTICAL_FULL_TOUCHING) {
                         // In this case we can unify both ranges
                         tileRangeA.union(tileRangeB);
                         noIntersectedTileRanges.remove(tileRangeB);
@@ -341,10 +334,7 @@ public class AvailableTileSet {
 
     private List<TileRange> split2ZonesTileRange(TileRange tileRangeBig, TileRange tileRangeSmall, TileRangeIntersectionType intersectionType) {
         // A_CONTAINS_2_B_0 || A_CONTAINS_2_B_1 || B_CONTAINS_2_A_0 || B_CONTAINS_2_A_1
-        if (intersectionType != TileRangeIntersectionType.A_CONTAINS_2_B_0 &&
-                intersectionType != TileRangeIntersectionType.A_CONTAINS_2_B_1 &&
-                intersectionType != TileRangeIntersectionType.B_CONTAINS_2_A_0 &&
-                intersectionType != TileRangeIntersectionType.B_CONTAINS_2_A_1) {
+        if (intersectionType != TileRangeIntersectionType.A_CONTAINS_2_B_0 && intersectionType != TileRangeIntersectionType.A_CONTAINS_2_B_1 && intersectionType != TileRangeIntersectionType.B_CONTAINS_2_A_0 && intersectionType != TileRangeIntersectionType.B_CONTAINS_2_A_1) {
             throw new IllegalArgumentException("Invalid intersection type for split2ZonesTileRange: " + intersectionType);
         }
 

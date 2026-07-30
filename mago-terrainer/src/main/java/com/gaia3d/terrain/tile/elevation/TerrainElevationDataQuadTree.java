@@ -1,4 +1,4 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.elevation;
 
 import com.gaia3d.terrain.structure.GeographicExtension;
 import lombok.Getter;

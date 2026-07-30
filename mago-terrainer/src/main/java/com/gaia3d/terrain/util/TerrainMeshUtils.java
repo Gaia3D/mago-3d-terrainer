@@ -2,8 +2,8 @@ package com.gaia3d.terrain.util;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.*;
-import com.gaia3d.terrain.tile.TileIndices;
-import com.gaia3d.terrain.tile.TileWgs84Manager;
+import com.gaia3d.terrain.tile.core.TileIndices;
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import lombok.experimental.UtilityClass;
@@ -129,7 +129,7 @@ public class TerrainMeshUtils {
 
     }
 
-    public static void save4ChildrenMeshes(TerrainMesh mesh, TileWgs84Manager manager, GlobalOptions globalOptions) {
+    public static void save4ChildrenMeshes(TerrainMesh mesh, TerrainTilesetGenerator manager, GlobalOptions globalOptions) {
         TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle
         TileIndices tileIndices = triangle.getOwnerTileIndices();
 
@@ -144,7 +144,7 @@ public class TerrainMeshUtils {
         TileIndices childRightDownTileIndices = tileIndices.getChildRightDownTileIndices(originIsLeftUp);
 
         // Classify the triangles of the tile
-        GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
+        GeographicExtension geoExtension = GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
         double midLonDeg = geoExtension.getMidLongitudeDeg();
         double midLatDeg = geoExtension.getMidLatitudeDeg();
         List<TerrainTriangle> triangles = mesh.triangles;
@@ -194,11 +194,11 @@ public class TerrainMeshUtils {
             TileIndices childTileIndices = triangle.getOwnerTileIndices();
 
             // Now, clamp the vertices in to the tile
-            TileWgs84Utils.clampVerticesInToTile(childMesh, childTileIndices, manager.getImaginaryType(), manager.originIsLeftUp());
+            GeographicTerrainTileUtils.clampVerticesInToTile(childMesh, childTileIndices, manager.getImaginaryType(), manager.originIsLeftUp());
 
             // Now, save the mesh
             String tileTempDirectory = globalOptions.getTileTempPath();
-            String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
+            String childTileFilePath = GeographicTerrainTileUtils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
             String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
             try {

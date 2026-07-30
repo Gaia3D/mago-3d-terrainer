@@ -1,14 +1,13 @@
 package com.gaia3d.terrain.structure;
 
-import lombok.Getter;
 import org.joml.Vector2i;
 
-@Getter
-public class RasterTriangle {
-    private final Vector2i p1; // column, row of the raster
-    private final Vector2i p2; // column, row of the raster
-    private final Vector2i p3; // column, row of the raster
-
+/**
+ * @param p1 column, row of the raster
+ * @param p2 column, row of the raster
+ * @param p3 column, row of the raster
+ */
+public record RasterTriangle(Vector2i p1, Vector2i p2, Vector2i p3) {
     public RasterTriangle(Vector2i p1, Vector2i p2, Vector2i p3) {
         this.p1 = requireVertex(p1);
         this.p2 = requireVertex(p2);

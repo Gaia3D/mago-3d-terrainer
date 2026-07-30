@@ -4,7 +4,7 @@ import com.gaia3d.basic.geometry.GaiaBoundingBox;
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.BigEndianDataInputStream;
 import com.gaia3d.io.BigEndianDataOutputStream;
-import com.gaia3d.terrain.tile.TileIndices;
+import com.gaia3d.terrain.tile.core.TileIndices;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
 import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.GlobeUtils;

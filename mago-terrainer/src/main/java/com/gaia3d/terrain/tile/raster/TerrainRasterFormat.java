@@ -6,7 +6,7 @@ import java.nio.ByteOrder;
 
 @NoArgsConstructor
 public final class TerrainRasterFormat {
-    public static final String EXTENSION = ".mtrf";
+    public static final String EXTENSION = ".raster";
     public static final String CRS = "EPSG:4326";
     public static final byte[] MAGIC = new byte[]{'M', 'T', 'R', 'F'};
     public static final int VERSION = 1;

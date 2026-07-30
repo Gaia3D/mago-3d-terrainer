@@ -43,7 +43,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @Slf4j
-public class GaiaGeoTiffManager {
+public class GeoTiffCoverageStore {
     private static final boolean ENABLE_RASTER_LRU_CACHE = false;
     private static final int MAX_CACHED_GRID_COVERAGES = 2;
     private static final long MIN_RASTER_CACHE_BYTES = 128L * 1024L * 1024L;
@@ -91,7 +91,7 @@ public class GaiaGeoTiffManager {
 
         while (mapPathGridCoverage2d.size() >= MAX_CACHED_GRID_COVERAGES) {
             // delete the old coverage. Check the pathList. the 1rst is the oldest
-            String oldestPath = pathList.get(0);
+            String oldestPath = pathList.getFirst();
             GridCoverage2D oldestCoverage = mapPathGridCoverage2d.get(oldestPath);
             oldestCoverage.dispose(true);
             mapPathGridCoverage2d.remove(oldestPath);
@@ -100,10 +100,10 @@ public class GaiaGeoTiffManager {
                 oldestReader.dispose();
             }
             mapPathGridCoverage2dSize.remove(oldestPath);
-            pathList.remove(0);
+            pathList.removeFirst();
         }
 
-        log.info("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
+        log.debug("[Raster][I/O] loading the geoTiff file: {}", geoTiffFilePath);
         GeoTiffReader reader = null;
         GridCoverage2D coverage;
         try {
@@ -298,8 +298,8 @@ public class GaiaGeoTiffManager {
         writeParams.setTilingMode(GeoTiffWriteParams.MODE_EXPLICIT);
 
         RenderedImage renderedImage = coverage.getRenderedImage();
-        int tileWidth = Math.min(Math.max(renderedImage.getWidth(), 1), 512);
-        int tileHeight = Math.min(Math.max(renderedImage.getHeight(), 1), 512);
+        int tileWidth = Math.clamp(renderedImage.getWidth(), 1, 512);
+        int tileHeight = Math.clamp(renderedImage.getHeight(), 1, 512);
         writeParams.setTiling(tileWidth, tileHeight);
 
         GeoTiffFormat format = new GeoTiffFormat();
@@ -539,7 +539,7 @@ public class GaiaGeoTiffManager {
     private long computeRasterCacheBudgetBytes() {
         long maxHeapBytes = Runtime.getRuntime().maxMemory();
         long desiredBytes = (long) (maxHeapBytes * RASTER_CACHE_HEAP_RATIO);
-        return Math.min(MAX_RASTER_CACHE_BYTES, Math.max(MIN_RASTER_CACHE_BYTES, desiredBytes));
+        return Math.clamp(desiredBytes, MIN_RASTER_CACHE_BYTES, MAX_RASTER_CACHE_BYTES);
     }
 
     private record PreparedCoverage(GridCoverage2D coverage, boolean disposeAfterUse, boolean allNoData) {}

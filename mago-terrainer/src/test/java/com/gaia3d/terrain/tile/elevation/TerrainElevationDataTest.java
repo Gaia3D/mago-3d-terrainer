@@ -1,4 +1,10 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.elevation;
+
+import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.elevation.*;
+import com.gaia3d.terrain.tile.generation.*;
+import com.gaia3d.terrain.tile.layer.*;
+import com.gaia3d.terrain.tile.mesh.*;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.command.LoggingConfiguration;
@@ -166,7 +172,7 @@ class TerrainElevationDataTest {
         int rasterCount = 16;
         int rasterSize = 32768 * 2;
         int tileSize = 256;
-        TerrainElevationDataManager manager = new TerrainElevationDataManager();
+        TerrainElevationModeler manager = new TerrainElevationModeler();
         TerrainElevationDataQuadTree root = new TerrainElevationDataQuadTree(null);
         VirtualTiledImage[] images = new VirtualTiledImage[rasterCount];
 
@@ -191,7 +197,7 @@ class TerrainElevationDataTest {
             int xOffset = pass * 13;
             for (int y = yOffset; y < rasterSize - 1; y += 389) {
                 for (int x = xOffset; x < rasterSize - 1; x += 397) {
-                    List<TerrainElevationData> elevationDataList = manager.getTerrainElevationDataArray(queryArea, (List<TerrainElevationData>) null);
+                    List<TerrainElevationData> elevationDataList = manager.collectTerrainElevationData(queryArea, (List<TerrainElevationData>) null);
                     for (TerrainElevationData elevationData : elevationDataList) {
                         elevationData.getElevation(x + 0.25, y + 0.25, new boolean[1]);
                     }

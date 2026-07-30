@@ -1,4 +1,4 @@
-package com.gaia3d.terrain.tile;
+package com.gaia3d.terrain.tile.core;
 
 import com.gaia3d.terrain.tile.geotiff.TileRangeIntersectionType;
 import lombok.Getter;
@@ -116,11 +116,7 @@ public class TileRange {
             return false;
         }
 
-        if (tileRange.getMinTileY() < this.minTileY || tileRange.getMaxTileY() > this.maxTileY) {
-            return false;
-        }
-
-        return true;
+        return tileRange.getMinTileY() >= this.minTileY && tileRange.getMaxTileY() <= this.maxTileY;
     }
 
     public boolean intersects(TileIndices tileIndices) {
@@ -144,11 +140,7 @@ public class TileRange {
             return false;
         }
 
-        if (tileRange.getMinTileY() > this.maxTileY || tileRange.getMaxTileY() < this.minTileY) {
-            return false;
-        }
-
-        return true;
+        return tileRange.getMinTileY() <= this.maxTileY && tileRange.getMaxTileY() >= this.minTileY;
     }
 
     public List<TileRange> splitTileRangeByX(int leftX, int rightX) {
@@ -193,11 +185,7 @@ public class TileRange {
             return false;
         }
 
-        if (tileRange.getMinTileX() > this.maxTileX || tileRange.getMaxTileX() < this.minTileX) {
-            return false;
-        }
-
-        return true;
+        return tileRange.getMinTileX() <= this.maxTileX && tileRange.getMaxTileX() >= this.minTileX;
     }
 
     public boolean intersectsYAxis(TileRange tileRange) {
@@ -205,11 +193,7 @@ public class TileRange {
             return false;
         }
 
-        if (tileRange.getMinTileY() > this.maxTileY || tileRange.getMaxTileY() < this.minTileY) {
-            return false;
-        }
-
-        return true;
+        return tileRange.getMinTileY() <= this.maxTileY && tileRange.getMaxTileY() >= this.minTileY;
     }
 
     public TileIndices getLeftDownTileIndices() {
