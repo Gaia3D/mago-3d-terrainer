@@ -196,8 +196,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getRightVerticesSortedDownToUp()" class="member-name-link">getRightVerticesSortedDownToUp</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getSplittableAdjacentTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationDataManager,java.util.List)" class="member-name-link">getSplittableAdjacentTriangle</a><wbr>(<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&nbsp;targetTriangle,
- <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationDataManager,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getSplittableAdjacentTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationModeler,java.util.List)" class="member-name-link">getSplittableAdjacentTriangle</a><wbr>(<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&nbsp;targetTriangle,
+ <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationModeler,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="TerrainHalfEdge.html" title="class in com.gaia3d.terrain.structure">TerrainHalfEdge</a>&gt;&nbsp;listHalfEdges)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
@@ -272,8 +272,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setVertexIdInList()" class="member-name-link">setVertexIdInList</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#splitTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationDataManager,java.util.List,java.util.List)" class="member-name-link">splitTriangle</a><wbr>(<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&nbsp;triangle,
- <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationDataManager,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#splitTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationModeler,java.util.List,java.util.List)" class="member-name-link">splitTriangle</a><wbr>(<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&nbsp;triangle,
+ <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationModeler,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&gt;&nbsp;resultNewTriangles,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="TerrainHalfEdge.html" title="class in com.gaia3d.terrain.structure">TerrainHalfEdge</a>&gt;&nbsp;listHalfEdges)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
@@ -531,10 +531,10 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="splitTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationDataManager,java.util.List,java.util.List)">
+<section class="detail" id="splitTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationModeler,java.util.List,java.util.List)">
 <h3>splitTriangle</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">splitTriangle</span><wbr><span class="parameters">(<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&nbsp;triangle,
- <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationDataManager,
+ <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationModeler,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&gt;&nbsp;resultNewTriangles,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="TerrainHalfEdge.html" title="class in com.gaia3d.terrain.structure">TerrainHalfEdge</a>&gt;&nbsp;listHalfEdges)</span>
                    throws <span class="exceptions">org.geotools.api.referencing.operation.TransformException,
@@ -547,10 +547,10 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="getSplittableAdjacentTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationDataManager,java.util.List)">
+<section class="detail" id="getSplittableAdjacentTriangle(com.gaia3d.terrain.structure.TerrainTriangle,com.gaia3d.terrain.tile.TerrainElevationModeler,java.util.List)">
 <h3>getSplittableAdjacentTriangle</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a></span>&nbsp;<span class="element-name">getSplittableAdjacentTriangle</span><wbr><span class="parameters">(<a href="TerrainTriangle.html" title="class in com.gaia3d.terrain.structure">TerrainTriangle</a>&nbsp;targetTriangle,
- <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationDataManager,
+ <a href="../tile/TerrainElevationDataManager.html" title="class in com.gaia3d.terrain.tile">TerrainElevationDataManager</a>&nbsp;terrainElevationModeler,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="TerrainHalfEdge.html" title="class in com.gaia3d.terrain.structure">TerrainHalfEdge</a>&gt;&nbsp;listHalfEdges)</span>
                                               throws <span class="exceptions">org.geotools.api.referencing.operation.TransformException,
 <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/io/IOException.html" title="class or interface in java.io" class="external-link">IOException</a></span></div>

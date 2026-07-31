@@ -1,11 +1,14 @@
-updated at 2026-03-24 by znkim
-
 # Basic Conversion Options
 
 ## Simple conversion example (minimum options)
 The following example shows a basic conversion of GeoTIFF data using the minimum required options.
 ```
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output"
+```
+
+Multiple input files or directories can be provided by repeating the input option:
+```bash
+java -jar mago-3d-terrainer.jar --input "/input_path/dem-a.tif" --input "/input_path/dem-b.tif" --output "/output_path/terrain_tiles_output"
 ```
 
 ## Setting minimum / maximum tile depth
@@ -15,14 +18,62 @@ Short options are `-min <value>` and `-max <value>`.
 Tile depth starts from 0, where 0 represents the root (top-level) tile.  
 Valid depth values range from **0 to 22**.
 
-Default values:
-- Minimum depth: **0**
-- Maximum depth: **14**
+Default behavior:
+- Minimum depth is effectively fixed at **0**.
+- If maximum depth is omitted, it is calculated automatically from the input raster resolution.
 
 The minimum depth must not be greater than the maximum depth.
 ```
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --min 0 --max 18
 ```
+
+## Tile depth and source raster resolution guide
+Each terrain tile covers `180 / 2^depth` degrees in the north-south direction. The table below shows the approximate north-south length of one tile for the default Earth body. The values use the same Earth equatorial radius as the converter, so they are intended as a practical guide rather than a geodetic distance survey.
+
+For lunar terrain, multiply these lengths by about **0.2724** (`1,737,400 / 6,378,137`).
+
+| Depth | One tile north-south length (km) | One tile north-south length (m) |
+| ---: | ---: | ---: |
+| 0 | 20,037.508 | 20,037,508 |
+| 1 | 10,018.754 | 10,018,754 |
+| 2 | 5,009.377 | 5,009,377 |
+| 3 | 2,504.689 | 2,504,689 |
+| 4 | 1,252.344 | 1,252,344 |
+| 5 | 626.172 | 626,172 |
+| 6 | 313.086 | 313,086 |
+| 7 | 156.543 | 156,543.034 |
+| 8 | 78.272 | 78,271.517 |
+| 9 | 39.136 | 39,135.758 |
+| 10 | 19.568 | 19,567.879 |
+| 11 | 9.784 | 9,783.940 |
+| 12 | 4.892 | 4,891.970 |
+| 13 | 2.445985 | 2,445.985 |
+| 14 | 1.222992 | 1,222.992 |
+| 15 | 0.611496 | 611.496 |
+| 16 | 0.305748 | 305.748 |
+| 17 | 0.152874 | 152.874 |
+| 18 | 0.076437 | 76.437 |
+| 19 | 0.038219 | 38.219 |
+| 20 | 0.019109 | 19.109 |
+| 21 | 0.009555 | 9.555 |
+| 22 | 0.004777 | 4.777 |
+
+To estimate a suitable `maxDepth` for a GeoTIFF:
+- Check the raster pixel size with `gdalinfo` or another GIS tool.
+- Multiply the pixel size by **256** to estimate the ground size represented by one 256-sample terrain tile.
+- Choose a depth whose tile length is near that size. The automatic `maxDepth` selection follows this idea and generally chooses the next finer depth once the tile length becomes smaller than `pixel size * 256`.
+
+Practical examples:
+
+| GeoTIFF pixel size | 256 pixels on the ground | Typical `maxDepth` |
+| ---: | ---: | ---: |
+| 90 m | 23,040 m | 11 |
+| 30 m | 7,680 m | 13 |
+| 10 m | 2,560 m | 14 |
+| 5 m | 1,280 m | 15 |
+| 1 m | 256 m | 18 |
+
+Using a much larger `maxDepth` than the source raster supports increases tile count, processing time, and storage size without adding real terrain detail. Use a smaller `maxDepth` when you need faster conversion or lighter output.
 
 ## Tiling detail level (Intensity)
 You can control the level of tiling detail using the `-intensity` or `-is` option.  
@@ -43,12 +94,12 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 ```
 
 ## Terrain normal calculation (Lighting)
-Enable terrain normal calculation using the `-calculateNormals` or `-cn` option.  
-Default value is `false`.
+Terrain normal calculation is enabled by default and adds the `octvertexnormals` extension for lighting.
 
-This increases conversion time but allows lighting effects during rendering.
+Use `--noCalculateNormals` / `-ncn` to disable normal generation when smaller output or faster conversion is preferred.  
+The legacy `--calculateNormals` / `-cn` option is still accepted for compatibility, but it is no longer required.
 ```
-java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --calculateNormals
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --noCalculateNormals
 ```
 
 ## Using a geoid correction file
@@ -57,7 +108,7 @@ For terrain data stored in **orthometric height**, the geoid height is added to 
 Formula:```DEM (Orthometric Height) + Geoid Height = Ellipsoid Height```
 
 Supported format: **GeoTIFF**  
-Built-in model: **EGM96**
+Built-in models: **EGM96**, **EGM2008**, **EGM84**
 ```
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "/input_path/geoid_file.tif"
 ```
@@ -65,6 +116,16 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 Using the built-in EGM96 model:
 ```
 java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "EGM96"
+```
+
+Using the built-in EGM2008 2.5' model:
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "EGM2008"
+```
+
+Using the built-in EGM84 30' model:
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --geoid "EGM84"
 ```
 
 ---

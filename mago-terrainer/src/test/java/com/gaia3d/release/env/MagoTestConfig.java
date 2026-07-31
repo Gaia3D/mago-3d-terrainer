@@ -1,12 +1,17 @@
 package com.gaia3d.release.env;
 
+import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.elevation.*;
+import com.gaia3d.terrain.tile.generation.*;
+import com.gaia3d.terrain.tile.layer.*;
+import com.gaia3d.terrain.tile.mesh.*;
+
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.command.Mago3DTerrainerMain;
 
 import java.io.File;
 
 public class MagoTestConfig {
-    //public static final String OUTPUT_PATH = "E:/data/mago-server/output";
     public static final String OUTPUT_PATH = "H:/workspace/mago-server/output";
     public static final String SSD_INPUT_PATH = "H:/workspace/mago-3d-terrainer";
     public static final String INPUT_PATH = "D:/data/mago-3d-terrainer/release-sample";

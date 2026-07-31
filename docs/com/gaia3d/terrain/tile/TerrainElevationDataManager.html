@@ -86,7 +86,7 @@ loadScripts(document, 'script');</script>
 <h1 title="Class TerrainElevationDataManager" class="title">Class TerrainElevationDataManager</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">com.gaia3d.terrain.tile.TerrainElevationDataManager</div>
+<div class="inheritance">com.gaia3d.terrain.tile.TerrainElevationModeler</div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
@@ -140,8 +140,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="TerrainElevationData.html" title="class in com.gaia3d.terrain.tile">TerrainElevationData</a>&gt;&nbsp;terrainElevDataArray)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>double</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getElevationBilinearRasterTile(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TileWgs84Manager,double,double)" class="member-name-link">getElevationBilinearRasterTile</a><wbr>(<a href="TileIndices.html" title="class in com.gaia3d.terrain.tile">TileIndices</a>&nbsp;tileIndices,
- <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;tileWgs84Manager,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getElevationBilinearRasterTile(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TerrainTilesetGenerator,double,double)" class="member-name-link">getElevationBilinearRasterTile</a><wbr>(<a href="TileIndices.html" title="class in com.gaia3d.terrain.tile">TileIndices</a>&nbsp;tileIndices,
+ <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;terrainTilesetGenerator,
  double&nbsp;lonDeg,
  double&nbsp;latDeg)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
@@ -156,12 +156,12 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="TerrainElevationData.html" title="class in com.gaia3d.terrain.tile">TerrainElevationData</a>,<wbr><a href="TerrainElevationData.html" title="class in com.gaia3d.terrain.tile">TerrainElevationData</a>&gt;&nbsp;terrainElevDataMap)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="TileWgs84Raster.html" title="class in com.gaia3d.terrain.tile">TileWgs84Raster</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getTileWgs84Raster(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TileWgs84Manager)" class="member-name-link">getTileWgs84Raster</a><wbr>(<a href="TileIndices.html" title="class in com.gaia3d.terrain.tile">TileIndices</a>&nbsp;tileIndices,
- <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;tileWgs84Manager)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getTileWgs84Raster(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TerrainTilesetGenerator)" class="member-name-link">getTileWgs84Raster</a><wbr>(<a href="TileIndices.html" title="class in com.gaia3d.terrain.tile">TileIndices</a>&nbsp;tileIndices,
+ <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;terrainTilesetGenerator)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#makeAllTileWgs84Raster(com.gaia3d.terrain.tile.TileRange,com.gaia3d.terrain.tile.TileWgs84Manager)" class="member-name-link">makeAllTileWgs84Raster</a><wbr>(<a href="TileRange.html" title="class in com.gaia3d.terrain.tile">TileRange</a>&nbsp;tileRange,
- <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;tileWgs84Manager)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#makeAllTileWgs84Raster(com.gaia3d.terrain.tile.TileRange,com.gaia3d.terrain.tile.TerrainTilesetGenerator)" class="member-name-link">makeAllTileWgs84Raster</a><wbr>(<a href="TileRange.html" title="class in com.gaia3d.terrain.tile">TileRange</a>&nbsp;tileRange,
+ <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;terrainTilesetGenerator)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#makeTerrainQuadTree(int)" class="member-name-link">makeTerrainQuadTree</a><wbr>(int&nbsp;depth)</code></div>
@@ -223,17 +223,17 @@ org.geotools.api.referencing.operation.TransformException,
 </section>
 </li>
 <li>
-<section class="detail" id="getTileWgs84Raster(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TileWgs84Manager)">
+<section class="detail" id="getTileWgs84Raster(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TerrainTilesetGenerator)">
 <h3>getTileWgs84Raster</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="TileWgs84Raster.html" title="class in com.gaia3d.terrain.tile">TileWgs84Raster</a></span>&nbsp;<span class="element-name">getTileWgs84Raster</span><wbr><span class="parameters">(<a href="TileIndices.html" title="class in com.gaia3d.terrain.tile">TileIndices</a>&nbsp;tileIndices,
- <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;tileWgs84Manager)</span></div>
+ <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;terrainTilesetGenerator)</span></div>
 </section>
 </li>
 <li>
-<section class="detail" id="makeAllTileWgs84Raster(com.gaia3d.terrain.tile.TileRange,com.gaia3d.terrain.tile.TileWgs84Manager)">
+<section class="detail" id="makeAllTileWgs84Raster(com.gaia3d.terrain.tile.TileRange,com.gaia3d.terrain.tile.TerrainTilesetGenerator)">
 <h3>makeAllTileWgs84Raster</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">makeAllTileWgs84Raster</span><wbr><span class="parameters">(<a href="TileRange.html" title="class in com.gaia3d.terrain.tile">TileRange</a>&nbsp;tileRange,
- <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;tileWgs84Manager)</span></div>
+ <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;terrainTilesetGenerator)</span></div>
 </section>
 </li>
 <li>
@@ -267,10 +267,10 @@ org.geotools.api.referencing.operation.TransformException,
 </section>
 </li>
 <li>
-<section class="detail" id="getElevationBilinearRasterTile(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TileWgs84Manager,double,double)">
+<section class="detail" id="getElevationBilinearRasterTile(com.gaia3d.terrain.tile.TileIndices,com.gaia3d.terrain.tile.TerrainTilesetGenerator,double,double)">
 <h3>getElevationBilinearRasterTile</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">double</span>&nbsp;<span class="element-name">getElevationBilinearRasterTile</span><wbr><span class="parameters">(<a href="TileIndices.html" title="class in com.gaia3d.terrain.tile">TileIndices</a>&nbsp;tileIndices,
- <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;tileWgs84Manager,
+ <a href="TileWgs84Manager.html" title="class in com.gaia3d.terrain.tile">TileWgs84Manager</a>&nbsp;terrainTilesetGenerator,
  double&nbsp;lonDeg,
  double&nbsp;latDeg)</span></div>
 </section>

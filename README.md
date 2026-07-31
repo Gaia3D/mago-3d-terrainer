@@ -9,7 +9,7 @@ See: https://github.com/CesiumGS/quantized-mesh
 
 ![Static Badge](https://img.shields.io/badge/Gaia3D%2C%20Inc-blue?style=flat-square)
 ![Static Badge](https://img.shields.io/badge/QuantizedMesh-green?style=flat-square&logo=Cesium)
-![Static Badge](https://img.shields.io/badge/Jdk17-red?style=flat-square&logo=openjdk)
+![Static Badge](https://img.shields.io/badge/JDK21-red?style=flat-square&logo=openjdk)
 ![Static Badge](https://img.shields.io/badge/Gradle-darkorange?style=flat-square&logo=gradle)
 ![Static Badge](https://img.shields.io/badge/Docker%20Image-blue?style=flat-square&logo=docker)
 
@@ -30,7 +30,7 @@ The built jar is created in the ```/dist``` directory.
 ```
 gradlew jar
 ```
-###### The java version used in the release is openjdk 17.
+###### The Java version used in the release is OpenJDK 21.
 
 ## Example help command
 ```
@@ -42,43 +42,54 @@ Output:
 mago-3d-terrainer(dev-version) by Gaia3D, Inc.
 ----------------------------------------
 Usage: command options
- -h, --help                       Print Help
- -lt, --leaveTemp                 Leave temporary files for debugging
- -j, --json                       Generate layer.json from terrain data
- -c, --continue                   Continue from last terrain generation. This option can be used when terrain creation is interrupted or fails.
- -i, --input <arg>                [Required] Input directory path
- -o, --output <arg>               [Required] Output directory path
- -l, --log <arg>                  Log file path
- -t, --temp <arg>                 Temporary directory path (default: {OUTPUT}/temp)
- -g, --geoid <arg>                Set reference height option for terrain data.
-                                  Geoid file path for height correction,
-                                  (default: Ellipsoid)(options: Ellipsoid, EGM96 or GeoTIFF File Path)
- -min, --minDepth <arg>           Set minimum terrain tile depth
-                                  (default : 0)(options: 0 - 22)
- -max, --maxDepth <arg>           Set maximum terrain tile depth
-                                  (default : 14)(options: 0 - 22)
- -is, --intensity <arg>           Set Mesh refinement intensity.
-                                  (default: 4.0)
- -it, --interpolationType <arg>   Set Interpolation type
-                                  (default : bilinear)(options: nearest, bilinear)
- -pt, --priorityType <arg>        Nesting height priority type options
-                                  (default : resolution)(options: resolution, higher)
- -nv, --nodataValue <arg>         Set NODATA value for terrain generating
-                                  (default : -9999)
- -cn, --calculateNormals          Add terrain octVertexNormals for lighting effect
- -ms, --mosaicSize <arg>          Tiling mosaic buffer size per tile.
-                                  (default : 16)
- -mr, --rasterMaxSize <arg>       Maximum raster size for split function.
-                                  (default : 8192)
- -b, --body <arg>                 Target celestial body for terrain generation
-                                  (default : earth)(options: earth, moon)
- -md, --metadata                  [Experimental] Generate metadata for the terrain data.
- -wm, --waterMask                 [Experimental] Generate water mask for the terrain data.
- -d, --debug                      [DEBUG] Print more detailed logs.
+ -h, --help                          Print help
+ -q, --quiet                         Suppress all output except errors
+ -lt, --leaveTemp                    Leave temporary files for debugging
+ -j, --json                          Generate layer.json for terrain data
+ -c, --continue                      Continue terrain generation from the previous run. Use this option when terrain generation is interrupted or fails.
+ -m, --modify                        Modify existing terrain. Use this option when updating part of a terrain region.
+ -ssr, --skipStandardizationResize   Skip standardization and resizing process. This option can be used when the input data is already standardized and resized.
+ -i, --input <arg>                   [Required] Input file or directory path. Repeatable.
+ -o, --output <arg>                  [Required] Output directory path
+ -l, --log <arg>                     Log file path
+ -t, --temp <arg>                    Temporary directory path (default: {OUTPUT}/temp)
+ -g, --geoid <arg>                   Set the height reference for terrain data.
+                                     Geoid file path for height correction.
+                                     (default: Ellipsoid)(options: Ellipsoid, EGM96, EGM2008, EGM84, or GeoTIFF file path)
+ -min, --minDepth <arg>              Set the minimum terrain tile depth. This is effectively fixed at 0.
+                                     (default: 0)(options: 0 - 22)
+ -max, --maxDepth <arg>              Set the maximum terrain tile depth. If omitted, it is calculated automatically from the input raster resolution.
+                                     (options: 0 - 22)
+ -is, --intensity <arg>              Set the mesh refinement intensity.
+                                     (default: 4.0)
+ -it, --interpolationType <arg>      Set the interpolation type.
+                                     (default: bilinear)(options: nearest, bilinear)
+ -pt, --priorityType <arg>           Set the height priority for overlapping terrain data.
+                                     (default: resolution)(options: resolution, higher)
+ -nv, --nodataValue <arg>            Set the NODATA value for terrain generation.
+                                     (default: -9999)
+ -cn, --calculateNormals             [Deprecated] Terrain octVertexNormals are generated by default.
+ -ncn, --noCalculateNormals          Disable generation of terrain octVertexNormals.
+ -ms, --mosaicSize <arg>             Set the tiling mosaic buffer size per tile.
+                                     (default: 8)
+ -mr, --rasterMaxSize <arg>          Set the maximum raster size for splitting.
+                                     (default: 4096)
+ -md, --metadata                     [Experimental] Generate metadata for terrain data.
+ -wm, --waterMask                    [Experimental] Generate a water mask for terrain data.
+ -b, --body <arg>                    Set the celestial body for terrain generation.
+                                     (default: earth)(options: earth, moon)
+ -vb, --verbose                      Print verbose logs.
+ -d, --debug                         [DEBUG] Print more detailed logs.
 ```
 This is a simple Quantized-mesh conversion code with the required argument values.
 ```
 java -jar mago-3d-terrainer-x.x.x.jar -input C:\data\geotiff-sample -output C:\data\geotiff-terrain-output -maxDepth 14
+```
+
+Multiple input files or directories can be provided by repeating the input option:
+
+```bash
+java -jar mago-3d-terrainer-x.x.x.jar --input C:\data\dem-a.tif --input C:\data\dem-b.tif --output C:\data\terrain-output -maxDepth 14
 ```
 or
 ```
@@ -134,7 +145,7 @@ For detailed documentation, including installation and usage instructions, pleas
 - Manual : [github.com/Gaia3D/mago-3d-terrainer](https://github.com/Gaia3D/mago-3d-terrainer/blob/main/MANUAL.md)
 
 ## Supported Java versions
-Supports long-term support (LTS) versions of the JDK, including JDK17 and JDK21.
+Requires JDK 21 or later. The release artifacts are built and tested with OpenJDK 21.
 
 ## License
 - mago 3DTerrainer is licensed under the MPL2.0 license (<https://www.mozilla.org/en-US/MPL/2.0/>).

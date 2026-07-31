@@ -1,6 +1,7 @@
 package com.gaia3d.command;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +37,7 @@ public class LoggingConfiguration {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
 
         removeAllAppender(loggerConfig);
-        
+
         if (pattern == null) {
             pattern = DEFAULT_PATTERN;
         }
@@ -55,7 +56,7 @@ public class LoggingConfiguration {
         loggerConfig.setLevel(level);
         ctx.updateLoggers();
     }
-    
+
     public static void initConsoleLogger() {
         initConsoleLogger(null);
     }
@@ -113,7 +114,15 @@ public class LoggingConfiguration {
     public static Options createOptions() {
         Options options = new Options();
         for (CommandOptions commandOptions : CommandOptions.values()) {
-            options.addOption(commandOptions.getShortName(), commandOptions.getLongName(), commandOptions.isArgRequired(), commandOptions.getDescription());
+            if (commandOptions.getShortName() == null || commandOptions.getShortName().isBlank()) {
+                options.addOption(Option.builder()
+                        .longOpt(commandOptions.getLongName())
+                        .hasArg(commandOptions.isArgRequired())
+                        .desc(commandOptions.getDescription())
+                        .build());
+            } else {
+                options.addOption(commandOptions.getShortName(), commandOptions.getLongName(), commandOptions.isArgRequired(), commandOptions.getDescription());
+            }
         }
         return options;
     }

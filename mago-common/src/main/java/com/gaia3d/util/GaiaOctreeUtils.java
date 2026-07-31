@@ -1,15 +1,17 @@
 package com.gaia3d.util;
 
 import com.gaia3d.basic.geometry.octree.GaiaFaceContent;
-import com.gaia3d.basic.geometry.octree.GaiaFaceData;
+import com.gaia3d.basic.geometry.octree.GeometryContent;
 import com.gaia3d.basic.model.*;
+import lombok.experimental.UtilityClass;
 import org.joml.Vector3d;
 
 import java.util.List;
 
+@UtilityClass
 public class GaiaOctreeUtils {
 
-    public static void getFaceDataListOfNode(GaiaScene sceneParent, GaiaNode node, List<GaiaFaceContent> resultFaceDataList) {
+    public static void getFaceDataListOfNode(GaiaScene sceneParent, GaiaNode node, List<GeometryContent> resultFaceDataList) {
         // 1rst, check meshes.
         if (node.getMeshes() != null) {
             for (int i = 0, length = node.getMeshes().size(); i < length; i++) {
@@ -73,7 +75,7 @@ public class GaiaOctreeUtils {
         }
     }
 
-    public static void getFaceDataListOfScene(GaiaScene gaiaScene, List<GaiaFaceContent> resultFaceDataList) {
+    public static void getFaceDataListOfScene(GaiaScene gaiaScene, List<GeometryContent> resultFaceDataList) {
         for (GaiaNode node : gaiaScene.getNodes()) {
             getFaceDataListOfNode(gaiaScene, node, resultFaceDataList);
         }

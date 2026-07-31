@@ -2,10 +2,11 @@ package com.gaia3d.terrain.util;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.*;
-import com.gaia3d.terrain.tile.TileIndices;
-import com.gaia3d.terrain.tile.TileWgs84Manager;
+import com.gaia3d.terrain.tile.core.TileIndices;
+import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.types.TerrainHalfEdgeType;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
@@ -16,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
-
+@UtilityClass
 public class TerrainMeshUtils {
     public static List<TerrainHalfEdge> getHalfEdgesOfTriangles(List<TerrainTriangle> triangles, List<TerrainHalfEdge> resultHalfEdges, List<TerrainHalfEdge> listHalfEdges) {
         if (resultHalfEdges == null) {
@@ -53,15 +54,15 @@ public class TerrainMeshUtils {
     public static void getSeparatedMeshes(TerrainMesh bigMesh, List<TerrainMesh> resultSeparatedMeshes, boolean originIsLeftUp) {
         // separate by ownerTile_tileIndices
         List<TerrainTriangle> triangles = bigMesh.triangles;
-        HashMap<String, List<TerrainTriangle>> map_triangles = new HashMap<>();
+        HashMap<Long, List<TerrainTriangle>> map_triangles = new HashMap<>();
         for (TerrainTriangle triangle : triangles) {
             if (triangle.getOwnerTileIndices() != null) {
                 TileIndices tileIndices = triangle.getOwnerTileIndices();
-                String tileIndicesString = tileIndices.getString();
-                List<TerrainTriangle> trianglesList = map_triangles.get(tileIndicesString);
+                long tileKey = tileIndices.toCacheKey();
+                List<TerrainTriangle> trianglesList = map_triangles.get(tileKey);
                 if (trianglesList == null) {
                     trianglesList = new ArrayList<>();
-                    map_triangles.put(tileIndicesString, trianglesList);
+                    map_triangles.put(tileKey, trianglesList);
                 }
                 trianglesList.add(triangle);
             } else {
@@ -71,8 +72,8 @@ public class TerrainMeshUtils {
         }
 
         // now, create separated meshes
-        for (String tileIndicesString : map_triangles.keySet()) {
-            List<TerrainTriangle> trianglesList = map_triangles.get(tileIndicesString);
+        for (Long tileKey : map_triangles.keySet()) {
+            List<TerrainTriangle> trianglesList = map_triangles.get(tileKey);
 
             TerrainMesh separatedMesh = new TerrainMesh();
             separatedMesh.triangles = trianglesList;
@@ -95,24 +96,24 @@ public class TerrainMeshUtils {
                 if (twin != null) {
                     TerrainTriangle twins_triangle = twin.getTriangle();
                     if (twins_triangle != null) {
-                        String twins_triangle_tileIndicesString = twins_triangle.getOwnerTileIndices().getString();
-                        if (!twins_triangle_tileIndicesString.equals(tileIndicesString)) {
+                        TileIndices twinsTriangleTileIndices = twins_triangle.getOwnerTileIndices();
+                        if (twinsTriangleTileIndices != null && !twinsTriangleTileIndices.isCoincident(tileIndices)) {
                             // the twin triangle has different ownerTile_tileIndices
                             halfEdge.setTwin(null);
                             twin.setTwin(null);
 
                             // now, for the hedges, must calculate the hedgeType
                             // must know the relative position of the twin triangle's tile
-                            if (twins_triangle_tileIndicesString.equals(L_tileIndices.getString())) {
+                            if (twinsTriangleTileIndices.isCoincident(L_tileIndices)) {
                                 halfEdge.setType(TerrainHalfEdgeType.LEFT);
                                 twin.setType(TerrainHalfEdgeType.RIGHT);
-                            } else if (twins_triangle_tileIndicesString.equals(R_tileIndices.getString())) {
+                            } else if (twinsTriangleTileIndices.isCoincident(R_tileIndices)) {
                                 halfEdge.setType(TerrainHalfEdgeType.RIGHT);
                                 twin.setType(TerrainHalfEdgeType.LEFT);
-                            } else if (twins_triangle_tileIndicesString.equals(U_tileIndices.getString())) {
+                            } else if (twinsTriangleTileIndices.isCoincident(U_tileIndices)) {
                                 halfEdge.setType(TerrainHalfEdgeType.UP);
                                 twin.setType(TerrainHalfEdgeType.DOWN);
-                            } else if (twins_triangle_tileIndicesString.equals(D_tileIndices.getString())) {
+                            } else if (twinsTriangleTileIndices.isCoincident(D_tileIndices)) {
                                 halfEdge.setType(TerrainHalfEdgeType.DOWN);
                                 twin.setType(TerrainHalfEdgeType.UP);
                             }
@@ -128,7 +129,7 @@ public class TerrainMeshUtils {
 
     }
 
-    public static void save4ChildrenMeshes(TerrainMesh mesh, TileWgs84Manager manager, GlobalOptions globalOptions) {
+    public static void save4ChildrenMeshes(TerrainMesh mesh, TerrainTilesetGenerator manager, GlobalOptions globalOptions) {
         TerrainTriangle triangle = mesh.triangles.get(0); // take the first triangle
         TileIndices tileIndices = triangle.getOwnerTileIndices();
 
@@ -143,7 +144,7 @@ public class TerrainMeshUtils {
         TileIndices childRightDownTileIndices = tileIndices.getChildRightDownTileIndices(originIsLeftUp);
 
         // Classify the triangles of the tile
-        GeographicExtension geoExtension = TileWgs84Utils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
+        GeographicExtension geoExtension = GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null, imageryType, originIsLeftUp);
         double midLonDeg = geoExtension.getMidLongitudeDeg();
         double midLatDeg = geoExtension.getMidLatitudeDeg();
         List<TerrainTriangle> triangles = mesh.triangles;
@@ -193,11 +194,11 @@ public class TerrainMeshUtils {
             TileIndices childTileIndices = triangle.getOwnerTileIndices();
 
             // Now, clamp the vertices in to the tile
-            TileWgs84Utils.clampVerticesInToTile(childMesh, childTileIndices, manager.getImaginaryType(), manager.originIsLeftUp());
+            GeographicTerrainTileUtils.clampVerticesInToTile(childMesh, childTileIndices, manager.getImaginaryType(), manager.originIsLeftUp());
 
             // Now, save the mesh
             String tileTempDirectory = globalOptions.getTileTempPath();
-            String childTileFilePath = TileWgs84Utils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
+            String childTileFilePath = GeographicTerrainTileUtils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
             String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
             try {
