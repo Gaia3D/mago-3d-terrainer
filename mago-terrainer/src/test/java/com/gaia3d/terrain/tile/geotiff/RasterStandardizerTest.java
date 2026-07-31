@@ -38,6 +38,25 @@ class RasterStandardizerTest {
 
     @Test
     @Tag("default")
+    void zeroBasedSharedRasterPreservesCroppedDataOffset() {
+        WritableRaster source = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, 8, 8, 1, null);
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                source.setSample(x, y, 0, y * 10 + x);
+            }
+        }
+        WritableRaster cropped = source.createWritableChild(3, 2, 3, 4, 3, 2, null);
+
+        WritableRaster translated = new RasterStandardizer().createSharedZeroBasedWritableRaster(cropped);
+
+        assertEquals(0, translated.getMinX());
+        assertEquals(0, translated.getMinY());
+        assertEquals(23.0, translated.getSampleDouble(0, 0, 0));
+        assertEquals(55.0, translated.getSampleDouble(2, 3, 0));
+    }
+
+    @Test
+    @Tag("default")
     void processTilesCountsExpectedTilesAndNames() throws Exception {
         RasterStandardizer rasterStandardizer = new RasterStandardizer();
         GridCoverage2D coverage = createCoverage("dem", 8, 6);

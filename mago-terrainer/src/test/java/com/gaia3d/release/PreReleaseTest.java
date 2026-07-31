@@ -11,6 +11,19 @@ import java.io.File;
 public class PreReleaseTest {
 
     @Test
+    void testCopernicusCopernicus() {
+        String name = "copernicus_sample";
+        File inputPath = MagoTestConfig.getInputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
     void multiBilinear() {
         String name = "multi-resolution";
         File inputPath = MagoTestConfig.getInputPath(name);
@@ -39,23 +52,6 @@ public class PreReleaseTest {
         };
         Mago3DTerrainerMain.main(args);
     }
-
-    @Test
-    void multiResolution() {
-        String name = "multi-resolution";
-        File inputPath = MagoTestConfig.getInputPath(name);
-        File outputPath = MagoTestConfig.getOutputPath(name);
-
-        String[] args = new String[]{
-                "-input", inputPath.getAbsolutePath(),
-                "-output", outputPath.getAbsolutePath(),
-                //"-max", "10",
-                "-interpolation", "nearest",
-                "-calculateNormals",
-        };
-        Mago3DTerrainerMain.main(args);
-    }
-
 
     @Test
     void multiResolutionWithGeoid() {

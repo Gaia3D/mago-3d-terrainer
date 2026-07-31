@@ -703,15 +703,14 @@ public class RasterStandardizer {
         return materializedRaster;
     }
 
-    private WritableRaster createSharedZeroBasedWritableRaster(Raster sourceRaster) {
-        if (sourceRaster instanceof WritableRaster writableRaster
-                && writableRaster.getMinX() == 0
-                && writableRaster.getMinY() == 0) {
-            return writableRaster;
+    WritableRaster createSharedZeroBasedWritableRaster(Raster sourceRaster) {
+        if (sourceRaster instanceof WritableRaster writableRaster) {
+            if (writableRaster.getMinX() == 0 && writableRaster.getMinY() == 0) {
+                return writableRaster;
+            }
+            return writableRaster.createWritableTranslatedChild(0, 0);
         }
-
-        Raster translatedRaster = sourceRaster.createTranslatedChild(0, 0);
-        return Raster.createWritableRaster(translatedRaster.getSampleModel(), translatedRaster.getDataBuffer(), new Point(0, 0));
+        return createZeroBasedWritableRaster(sourceRaster);
     }
 
     private File createOutputTileFile(File sourceOutputDirectory, String tileName, int tileIndex) {
