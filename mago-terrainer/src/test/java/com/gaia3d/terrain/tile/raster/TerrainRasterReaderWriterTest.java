@@ -1,5 +1,6 @@
 package com.gaia3d.terrain.tile.raster;
 
+import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.tile.core.*;
 import com.gaia3d.terrain.tile.elevation.*;
 import com.gaia3d.terrain.tile.generation.*;
@@ -8,15 +9,55 @@ import com.gaia3d.terrain.tile.mesh.*;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.eclipse.imagen.PlanarImage;
+import org.eclipse.imagen.RasterFactory;
+import org.eclipse.imagen.TiledImage;
+import org.eclipse.imagen.media.range.NoDataContainer;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
+import org.geotools.coverage.util.CoverageUtilities;
+import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 
+import java.awt.image.DataBuffer;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TerrainRasterReaderWriterTest {
+
+    @Test
+    @Tag("default")
+    void coverageWriterPreservesDoubleNoDataMarkerForComparison() throws Exception {
+        Path tempDir = Files.createTempDirectory("terrain-raster-double-nodata-");
+        Path rasterPath = tempDir.resolve("tile" + TerrainRasterFormat.EXTENSION);
+        GlobalOptions globalOptions = GlobalOptions.getInstance();
+        double previousNoData = globalOptions.getNoDataValue();
+        globalOptions.setNoDataValue(-9999.0);
+        GridCoverage2D coverage = createDoubleCoverage(
+                new double[]{-Double.MAX_VALUE, -9999.0, Double.NaN, 123.5}, -Double.MAX_VALUE);
+
+        try {
+            new TerrainRasterWriter().write(rasterPath, coverage);
+            TerrainRasterData read = new TerrainRasterReader().read(rasterPath);
+
+            assertTrue(Float.isNaN(read.noDataValue()));
+            assertTrue(Float.isNaN(read.getElevation(0, 0)));
+            assertTrue(Float.isNaN(read.getElevation(1, 0)));
+            assertTrue(Float.isNaN(read.getElevation(2, 0)));
+            assertEquals(123.5f, read.getElevation(3, 0));
+        } finally {
+            coverage.dispose(true);
+            globalOptions.setNoDataValue(previousNoData);
+            deleteRecursively(tempDir);
+        }
+    }
 
     @Test
     @Tag("default")
@@ -106,6 +147,21 @@ class TerrainRasterReaderWriterTest {
         elevations[0] = 20.0f;
 
         assertEquals(10.0f, data.getElevation(0, 0));
+    }
+
+    private GridCoverage2D createDoubleCoverage(double[] values, double noDataValue) {
+        WritableRaster raster = RasterFactory.createBandedRaster(DataBuffer.TYPE_DOUBLE, values.length, 1, 1, null);
+        for (int x = 0; x < values.length; x++) {
+            raster.setSample(x, 0, 0, values[x]);
+        }
+
+        TiledImage image = new TiledImage(0, 0, values.length, 1, 0, 0,
+                raster.getSampleModel(), PlanarImage.createColorModel(raster.getSampleModel()));
+        image.setData(raster);
+        Map<String, Object> properties = new HashMap<>();
+        CoverageUtilities.setNoDataProperty(properties, new NoDataContainer(noDataValue));
+        ReferencedEnvelope envelope = new ReferencedEnvelope(0.0, values.length, 0.0, 1.0, DefaultGeographicCRS.WGS84);
+        return new GridCoverageFactory().create("double-dem", image, envelope, null, null, properties);
     }
 
     private void deleteRecursively(Path path) throws IOException {

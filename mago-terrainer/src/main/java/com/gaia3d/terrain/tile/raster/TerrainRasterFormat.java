@@ -12,6 +12,7 @@ public final class TerrainRasterFormat {
     public static final int VERSION = 1;
     public static final int HEADER_SIZE_BYTES = 64;
     public static final int FLOAT_BYTES = Float.BYTES;
+    public static final float NO_DATA_VALUE = Float.NaN;
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
 }

@@ -31,8 +31,9 @@ public final class TerrainRasterWriter {
         Raster raster = coverage.getRenderedImage().getData();
         int width = raster.getWidth();
         int height = raster.getHeight();
-        float sourceNoDataValue = resolveNoDataValue(coverage);
-        float noDataValue = (float) GlobalOptions.getInstance().getNoDataValue();
+        double sourceNoDataValue = resolveNoDataValue(coverage);
+        double configuredNoDataValue = GlobalOptions.getInstance().getNoDataValue();
+        float noDataValue = TerrainRasterFormat.NO_DATA_VALUE;
         float[] elevations = new float[Math.multiplyExact(width, height)];
         int index = 0;
         int maxX = raster.getMinX() + width;
@@ -40,7 +41,9 @@ public final class TerrainRasterWriter {
         for (int y = raster.getMinY(); y < maxY; y++) {
             for (int x = raster.getMinX(); x < maxX; x++) {
                 double sample = raster.getSampleDouble(x, y, 0);
-                elevations[index++] = isNoData(sample, sourceNoDataValue) ? noDataValue : (float) sample;
+                float elevation = (float) sample;
+                elevations[index++] = isNoData(sample, sourceNoDataValue, configuredNoDataValue) || !Float.isFinite(elevation)
+                        ? noDataValue : elevation;
             }
         }
 
@@ -51,14 +54,19 @@ public final class TerrainRasterWriter {
                 noDataValue, elevations));
     }
 
-    private float resolveNoDataValue(GridCoverage2D coverage) {
+    private double resolveNoDataValue(GridCoverage2D coverage) {
         NoDataContainer noData = CoverageUtilities.getNoDataProperty(coverage);
-        return noData == null ? Float.NaN : (float) noData.getAsSingleValue();
+        return noData == null ? Double.NaN : noData.getAsSingleValue();
     }
 
-    private boolean isNoData(double sample, float sourceNoDataValue) {
+    private boolean isNoData(double sample, double sourceNoDataValue, double configuredNoDataValue) {
         return !Double.isFinite(sample)
-                || (!Float.isNaN(sourceNoDataValue) && Double.compare(sample, sourceNoDataValue) == 0);
+                || matchesNoData(sample, sourceNoDataValue)
+                || matchesNoData(sample, configuredNoDataValue);
+    }
+
+    private boolean matchesNoData(double sample, double noDataValue) {
+        return !Double.isNaN(noDataValue) && Double.compare(sample, noDataValue) == 0;
     }
 
     private ByteBuffer createHeader(TerrainRasterData data) {
