@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,12 +51,6 @@ public class HalfEdgePrimitive implements Serializable {
             vertex.deleteObjects();
         }
         vertices.clear();
-    }
-
-    public void checkSandClockFaces() {
-        for (HalfEdgeSurface surface : surfaces) {
-            surface.checkSandClockFaces();
-        }
     }
 
     public void transformPoints(Matrix4d finalMatrix) {
@@ -112,40 +104,6 @@ public class HalfEdgePrimitive implements Serializable {
     public void setObjectIdsInList() {
         for (HalfEdgeSurface surface : surfaces) {
             surface.setObjectIdsInList();
-        }
-    }
-
-    public void writeFile(ObjectOutputStream outputStream) {
-        try {
-            // accessorIndices
-            outputStream.writeInt(accessorIndices);
-            // materialIndex
-            outputStream.writeInt(materialIndex);
-            // surfaces
-            outputStream.writeInt(surfaces.size());
-            for (HalfEdgeSurface surface : surfaces) {
-                surface.writeFile(outputStream);
-            }
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
-        }
-    }
-
-    public void readFile(ObjectInputStream inputStream) {
-        try {
-            // accessorIndices
-            accessorIndices = inputStream.readInt();
-            // materialIndex
-            materialIndex = inputStream.readInt();
-            // surfaces
-            int surfacesCount = inputStream.readInt();
-            for (int i = 0; i < surfacesCount; i++) {
-                HalfEdgeSurface surface = new HalfEdgeSurface();
-                surface.readFile(inputStream);
-                surfaces.add(surface);
-            }
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
         }
     }
 
@@ -357,14 +315,5 @@ public class HalfEdgePrimitive implements Serializable {
         for (HalfEdgeSurface surface : surfaces) {
             surface.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
         }
-    }
-
-    public boolean TEST_checkTexCoords() {
-        for (HalfEdgeSurface surface : surfaces) {
-            if (!surface.TEST_checkTexCoords()) {
-                return false;
-            }
-        }
-        return true;
     }
 }

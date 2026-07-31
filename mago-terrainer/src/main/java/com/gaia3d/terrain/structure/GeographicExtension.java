@@ -118,6 +118,18 @@ public class GeographicExtension {
 
     }
 
+    public boolean intersects(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg) {
+        if (minLonDeg > this.maxGeographicCoordDeg.x) {
+            return false;
+        } else if (maxLonDeg < this.minGeographicCoordDeg.x) {
+            return false;
+        } else if (minLatDeg > this.maxGeographicCoordDeg.y) {
+            return false;
+        } else {
+            return !(maxLatDeg < this.minGeographicCoordDeg.y);
+        }
+    }
+
     public boolean intersectsBox(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg) {
         return minLonDeg >= minGeographicCoordDeg.x && minLonDeg <= maxGeographicCoordDeg.x && minLatDeg >= minGeographicCoordDeg.y && minLatDeg <= maxGeographicCoordDeg.y && maxLonDeg >= minGeographicCoordDeg.x && maxLonDeg <= maxGeographicCoordDeg.x && maxLatDeg >= minGeographicCoordDeg.y && maxLatDeg <= maxGeographicCoordDeg.y;
     }

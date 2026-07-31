@@ -1,6 +1,6 @@
 subprojects {
     group "com.gaia3d"
-    version '1.13.0-release'
+    version '1.14.1-release'
     apply plugin: 'java'
     project.ext.lwjglVersion = "3.3.6"
 
@@ -58,13 +58,17 @@ subprojects {
         testImplementation platform("org.junit:junit-bom:5.10.0")
         testImplementation "org.junit.jupiter:junit-jupiter-api"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
-        testRuntimeOnly  "org.junit.platform:junit-platform-launcher"
+        testRuntimeOnly "org.junit.platform:junit-platform-launcher"
     }
 
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
         }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.release = 21
     }
 
     configurations.configureEach {

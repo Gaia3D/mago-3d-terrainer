@@ -10,12 +10,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.joml.Vector2d;
 import org.joml.Vector3d;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,50 +30,6 @@ public class HalfEdgeScene implements Serializable {
     private List<HalfEdgeNode> nodes = new ArrayList<>();
     private List<GaiaMaterial> materials = new ArrayList<>();
     private GaiaBoundingBox boundingBox = null;
-
-    public static HalfEdgeScene readFile(String folderPathString, String fileName) throws FileNotFoundException {
-        Path folderPath = Paths.get(folderPathString);
-        Path filePath = folderPath.resolve(fileName);
-        File file = filePath.toFile();
-        try {
-            HalfEdgeScene halfEdgeScene = new HalfEdgeScene();
-            FileInputStream fileInputStream = new FileInputStream(file);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-            ObjectInputStream inputStream = new ObjectInputStream(bufferedInputStream);
-
-            // read originalPath, gaiaBoundingBox, attribute
-            String originalPath = inputStream.readUTF();
-            halfEdgeScene.originalPath = Paths.get(originalPath);
-
-            halfEdgeScene.gaiaBoundingBox = (GaiaBoundingBox) inputStream.readObject();
-            halfEdgeScene.attribute = (GaiaAttribute) inputStream.readObject();
-
-            // Read nodes
-            int nodesSize = inputStream.readInt();
-            for (int i = 0; i < nodesSize; i++) {
-                HalfEdgeNode node = new HalfEdgeNode();
-                node.readFile(inputStream);
-                halfEdgeScene.nodes.add(node);
-            }
-
-            // Read materials
-            int materialsSize = inputStream.readInt();
-            for (int i = 0; i < materialsSize; i++) {
-                GaiaMaterial material = (GaiaMaterial) inputStream.readObject();
-                halfEdgeScene.materials.add(material);
-            }
-
-            inputStream.close();
-            bufferedInputStream.close();
-            fileInputStream.close();
-
-            return halfEdgeScene;
-        } catch (Exception e) {
-            log.error("[ERROR] GaiaSet Read Error : ", e);
-        }
-
-        return null;
-    }
 
     public List<GaiaMaterial> getCopyMaterials() {
         List<GaiaMaterial> copyMaterials = new ArrayList<>();
@@ -124,12 +80,6 @@ public class HalfEdgeScene implements Serializable {
         }
     }
 
-    public void checkSandClockFaces() {
-        for (HalfEdgeNode node : nodes) {
-            node.checkSandClockFaces();
-        }
-    }
-
     public void spendTransformationMatrix() {
         for (HalfEdgeNode node : nodes) {
             node.spendTransformationMatrix();
@@ -139,31 +89,6 @@ public class HalfEdgeScene implements Serializable {
     public void deleteFacesWithClassifyId(int classifyId) {
         for (HalfEdgeNode node : nodes) {
             node.deleteFacesWithClassifyId(classifyId);
-        }
-    }
-
-    public void TEST_cutScene() {
-        // Test
-        GaiaBoundingBox bbox = getBoundingBox();
-        Vector3d center = bbox.getCenter();
-        double error = 1e-8;
-//        if (error < 1)
-//        {
-//            return;
-//        }
-        PlaneType planeType = PlaneType.YZ;
-        cutByPlane(planeType, center, error);
-        classifyFacesIdByPlane(planeType, center);
-
-        // check if there are no used vertices
-        List<HalfEdgeSurface> resultHalfEdgeSurfaces = new ArrayList<>();
-        extractSurfaces(resultHalfEdgeSurfaces);
-        List<HalfEdgeVertex> noUsedVertices = new ArrayList<>();
-        for (HalfEdgeSurface surface : resultHalfEdgeSurfaces) {
-            noUsedVertices.clear();
-            if (surface.existNoUsedVertices(noUsedVertices)) {
-                log.error("[ERROR] existNoUsedVertices.");
-            }
         }
     }
 
@@ -308,49 +233,6 @@ public class HalfEdgeScene implements Serializable {
             } else {
                 FileUtils.copyFile(imageFile, outputImageFile);
             }
-        }
-    }
-
-    public void writeFile(String folderPathString, String fileName) throws FileNotFoundException {
-        Path folderPath = Paths.get(folderPathString);
-        Path filePath = folderPath.resolve(fileName);
-        File file = filePath.toFile();
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-            ObjectOutputStream outputStream = new ObjectOutputStream(bufferedOutputStream);
-
-            // write originalPath, gaiaBoundingBox, attribute
-            String originalPath = this.originalPath.toString();
-            outputStream.writeUTF(originalPath);
-
-            outputStream.writeObject(gaiaBoundingBox);
-            outputStream.writeObject(attribute);
-
-            // Write nodes
-            outputStream.writeInt(nodes.size());
-            for (HalfEdgeNode node : nodes) {
-                node.writeFile(outputStream);
-            }
-
-            // Write materials
-            outputStream.writeInt(materials.size());
-            for (GaiaMaterial material : materials) {
-                outputStream.writeObject(material);
-            }
-
-            // Copy images to the temp directory
-            for (GaiaMaterial material : materials) {
-                copyTextures(material, folderPath);
-            }
-
-            outputStream.close();
-            bufferedOutputStream.close();
-            fileOutputStream.close();
-
-        } catch (Exception e) {
-            log.error("[ERROR] GaiaSet Write Error : ", e);
-            file.delete();
         }
     }
 
@@ -509,86 +391,6 @@ public class HalfEdgeScene implements Serializable {
         }
     }
 
-    public void makeVerticalSkirt(double skirtHeight) {
-        //***************************
-        // Function NO finished yet.
-        //***************************
-        GaiaBoundingBox bbox = getBoundingBox();
-        if (bbox == null) {
-            log.info("Making skirt : Error: bbox is null");
-            return;
-        }
-
-        double error = 0.01; // 0.001
-        List<HalfEdgeVertex> westVertices = new ArrayList<>();
-        List<HalfEdgeVertex> eastVertices = new ArrayList<>();
-        List<HalfEdgeVertex> southVertices = new ArrayList<>();
-        List<HalfEdgeVertex> northVertices = new ArrayList<>();
-        for (HalfEdgeNode node : nodes) {
-            node.getWestEastSouthNorthVertices(bbox, westVertices, eastVertices, southVertices, northVertices, error);
-        }
-
-        // revert west vertices
-        westVertices.sort((v1, v2) -> {
-            Vector3d p1 = v1.getPosition();
-            Vector3d p2 = v2.getPosition();
-            return -Double.compare(p1.y, p2.y); // up to down
-        });
-        eastVertices.sort((v1, v2) -> {
-            Vector3d p1 = v1.getPosition();
-            Vector3d p2 = v2.getPosition();
-            return Double.compare(p1.y, p2.y); // down to up
-        });
-        southVertices.sort((v1, v2) -> {
-            Vector3d p1 = v1.getPosition();
-            Vector3d p2 = v2.getPosition();
-            return Double.compare(p1.x, p2.x); // left to right
-        });
-        northVertices.sort((v1, v2) -> {
-            Vector3d p1 = v1.getPosition();
-            Vector3d p2 = v2.getPosition();
-            return -Double.compare(p1.x, p2.x); // right to left
-        });
-
-        // create a new surface.***
-        HalfEdgeNode rootNode = this.getNodes().get(0);
-        HalfEdgeNode node = new HalfEdgeNode();
-        rootNode.getChildren().add(node);
-        HalfEdgeMesh mesh = new HalfEdgeMesh();
-        node.getMeshes().add(mesh);
-        HalfEdgePrimitive primitive = new HalfEdgePrimitive();
-        mesh.getPrimitives().add(primitive);
-        HalfEdgeSurface surface = new HalfEdgeSurface();
-        primitive.getSurfaces().add(surface);
-
-        // west.***
-        List<HalfEdgeVertex> westVerticesBottom = new ArrayList<>();
-        for (int i = 0; i < westVertices.size(); i++) {
-            HalfEdgeVertex v1 = westVertices.get(i);
-            HalfEdgeVertex v1Copy = new HalfEdgeVertex();
-            v1Copy.copyFrom(v1);
-            Vector3d position = v1Copy.getPosition();
-            position.z -= skirtHeight;
-            westVerticesBottom.add(v1Copy);
-        }
-        for (int i = 0; i < westVertices.size() - 1; i++) {
-            HalfEdgeVertex v1Up = westVertices.get(i);
-            HalfEdgeVertex v2Up = westVertices.get(i + 1);
-            HalfEdgeVertex v1Down = westVerticesBottom.get(i);
-            HalfEdgeVertex v2Down = westVerticesBottom.get(i + 1);
-
-            // make hafEdges.***
-            HalfEdge he1 = new HalfEdge();
-            HalfEdge he2 = new HalfEdge();
-            HalfEdge he3 = new HalfEdge();
-            HalfEdge he4 = new HalfEdge();
-            HalfEdge he5 = new HalfEdge();
-            HalfEdge he6 = new HalfEdge();
-
-
-        }
-    }
-
     public void makeHorizontalSkirt() {
         GaiaBoundingBox bbox = getBoundingBox();
         if (bbox == null) {
@@ -668,14 +470,5 @@ public class HalfEdgeScene implements Serializable {
             facesCount += node.getFacesCount();
         }
         return facesCount;
-    }
-
-    public boolean TEST_checkTexCoords() {
-//        for (HalfEdgeNode node : nodes) {
-//            if (!node.TEST_checkTexCoords()) {
-//                return false;
-//            }
-//        }
-        return true;
     }
 }

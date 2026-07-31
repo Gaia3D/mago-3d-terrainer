@@ -340,7 +340,7 @@ public class TestUtils {
         List<HalfEdgeSurface> surfaces = scene.extractSurfaces(null);
         for (HalfEdgeSurface halfEdgeSurface : surfaces) {
             List<List<HalfEdgeFace>> resultWeldedFacesGroups = new ArrayList<>();
-            halfEdgeSurface.getWeldedFacesGroups(resultWeldedFacesGroups);
+            WeldedFacesFinder.getWeldedFacesGroups(halfEdgeSurface, resultWeldedFacesGroups);
 
         }
         return true;

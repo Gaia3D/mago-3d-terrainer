@@ -58,6 +58,6 @@ public enum TileRangeIntersectionType {
     B_CONTAINS_2_A_1,
     A_CONTAINS_1_B_1,
     HORIZONTAL_FULL_TOUCHING,
-    VERTICAL_FULL_TOUCHING;
+    VERTICAL_FULL_TOUCHING
 
 }

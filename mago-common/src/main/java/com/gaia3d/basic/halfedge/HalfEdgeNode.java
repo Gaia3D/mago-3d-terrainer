@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,15 +32,6 @@ public class HalfEdgeNode implements Serializable {
             child.deleteObjects();
         }
         children.clear();
-    }
-
-    public void checkSandClockFaces() {
-        for (HalfEdgeMesh mesh : meshes) {
-            mesh.checkSandClockFaces();
-        }
-        for (HalfEdgeNode child : children) {
-            child.checkSandClockFaces();
-        }
     }
 
     public void calculateNormals() {
@@ -211,56 +200,6 @@ public class HalfEdgeNode implements Serializable {
             clonedNode.boundingBox = boundingBox.clone();
         }
         return clonedNode;
-    }
-
-    public void writeFile(ObjectOutputStream outputStream) {
-        try {
-            // transformMatrix
-            outputStream.writeObject(transformMatrix);
-            // preMultipliedTransformMatrix
-            outputStream.writeObject(preMultipliedTransformMatrix);
-            // meshes
-            outputStream.writeInt(meshes.size());
-            for (HalfEdgeMesh mesh : meshes) {
-                mesh.writeFile(outputStream);
-            }
-
-            // children
-            outputStream.writeInt(children.size());
-            for (HalfEdgeNode child : children) {
-                child.writeFile(outputStream);
-            }
-
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
-        }
-    }
-
-    public void readFile(ObjectInputStream inputStream) {
-        try {
-            // transformMatrix
-            transformMatrix = (Matrix4d) inputStream.readObject();
-            // preMultipliedTransformMatrix
-            preMultipliedTransformMatrix = (Matrix4d) inputStream.readObject();
-            // meshes
-            int meshesSize = inputStream.readInt();
-            for (int i = 0; i < meshesSize; i++) {
-                HalfEdgeMesh mesh = new HalfEdgeMesh();
-                mesh.readFile(inputStream);
-                meshes.add(mesh);
-            }
-
-            // children
-            int childrenSize = inputStream.readInt();
-            for (int i = 0; i < childrenSize; i++) {
-                HalfEdgeNode child = new HalfEdgeNode();
-                child.readFile(inputStream);
-                children.add(child);
-            }
-
-        } catch (Exception e) {
-            log.error("[ERROR] Error Log : ", e);
-        }
     }
 
     public void scissorTextures(List<GaiaMaterial> materials) {
@@ -437,19 +376,5 @@ public class HalfEdgeNode implements Serializable {
         for (HalfEdgeNode child : children) {
             child.getIntersectedFacesByPlane(planeType, planePosition, resultFaces, error);
         }
-    }
-
-    public boolean TEST_checkTexCoords() {
-        for (HalfEdgeMesh mesh : meshes) {
-            if (!mesh.TEST_checkTexCoords()) {
-                return false;
-            }
-        }
-        for (HalfEdgeNode child : children) {
-            if (!child.TEST_checkTexCoords()) {
-                return false;
-            }
-        }
-        return true;
     }
 }

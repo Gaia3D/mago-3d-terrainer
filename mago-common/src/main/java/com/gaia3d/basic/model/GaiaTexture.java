@@ -65,14 +65,41 @@ public class GaiaTexture extends TextureStructure implements Serializable {
     }
 
     public void saveImage(String savePath) {
-        try {
-            String imageExtension = savePath.substring(savePath.lastIndexOf(".") + 1);
-            File file = new File(savePath);
-            ImageIO.setUseCache(false);
-            ImageIO.write(bufferedImage, imageExtension, file);
-        } catch (IOException e) {
-            log.error("[ERROR] :", e);
+//        try {
+//            String imageExtension = savePath.substring(savePath.lastIndexOf(".") + 1);
+//            File file = new File(savePath);
+//            ImageIO.setUseCache(false);
+//            ImageIO.write(bufferedImage, imageExtension, file);
+//        } catch (IOException e) {
+//            log.error("[ERROR] :", e);
+//        }
+        saveImage(savePath, true, 0.90f);
+    }
+
+    /**
+     * @param savePath Ruta de destino.
+     * @param fastPng true para priorizar velocidad sobre tamaño del PNG.
+     * @param jpegQuality Calidad JPEG entre 0.0 y 1.0.
+     * @return true cuando la imagen se escribió correctamente.
+     */
+    public boolean saveImage(
+            String savePath,
+            boolean fastPng,
+            float jpegQuality
+    ) {
+        if (bufferedImage == null) {
+            log.warn("GaiaTexture.saveImage(): bufferedImage is null.");
+            return false;
         }
+
+        if (savePath == null || savePath.isBlank()) {
+            log.warn("GaiaTexture.saveImage(): savePath is null or empty.");
+            return false;
+        }
+
+        ImageUtils.saveBufferedImage(bufferedImage, savePath, fastPng, jpegQuality);
+
+        return true;
     }
 
     public void flipImageY() {
@@ -170,8 +197,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
                 resizeHeight = ImageUtils.getNearestPowerOfTwo(resizeHeight);
                 this.width = resizeWidth;
                 this.height = resizeHeight;
-                ImageResizer imageResizer = new ImageResizer();
-                this.bufferedImage = imageResizer.resizeImageGraphic2D(this.bufferedImage, resizeWidth, resizeHeight);
+                this.bufferedImage = ImageResizer.resizeImageGraphic2D(this.bufferedImage, resizeWidth, resizeHeight);
             }
         }
     }
@@ -183,8 +209,7 @@ public class GaiaTexture extends TextureStructure implements Serializable {
         if (this.bufferedImage == null) {
             return;
         }
-        ImageResizer imageResizer = new ImageResizer();
-        this.bufferedImage = imageResizer.resizeImageGraphic2D(this.bufferedImage, width, height);
+        this.bufferedImage = ImageResizer.resizeImageGraphic2D(this.bufferedImage, width, height);
         this.width = width;
         this.height = height;
     }

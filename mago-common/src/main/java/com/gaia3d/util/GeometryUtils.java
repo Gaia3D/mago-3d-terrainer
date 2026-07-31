@@ -5,6 +5,7 @@ import com.gaia3d.basic.geometry.GaiaRectangle;
 import com.gaia3d.basic.geometry.octree.GaiaFaceContent;
 import com.gaia3d.basic.halfedge.PlaneType;
 import com.gaia3d.basic.model.*;
+import lombok.experimental.UtilityClass;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.joml.Vector4d;
@@ -15,7 +16,17 @@ import java.util.List;
 /**
  * GeometryUtils
  */
+@UtilityClass
 public class GeometryUtils {
+
+    /**
+     * CosineBetweenUnitaryVectors for mago 3DTerrainer
+     * @return
+     */
+    public static double cosineBetweenUnitaryVectors(double ax, double ay, double az, double bx, double by, double bz) {
+        return ax * bx + ay * by + az * bz;
+    }
+
     public static boolean isIdentity(float[] matrix) {
         return matrix[0] == 1 && matrix[1] == 0 && matrix[2] == 0 && matrix[3] == 0 && matrix[4] == 0 && matrix[5] == 1 && matrix[6] == 0 && matrix[7] == 0 && matrix[8] == 0 && matrix[9] == 0 && matrix[10] == 1 && matrix[11] == 0 && matrix[12] == 0 && matrix[13] == 0 && matrix[14] == 0 && matrix[15] == 1;
     }
@@ -36,10 +47,6 @@ public class GeometryUtils {
         }
 
         return boundingRectangle;
-    }
-
-    public static double cosineBetweenUnitaryVectors(double ax, double ay, double az, double bx, double by, double bz) {
-        return ax * bx + ay * by + az * bz;
     }
 
     public static GaiaRectangle getTexCoordsBoundingRectangleOfFaces(List<GaiaFace> faces, List<GaiaVertex> vertices, GaiaRectangle boundingRectangle) {
@@ -139,8 +146,40 @@ public class GeometryUtils {
         return primitive;
     }
 
-    public static GaiaPrimitive getPrimitiveFromBox(Vector3d leftFrontBottom, Vector3d rightFrontBottom, Vector3d rightRearBottom,Vector3d leftRearBottom,
-                                                    Vector3d leftFrontTop, Vector3d rightFrontTop, Vector3d rightRearTop,Vector3d leftRearTop,
+    public static GaiaPrimitive getQuadPrimitiveFrom4Vertices(GaiaVertex v0, GaiaVertex v1, GaiaVertex v2, GaiaVertex v3, Vector3d normal) {
+        GaiaPrimitive primitive = new GaiaPrimitive();
+        GaiaVertex vertex0 = v0.clone();
+        vertex0.setNormal(new Vector3d(normal));
+
+        GaiaVertex vertex1 = v1.clone();
+        vertex1.setNormal(new Vector3d(normal));
+
+        GaiaVertex vertex2 = v2.clone();
+        vertex2.setNormal(new Vector3d(normal));
+
+        GaiaVertex vertex3 = v3.clone();
+        vertex3.setNormal(new Vector3d(normal));
+
+        primitive.getVertices().add(vertex0);
+        primitive.getVertices().add(vertex1);
+        primitive.getVertices().add(vertex2);
+        primitive.getVertices().add(vertex3);
+
+        GaiaSurface surface = new GaiaSurface();
+        // Face0 (0, 1, 2)
+        GaiaFace face0 = new GaiaFace();
+        face0.setIndices(new int[]{0, 1, 2});
+        surface.getFaces().add(face0);
+        // Face1 (0, 2, 3)
+        GaiaFace face1 = new GaiaFace();
+        face1.setIndices(new int[]{0, 2, 3});
+        surface.getFaces().add(face1);
+        primitive.getSurfaces().add(surface);
+        return primitive;
+    }
+
+    public static GaiaPrimitive getPrimitiveFromBox(Vector3d leftFrontBottom, Vector3d rightFrontBottom, Vector3d rightRearBottom, Vector3d leftRearBottom,
+                                                    Vector3d leftFrontTop, Vector3d rightFrontTop, Vector3d rightRearTop, Vector3d leftRearTop,
                                                     boolean left, boolean right, boolean front, boolean rear, boolean bottom, boolean top) {
         GaiaPrimitive resultPrimitive = new GaiaPrimitive();
 
@@ -169,8 +208,6 @@ public class GeometryUtils {
         //                          /        /
         //                         /        /   <- bottom
         //                        0--------3
-
-
 
         if (left) {
             // leftFrontBottom - leftFrontTop - leftRearTop - leftRearBottom
@@ -246,7 +283,6 @@ public class GeometryUtils {
         //                          /        /
         //                         /        /   <- bottom
         //                        0--------1
-
 
         GaiaVertex vertex0 = new GaiaVertex();
         // Bottom
@@ -356,7 +392,6 @@ public class GeometryUtils {
         vertex23.setPosition(new Vector3d(minX, maxY, maxZ));
         vertex23.setNormal(normalTop);
 
-
         resultPrimitive.getVertices().add(vertex0);
         resultPrimitive.getVertices().add(vertex1);
         resultPrimitive.getVertices().add(vertex2);
@@ -381,7 +416,6 @@ public class GeometryUtils {
         resultPrimitive.getVertices().add(vertex21);
         resultPrimitive.getVertices().add(vertex22);
         resultPrimitive.getVertices().add(vertex23);
-
 
         // BottomSurface
         GaiaSurface bottomSurface = new GaiaSurface();
@@ -684,7 +718,6 @@ public class GeometryUtils {
 
             Vector3d cross = new Vector3d();
             v1.cross(v2, cross);
-
 
             if (!isValidVector(cross)) {
                 // cross is invalid

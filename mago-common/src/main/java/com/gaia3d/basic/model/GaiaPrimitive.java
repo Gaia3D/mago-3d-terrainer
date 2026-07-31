@@ -87,11 +87,54 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
         }
     }
 
-    public int[] getIndices() {
+    public int[] getIndices_original() {
         int[] resultIndices = new int[0];
         for (GaiaSurface surface : surfaces) {
             resultIndices = ArrayUtils.addAll(resultIndices, surface.getIndices());
         }
+        return resultIndices;
+    }
+
+    public int[] getIndices() {
+        if (surfaces == null || surfaces.isEmpty()) {
+            return new int[0];
+        }
+
+        int totalLength = 0;
+
+        for (GaiaSurface surface : surfaces) {
+            if (surface == null) {
+                continue;
+            }
+
+            int[] indices = surface.getIndices();
+
+            if (indices == null || indices.length == 0) {
+                continue;
+            }
+
+            totalLength += indices.length;
+        }
+
+        int[] resultIndices = new int[totalLength];
+
+        int offset = 0;
+
+        for (GaiaSurface surface : surfaces) {
+            if (surface == null) {
+                continue;
+            }
+
+            int[] indices = surface.getIndices();
+
+            if (indices == null || indices.length == 0) {
+                continue;
+            }
+
+            System.arraycopy(indices, 0, resultIndices, offset, indices.length);
+            offset += indices.length;
+        }
+
         return resultIndices;
     }
 
@@ -189,9 +232,9 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
 
                 Vector3d normalized = normal.normalize(new Vector3d());
                 if (Double.isNaN(normalized.x()) || Double.isNaN(normalized.y()) || Double.isNaN(normalized.z())) {
-                    log.error("[ERROR] Normal is NaN");
-                    log.error(" - Normal : {}", normal);
-                    log.error(" - Normalized : {}", normalized);
+                    log.debug("[ERROR] Normal is NaN");
+                    log.debug(" - Normal : {}", normal);
+                    log.debug(" - Normalized : {}", normalized);
                     normalized = new Vector3d(0, 0, 1);
                 }
                 normalList[normalIndex++] = (float) normalized.x;
@@ -419,7 +462,6 @@ public class GaiaPrimitive extends PrimitiveStructure implements Serializable {
         if (boundingBox == null) {
             return;
         }
-
 
         GaiaBoundingBox cubeBoundingBox = boundingBox.createCubeFromMinPosition();
         GaiaOctreeVertices octreeVertices = new GaiaOctreeVertices(null, cubeBoundingBox);
