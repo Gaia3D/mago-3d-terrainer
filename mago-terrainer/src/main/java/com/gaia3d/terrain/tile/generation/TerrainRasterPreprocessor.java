@@ -27,7 +27,7 @@ import java.util.Set;
 @Slf4j
 @RequiredArgsConstructor
 public class TerrainRasterPreprocessor {
-    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TerrainTilesetGenerator manager;
 
     public void standardizeInputRasters() {

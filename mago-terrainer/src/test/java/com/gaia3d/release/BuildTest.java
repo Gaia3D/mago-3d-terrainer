@@ -185,6 +185,19 @@ public class BuildTest {
     }
 
     @Test
+    void sample1mJejuIsland() {
+        String name = "sample-1m-jeju-island";
+        File inputPath = new File("D:\\data\\mago-3d-terrainer\\release-sample\\test_jeju_1m.tif");
+        File outputPath = MagoTestConfig.getOutputPath(name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
     void moon() {
         String name = "Lunar_LRO_LOLA";
         File inputPath = new File("D:\\user\\znkim\\Downloads\\Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014-wrap.tif");

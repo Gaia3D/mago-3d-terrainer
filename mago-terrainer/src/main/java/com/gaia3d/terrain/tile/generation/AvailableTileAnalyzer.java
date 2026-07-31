@@ -27,7 +27,7 @@ import java.util.*;
 @Slf4j
 @RequiredArgsConstructor
 public class AvailableTileAnalyzer {
-    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TerrainTilesetGenerator generator;
 
     public void calculateAvailableTilesForEachDepth() throws IOException, FactoryException {

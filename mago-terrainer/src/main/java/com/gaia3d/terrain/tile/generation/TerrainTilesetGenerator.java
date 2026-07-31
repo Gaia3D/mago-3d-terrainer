@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Setter
 @Slf4j
 public class TerrainTilesetGenerator {
-    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private final GlobalOptions globalOptions = GlobalOptions.getInstance();
 
     private final TerrainTilingContext tilingContext = new TerrainTilingContext();
     private final int rasterTileSize = tilingContext.getRasterTileSize();

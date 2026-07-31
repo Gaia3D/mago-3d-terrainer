@@ -24,7 +24,7 @@ import java.util.*;
 @Slf4j
 @RequiredArgsConstructor
 public class TerrainTileStore {
-    private static GlobalOptions globalOptions = GlobalOptions.getInstance();
+    private final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TerrainTilesetGenerator generator;
 
     public void writeTempTilesFromQuantizedMeshes(int depth) {

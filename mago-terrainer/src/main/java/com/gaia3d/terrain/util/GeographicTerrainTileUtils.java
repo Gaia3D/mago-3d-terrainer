@@ -14,12 +14,10 @@ import java.util.List;
 
 @UtilityClass
 public class GeographicTerrainTileUtils {
-    private static final GlobalOptions globalOptions = GlobalOptions.getInstance();
-
     public static double getTileSizeInMetersByDepth(int depth) {
         double angDeg = GeographicTerrainTileUtils.selectTileAngleRangeByDepth(depth);
         double angRad = angDeg * Math.PI / 180.0;
-        return angRad * globalOptions.getCelestialBody().getEquatorialRadius();
+        return angRad * GlobalOptions.getInstance().getCelestialBody().getEquatorialRadius();
     }
 
     public static int getMaxTileDepthByPixelSizeMeters(double pixelSizeMeters) {
@@ -119,7 +117,7 @@ public class GeographicTerrainTileUtils {
         } else {
             result = tileSize * 0.07;
         }
-        return result / globalOptions.getIntensity();
+        return result / GlobalOptions.getInstance().getIntensity();
     }
 
     public static double selectTileAngleRangeByDepth(int depth) {

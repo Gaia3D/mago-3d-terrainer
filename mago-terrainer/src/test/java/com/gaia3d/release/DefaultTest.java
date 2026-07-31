@@ -1,12 +1,6 @@
 package com.gaia3d.release;
 
-import com.gaia3d.terrain.tile.core.*;
-import com.gaia3d.terrain.tile.elevation.*;
-import com.gaia3d.terrain.tile.generation.*;
-import com.gaia3d.terrain.tile.layer.*;
-import com.gaia3d.terrain.tile.mesh.*;
-
-import com.gaia3d.command.Mago3DTerrainerMain;
+import com.gaia3d.release.env.MagoTestConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -21,13 +15,13 @@ public class DefaultTest {
     @Test
     void noArgs() {
         String[] args = new String[]{};
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
     void help() {
         String[] args = new String[]{"--help"};
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -41,7 +35,7 @@ public class DefaultTest {
                 "-input", inputPath.getAbsolutePath(),
                 "-output", outputPath.getAbsolutePath(),
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -57,7 +51,7 @@ public class DefaultTest {
                 "-geoid", "EGM96",
                 "-max", "10",
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -72,7 +66,7 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-max", "10",
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -87,7 +81,7 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-max", "12",
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -103,7 +97,7 @@ public class DefaultTest {
                 "-max", "10",
                 "-interpolationType", "nearest",
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -119,7 +113,7 @@ public class DefaultTest {
                 "-max", "12",
                 "-interpolationType", "nearest",
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -134,7 +128,7 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-max", "12",
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -149,7 +143,7 @@ public class DefaultTest {
                 "-output", outputPath.getAbsolutePath(),
                 "-max", "12",
         };
-        Mago3DTerrainerMain.main(args);
+        MagoTestConfig.execute(args);
     }
 
     @Test
@@ -165,7 +159,7 @@ public class DefaultTest {
         };
 
         try {
-            Mago3DTerrainerMain.main(args);
+            MagoTestConfig.execute(args);
         } catch (Exception e) {
             log.error("", e);
         }
@@ -184,7 +178,7 @@ public class DefaultTest {
         };
 
         try {
-            Mago3DTerrainerMain.main(args);
+            MagoTestConfig.execute(args);
         } catch (Exception e) {
             log.error("", e);
         }
@@ -205,7 +199,7 @@ public class DefaultTest {
         };
 
         try {
-            Mago3DTerrainerMain.main(args);
+            MagoTestConfig.execute(args);
         } catch (Exception e) {
             log.error("", e);
         }
