@@ -636,12 +636,14 @@ public class GltfWriter {
 
         Material material = new Material();
         material.setName(gaiaMaterial.getName());
-        material.setDoubleSided(gltfOptions.isDoubleSided());
+        if (gaiaMaterial.isDoubleSided() || gltfOptions.isDoubleSided()) {
+            material.setDoubleSided(true);
+        }
 
-        // Set the alpha mode
-        boolean isOpaque = gaiaMaterial.isOpaqueMaterial();
+        // Set the alpha mode from the material state without inferring from the texture file extension.
+        boolean isBlend = gaiaMaterial.isBlend();
+        boolean isOpaque = gaiaMaterial.isOpaque() && !isBlend;
         if (!isOpaque) {
-            boolean isBlend = gaiaMaterial.isBlend();
             float alphaCutoff = gaiaMaterial.getAlphaCutoff();
             if (isBlend) {
                 material.setAlphaMode("BLEND");
@@ -701,6 +703,7 @@ public class GltfWriter {
 
         Image image = new Image();
         image.setMimeType(mimeType);
+        //if (globalOptions.getTilesVersion().equals("1.0")) {
         if (gltfOptions.isUriImage()) {
             String uri = convertBufferedImageToURI(gaiaTexture.getBufferedImage(), mimeType);
             image.setUri(uri);
@@ -757,8 +760,6 @@ public class GltfWriter {
         Sampler sampler = new Sampler();
         sampler.setMagFilter(GL20.GL_LINEAR);
         sampler.setMinFilter(GL20.GL_LINEAR_MIPMAP_LINEAR);
-        sampler.setWrapS(GL20.GL_REPEAT);
-        sampler.setWrapT(GL20.GL_REPEAT);
         return sampler;
     }
 
@@ -771,8 +772,12 @@ public class GltfWriter {
         Sampler sampler = new Sampler();
         sampler.setMagFilter(gaiaSamplers.getMagFilter());
         sampler.setMinFilter(gaiaSamplers.getMinFilter());
-        sampler.setWrapS(gaiaSamplers.getWrapS());
-        sampler.setWrapT(gaiaSamplers.getWrapT());
+        if (gaiaSamplers.getWrapS() != GL20.GL_REPEAT) {
+            sampler.setWrapS(gaiaSamplers.getWrapS());
+        }
+        if (gaiaSamplers.getWrapT() != GL20.GL_REPEAT) {
+            sampler.setWrapT(gaiaSamplers.getWrapT());
+        }
         return sampler;
     }
 
@@ -819,13 +824,6 @@ public class GltfWriter {
         String formatName = ImageUtils.getFormatNameByMimeType(mimeType);
         byte[] imageBytes = null;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            int width = bufferedImage.getWidth();
-            int height = bufferedImage.getHeight();
-            int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
-            int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
-            if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                bufferedImage = ImageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
-            }
             assert formatName != null;
 
             if (gltfOptions.isForceJpeg() || mimeType.equals("image/jpeg")) {
@@ -853,13 +851,6 @@ public class GltfWriter {
         String formatName = ImageUtils.getFormatNameByMimeType(mimeType);
         String imageString = null;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            int width = bufferedImage.getWidth();
-            int height = bufferedImage.getHeight();
-            int powerOfTwoWidth = ImageUtils.getNearestPowerOfTwo(width);
-            int powerOfTwoHeight = ImageUtils.getNearestPowerOfTwo(height);
-            if (width != powerOfTwoWidth || height != powerOfTwoHeight) {
-                bufferedImage = ImageResizer.resizeImageGraphic2D(bufferedImage, powerOfTwoWidth, powerOfTwoHeight, true);
-            }
             assert formatName != null;
 
             if (gltfOptions.isForceJpeg() || mimeType.equals("image/jpeg")) {
