@@ -46,6 +46,7 @@ public class TileMatrix {
     // the tilesMatrixRowCol is a matrix of tiles
     List<TerrainVertex> listVertices = new ArrayList<>();
     List<TerrainHalfEdge> listHalfEdges = new ArrayList<>();
+    List<TerrainHalfEdge> secondHalfEdges = new ArrayList<>();
 
     public TileMatrix(TileRange tilesRange, TerrainTilesetGenerator manager) {
         this.tilesRange = tilesRange;
@@ -229,8 +230,8 @@ public class TileMatrix {
             TerrainVertex startVertex2 = halfEdge2.getStartVertex();
             TerrainVertex endVertex2 = halfEdge2.getEndVertex();
 
-            List<TerrainHalfEdge> outingHalfEdges_strVertex2 = startVertex2.getAllOutingHalfEdges();
-            List<TerrainHalfEdge> outingHalfEdges_endVertex2 = endVertex2.getAllOutingHalfEdges();
+            List<TerrainHalfEdge> outingHalfEdges_strVertex2 = startVertex2.getAllOutingHalfEdges(listHalfEdges);
+            List<TerrainHalfEdge> outingHalfEdges_endVertex2 = endVertex2.getAllOutingHalfEdges(secondHalfEdges);
 
             for (TerrainHalfEdge outingHalfEdge : outingHalfEdges_strVertex2) {
                 // NOTE : for outingHEdges of startVertex2, must set "startVertex" the endVertex of halfEdge
@@ -1165,7 +1166,7 @@ public class TileMatrix {
             }
             totalVertices++;
 
-            List<TerrainHalfEdge> edges = vertex.getAllOutingHalfEdges();
+            List<TerrainHalfEdge> edges = vertex.getAllOutingHalfEdges(listHalfEdges);
             int edgeCount = edges.size();
 
             if (edgeCount > maxEdgeCount) {

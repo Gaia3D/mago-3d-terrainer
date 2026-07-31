@@ -97,6 +97,17 @@ class TerrainRasterReaderWriterTest {
         assertThrows(IllegalArgumentException.class, () -> new TerrainRasterData(3, 2, 126.0, 37.0, 127.0, 38.0, -32768.0f, new float[]{1.0f, 2.0f}));
     }
 
+    @Test
+    @Tag("default")
+    void publicRasterDataConstructorRetainsDefensiveCopy() {
+        float[] elevations = {10.0f};
+        TerrainRasterData data = new TerrainRasterData(1, 1, 126.0, 37.0, 127.0, 38.0, -9999.0f, elevations);
+
+        elevations[0] = 20.0f;
+
+        assertEquals(10.0f, data.getElevation(0, 0));
+    }
+
     private void deleteRecursively(Path path) throws IOException {
         if (!Files.exists(path)) {
             return;

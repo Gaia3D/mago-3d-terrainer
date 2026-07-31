@@ -68,8 +68,7 @@ public class TerrainElevationDataQuadTree {
     }
 
     private void makeTree(int maxDepth) {
-        // if my data count is less than 2, then return
-        if (terrainElevationDataList.size() < 2) {
+        if (depth >= maxDepth || terrainElevationDataList.size() < 2) {
             return;
         }
 
@@ -109,26 +108,37 @@ public class TerrainElevationDataQuadTree {
             geographicExtension3.setDegrees(minLonDeg, midLatDeg, 0.0, midLonDeg, maxLatDeg, 0.0);
         }
 
-        // 2nd distribute data to children
+        List<TerrainElevationData> retainedData = new ArrayList<>();
         for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
-            GeographicExtension geographicExtension = terrainElevationData.getGeographicExtension();
-
+            GeographicExtension dataExtension = terrainElevationData.getGeographicExtension();
+            int containingChild = -1;
             for (int j = 0; j < CHILDREN_COUNT; j++) {
-                if (children[j].geographicExtension.intersects(geographicExtension)) {
-                    children[j].addTerrainElevationData(terrainElevationData);
+                if (contains(children[j].geographicExtension, dataExtension)) {
+                    if (containingChild >= 0) {
+                        containingChild = -1;
+                        break;
+                    }
+                    containingChild = j;
                 }
             }
-        }
-
-        // now remove all data from this node
-        terrainElevationDataList.clear();
-
-        if (this.depth < maxDepth) {
-            // continue making children
-            for (int j = 0; j < CHILDREN_COUNT; j++) {
-                children[j].makeTree(maxDepth);
+            if (containingChild >= 0) {
+                children[containingChild].addTerrainElevationData(terrainElevationData);
+            } else {
+                retainedData.add(terrainElevationData);
             }
         }
+        terrainElevationDataList = retainedData;
+
+        for (int j = 0; j < CHILDREN_COUNT; j++) {
+            children[j].makeTree(maxDepth);
+        }
+    }
+
+    private static boolean contains(GeographicExtension container, GeographicExtension value) {
+        return container.getMinLongitudeDeg() <= value.getMinLongitudeDeg()
+                && container.getMinLatitudeDeg() <= value.getMinLatitudeDeg()
+                && container.getMaxLongitudeDeg() >= value.getMaxLongitudeDeg()
+                && container.getMaxLatitudeDeg() >= value.getMaxLatitudeDeg();
     }
 
     public void deleteCoverage() {
@@ -146,6 +156,11 @@ public class TerrainElevationDataQuadTree {
     }
 
     public void deleteCoverageIfNoIntersectsGeoExtension(GeographicExtension geographicExtension) {
+        if (!this.geographicExtension.intersects(geographicExtension)) {
+            deleteCoverage();
+            return;
+        }
+
         if (terrainElevationDataList != null) {
             for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
                 if (!geographicExtension.intersects(terrainElevationData.getGeographicExtension())) {
@@ -230,6 +245,10 @@ public class TerrainElevationDataQuadTree {
     }
 
     private void getTerrainElevationDataArray(double minLonDeg, double minLatDeg, double maxLonDeg, double maxLatDeg, List<TerrainElevationData> resultTerrainElevDataArray, int queryMark) {
+        if (!geographicExtension.intersects(minLonDeg, minLatDeg, maxLonDeg, maxLatDeg)) {
+            return;
+        }
+
         for (TerrainElevationData terrainElevationData : terrainElevationDataList) {
             if (terrainElevationData.getQueryMark() == queryMark) {
                 continue;

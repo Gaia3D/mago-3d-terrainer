@@ -25,11 +25,13 @@ public enum TerrainHalfEdgeType {
     private final int value;
 
     public static TerrainHalfEdgeType fromValue(int value) {
-        for (TerrainHalfEdgeType type : TerrainHalfEdgeType.values()) {
-            if (type.value == value) {
-                return type;
-            }
-        }
-        return UNKNOWN;
+        return switch (value) {
+            case 0 -> LEFT;
+            case 1 -> RIGHT;
+            case 2 -> UP;
+            case 3 -> DOWN;
+            case 4 -> INTERIOR;
+            default -> UNKNOWN;
+        };
     }
 }

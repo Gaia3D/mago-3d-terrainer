@@ -11,9 +11,7 @@ import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @Setter
@@ -69,6 +67,10 @@ public class TerrainVertex {
     }
 
     public void calculateNormal() {
+        calculateNormal(new ArrayList<>());
+    }
+
+    public void calculateNormal(List<TerrainHalfEdge> outingHalfEdges) {
         if (this.normal == null) {
             this.normal = new Vector3f();
         }
@@ -82,7 +84,7 @@ public class TerrainVertex {
             return;
         }
 
-        List<TerrainHalfEdge> outingHalfEdges = this.getAllOutingHalfEdges();
+        getAllOutingHalfEdges(outingHalfEdges);
         for (TerrainHalfEdge outingHalfEdge : outingHalfEdges) {
             TerrainTriangle triangle = outingHalfEdge.getTriangle();
             if (triangle == null) {
@@ -108,6 +110,11 @@ public class TerrainVertex {
 
     public List<TerrainHalfEdge> getAllOutingHalfEdges() {
         List<TerrainHalfEdge> outingHalfEdges = new ArrayList<>();
+        return getAllOutingHalfEdges(outingHalfEdges);
+    }
+
+    public List<TerrainHalfEdge> getAllOutingHalfEdges(List<TerrainHalfEdge> outingHalfEdges) {
+        outingHalfEdges.clear();
 
         // there are 2 cases: this vertex is interior vertex or boundary vertex, but we dont know
         // 1- interior vertex
@@ -126,8 +133,7 @@ public class TerrainVertex {
         TerrainHalfEdge firstHalfEdge = this.outingHEdge;
         TerrainHalfEdge currHalfEdge = this.outingHEdge;
 
-        Map<TerrainHalfEdge, TerrainHalfEdge> mapUniqueHalfEdges = new HashMap<>();
-        mapUniqueHalfEdges.put(this.outingHEdge, this.outingHEdge);
+        outingHalfEdges.add(this.outingHEdge);
         boolean finished = false;
         boolean isInteriorVertex = true;
         int counter = 0;
@@ -149,12 +155,11 @@ public class TerrainVertex {
                 break;
             }
 
-            if (mapUniqueHalfEdges.containsKey(nextHalfEdge)) {
+            if (containsIdentity(outingHalfEdges, nextHalfEdge)) {
                 log.warn("This vertex has duplicated outing halfEdges. id : {}, halfEdge id : {}", this.id, nextHalfEdge.getId());
-//                finished = true;
-//                break;
+                break;
             } else {
-                mapUniqueHalfEdges.put(nextHalfEdge, nextHalfEdge);
+                outingHalfEdges.add(nextHalfEdge);
             }
 
             currHalfEdge = nextHalfEdge;
@@ -174,8 +179,6 @@ public class TerrainVertex {
                 break;
             }
         }
-
-        outingHalfEdges.addAll(mapUniqueHalfEdges.values());
 
         // if this vertex is NO interior vertex, then must check if there are more outing halfEdges
         if (!isInteriorVertex) {
@@ -201,6 +204,15 @@ public class TerrainVertex {
             }
         }
         return outingHalfEdges;
+    }
+
+    private boolean containsIdentity(List<TerrainHalfEdge> halfEdges, TerrainHalfEdge candidate) {
+        for (TerrainHalfEdge halfEdge : halfEdges) {
+            if (halfEdge == candidate) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -8,9 +8,9 @@ import com.gaia3d.terrain.tile.core.TileIndices;
 import com.gaia3d.terrain.tile.core.TileRange;
 import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.tile.geotiff.GeoTiffCoverageStore;
-import com.gaia3d.terrain.tile.raster.TerrainRasterData;
 import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
 import com.gaia3d.terrain.tile.raster.TerrainRasterReader;
+import com.gaia3d.terrain.tile.raster.TerrainRasterMetadata;
 import com.gaia3d.util.GlobeUtils;
 import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
@@ -41,9 +41,10 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationModeler {
-    private static final boolean PRELOAD_TERRAIN_RASTERS = false;
-    private static final long MIN_PRELOAD_BUDGET_BYTES = 128L * 1024L * 1024L;
-    private static final long MAX_PRELOAD_BUDGET_BYTES = 1024L * 1024L * 1024L;
+    private static final boolean PRELOAD_TERRAIN_RASTERS = true;
+    private static final long MEMORY_PLANNING_LIMIT_BYTES = 8L * 1024L * 1024L * 1024L;
+    private static final long MIN_PRELOAD_BUDGET_BYTES = 256L * 1024L * 1024L;
+    private static final long MAX_PRELOAD_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L;
     private static final long HEAP_RESERVE_BYTES = 2L * 1024L * 1024L * 1024L;
     private static final long MIN_LIVE_RASTER_BUDGET_BYTES = 512L * 1024L * 1024L;
     private static final long MAX_LIVE_RASTER_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L;
@@ -429,7 +430,7 @@ public class TerrainElevationModeler {
 
     private void loadTerrainRasterMetadata(File rasterFile, TerrainElevationData elevationData) {
         try {
-            TerrainRasterData data = new TerrainRasterReader().read(rasterFile.toPath());
+            TerrainRasterMetadata data = new TerrainRasterReader().readMetadata(rasterFile.toPath());
             elevationData.setGeotiffFilePath(rasterFile.getAbsolutePath());
             elevationData.setGeotiffFileName(rasterFile.getName());
             elevationData.getGeographicExtension().setDegrees(
@@ -442,6 +443,8 @@ public class TerrainElevationModeler {
             double pixelHeight = GlobeUtils.distanceBetweenLatitudesRad(
                     Math.toRadians(data.minLatitude()), Math.toRadians(data.maxLatitude())) / data.originalHeight();
             elevationData.setPixelSizeMeters(new Vector2d(pixelWidth, pixelHeight));
+            elevationData.setGridCoverage2DSize(new org.joml.Vector2i(data.width(), data.height()));
+            elevationData.setEstimatedRasterBytes(data.payloadSizeBytes());
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read terrain raster metadata: " + rasterFile, e);
         }
@@ -612,27 +615,29 @@ public class TerrainElevationModeler {
 
     private long computePreloadBudgetBytes() {
         Runtime runtime = Runtime.getRuntime();
-        long maxMemory = runtime.maxMemory();
+        long maxMemory = Math.min(runtime.maxMemory(), MEMORY_PLANNING_LIMIT_BYTES);
         long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-        long freeHeadroom = maxMemory - usedMemory - HEAP_RESERVE_BYTES;
+        long reserveBytes = Math.min(HEAP_RESERVE_BYTES, maxMemory / 4);
+        long freeHeadroom = maxMemory - usedMemory - reserveBytes;
         if (freeHeadroom <= 0L) {
             return 0L;
         }
 
-        long desiredBudget = Math.min(MAX_PRELOAD_BUDGET_BYTES, Math.max(MIN_PRELOAD_BUDGET_BYTES, maxMemory / 8));
+        long desiredBudget = Math.min(MAX_PRELOAD_BUDGET_BYTES, Math.max(MIN_PRELOAD_BUDGET_BYTES, maxMemory / 4));
         return Math.min(desiredBudget, freeHeadroom);
     }
 
     private long computeLiveRasterBudgetBytes() {
         Runtime runtime = Runtime.getRuntime();
-        long maxMemory = runtime.maxMemory();
+        long maxMemory = Math.min(runtime.maxMemory(), MEMORY_PLANNING_LIMIT_BYTES);
         long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-        long freeHeadroom = maxMemory - usedMemory - HEAP_RESERVE_BYTES;
+        long reserveBytes = Math.min(HEAP_RESERVE_BYTES, maxMemory / 4);
+        long freeHeadroom = maxMemory - usedMemory - reserveBytes;
         if (freeHeadroom <= 0L) {
             return 0L;
         }
 
-        long desiredBudget = Math.min(MAX_LIVE_RASTER_BUDGET_BYTES, Math.max(MIN_LIVE_RASTER_BUDGET_BYTES, maxMemory / 8));
+        long desiredBudget = Math.min(MAX_LIVE_RASTER_BUDGET_BYTES, Math.max(MIN_LIVE_RASTER_BUDGET_BYTES, maxMemory / 4));
         return Math.min(desiredBudget, freeHeadroom);
     }
 }

@@ -17,13 +17,13 @@ class TerrainElevationModelerMemoryTest {
 
     @Test
     @Tag("default")
-    void preloadTerrainElevationRastersIsDisabledByDefault() {
+    void preloadTerrainElevationRastersWithinBudget() {
         TerrainElevationModeler manager = new TerrainElevationModeler();
         CountingTerrainElevationData elevationData = new CountingTerrainElevationData(manager);
 
         manager.preloadTerrainElevationRasters(List.of(elevationData));
 
-        assertEquals(0, elevationData.preloadCalls);
+        assertEquals(1, elevationData.preloadCalls);
     }
 
     private static class CountingTerrainElevationData extends TerrainElevationData {

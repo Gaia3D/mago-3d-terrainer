@@ -102,6 +102,7 @@ public class TerrainElevationData {
     private short[] rasterShortData = null;
     private byte[] rasterByteData = null;
     private TerrainRasterData terrainRasterData = null;
+    private long estimatedRasterBytes = 0L;
 
     public TerrainElevationData(TerrainElevationModeler terrainElevationModeler) {
         this.terrainElevDataManager = terrainElevationModeler;
@@ -749,6 +750,10 @@ public class TerrainElevationData {
 
         if (this.rasterWidth > 0 && this.rasterHeight > 0) {
             return (long) this.rasterWidth * this.rasterHeight * estimateBytesPerSample();
+        }
+
+        if (this.estimatedRasterBytes > 0L) {
+            return this.estimatedRasterBytes;
         }
 
         return this.renderedImage != null ? estimateImageTileBytes() : 0L;

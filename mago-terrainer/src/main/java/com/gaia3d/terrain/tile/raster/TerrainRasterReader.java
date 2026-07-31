@@ -11,6 +11,16 @@ public final class TerrainRasterReader {
     private static final int FLOATS_PER_CHUNK = 8192;
 
     public TerrainRasterData read(Path path) throws IOException {
+        TerrainRasterMetadata metadata = readMetadata(path);
+        int sampleCount = Math.toIntExact((long) metadata.width() * metadata.height());
+        float[] elevations = readPayload(path, sampleCount);
+
+        return TerrainRasterData.takeOwnership(metadata.width(), metadata.height(), metadata.originalWidth(), metadata.originalHeight(),
+                metadata.minLongitude(), metadata.minLatitude(), metadata.maxLongitude(), metadata.maxLatitude(),
+                metadata.noDataValue(), elevations);
+    }
+
+    public TerrainRasterMetadata readMetadata(Path path) throws IOException {
         long fileSize = Files.size(path);
         if (fileSize < TerrainRasterFormat.HEADER_SIZE_BYTES) {
             throw new IOException("Terrain raster file is smaller than the header: " + path);
@@ -55,10 +65,8 @@ public final class TerrainRasterReader {
             throw new IOException("Invalid terrain raster file size: expected=" + expectedSize + ", actual=" + fileSize);
         }
 
-        float[] elevations = readPayload(path, (int) sampleCount);
-
-        return new TerrainRasterData(width, height, originalWidth, originalHeight,
-                minLongitude, minLatitude, maxLongitude, maxLatitude, noDataValue, elevations);
+        return new TerrainRasterMetadata(width, height, originalWidth, originalHeight,
+                minLongitude, minLatitude, maxLongitude, maxLatitude, noDataValue);
     }
 
     private byte[] readHeader(Path path) throws IOException {

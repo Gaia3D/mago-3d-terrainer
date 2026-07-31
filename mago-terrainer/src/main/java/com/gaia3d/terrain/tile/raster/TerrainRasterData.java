@@ -3,12 +3,27 @@ package com.gaia3d.terrain.tile.raster;
 import java.util.Arrays;
 import java.util.Objects;
 
-public record TerrainRasterData(int width, int height, int originalWidth, int originalHeight, double minLongitude, double minLatitude, double maxLongitude, double maxLatitude, float noDataValue, float[] elevations) {
+public final class TerrainRasterData {
+    private final int width;
+    private final int height;
+    private final int originalWidth;
+    private final int originalHeight;
+    private final double minLongitude;
+    private final double minLatitude;
+    private final double maxLongitude;
+    private final double maxLatitude;
+    private final float noDataValue;
+    private final float[] elevations;
+
     public TerrainRasterData(int width, int height, double minLongitude, double minLatitude, double maxLongitude, double maxLatitude, float noDataValue, float[] elevations) {
         this(width, height, width, height, minLongitude, minLatitude, maxLongitude, maxLatitude, noDataValue, elevations);
     }
 
     public TerrainRasterData(int width, int height, int originalWidth, int originalHeight, double minLongitude, double minLatitude, double maxLongitude, double maxLatitude, float noDataValue, float[] elevations) {
+        this(width, height, originalWidth, originalHeight, minLongitude, minLatitude, maxLongitude, maxLatitude, noDataValue, elevations, true);
+    }
+
+    private TerrainRasterData(int width, int height, int originalWidth, int originalHeight, double minLongitude, double minLatitude, double maxLongitude, double maxLatitude, float noDataValue, float[] elevations, boolean copyElevations) {
         validate(width, height, originalWidth, originalHeight, minLongitude, minLatitude, maxLongitude, maxLatitude, elevations);
         this.width = width;
         this.height = height;
@@ -19,7 +34,14 @@ public record TerrainRasterData(int width, int height, int originalWidth, int or
         this.maxLongitude = maxLongitude;
         this.maxLatitude = maxLatitude;
         this.noDataValue = noDataValue;
-        this.elevations = Arrays.copyOf(elevations, elevations.length);
+        this.elevations = copyElevations ? Arrays.copyOf(elevations, elevations.length) : elevations;
+    }
+
+    static TerrainRasterData takeOwnership(int width, int height, int originalWidth, int originalHeight,
+                                           double minLongitude, double minLatitude, double maxLongitude, double maxLatitude,
+                                           float noDataValue, float[] elevations) {
+        return new TerrainRasterData(width, height, originalWidth, originalHeight,
+                minLongitude, minLatitude, maxLongitude, maxLatitude, noDataValue, elevations, false);
     }
 
     private static void validate(int width, int height, int originalWidth, int originalHeight, double minLongitude, double minLatitude, double maxLongitude, double maxLatitude, float[] elevations) {
@@ -48,9 +70,44 @@ public record TerrainRasterData(int width, int height, int originalWidth, int or
         }
     }
 
-    @Override
     public float[] elevations() {
         return Arrays.copyOf(elevations, elevations.length);
+    }
+
+    public int width() {
+        return width;
+    }
+
+    public int height() {
+        return height;
+    }
+
+    public int originalWidth() {
+        return originalWidth;
+    }
+
+    public int originalHeight() {
+        return originalHeight;
+    }
+
+    public double minLongitude() {
+        return minLongitude;
+    }
+
+    public double minLatitude() {
+        return minLatitude;
+    }
+
+    public double maxLongitude() {
+        return maxLongitude;
+    }
+
+    public double maxLatitude() {
+        return maxLatitude;
+    }
+
+    public float noDataValue() {
+        return noDataValue;
     }
 
     public float getElevation(int column, int row) {

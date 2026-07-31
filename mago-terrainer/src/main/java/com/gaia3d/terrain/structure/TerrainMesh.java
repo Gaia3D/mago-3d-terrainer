@@ -567,7 +567,7 @@ public class TerrainMesh {
             if (vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
                 continue;
             }
-            vertex.calculateNormal();
+            vertex.calculateNormal(listHalfEdges);
         }
     }
 
