@@ -233,7 +233,7 @@ class RasterStandardizerTest {
 
     @Test
     @Tag("default")
-    void standardizePreservesCoverageNoDataValue() throws Exception {
+    void standardizeNormalizesCoverageNoDataValueToNaN() throws Exception {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
         globalOptions.setOutputCRS(DefaultGeographicCRS.WGS84);
         globalOptions.setMaxRasterSize(4);
@@ -258,8 +258,8 @@ class RasterStandardizerTest {
             }
 
             TerrainRasterData output = new TerrainRasterReader().read(outputTile);
-            assertEquals(-9999.0f, output.noDataValue());
-            assertEquals(-9999.0f, output.getElevation(0, 0));
+            assertTrue(Float.isNaN(output.noDataValue()));
+            assertTrue(Float.isNaN(output.getElevation(0, 0)));
         } finally {
             coverage.dispose(true);
             deleteRecursively(tempDir);
