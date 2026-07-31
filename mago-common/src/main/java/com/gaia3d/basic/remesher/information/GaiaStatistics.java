@@ -28,6 +28,7 @@ public class GaiaStatistics {
     public double trianglesDensity = 0.0;
 
     public double normalVariance = 0.0;
+
     public double verticalRange = 0.0;
     public double areaFoldRatio = 0.0;
     public double minX = Double.POSITIVE_INFINITY;
@@ -69,12 +70,14 @@ public class GaiaStatistics {
     public double edgesBelow100cmRatio = 0.0;
     public double edgesBelow150cmRatio = 0.0;
     public double edgesBelow200cmRatio = 0.0;
+
     //    normalVariance ≈ 0.00  -> todos los triángulos miran parecido
 //    normalVariance ≈ 0.05  -> casi plano / ordenado
 //    normalVariance ≈ 0.15  -> algo rugoso
 //    normalVariance ≈ 0.25+ -> bastante caótico
 //    normalVariance ≈ 0.40+ -> muy caótico
     private double normalVarianceWeightedSum = 0.0;
+
 
     private static double calculateDistance(Vector3d a, Vector3d b) {
         double dx = b.x - a.x;
