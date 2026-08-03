@@ -361,7 +361,9 @@ public class GltfWriter {
         }
         if (normalsBufferViewId > -1 && normals.length > 0) {
             if (gltfOptions.isUseByteNormal()) {
-                int normalsAccessorId = createAccessor(gltf, normalsBufferViewId, 0, normals.length / 4, GltfConstants.GL_BYTE, AccessorType.VEC4, true);
+                // normals is a VEC3 float array (3 per vertex); byte normals are written as VEC4
+                // (one element per vertex), so the accessor element count is normals.length / 3.
+                int normalsAccessorId = createAccessor(gltf, normalsBufferViewId, 0, normals.length / 3, GltfConstants.GL_BYTE, AccessorType.VEC4, true);
                 nodeBuffer.setNormalsAccessorId(normalsAccessorId);
             } else {
                 int normalsAccessorId = createAccessor(gltf, normalsBufferViewId, 0, normals.length / 3, GltfConstants.GL_FLOAT, AccessorType.VEC3, false);
