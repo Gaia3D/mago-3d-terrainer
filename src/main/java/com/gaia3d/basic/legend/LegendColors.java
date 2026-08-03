@@ -62,4 +62,19 @@ public class LegendColors {
             return mix(lowerColor, higherColor, ratio);
         }
     }
+
+    /**
+     * Returns the discrete legend-band color used by voxel rendering: the color at the greatest
+     * legend value less than or equal to {@code value}. Values below the first key use the first
+     * band's color.
+     */
+    public GaiaColor getColorByBand(double value) {
+        if (colorMap.isEmpty()) {
+            log.warn("Color map is empty, returning default color.");
+            return new GaiaColor(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        Map.Entry<Double, GaiaColor> bandEntry = colorMap.floorEntry(value);
+        return bandEntry != null ? bandEntry.getValue() : colorMap.firstEntry().getValue();
+    }
 }

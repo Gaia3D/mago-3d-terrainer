@@ -799,7 +799,7 @@ public class MarchingCube {
                 vertexNormalCalculator.apply(gaiaScene);
 
                 // set color by legendColors
-                GaiaColor gaiaColor = legendColors.getColorLinearInterpolation(currIsoValue);
+                GaiaColor gaiaColor = legendColors.getColorByBand(currIsoValue);
                 byte[] color4 = gaiaColor.getColorBytesArray();
                 float redFloat = gaiaColor.getRed();
                 float greenFloat = gaiaColor.getGreen();
@@ -840,6 +840,79 @@ public class MarchingCube {
                         gaiaPrimitiveMaster.addPrimitive(gaiaPrimitive);
                     }
                 }
+            }
+        }
+
+        return gaiaSceneMaster;
+    }
+
+    /**
+     * Same as {@link #makeGaiaSceneOnion(PositionedVoxel3DGrid, double[], LegendColors)} but keeps
+     * each iso-value shell as its own node under a shared root instead of merging them into a single
+     * primitive, so the individual legend bands can be shown/hidden selectively.
+     */
+    public static GaiaScene makeGaiaSceneOnionByNodes(PositionedVoxel3DGrid positionedVoxel3DGrid, double[] isoValuesArray, LegendColors legendColors) {
+        int isoValuesCount = isoValuesArray.length;
+        GaiaScene gaiaSceneMaster = null;
+        GaiaNode rootNodeMaster = null;
+        double totalMaxValue = positionedVoxel3DGrid.getMinMaxValues()[1];
+
+        for (int i = 0; i < isoValuesCount; i++) {
+            double currIsoValue = isoValuesArray[i];
+            if (totalMaxValue <= currIsoValue) {
+                continue;
+            }
+
+            GaiaScene gaiaScene = MarchingCube.makeGaiaScene(positionedVoxel3DGrid, currIsoValue);
+            if (gaiaScene == null) {
+                continue;
+            }
+
+            GaiaWeldOptions weldOptions = GaiaWeldOptions.builder()
+                    .error(0.1)
+                    .checkTexCoord(false)
+                    .checkNormal(false)
+                    .checkColor(false)
+                    .checkBatchId(false)
+                    .build();
+            new GaiaWelder(weldOptions).apply(gaiaScene);
+            new VertexNormalCalculator().apply(gaiaScene);
+
+            // Use the same discrete floor-band lookup as the voxel converter. Linear interpolation
+            // produces blended colors and can shift colors at exact legend boundaries.
+            GaiaColor gaiaColor = legendColors.getColorByBand(currIsoValue);
+            byte[] color4 = gaiaColor.getColorBytesArray();
+
+            GaiaExtractor extractor = new GaiaExtractor();
+            List<GaiaPrimitive> primitives = extractor.extractAllPrimitives(gaiaScene);
+            for (GaiaPrimitive gaiaPrimitive : primitives) {
+                gaiaPrimitive.setMaterialIndex(0);
+                for (GaiaVertex gaiaVertex : gaiaPrimitive.getVertices()) {
+                    gaiaVertex.setColor(color4);
+                }
+            }
+
+            List<GaiaMaterial> gaiaMaterials = gaiaScene.getMaterials();
+            if (gaiaMaterials.isEmpty()) {
+                GaiaMaterial gaiaMaterial = new GaiaMaterial();
+                gaiaMaterial.setDiffuseColor(new Vector4d(gaiaColor.getRed(), gaiaColor.getGreen(), gaiaColor.getBlue(), gaiaColor.getAlpha()));
+                gaiaMaterial.setBlend(true);
+                gaiaMaterials.add(gaiaMaterial);
+            }
+            for (GaiaMaterial gaiaMaterial : gaiaMaterials) {
+                gaiaMaterial.setDiffuseColor(new Vector4d(gaiaColor.getRed(), gaiaColor.getGreen(), gaiaColor.getBlue(), gaiaColor.getAlpha()));
+                gaiaMaterial.setBlend(true);
+            }
+
+            // Add this shell as its own node so the legend band can be toggled selectively.
+            GaiaNode shellRootNode = gaiaScene.getNodes().getFirst();
+            GaiaNode shellNode = shellRootNode.getChildren().getFirst();
+            shellNode.setName("band_" + i);
+            if (gaiaSceneMaster == null) {
+                gaiaSceneMaster = gaiaScene;
+                rootNodeMaster = gaiaSceneMaster.getNodes().getFirst();
+            } else {
+                rootNodeMaster.getChildren().add(shellNode);
             }
         }
 
