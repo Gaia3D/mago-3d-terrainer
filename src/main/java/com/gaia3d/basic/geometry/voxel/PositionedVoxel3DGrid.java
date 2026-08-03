@@ -9,23 +9,23 @@ import org.joml.Vector3d;
 @Getter
 @Setter
 
-public class VoxelCPGrid3D {
+public class PositionedVoxel3DGrid {
     private int gridsCountX;
     private int gridsCountY;
     private int gridsCountZ;
-    private VoxelCP[][][] voxels;
+    private PositionedVoxel[][][] voxels;
     private double[] minMaxValues;
 
-    public VoxelCPGrid3D(int gridsCountX, int gridsCountY, int gridsCountZ) {
+    public PositionedVoxel3DGrid(int gridsCountX, int gridsCountY, int gridsCountZ) {
         this.gridsCountX = gridsCountX;
         this.gridsCountY = gridsCountY;
         this.gridsCountZ = gridsCountZ;
-        this.voxels = new VoxelCP[gridsCountX][gridsCountY][gridsCountZ];
+        this.voxels = new PositionedVoxel[gridsCountX][gridsCountY][gridsCountZ];
 
         for (int x = 0; x < gridsCountX; x++) {
             for (int y = 0; y < gridsCountY; y++) {
                 for (int z = 0; z < gridsCountZ; z++) {
-                    voxels[x][y][z] = new VoxelCP();
+                    voxels[x][y][z] = new PositionedVoxel();
                 }
             }
         }
@@ -37,11 +37,11 @@ public class VoxelCPGrid3D {
         int newGridsCountY = gridsCountY + expandY * 2;
         int newGridsCountZ = gridsCountZ + expandZ * 2;
 
-        VoxelCP[][][] newVoxels = new VoxelCP[newGridsCountX][newGridsCountY][newGridsCountZ];
+        PositionedVoxel[][][] newVoxels = new PositionedVoxel[newGridsCountX][newGridsCountY][newGridsCountZ];
         for (int x = 0; x < newGridsCountX; x++) {
             for (int y = 0; y < newGridsCountY; y++) {
                 for (int z = 0; z < newGridsCountZ; z++) {
-                    newVoxels[x][y][z] = new VoxelCP();
+                    newVoxels[x][y][z] = new PositionedVoxel();
                 }
             }
         }
@@ -59,7 +59,7 @@ public class VoxelCPGrid3D {
 
     }
 
-    public VoxelCP getVoxel(int x, int y, int z) {
+    public PositionedVoxel getVoxel(int x, int y, int z) {
         if (x < 0 || x >= gridsCountX || y < 0 || y >= gridsCountY || z < 0 || z >= gridsCountZ) {
             return null;
         }

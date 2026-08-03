@@ -5,10 +5,13 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3d;
 
+/**
+ * VoxelCP(CustomPosition)
+ */
 @Slf4j
 @Getter
 @Setter
-public class VoxelCP {
+public class PositionedVoxel {
     // voxel custom position class
     // This class is used to represent a voxel with a custom position in 3D space.
     private double value = 0.0;

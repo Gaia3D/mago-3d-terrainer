@@ -4,8 +4,8 @@ import com.gaia3d.basic.geometry.modifier.topology.GaiaExtractor;
 import com.gaia3d.basic.geometry.modifier.topology.GaiaWeldOptions;
 import com.gaia3d.basic.geometry.modifier.topology.GaiaWelder;
 import com.gaia3d.basic.geometry.modifier.topology.VertexNormalCalculator;
-import com.gaia3d.basic.geometry.voxel.VoxelCPGrid3D;
-import com.gaia3d.basic.geometry.voxel.VoxelGrid3D;
+import com.gaia3d.basic.geometry.voxel.PositionedVoxel3DGrid;
+import com.gaia3d.basic.geometry.voxel.Voxel3DGrid;
 import com.gaia3d.basic.legend.GaiaColor;
 import com.gaia3d.basic.legend.LegendColors;
 import com.gaia3d.basic.model.*;
@@ -335,7 +335,7 @@ public class MarchingCube {
         );
     }
 
-    public static GaiaScene makeGaiaScene(VoxelGrid3D voxelGrid3d, float isoValue) {
+    public static GaiaScene makeGaiaScene(Voxel3DGrid voxel3DGrid, float isoValue) {
         GaiaScene gaiaScene = new GaiaScene();
         GaiaNode rootNode = new GaiaNode();
         gaiaScene.getNodes().add(rootNode);
@@ -347,9 +347,9 @@ public class MarchingCube {
         GaiaPrimitive gaiaPrimitive = new GaiaPrimitive();
         mesh.getPrimitives().add(gaiaPrimitive);
 
-        int gridsCountX = voxelGrid3d.getGridsCountX();
-        int gridsCountY = voxelGrid3d.getGridsCountY();
-        int gridsCountZ = voxelGrid3d.getGridsCountZ();
+        int gridsCountX = voxel3DGrid.getGridsCountX();
+        int gridsCountY = voxel3DGrid.getGridsCountY();
+        int gridsCountZ = voxel3DGrid.getGridsCountZ();
 
         List<GaiaVertex> gaiaVertices = gaiaPrimitive.getVertices();
         GaiaSurface gaiaSurface = new GaiaSurface();
@@ -375,14 +375,14 @@ public class MarchingCube {
                     //              |/__________________|/                       *-------> x
                     //             0                     1
 
-                    float value0 = voxelGrid3d.getVoxelAlphaFloat(x, y, z);
-                    float value1 = voxelGrid3d.getVoxelAlphaFloat(x + 1, y, z);
-                    float value2 = voxelGrid3d.getVoxelAlphaFloat(x, y + 1, z);
-                    float value3 = voxelGrid3d.getVoxelAlphaFloat(x + 1, y + 1, z);
-                    float value4 = voxelGrid3d.getVoxelAlphaFloat(x, y, z + 1);
-                    float value5 = voxelGrid3d.getVoxelAlphaFloat(x + 1, y, z + 1);
-                    float value6 = voxelGrid3d.getVoxelAlphaFloat(x, y + 1, z + 1);
-                    float value7 = voxelGrid3d.getVoxelAlphaFloat(x + 1, y + 1, z + 1);
+                    float value0 = voxel3DGrid.getVoxelAlphaFloat(x, y, z);
+                    float value1 = voxel3DGrid.getVoxelAlphaFloat(x + 1, y, z);
+                    float value2 = voxel3DGrid.getVoxelAlphaFloat(x, y + 1, z);
+                    float value3 = voxel3DGrid.getVoxelAlphaFloat(x + 1, y + 1, z);
+                    float value4 = voxel3DGrid.getVoxelAlphaFloat(x, y, z + 1);
+                    float value5 = voxel3DGrid.getVoxelAlphaFloat(x + 1, y, z + 1);
+                    float value6 = voxel3DGrid.getVoxelAlphaFloat(x, y + 1, z + 1);
+                    float value7 = voxel3DGrid.getVoxelAlphaFloat(x + 1, y + 1, z + 1);
 
                     int cubeIndex = 0;
                     if (value0 < isoValue) {cubeIndex |= 1;}
@@ -408,63 +408,63 @@ public class MarchingCube {
                     float mu = 0.5f;
                     Vector3d[] vertices = new Vector3d[12];
                     if ((edges & 1) != 0) {
-                        Vector3d p0 = voxelGrid3d.getVoxelPosition(x, y, z); // 0
-                        Vector3d p1 = voxelGrid3d.getVoxelPosition(x + 1, y, z); // 1
+                        Vector3d p0 = voxel3DGrid.getVoxelPosition(x, y, z); // 0
+                        Vector3d p1 = voxel3DGrid.getVoxelPosition(x + 1, y, z); // 1
                         vertices[0] = interpolate(p0, p1, value0, value1, isoValue);
                     }
                     if ((edges & 2) != 0) {
-                        Vector3d p1 = voxelGrid3d.getVoxelPosition(x + 1, y, z); // 1
-                        Vector3d p3 = voxelGrid3d.getVoxelPosition(x + 1, y + 1, z); // 3
+                        Vector3d p1 = voxel3DGrid.getVoxelPosition(x + 1, y, z); // 1
+                        Vector3d p3 = voxel3DGrid.getVoxelPosition(x + 1, y + 1, z); // 3
                         vertices[1] = interpolate(p1, p3, value1, value3, isoValue);
                     }
                     if ((edges & 4) != 0) {
-                        Vector3d p3 = voxelGrid3d.getVoxelPosition(x + 1, y + 1, z); // 3
-                        Vector3d p2 = voxelGrid3d.getVoxelPosition(x, y + 1, z); // 2
+                        Vector3d p3 = voxel3DGrid.getVoxelPosition(x + 1, y + 1, z); // 3
+                        Vector3d p2 = voxel3DGrid.getVoxelPosition(x, y + 1, z); // 2
                         vertices[2] = interpolate(p2, p3, value2, value3, isoValue);
                     }
                     if ((edges & 8) != 0) {
-                        Vector3d p2 = voxelGrid3d.getVoxelPosition(x, y + 1, z); // 2
-                        Vector3d p0 = voxelGrid3d.getVoxelPosition(x, y, z); // 0
+                        Vector3d p2 = voxel3DGrid.getVoxelPosition(x, y + 1, z); // 2
+                        Vector3d p0 = voxel3DGrid.getVoxelPosition(x, y, z); // 0
                         vertices[3] = interpolate(p0, p2, value0, value2, isoValue);
                     }
                     if ((edges & 16) != 0) {
-                        Vector3d p4 = voxelGrid3d.getVoxelPosition(x, y, z + 1); // 4
-                        Vector3d p5 = voxelGrid3d.getVoxelPosition(x + 1, y, z + 1); // 5
+                        Vector3d p4 = voxel3DGrid.getVoxelPosition(x, y, z + 1); // 4
+                        Vector3d p5 = voxel3DGrid.getVoxelPosition(x + 1, y, z + 1); // 5
                         vertices[4] = interpolate(p4, p5, value4, value5, isoValue);
                     }
                     if ((edges & 32) != 0) {
-                        Vector3d p5 = voxelGrid3d.getVoxelPosition(x + 1, y, z + 1); // 5
-                        Vector3d p7 = voxelGrid3d.getVoxelPosition(x + 1, y + 1, z + 1); // 7
+                        Vector3d p5 = voxel3DGrid.getVoxelPosition(x + 1, y, z + 1); // 5
+                        Vector3d p7 = voxel3DGrid.getVoxelPosition(x + 1, y + 1, z + 1); // 7
                         vertices[5] = interpolate(p5, p7, value5, value7, isoValue);
                     }
                     if ((edges & 64) != 0) {
-                        Vector3d p7 = voxelGrid3d.getVoxelPosition(x + 1, y + 1, z + 1); // 7
-                        Vector3d p6 = voxelGrid3d.getVoxelPosition(x, y + 1, z + 1); // 6
+                        Vector3d p7 = voxel3DGrid.getVoxelPosition(x + 1, y + 1, z + 1); // 7
+                        Vector3d p6 = voxel3DGrid.getVoxelPosition(x, y + 1, z + 1); // 6
                         vertices[6] = interpolate(p6, p7, value6, value7, isoValue);
                     }
                     if ((edges & 128) != 0) {
-                        Vector3d p6 = voxelGrid3d.getVoxelPosition(x, y + 1, z + 1); // 6
-                        Vector3d p4 = voxelGrid3d.getVoxelPosition(x, y, z + 1); // 4
+                        Vector3d p6 = voxel3DGrid.getVoxelPosition(x, y + 1, z + 1); // 6
+                        Vector3d p4 = voxel3DGrid.getVoxelPosition(x, y, z + 1); // 4
                         vertices[7] = interpolate(p4, p6, value4, value6, isoValue);
                     }
                     if ((edges & 256) != 0) {
-                        Vector3d p0 = voxelGrid3d.getVoxelPosition(x, y, z); // 0
-                        Vector3d p4 = voxelGrid3d.getVoxelPosition(x, y, z + 1); // 4
+                        Vector3d p0 = voxel3DGrid.getVoxelPosition(x, y, z); // 0
+                        Vector3d p4 = voxel3DGrid.getVoxelPosition(x, y, z + 1); // 4
                         vertices[8] = interpolate(p0, p4, value0, value4, isoValue);
                     }
                     if ((edges & 512) != 0) {
-                        Vector3d p1 = voxelGrid3d.getVoxelPosition(x + 1, y, z); // 1
-                        Vector3d p5 = voxelGrid3d.getVoxelPosition(x + 1, y, z + 1); // 5
+                        Vector3d p1 = voxel3DGrid.getVoxelPosition(x + 1, y, z); // 1
+                        Vector3d p5 = voxel3DGrid.getVoxelPosition(x + 1, y, z + 1); // 5
                         vertices[9] = interpolate(p1, p5, value1, value5, isoValue);
                     }
                     if ((edges & 1024) != 0) {
-                        Vector3d p3 = voxelGrid3d.getVoxelPosition(x + 1, y + 1, z); // 3
-                        Vector3d p7 = voxelGrid3d.getVoxelPosition(x + 1, y + 1, z + 1); // 7
+                        Vector3d p3 = voxel3DGrid.getVoxelPosition(x + 1, y + 1, z); // 3
+                        Vector3d p7 = voxel3DGrid.getVoxelPosition(x + 1, y + 1, z + 1); // 7
                         vertices[10] = interpolate(p3, p7, value3, value7, isoValue);
                     }
                     if ((edges & 2048) != 0) {
-                        Vector3d p2 = voxelGrid3d.getVoxelPosition(x, y + 1, z); // 2
-                        Vector3d p6 = voxelGrid3d.getVoxelPosition(x, y + 1, z + 1); // 6
+                        Vector3d p2 = voxel3DGrid.getVoxelPosition(x, y + 1, z); // 2
+                        Vector3d p6 = voxel3DGrid.getVoxelPosition(x, y + 1, z + 1); // 6
                         vertices[11] = interpolate(p2, p6, value2, value6, isoValue);
                     }
 
@@ -509,7 +509,7 @@ public class MarchingCube {
         return gaiaScene;
     }
 
-    public static GaiaScene makeGaiaScene(VoxelCPGrid3D voxelGrid3d, double isoValue) {
+    public static GaiaScene makeGaiaScene(PositionedVoxel3DGrid voxelGrid3d, double isoValue) {
         GaiaScene gaiaScene = null;
         List<GaiaVertex> gaiaVertices = null;
         GaiaSurface gaiaSurface = null;
@@ -686,11 +686,11 @@ public class MarchingCube {
         return gaiaScene;
     }
 
-    public static GaiaScene makeGaiaSceneOnion(VoxelCPGrid3D voxelCPGrid3D, double[] isoValuesArray) {
+    public static GaiaScene makeGaiaSceneOnion(PositionedVoxel3DGrid positionedVoxel3DGrid, double[] isoValuesArray) {
         int isoValuesCount = isoValuesArray.length;
         GaiaScene gaiaSceneMaster = null;
-        double totalMinValue = voxelCPGrid3D.getMinMaxValues()[0];
-        double totalMaxValue = voxelCPGrid3D.getMinMaxValues()[1];
+        double totalMinValue = positionedVoxel3DGrid.getMinMaxValues()[0];
+        double totalMaxValue = positionedVoxel3DGrid.getMinMaxValues()[1];
 
         for (int i = 0; i < isoValuesCount; i++) {
             double currIsoValue = isoValuesArray[i];
@@ -701,7 +701,7 @@ public class MarchingCube {
                 byte[] encodedColor4 = new byte[4];
                 GeometryUtils.encodeFloat(quantizedIsoValue, encodedColor4);
 
-                GaiaScene gaiaScene = MarchingCube.makeGaiaScene(voxelCPGrid3D, currIsoValue);
+                GaiaScene gaiaScene = MarchingCube.makeGaiaScene(positionedVoxel3DGrid, currIsoValue);
                 if (gaiaScene == null) {
                     continue;
                 }
@@ -771,17 +771,17 @@ public class MarchingCube {
         return gaiaSceneMaster;
     }
 
-    public static GaiaScene makeGaiaSceneOnion(VoxelCPGrid3D voxelCPGrid3D, double[] isoValuesArray, LegendColors legendColors) {
+    public static GaiaScene makeGaiaSceneOnion(PositionedVoxel3DGrid positionedVoxel3DGrid, double[] isoValuesArray, LegendColors legendColors) {
         int isoValuesCount = isoValuesArray.length;
         GaiaScene gaiaSceneMaster = null;
-        double totalMinValue = voxelCPGrid3D.getMinMaxValues()[0];
-        double totalMaxValue = voxelCPGrid3D.getMinMaxValues()[1];
+        double totalMinValue = positionedVoxel3DGrid.getMinMaxValues()[0];
+        double totalMaxValue = positionedVoxel3DGrid.getMinMaxValues()[1];
 
         for (int i = 0; i < isoValuesCount; i++) {
             double currIsoValue = isoValuesArray[i];
             if (totalMaxValue > currIsoValue) {
 
-                GaiaScene gaiaScene = MarchingCube.makeGaiaScene(voxelCPGrid3D, currIsoValue);
+                GaiaScene gaiaScene = MarchingCube.makeGaiaScene(positionedVoxel3DGrid, currIsoValue);
                 if (gaiaScene == null) {
                     continue;
                 }
