@@ -979,6 +979,9 @@ public class HalfEdgeUtils {
         }
         halfEdgeScene.setOriginalPath(originalPath);
         halfEdgeScene.setGaiaBoundingBox(gaiaScene.updateBoundingBox().clone());
+        if (gaiaScene.getAttribute() == null) {
+            gaiaScene.setAttribute(new GaiaAttribute());
+        }
         halfEdgeScene.setAttribute(gaiaScene.getAttribute().getCopy());
 
         // copy gaiaAttributes
