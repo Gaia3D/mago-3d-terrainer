@@ -941,9 +941,8 @@ public class TileMatrix {
             distToPlane = rawDistToPlane * cosAng;
         }
 
+        // is it Barycenter?
         if (distToPlane > maxDiff) {
-            // is it Barycenter?
-            log.debug("Filtered by Barycenter : L : " + tileIndices.getL() + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
             return true;
         }
 
@@ -956,7 +955,8 @@ public class TileMatrix {
         int colsCount = endCol - startCol + 1;
         int rowsCount = endRow - startRow + 1;
 
-        if (colsCount < 6 || rowsCount < 6) {
+        boolean isMaxDepth = currL >= globalOptions.getMaximumTileDepth();
+        if (!isMaxDepth && (colsCount < 3 || rowsCount < 3)) {
             triangle.setRefineChecked(true);
             return false;
         }
@@ -986,8 +986,8 @@ public class TileMatrix {
         }
         double inverseDenominator = 1.0 / denominator;
 
-        double startLonDeg = tileRaster.getLonDeg(startCol); // here contains the semiDeltaLonDeg, for the pixel center
-        double startLatDeg = tileRaster.getLatDeg(startRow); // here contains the semiDeltaLatDeg, for the pixel center
+        double startLonDeg = tileRaster.getLonDeg(startCol);
+        double startLatDeg = tileRaster.getLatDeg(startRow);
 
         double deltaLonDeg = tileRaster.getDeltaLonDeg();
         double deltaLatDeg = tileRaster.getDeltaLatDeg();

@@ -24,6 +24,45 @@ public class PreReleaseTest {
     }
 
     @Test
+    void testGarisanPrecision() {
+        File inputPath = MagoTestConfig.getInputPath("garisan-precision.tif");
+        File outputPath = MagoTestConfig.getOutputPath("garisan-precision-5m");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                //"-it", "nearest",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void testGarisanPrecision1m() {
+        File inputPath = MagoTestConfig.getInputPath("garisan-precision-1m.tif");
+        File outputPath = MagoTestConfig.getOutputPath("garisan-precision-1m");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                //"-it", "nearest",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void testGarisanPrecision25cm() {
+        File inputPath = MagoTestConfig.getInputPath("garisan-precision-25cm.tif");
+        File outputPath = MagoTestConfig.getOutputPath("garisan-precision-25cm");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                //"-it", "nearest",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
     void multiBilinear() {
         String name = "multi-resolution";
         File inputPath = MagoTestConfig.getInputPath(name);

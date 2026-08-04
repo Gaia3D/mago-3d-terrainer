@@ -338,8 +338,11 @@ public class TerrainElevationData {
         double clampedX = Math.max(0.0, Math.min(x, Math.nextDown(1.0)));
         double clampedY = Math.max(0.0, Math.min(y, Math.nextDown(1.0)));
 
-        double scaledX = clampedX * geoTiffWidth;
-        double scaledY = clampedY * geoTiffHeight;
+        // GeoTIFF sample values are located at pixel centers. Convert the
+        // normalized coverage coordinate to a center-based grid coordinate and
+        // extend the edge samples across the outer half-pixel region.
+        double scaledX = Math.max(0.0, Math.min(clampedX * geoTiffWidth - 0.5, geoTiffWidth - 1.0));
+        double scaledY = Math.max(0.0, Math.min(clampedY * geoTiffHeight - 0.5, geoTiffHeight - 1.0));
 
         int column = (int) Math.floor(scaledX);
         int row = (int) Math.floor(scaledY);

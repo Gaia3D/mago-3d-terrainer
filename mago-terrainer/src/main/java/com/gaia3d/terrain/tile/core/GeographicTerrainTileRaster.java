@@ -151,9 +151,6 @@ public class GeographicTerrainTileRaster {
         deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth - 1);
         deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight - 1);
 
-        double semiDeltaLonDeg = deltaLonDeg * 0.5;
-        double semiDeltaLatDeg = deltaLatDeg * 0.5;
-
         // make intersected terrainElevationDataList
         GeographicExtension geoExtension = this.getGeographicExtension();
         List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
@@ -165,7 +162,7 @@ public class GeographicTerrainTileRaster {
 
         double[] longitudes = new double[rasterWidth];
         for (int col = 0; col < rasterWidth; col++) {
-            longitudes[col] = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;
+            longitudes[col] = minLonDeg + col * deltaLonDeg;
         }
 
         GeographicExtension activeBlock = new GeographicExtension();
@@ -175,8 +172,8 @@ public class GeographicTerrainTileRaster {
             for (int colStart = 0; colStart < rasterWidth; colStart += RASTER_RELEASE_COLUMN_BLOCK_SIZE) {
                 int colEndExclusive = Math.min(colStart + RASTER_RELEASE_COLUMN_BLOCK_SIZE, rasterWidth);
 
-                double blockMinLatDeg = minLatDeg + semiDeltaLatDeg + rowStart * deltaLatDeg;
-                double blockMaxLatDeg = minLatDeg + semiDeltaLatDeg + (rowEndExclusive - 1) * deltaLatDeg;
+                double blockMinLatDeg = minLatDeg + rowStart * deltaLatDeg;
+                double blockMaxLatDeg = minLatDeg + (rowEndExclusive - 1) * deltaLatDeg;
                 if (blockMinLatDeg > blockMaxLatDeg) {
                     double swap = blockMinLatDeg;
                     blockMinLatDeg = blockMaxLatDeg;
@@ -196,7 +193,7 @@ public class GeographicTerrainTileRaster {
                 filterTerrainElevationDataForBlock(resultTerrainElevDataArray, activeBlock, blockTerrainElevDataArray);
 
                 for (int row = rowStart; row < rowEndExclusive; row++) {
-                    double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
+                    double latDeg = minLatDeg + row * deltaLatDeg;
                     int rowOffset = row * rasterWidth;
                     for (int col = colStart; col < colEndExclusive; col++) {
                         double lonDeg = longitudes[col];
