@@ -509,7 +509,6 @@ public class TextureAwareReMesher {
 
     private static boolean isDegenerated(int[] idx) {
         if (idx == null || idx.length < 3) {return true;}
-
         for (int i = 0; i < idx.length; i++) {
             for (int j = i + 1; j < idx.length; j++) {
                 if (idx[i] == idx[j]) {
@@ -1030,7 +1029,6 @@ public class TextureAwareReMesher {
 
     private static class CellClusterKey {
         final Vector3i cell;
-
         CellClusterKey(Vector3i cell) {
             this.cell = new Vector3i(cell);
         }
@@ -1209,5 +1207,4 @@ public class TextureAwareReMesher {
             }
         }
     }
-
 }

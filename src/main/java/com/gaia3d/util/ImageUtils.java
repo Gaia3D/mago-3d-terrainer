@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.concurrent.Semaphore;
 
 /**
  * Utility class for image operations.
@@ -30,6 +31,8 @@ public class ImageUtils {
 
     private final int MAX_IMAGE_SIZE = 16384;
     private final int MIN_IMAGE_SIZE = 32;
+    private static final Semaphore IMAGE_SAVE_PERMITS =
+            new Semaphore(2);
 
     public static int getNearestPowerOfTwo(int value) {
         int power = 1;
@@ -570,6 +573,41 @@ public class ImageUtils {
 
         } finally {
             writer.dispose();
+        }
+    }
+
+    public static boolean saveBufferedImageControlled(
+            BufferedImage image,
+            String savePath,
+            boolean fastPng,
+            float jpegQuality
+    ) {
+        boolean acquired = false;
+
+        try {
+            IMAGE_SAVE_PERMITS.acquire();
+            acquired = true;
+
+            return saveBufferedImage(
+                    image,
+                    savePath,
+                    fastPng,
+                    jpegQuality
+            );
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+
+            throw new RuntimeException(
+                    "Interrupted while waiting to save image: "
+                            + savePath,
+                    e
+            );
+
+        } finally {
+            if (acquired) {
+                IMAGE_SAVE_PERMITS.release();
+            }
         }
     }
 

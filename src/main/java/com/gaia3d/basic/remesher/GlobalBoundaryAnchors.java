@@ -19,31 +19,45 @@ public class GlobalBoundaryAnchors {
         return lockedAveragePositions.containsKey(cellIndex);
     }
 
-    public void putIfAbsent(Vector3i cellIndex, Vector3d average) {
-        if (cellIndex == null || average == null) {return;}
+    public boolean putIfAbsent(Vector3i cellIndex, Vector3d average) {
+        if (cellIndex == null || average == null) {
+            return false;
+        }
 
         lockedAveragePositions.putIfAbsent(
                 new Vector3i(cellIndex),
                 new Vector3d(average)
         );
+        return false;
     }
 
-    public void addMissingFromTileAnchors(TileBoundaryAnchors tileAnchors) {
-        if (tileAnchors == null) {return;}
+    public int size() {
+        return lockedAveragePositions.size();
+    }
 
-        for (Map.Entry<Vector3i, Vector3d> entry : tileAnchors.frontierAveragePositions.entrySet()) {
-            Vector3i cellIndex = entry.getKey();
-            Vector3d avg = entry.getValue();
-
-            if (cellIndex == null || avg == null) {
-                continue;
-            }
-
-            putIfAbsent(cellIndex, avg);
-        }
+    public boolean isEmpty() {
+        return lockedAveragePositions.isEmpty();
     }
 
     public void clear() {
         lockedAveragePositions.clear();
+    }
+
+    /*
+     * Solo debe llamarse durante la construcción.
+     * Después, GlobalBoundaryAnchors será de solo lectura.
+     */
+    void putLockedAverage(
+            Vector3i cellIndex,
+            Vector3d average
+    ) {
+        if (cellIndex == null || average == null) {
+            return;
+        }
+
+        lockedAveragePositions.put(
+                new Vector3i(cellIndex),
+                new Vector3d(average)
+        );
     }
 }

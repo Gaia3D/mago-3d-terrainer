@@ -10,7 +10,6 @@ import java.util.*;
 public class DominantPlaneProjector {
 
     double maxPlaneDistance = 0.05;
-
     public PrimitiveClusterBuildResult buildClustersOnPrimitiveWithResult(
             GaiaPrimitive primitive,
             double positionEpsilon,
@@ -398,7 +397,6 @@ public class DominantPlaneProjector {
 
         return map;
     }
-
     private Vector3d[] copyOriginalPositions(GaiaPrimitive primitive) {
         List<GaiaVertex> vertices = primitive.getVertices();
 
