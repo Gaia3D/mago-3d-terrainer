@@ -215,7 +215,7 @@ public class GltfWriter {
 
             // Normalize the normal vector
             Vector3d vector3d = new Vector3d(x, y, z);
-            vector3d.normalize();
+            normalizeOrUseFallback(vector3d);
 
             normalBytes[i] = convertNormal((float) vector3d.x);
             normalBytes[i + 1] = convertNormal((float) vector3d.y);
@@ -231,7 +231,7 @@ public class GltfWriter {
         short[] normalShorts = new short[length];
         for (int i = 0; i < length; i += 4) {
             Vector3d normal = new Vector3d(normalValues[index++], normalValues[index++], normalValues[index++]);
-            normal.normalize();
+            normalizeOrUseFallback(normal);
 
             normalShorts[i] = convertShortNormal((float) normal.x);
             normalShorts[i + 1] = convertShortNormal((float) normal.y);
@@ -239,6 +239,15 @@ public class GltfWriter {
             normalShorts[i + 3] = 0;
         }
         return normalShorts;
+    }
+
+    private void normalizeOrUseFallback(Vector3d normal) {
+        if (Double.isFinite(normal.x) && Double.isFinite(normal.y) && Double.isFinite(normal.z)
+                && normal.lengthSquared() > 1.0e-20) {
+            normal.normalize();
+        } else {
+            normal.set(0.0, 0.0, 1.0);
+        }
     }
 
     protected GltfNodeBuffer convertGeometryInfo(GlTF gltf, GaiaMesh gaiaMesh, Node node) {
