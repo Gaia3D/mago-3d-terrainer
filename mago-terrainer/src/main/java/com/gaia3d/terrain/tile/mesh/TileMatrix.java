@@ -739,6 +739,11 @@ public class TileMatrix {
     }
 
     public void saveQuantizedMeshes(List<TerrainMesh> separatedMeshes) throws IOException {
+        saveQuantizedMeshes(separatedMeshes, null, null);
+    }
+
+    private void saveQuantizedMeshes(List<TerrainMesh> separatedMeshes,
+                                     Double commonMinimumHeight, Double commonMaximumHeight) throws IOException {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         boolean calculateNormals = globalOptions.isCalculateNormalsExtension();
 
@@ -753,7 +758,8 @@ public class TileMatrix {
             tile.setMesh(mesh);
 
             QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
-            QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile, calculateNormals);
+            QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(
+                    tile, calculateNormals, commonMinimumHeight, commonMaximumHeight);
             String tileFullPath = this.manager.getQuantizedMeshTilePath(tileIndices);
             String tileFolderPath = this.manager.getQuantizedMeshTileFolderPath(tileIndices);
             FileUtils.createAllFoldersIfNoExist(tileFolderPath);
@@ -763,6 +769,107 @@ public class TileMatrix {
             // save the tile
             quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);
             dataOutputStream.close();
+        }
+    }
+
+    public void regenerateAntimeridianPair(int depth, int tileY) throws IOException, TransformException {
+        int maxTileX = (1 << (depth + 1)) - 1;
+        TileIndices westIndices = new TileIndices(0, tileY, depth);
+        TileIndices eastIndices = new TileIndices(maxTileX, tileY, depth);
+
+        GeographicTerrainTile westTile = new GeographicTerrainTile(null, manager);
+        westTile.setTileIndices(westIndices);
+        westTile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
+                depth, 0, tileY, null, manager.getImaginaryType(), manager.isOriginIsLeftUp()));
+        westTile.createInitialMesh();
+
+        GeographicTerrainTile eastTile = new GeographicTerrainTile(null, manager);
+        eastTile.setTileIndices(eastIndices);
+        eastTile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
+                depth, maxTileX, tileY, null, manager.getImaginaryType(), manager.isOriginIsLeftUp()));
+        eastTile.createInitialMesh();
+
+        TerrainMesh westMesh = westTile.getMesh();
+        TerrainMesh eastMesh = eastTile.getMesh();
+
+        TileRange westRange = new TileRange();
+        westRange.setTileDepth(depth);
+        westRange.setMinTileX(0);
+        westRange.setMaxTileX(0);
+        westRange.setMinTileY(tileY);
+        westRange.setMaxTileY(tileY);
+        recalculateElevation(westMesh, westRange, false);
+
+        TileRange eastRange = new TileRange();
+        eastRange.setTileDepth(depth);
+        eastRange.setMinTileX(maxTileX);
+        eastRange.setMaxTileX(maxTileX);
+        eastRange.setMinTileY(tileY);
+        eastRange.setMaxTileY(tileY);
+        recalculateElevation(eastMesh, eastRange, false);
+
+        translateMeshLongitude(eastMesh, -360.0);
+
+        List<TerrainHalfEdge> eastFrontier = eastMesh.getRightHalfEdgesSortedDownToUp();
+        List<TerrainHalfEdge> westFrontier = westMesh.getLeftHalfEdgesSortedUpToDown();
+        if (!setTwinsBetweenHalfEdgesInverseOrder(eastFrontier, westFrontier)) {
+            throw new IOException("Failed to connect antimeridian R-TIN frontiers at L=" + depth + ", Y=" + tileY);
+        }
+        eastMesh.removeDeletedObjects();
+        eastMesh.mergeMesh(westMesh);
+
+        TileRange pairRange = new TileRange();
+        pairRange.setTileDepth(depth);
+        pairRange.setMinTileX(0);
+        pairRange.setMaxTileX(maxTileX);
+        pairRange.setMinTileY(tileY);
+        pairRange.setMaxTileY(tileY);
+        refineMesh(eastMesh, pairRange);
+
+        List<TerrainMesh> separatedMeshes = new ArrayList<>();
+        TerrainMeshUtils.getSeparatedMeshes(eastMesh, separatedMeshes, manager.isOriginIsLeftUp());
+        double commonMinimumHeight = Double.MAX_VALUE;
+        double commonMaximumHeight = -Double.MAX_VALUE;
+        List<TerrainMesh> westSeparatedMeshes = new ArrayList<>();
+        List<TerrainMesh> eastSeparatedMeshes = new ArrayList<>();
+        for (TerrainMesh separatedMesh : separatedMeshes) {
+            TileIndices owner = separatedMesh.getTriangles().getFirst().getOwnerTileIndices();
+            if (owner.getX() == maxTileX) {
+                eastSeparatedMeshes.add(separatedMesh);
+            } else {
+                westSeparatedMeshes.add(separatedMesh);
+            }
+            for (TerrainVertex vertex : separatedMesh.getVertices()) {
+                double height = vertex.getPosition().z;
+                commonMinimumHeight = Math.min(commonMinimumHeight, height);
+                commonMaximumHeight = Math.max(commonMaximumHeight, height);
+            }
+        }
+
+        // getSeparatedMeshes keeps the antimeridian vertices shared between both meshes.
+        // Save the west side while they are still at -180, then restore and save the east
+        // side. Restoring the east side first would also move the west frontier to +180.
+        calculateNormalsIfRequired(westSeparatedMeshes);
+        saveQuantizedMeshes(westSeparatedMeshes, commonMinimumHeight, commonMaximumHeight);
+        for (TerrainMesh eastSeparatedMesh : eastSeparatedMeshes) {
+            translateMeshLongitude(eastSeparatedMesh, 360.0);
+        }
+        calculateNormalsIfRequired(eastSeparatedMeshes);
+        saveQuantizedMeshes(eastSeparatedMeshes, commonMinimumHeight, commonMaximumHeight);
+    }
+
+    private void calculateNormalsIfRequired(List<TerrainMesh> meshes) {
+        if (!globalOptions.isCalculateNormalsExtension()) {
+            return;
+        }
+        for (TerrainMesh mesh : meshes) {
+            mesh.calculateNormals(new ArrayList<>(), new ArrayList<>());
+        }
+    }
+
+    private void translateMeshLongitude(TerrainMesh mesh, double longitudeOffset) {
+        for (TerrainVertex vertex : mesh.getVertices()) {
+            vertex.getPosition().x += longitudeOffset;
         }
     }
 
@@ -878,6 +985,15 @@ public class TileMatrix {
         maxDiff *= scale; // scale the maxDiff
 
         GeographicTerrainTileRaster tileRaster = terrainElevationModeler.getGeographicTerrainTileRaster(tileIndices, this.manager);
+        double rasterLongitudeOffset = 0.0;
+        if (tileRaster != null) {
+            GeographicExtension tileRasterExtension = tileRaster.getGeographicExtension();
+            if (bboxTriangle.getMaxX() < tileRasterExtension.getMinLongitudeDeg() - 180.0) {
+                rasterLongitudeOffset = -360.0;
+            } else if (bboxTriangle.getMinX() > tileRasterExtension.getMaxLongitudeDeg() + 180.0) {
+                rasterLongitudeOffset = 360.0;
+            }
+        }
 
         // if the triangle size is very small, then do not refine**********************
         // Calculate the maxLength of the triangle in meters
@@ -898,7 +1014,9 @@ public class TileMatrix {
 
         // check if the triangle intersects the terrainData
         GeographicExtension rootGeographicExtension = terrainElevationModeler.getRootGeographicExtension();
-        if (!rootGeographicExtension.intersectsBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY())) {
+        double sourceMinX = bboxTriangle.getMinX() - rasterLongitudeOffset;
+        double sourceMaxX = bboxTriangle.getMaxX() - rasterLongitudeOffset;
+        if (!rootGeographicExtension.intersectsBox(sourceMinX, bboxTriangle.getMinY(), sourceMaxX, bboxTriangle.getMaxY())) {
             // Need check only the 3 vertex of the triangle
             for (TerrainVertex vertex : this.listVertices) {
                 if (vertex.getPosition().z > maxDiff) {
@@ -925,7 +1043,7 @@ public class TileMatrix {
         triangle.getBarycenter(this.listVertices, this.listHalfEdges, this.barycenterScratch);
         int colIdx = tileRaster.getColumn(this.barycenterScratch.x);
         int rowIdx = tileRaster.getRow(this.barycenterScratch.y);
-        double barycenterLonDeg = tileRaster.getLonDeg(colIdx);
+        double barycenterLonDeg = tileRaster.getLonDeg(colIdx) + rasterLongitudeOffset;
         double barycenterLatDeg = tileRaster.getLatDeg(rowIdx);
 
         double elevation = tileRaster.getElevation(colIdx, rowIdx);
@@ -986,7 +1104,7 @@ public class TileMatrix {
         }
         double inverseDenominator = 1.0 / denominator;
 
-        double startLonDeg = tileRaster.getLonDeg(startCol);
+        double startLonDeg = tileRaster.getLonDeg(startCol) + rasterLongitudeOffset;
         double startLatDeg = tileRaster.getLatDeg(startRow);
 
         double deltaLonDeg = tileRaster.getDeltaLonDeg();

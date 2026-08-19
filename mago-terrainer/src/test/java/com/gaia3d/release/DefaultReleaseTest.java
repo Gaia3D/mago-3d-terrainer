@@ -4,11 +4,57 @@ import com.gaia3d.command.Mago3DTerrainerMain;
 import com.gaia3d.release.env.MagoTestConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.File;
 
 @Slf4j
 public class DefaultReleaseTest {
+
+    @Test
+    @Tag("default")
+    void testFrontierTest() {
+        String name = "frontier-test";
+        File inputPath = MagoTestConfig.getInputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                //"--skipStandardizationResize",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void testGtopo30() {
+        String name = "global-test";
+        File inputPath = MagoTestConfig.getInputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath("gtopo30");
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                //"--skipStandardizationResize",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    //frontier-test
+
+    @Test
+    void testChangwon1mDem() {
+        String name = "changwon_1m";
+        File inputPath = MagoTestConfig.getInputPath(name);
+        File outputPath = MagoTestConfig.getOutputPath(name);
+
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
+                "--skipStandardizationResize",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
 
     @Test
     void testCopernicusCopernicus() {
@@ -203,6 +249,18 @@ public class DefaultReleaseTest {
                 "-max", "14",
                 "-calculateNormals",
                 "-geoid", "EGM96",
+        };
+        Mago3DTerrainerMain.main(args);
+    }
+
+    @Test
+    void garisanProjectDem() {
+        String name = "garian-project-dem";
+        File inputPath = new File("D:\\user\\znkim\\Downloads\\merged_dem_5186.tif");
+        File outputPath = MagoTestConfig.getOutputPath(name);
+        String[] args = new String[]{
+                "-input", inputPath.getAbsolutePath(),
+                "-output", outputPath.getAbsolutePath(),
         };
         Mago3DTerrainerMain.main(args);
     }

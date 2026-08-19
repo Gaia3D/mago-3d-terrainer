@@ -14,7 +14,9 @@ import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Getter
@@ -22,6 +24,8 @@ import java.util.List;
 public class GeographicTerrainTileRaster {
     private static final int RASTER_RELEASE_ROW_BLOCK_SIZE = 32;
     private static final int RASTER_RELEASE_COLUMN_BLOCK_SIZE = 32;
+    private static final double ANTIMERIDIAN_EPSILON_DEG = 1.0e-8;
+    private static final double ANTIMERIDIAN_CANDIDATE_BAND_DEG = 1.0;
 
     private TerrainTilesetGenerator manager = null;
     private TileIndices tileIndices = null;
@@ -44,6 +48,15 @@ public class GeographicTerrainTileRaster {
     public int getColumn(double lonDeg) {
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
+
+        // A mesh connected across the antimeridian can temporarily represent the +180 side
+        // in the -180 coordinate frame (or vice versa). Map that virtual longitude back to
+        // this raster before converting it to a column.
+        if (lonDeg < minLonDeg - 180.0) {
+            lonDeg += 360.0;
+        } else if (lonDeg > maxLonDeg + 180.0) {
+            lonDeg -= 360.0;
+        }
 
         // Clamp longitude to valid bounds instead of returning -1
         // This handles floating-point precision errors at tile boundaries
@@ -203,6 +216,43 @@ public class GeographicTerrainTileRaster {
             }
         }
 
+        reconcileAntimeridianFrontier(terrainElevationModeler);
+
+    }
+
+    private void reconcileAntimeridianFrontier(TerrainElevationModeler terrainElevationModeler) {
+        double minLonDeg = geographicExtension.getMinLongitudeDeg();
+        double maxLonDeg = geographicExtension.getMaxLongitudeDeg();
+        boolean westFrontier = Math.abs(minLonDeg + 180.0) <= ANTIMERIDIAN_EPSILON_DEG;
+        boolean eastFrontier = Math.abs(maxLonDeg - 180.0) <= ANTIMERIDIAN_EPSILON_DEG;
+        if (!westFrontier && !eastFrontier) {
+            return;
+        }
+
+        // The opposite frontier is normally outside this tile's local DEM candidate list.
+        // Query both full-height frontier lines and de-duplicate rasters before the final pass.
+        Map<TerrainElevationData, TerrainElevationData> seamDataMap = new HashMap<>();
+        GeographicExtension westSeam = new GeographicExtension();
+        westSeam.setDegrees(-180.0, -90.0, 0.0,
+                -180.0 + ANTIMERIDIAN_CANDIDATE_BAND_DEG, 90.0, 0.0);
+        GeographicExtension eastSeam = new GeographicExtension();
+        eastSeam.setDegrees(180.0 - ANTIMERIDIAN_CANDIDATE_BAND_DEG, -90.0, 0.0,
+                180.0, 90.0, 0.0);
+        terrainElevationModeler.collectTerrainElevationData(westSeam, seamDataMap);
+        terrainElevationModeler.collectTerrainElevationData(eastSeam, seamDataMap);
+
+        List<TerrainElevationData> seamData = new ArrayList<>(seamDataMap.keySet());
+        if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
+            seamData.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
+        }
+
+        int frontierColumn = westFrontier ? 0 : rasterWidth - 1;
+        double minLatDeg = geographicExtension.getMinLatitudeDeg();
+        for (int row = 0; row < rasterHeight; row++) {
+            double latDeg = minLatDeg + row * deltaLatDeg;
+            elevations[row * rasterWidth + frontierColumn] =
+                    (float) terrainElevationModeler.getAntimeridianElevation(latDeg, seamData);
+        }
     }
 
     /**

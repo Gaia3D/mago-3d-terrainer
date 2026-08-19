@@ -186,6 +186,11 @@ public class QuantizedMeshManager {
     }
 
     public QuantizedMesh getQuantizedMeshFromTile(GeographicTerrainTile tile, boolean calculateNormals) {
+        return getQuantizedMeshFromTile(tile, calculateNormals, null, null);
+    }
+
+    public QuantizedMesh getQuantizedMeshFromTile(GeographicTerrainTile tile, boolean calculateNormals,
+                                                   Double commonMinimumHeight, Double commonMaximumHeight) {
         // First get the quantized mesh header
         QuantizedMeshHeader header = new QuantizedMeshHeader();
         TerrainMesh mesh = tile.getMesh();
@@ -212,6 +217,10 @@ public class QuantizedMeshManager {
             // calculate the bbox in world coordinates
             double[] posWC = GlobeUtils.geographicToCartesian(vertex.getPosition().x, vertex.getPosition().y, height, body);
             bboxWC.addPoint(posWC[0], posWC[1], posWC[2]);
+        }
+        if (commonMinimumHeight != null && commonMaximumHeight != null) {
+            minimumHeight = commonMinimumHeight;
+            maximumHeight = commonMaximumHeight;
         }
         double midHeight = (minimumHeight + maximumHeight) / 2.0;
 

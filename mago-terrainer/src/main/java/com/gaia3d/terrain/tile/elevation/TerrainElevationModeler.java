@@ -41,6 +41,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationModeler {
+    private static final double ANTIMERIDIAN_EPSILON_DEG = 1.0e-8;
     private static final boolean PRELOAD_TERRAIN_RASTERS = true;
     private static final long MEMORY_PLANNING_LIMIT_BYTES = 8L * 1024L * 1024L * 1024L;
     private static final long MIN_PRELOAD_BUDGET_BYTES = 256L * 1024L * 1024L;
@@ -299,12 +300,95 @@ public class TerrainElevationModeler {
     }
 
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
-        double resultElevation = 0.0;
-
         if (rootTerrainElevationDataQuadTree == null) {
-            return resultElevation;
+            intersects[0] = false;
+            return 0.0;
         }
 
+        return sampleElevation(lonDeg, latDeg, terrainElevDataArray);
+    }
+
+    /**
+     * Resolves the common elevation of the two antimeridian frontiers. This is deliberately
+     * separate from {@link #getElevation(double, double, List)} so ordinary DEM sampling and
+     * overlap priority remain unchanged; raster tiles call it only in their final seam pass.
+     */
+    public double getAntimeridianElevation(double latDeg, List<TerrainElevationData> terrainElevDataArray) {
+        double westElevation = sampleElevation(-180.0, latDeg, terrainElevDataArray);
+        boolean westIntersects = intersects[0];
+        if (!westIntersects) {
+            westElevation = sampleAntimeridianFallback(true, latDeg, terrainElevDataArray);
+            westIntersects = intersects[0];
+        }
+        double eastElevation = sampleElevation(180.0, latDeg, terrainElevDataArray);
+        boolean eastIntersects = intersects[0];
+        if (!eastIntersects) {
+            eastElevation = sampleAntimeridianFallback(false, latDeg, terrainElevDataArray);
+            eastIntersects = intersects[0];
+        }
+
+        if (westIntersects && eastIntersects) {
+            intersects[0] = true;
+            return (westElevation + eastElevation) * 0.5;
+        }
+        if (westIntersects) {
+            intersects[0] = true;
+            return westElevation;
+        }
+        intersects[0] = eastIntersects;
+        return eastIntersects ? eastElevation : 0.0;
+    }
+
+    private double sampleAntimeridianFallback(boolean west, double latDeg,
+                                               List<TerrainElevationData> terrainElevDataArray) {
+        PriorityType priorityType = globalOptions.getPriorityType();
+        Vector2d pixelSize = new Vector2d();
+        boolean anyIntersects = false;
+        double candidateElevation = 0.0;
+
+        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+            GeographicExtension extension = terrainElevationData.getGeographicExtension();
+            terrainElevationData.getPixelSizeDegree(pixelSize);
+            double pixelSizeLon = Math.abs(pixelSize.x);
+            if (!(pixelSizeLon > 0.0) || !Double.isFinite(pixelSizeLon)) {
+                continue;
+            }
+
+            double frontierLon = west ? -180.0 : 180.0;
+            double edgeLon = west ? extension.getMinLongitudeDeg() : extension.getMaxLongitudeDeg();
+            double gap = Math.abs(edgeLon - frontierLon);
+            if (gap > pixelSizeLon + ANTIMERIDIAN_EPSILON_DEG) {
+                continue;
+            }
+
+            // If the nominal frontier is covered but NoData, move one pixel inward. If the
+            // raster ends just short of ±180, its closest valid edge is already the fallback.
+            boolean containsFrontier = extension.getMinLongitudeDeg() <= frontierLon
+                    && extension.getMaxLongitudeDeg() >= frontierLon;
+            double fallbackLon = containsFrontier
+                    ? frontierLon + (west ? pixelSizeLon : -pixelSizeLon)
+                    : edgeLon;
+            fallbackLon = Math.max(extension.getMinLongitudeDeg(),
+                    Math.min(extension.getMaxLongitudeDeg(), fallbackLon));
+
+            double elevation = terrainElevationData.getElevation(fallbackLon, latDeg, intersects);
+            if (!intersects[0]) {
+                continue;
+            }
+            if (priorityType == PriorityType.RESOLUTION) {
+                return elevation;
+            }
+            anyIntersects = true;
+            if (elevation > candidateElevation) {
+                candidateElevation = elevation;
+            }
+        }
+
+        intersects[0] = anyIntersects;
+        return candidateElevation;
+    }
+
+    private double sampleElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         PriorityType priorityType = globalOptions.getPriorityType();
 
         intersects[0] = false;
@@ -315,22 +399,25 @@ public class TerrainElevationModeler {
                     return elevation;
                 }
             }
+            intersects[0] = false;
             return 0.0;
         }
 
+        boolean anyIntersects = false;
         double candidateElevation = 0.0;
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (!intersects[0]) {
                 continue;
             }
+            anyIntersects = true;
             if (elevation > candidateElevation) {
                 candidateElevation = elevation;
             }
         }
 
-        resultElevation = candidateElevation;
-        return resultElevation;
+        intersects[0] = anyIntersects;
+        return candidateElevation;
     }
 
     private List<File> resolveConfiguredElevationFiles() {

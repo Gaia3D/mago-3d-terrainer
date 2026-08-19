@@ -252,6 +252,8 @@ public class TerrainTilesetGenerator {
                 }
             }
 
+            regenerateAntimeridianPairs(depth);
+
             if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
@@ -276,6 +278,31 @@ public class TerrainTilesetGenerator {
             log.info("----------------------------------------");
         }
         terrainLayer.saveJsonFile(globalOptions.getOutputPath(), "layer.json");
+    }
+
+    private void regenerateAntimeridianPairs(int depth) throws IOException, TransformException {
+        int maxTileX = (1 << (depth + 1)) - 1;
+        File westDirectory = new File(globalOptions.getOutputPath(), depth + File.separator + "0");
+        File eastDirectory = new File(globalOptions.getOutputPath(), depth + File.separator + maxTileX);
+        if (!westDirectory.isDirectory() || !eastDirectory.isDirectory()) {
+            return;
+        }
+
+        File[] westFiles = westDirectory.listFiles((directory, name) -> name.endsWith(".terrain"));
+        if (westFiles == null) {
+            return;
+        }
+
+        TileMatrix frontierMatrix = new TileMatrix(new TileRange(), this);
+        for (File westFile : westFiles) {
+            File eastFile = new File(eastDirectory, westFile.getName());
+            if (!eastFile.isFile()) {
+                continue;
+            }
+            int tileY = Integer.parseInt(westFile.getName().substring(0, westFile.getName().indexOf('.')));
+            frontierMatrix.regenerateAntimeridianPair(depth, tileY);
+        }
+        frontierMatrix.deleteObjects();
     }
 
     public void generateModifiedAvailableTileMeshes() throws IOException, TransformException, FactoryException {
@@ -502,6 +529,8 @@ public class TerrainTilesetGenerator {
                 tileMatrix.deleteObjects();
             }
 
+            regenerateAntimeridianPairs(depth);
+
             if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
@@ -616,6 +645,8 @@ public class TerrainTilesetGenerator {
                     }
                 }
             }
+
+            regenerateAntimeridianPairs(depth);
 
             this.terrainElevationModeler.deleteGeoTiffManager();
             this.terrainElevationModeler.deleteTileRaster();
@@ -757,6 +788,8 @@ public class TerrainTilesetGenerator {
                 tileMatrix.makeMatrixMesh(isFirstGeneration);
                 tileMatrix.deleteObjects();
             }
+
+            regenerateAntimeridianPairs(depth);
 
             this.terrainElevationModeler.deleteGeoTiffManager();
             this.terrainElevationModeler.deleteTileRaster();
