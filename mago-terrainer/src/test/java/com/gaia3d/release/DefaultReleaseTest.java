@@ -12,7 +12,6 @@ import java.io.File;
 public class DefaultReleaseTest {
 
     @Test
-    @Tag("default")
     void testFrontierTest() {
         String name = "frontier-test";
         File inputPath = MagoTestConfig.getInputPath(name);

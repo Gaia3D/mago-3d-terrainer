@@ -36,6 +36,10 @@ public class GeographicTerrainTileRaster {
     private double deltaLonDeg = 0;
     private double deltaLatDeg = 0;
 
+    GeographicTerrainTileRaster() {
+        // Used by focused raster interpolation tests.
+    }
+
     public GeographicTerrainTileRaster(TileIndices tileIndices, TerrainTilesetGenerator manager) {
         this.tileIndices = tileIndices;
         this.manager = manager;
@@ -46,6 +50,20 @@ public class GeographicTerrainTileRaster {
     }
 
     public int getColumn(double lonDeg) {
+        lonDeg = normalizeLongitude(lonDeg);
+        double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
+
+        // Clamp longitude to valid bounds instead of returning -1
+        // This handles floating-point precision errors at tile boundaries
+        double clampedLonDeg = Math.max(minLonDeg, Math.min(this.geographicExtension.getMaxLongitudeDeg(), lonDeg));
+
+        int col = (int) ((clampedLonDeg - minLonDeg) / deltaLonDeg);
+
+        // Ensure column is within valid raster range
+        return Math.max(0, Math.min(rasterWidth - 1, col));
+    }
+
+    private double normalizeLongitude(double lonDeg) {
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
 
@@ -57,15 +75,7 @@ public class GeographicTerrainTileRaster {
         } else if (lonDeg > maxLonDeg + 180.0) {
             lonDeg -= 360.0;
         }
-
-        // Clamp longitude to valid bounds instead of returning -1
-        // This handles floating-point precision errors at tile boundaries
-        double clampedLonDeg = Math.max(minLonDeg, Math.min(maxLonDeg, lonDeg));
-
-        int col = (int) ((clampedLonDeg - minLonDeg) / deltaLonDeg);
-
-        // Ensure column is within valid raster range
-        return Math.max(0, Math.min(rasterWidth - 1, col));
+        return lonDeg;
     }
 
     public int getRow(double latDeg) {
@@ -102,6 +112,10 @@ public class GeographicTerrainTileRaster {
     }
 
     public float getElevationBilinear(double lonDeg, double latDeg) {
+        // Keep the interpolation fraction in the raster's longitude frame as well as
+        // the column lookup. Using a translated longitude (for example -180.5 for an
+        // east-antimeridian raster at 179.5) here produces an enormous extrapolation.
+        lonDeg = normalizeLongitude(lonDeg);
         int col = getColumn(lonDeg);
         int row = getRow(latDeg);
 
