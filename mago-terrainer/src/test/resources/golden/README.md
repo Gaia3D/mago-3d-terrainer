@@ -46,7 +46,7 @@ The outputs and logs are written to `mago-terrainer/build/release-test/{case}`.
 | F20 | recovery after a crash at a depth boundary | `sample` | child JVM killed after depth 7, then `-continue` → same as F01 |
 | F21 | recovery after a crash in the middle of a depth | `multi-resolution-sample` | child JVM killed in the 2nd subrange of depth 11, then `-continue` → same files as F13, the depth 11 is generated again from the quantized meshes (requires #34) |
 
-Not covered yet: `-modify`, `-body moon`, very large inputs (see `DefaultReleaseTest`, `BuildTest` with the local release-sample data).
+Not covered yet: `-body moon`, very large inputs (see `DefaultReleaseTest`, `BuildTest` with the local release-sample data).
 
 ## Sample data
 

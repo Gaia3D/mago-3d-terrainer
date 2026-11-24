@@ -177,6 +177,8 @@ java -jar mago-3d-terrainer.jar --input "D:/dem" --output "/output_path/terrain_
 ```
 The rasters that are not listed come after the listed ones, by resolution. An entry that matches no input raster is reported in the log, and the resolved order is printed (`[Pre][Priority]`).
 
+To add a higher resolution DEM to an existing area, generate the tileset again with both the existing DEM and the new DEM as inputs. The higher resolution raster (or the order set by the priority options) is used where they overlap.
+
 ## NODATA value
 Pixels equal to the NODATA value (or NaN) are treated as "no data". The default is `-9999`.
 ```
@@ -238,11 +240,6 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 - If the previous run stopped **between two depths**, the result is the same as an uninterrupted run.
 - If the previous run stopped **in the middle of a depth**, the rest of that depth is not generated (known limitation). Delete the last depth folder of the output before continuing.
 - It can also be used to extend a completed tileset to a deeper `--maxDepth`. The deeper tiles are then generated from the existing quantized-mesh tiles.
-
-## Modifying a part of a tileset (`--modify`)
-`--modify` / `-m` is **not available yet**. The option is currently ignored and the terrain is fully generated from the input rasters.
-
-To add a higher resolution DEM to an existing area, generate the tileset again with both the existing DEM and the new DEM as inputs. The higher resolution raster is used where they overlap.
 
 ## Generating only layer.json (`--json`)
 `--json` / `-j` regenerates `layer.json` from an existing tileset, without generating tiles. Use the tileset folder as the input and the output.

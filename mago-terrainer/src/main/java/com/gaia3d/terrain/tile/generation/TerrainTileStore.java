@@ -127,58 +127,6 @@ public class TerrainTileStore {
         }
     }
 
-    public void writeTempTilesFromQuantizedMeshes(int depth, TileRange tileRange) {
-        GlobalOptions globalOptions = GlobalOptions.getInstance();
-        String tempPath = globalOptions.getTileTempPath();
-        String depthTempPath = tempPath + File.separator + "L" + depth;
-        File depthTempFolder = new File(depthTempPath);
-        if (!depthTempFolder.exists() && depthTempFolder.mkdirs()) {
-            log.debug("Created temp folder: {}", depthTempFolder.getAbsolutePath());
-        }
-
-        String quantizedMeshPath = globalOptions.getOutputPath() + File.separator + depth;
-        File quantizedMeshFolder = new File(quantizedMeshPath);
-        if (!quantizedMeshFolder.exists()) {
-            log.error("Quantized mesh folder does not exist: {}", quantizedMeshPath);
-            return;
-        }
-
-        TileIndices tileIndices = new TileIndices();
-        QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
-
-        for (int tileX = tileRange.getMinTileX(); tileX <= tileRange.getMaxTileX(); tileX++) {
-            for (int tileY = tileRange.getMinTileY(); tileY <= tileRange.getMaxTileY(); tileY++) {
-                String qMeshFullPath = quantizedMeshPath + File.separator + tileX + File.separator + tileY + ".terrain";
-                if (!new File(qMeshFullPath).exists()) {
-                    log.info("Quantized mesh file does not exist: {}", qMeshFullPath);
-                    continue;
-                }
-
-                String tempXFolderName = "X" + tileX;
-                String tempFileName = "L" + depth + "_" + tempXFolderName + "_Y" + tileY + ".til";
-                String tempFilePath = depthTempPath + File.separator + tempXFolderName + File.separator + tempFileName;
-                if (new File(tempFilePath).exists()) {
-                    log.debug("Temp file already exists: {}", tempFilePath);
-                    continue;
-                }
-
-                try {
-                    LittleEndianDataInputStream inputStream = new LittleEndianDataInputStream(new BufferedInputStream(new FileInputStream(qMeshFullPath)));
-                    QuantizedMesh quantizedMesh = new QuantizedMesh();
-                    quantizedMesh.loadDataInputStream(inputStream);
-
-                    tileIndices.set(tileX, tileY, depth);
-                    GeographicTerrainTile geographicTerrainTile = quantizedMeshManager.getGeographicTerrainTileFromQuantizedMesh(quantizedMesh, tileIndices, generator);
-                    geographicTerrainTile.saveFile(geographicTerrainTile.getMesh(), tempFilePath);
-                    TerrainMeshUtils.save4ChildrenMeshes(geographicTerrainTile.getMesh(), generator, globalOptions);
-                    geographicTerrainTile.deleteObjects();
-                } catch (Exception e) {
-                    log.error("Error loading quantized mesh file: {}", qMeshFullPath, e);
-                }
-            }
-        }
-    }
-
     public void writeChildTempTiles(int depth) {
         int childrenDepth = depth + 1;
         String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;

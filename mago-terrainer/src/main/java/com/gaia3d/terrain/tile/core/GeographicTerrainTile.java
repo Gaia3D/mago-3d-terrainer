@@ -214,7 +214,6 @@ public class GeographicTerrainTile {
         boolean refined = false;
         int trianglesCount = mesh.triangles.size();
         log.debug("[RefineMesh] Triangles Count : {}", trianglesCount);
-        boolean isModifyProcess = false;
         for (int i = 0; i < trianglesCount; i++) {
             TerrainTriangle triangle = mesh.triangles.get(i);
 
@@ -225,7 +224,7 @@ public class GeographicTerrainTile {
             log.debug("[RefineMesh] FAST-Check : TRIANGLE IS BIG FOR THE TILE DEPTH");
             this.manager.getTriangleList().clear();
             this.listHalfEdges.clear();
-            mesh.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, isModifyProcess, null);
+            mesh.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, null);
             this.listHalfEdges.clear();
 
             if (!this.manager.getTriangleList().isEmpty()) {

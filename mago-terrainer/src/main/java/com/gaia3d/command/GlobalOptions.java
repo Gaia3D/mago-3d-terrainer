@@ -65,7 +65,6 @@ public class GlobalOptions {
     private boolean debugMode = false;
     private boolean leaveTemp = false;
     private boolean isContinue = false;
-    private boolean isModify = false;
     private boolean skipStandardizationAndResize = false;
 
     // Tiling options
