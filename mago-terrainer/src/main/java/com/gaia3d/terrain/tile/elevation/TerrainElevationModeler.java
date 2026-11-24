@@ -69,6 +69,9 @@ public class TerrainElevationModeler {
     private TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree = null;
     private GeoTiffCoverageStore geoTiffManager = null;
     private boolean[] intersects = {false};
+    // the geoid used for the height of the areas without data, resolved on the first use
+    private GeoidHeightSampler noDataGeoidSampler = null;
+    private boolean noDataGeoidResolved = false;
     private List<String> geoTiffFileNames = new ArrayList<>();
     private int terrainElevationDataQueryMark = 1;
 
@@ -302,7 +305,7 @@ public class TerrainElevationModeler {
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         if (rootTerrainElevationDataQuadTree == null) {
             intersects[0] = false;
-            return 0.0;
+            return getNoDataHeight(lonDeg, latDeg);
         }
 
         return sampleElevation(lonDeg, latDeg, terrainElevDataArray);
@@ -336,7 +339,18 @@ public class TerrainElevationModeler {
             return westElevation;
         }
         intersects[0] = eastIntersects;
-        return eastIntersects ? eastElevation : 0.0;
+        return eastIntersects ? eastElevation : getNoDataHeight(180.0, latDeg);
+    }
+
+    /**
+     * The height of the areas without data: the geoid height (the mean sea level) when a geoid is used, otherwise 0.
+     */
+    public double getNoDataHeight(double lonDeg, double latDeg) {
+        if (!noDataGeoidResolved) {
+            noDataGeoidSampler = GeoidHeightSampler.getConfiguredSampler();
+            noDataGeoidResolved = true;
+        }
+        return noDataGeoidSampler != null ? noDataGeoidSampler.getHeight(lonDeg, latDeg) : 0.0;
     }
 
     private double sampleAntimeridianFallback(boolean west, double latDeg,
@@ -344,7 +358,7 @@ public class TerrainElevationModeler {
         PriorityType priorityType = globalOptions.getPriorityType();
         Vector2d pixelSize = new Vector2d();
         boolean anyIntersects = false;
-        double candidateElevation = 0.0;
+        double candidateElevation = -Double.MAX_VALUE;
 
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             GeographicExtension extension = terrainElevationData.getGeographicExtension();
@@ -385,7 +399,7 @@ public class TerrainElevationModeler {
         }
 
         intersects[0] = anyIntersects;
-        return candidateElevation;
+        return anyIntersects ? candidateElevation : 0.0;
     }
 
     private double sampleElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
@@ -400,11 +414,11 @@ public class TerrainElevationModeler {
                 }
             }
             intersects[0] = false;
-            return 0.0;
+            return getNoDataHeight(lonDeg, latDeg);
         }
 
         boolean anyIntersects = false;
-        double candidateElevation = 0.0;
+        double candidateElevation = -Double.MAX_VALUE;
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (!intersects[0]) {
@@ -417,7 +431,7 @@ public class TerrainElevationModeler {
         }
 
         intersects[0] = anyIntersects;
-        return candidateElevation;
+        return anyIntersects ? candidateElevation : getNoDataHeight(lonDeg, latDeg);
     }
 
     private List<File> resolveConfiguredElevationFiles() {
