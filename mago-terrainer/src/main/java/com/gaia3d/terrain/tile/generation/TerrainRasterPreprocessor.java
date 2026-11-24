@@ -44,7 +44,9 @@ public class TerrainRasterPreprocessor {
         List<String> standardizedRasterPaths = new ArrayList<>();
         FileUtils.getFilePathsByExtension(tempFolder.getAbsolutePath(), TerrainRasterFormat.EXTENSION, standardizedRasterPaths, true);
         if (standardizedRasterPaths.isEmpty()) {
-            throw new RuntimeException("No standardized terrain raster files found in: " + tempFolder.getAbsolutePath());
+            // the rasters that only contain NODATA are skipped by the standardization
+            throw new RuntimeException("No standardized terrain raster files found in: " + tempFolder.getAbsolutePath()
+                    + ". All input pixels are NODATA: check the NODATA value (--nodataValue) and, with --geoid, that the geoid covers the input area.");
         }
 
         manager.getStandardizedGeoTiffFiles().clear();

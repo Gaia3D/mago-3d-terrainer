@@ -234,6 +234,42 @@ public class TerrainElevationData {
         resultPixelSize.set(pixelSizeX, pixelSizeY);
     }
 
+    /**
+     * The NODATA samples are represented by the configured NODATA value, which can be NaN ("-nv nan").
+     */
+    private boolean isNoDataSample(double value) {
+        return Double.isNaN(value) || value == globalOptions.getNoDataValue();
+    }
+
+    /**
+     * Bilinear interpolation when some of the 4 samples are NODATA (value01 is the next row, value10 the next column).
+     * The point is NODATA when its nearest sample is NODATA, otherwise the valid samples are interpolated with their
+     * renormalized weights, so the border of the valid area is not shifted and NODATA is never mixed into heights.
+     */
+    double interpolateValidSamples(double value00, double value01, double value10, double value11, double factorX, double factorY) {
+        double nearest;
+        if (factorX < 0.5) {
+            nearest = factorY < 0.5 ? value00 : value01;
+        } else {
+            nearest = factorY < 0.5 ? value10 : value11;
+        }
+        if (isNoDataSample(nearest)) {
+            return globalOptions.getNoDataValue();
+        }
+
+        double[] values = {value00, value01, value10, value11};
+        double[] weights = {(1.0 - factorX) * (1.0 - factorY), (1.0 - factorX) * factorY, factorX * (1.0 - factorY), factorX * factorY};
+        double sum = 0.0;
+        double weightSum = 0.0;
+        for (int i = 0; i < 4; i++) {
+            if (!isNoDataSample(values[i])) {
+                sum += values[i] * weights[i];
+                weightSum += weights[i];
+            }
+        }
+        return weightSum > 0.0 ? sum / weightSum : nearest;
+    }
+
     public double getGridValue(int x, int y) {
         if (isTerrainRasterFile()) {
             if (!ensureRasterInitialized() || x < 0 || y < 0 || x >= terrainRasterData.width() || y >= terrainRasterData.height()) {
@@ -257,9 +293,10 @@ public class TerrainElevationData {
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
+                return globalOptions.getNoDataValue();
             } catch (Exception e) {
                 log.error("[getGridValue : Exception] Error in getGridValue", e);
-                log.error("Error:", e);
+                return globalOptions.getNoDataValue();
             }
 
             if (this.noDataContainer == null && coverage != null) {
@@ -314,8 +351,7 @@ public class TerrainElevationData {
             resultAltitude = calcNearestInterpolation((int) Math.floor(unitaryX * geoTiffRasterWidth), (int) Math.floor(unitaryY * geoTiffRasterHeight));
         }
 
-        double noDataValue = globalOptions.getNoDataValue();
-        if (resultAltitude == noDataValue) {
+        if (isNoDataSample(resultAltitude)) {
             intersects[0] = false;
             return resultAltitude;
         }
@@ -386,14 +422,9 @@ public class TerrainElevationData {
         }
 
         // Ignore noDataValue samples.
-        double noDataValue = globalOptions.getNoDataValue();
-        boolean hasNoData = (value00 == noDataValue) || (value01 == noDataValue) || (value10 == noDataValue) || (value11 == noDataValue);
+        boolean hasNoData = isNoDataSample(value00) || isNoDataSample(value01) || isNoDataSample(value10) || isNoDataSample(value11);
         if (hasNoData) {
-            if (value00 == noDataValue) {
-                return noDataValue;
-            } else {
-                return value00;
-            }
+            return interpolateValidSamples(value00, value01, value10, value11, factorX, factorY);
         }
 
         double value0 = value00 * (1.0 - factorY) + value01 * factorY;

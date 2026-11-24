@@ -68,6 +68,9 @@ public class TerrainElevationModeler {
     private TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree = null;
     private GeoTiffCoverageStore geoTiffManager = null;
     private boolean[] intersects = {false};
+    // the geoid used for the height of the areas without data, resolved on the first use
+    private GeoidHeightSampler noDataGeoidSampler = null;
+    private boolean noDataGeoidResolved = false;
     private List<String> geoTiffFileNames = new ArrayList<>();
     private int terrainElevationDataQueryMark = 1;
 
@@ -301,7 +304,7 @@ public class TerrainElevationModeler {
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         if (rootTerrainElevationDataQuadTree == null) {
             intersects[0] = false;
-            return 0.0;
+            return getNoDataHeight(lonDeg, latDeg);
         }
 
         return sampleElevation(lonDeg, latDeg, terrainElevDataArray);
@@ -335,7 +338,18 @@ public class TerrainElevationModeler {
             return westElevation;
         }
         intersects[0] = eastIntersects;
-        return eastIntersects ? eastElevation : 0.0;
+        return eastIntersects ? eastElevation : getNoDataHeight(180.0, latDeg);
+    }
+
+    /**
+     * The height of the areas without data: the geoid height (the mean sea level) when a geoid is used, otherwise 0.
+     */
+    public double getNoDataHeight(double lonDeg, double latDeg) {
+        if (!noDataGeoidResolved) {
+            noDataGeoidSampler = GeoidHeightSampler.getConfiguredSampler();
+            noDataGeoidResolved = true;
+        }
+        return noDataGeoidSampler != null ? noDataGeoidSampler.getHeight(lonDeg, latDeg) : 0.0;
     }
 
     private double sampleAntimeridianFallback(boolean west, double latDeg,
@@ -379,15 +393,18 @@ public class TerrainElevationModeler {
 
     private double sampleElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         // the rasters are in priority order (GeographicTerrainTileRaster), the first one with data gives the height
+        // indexed loop : this is the hottest path of the elevation sampling, avoid the iterator allocation
         intersects[0] = false;
-        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+        int terrainElevDataCount = terrainElevDataArray.size();
+        for (int i = 0; i < terrainElevDataCount; i++) {
+            TerrainElevationData terrainElevationData = terrainElevDataArray.get(i);
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (intersects[0]) {
                 return elevation;
             }
         }
         intersects[0] = false;
-        return 0.0;
+        return getNoDataHeight(lonDeg, latDeg);
     }
 
     private List<File> resolveConfiguredElevationFiles() {

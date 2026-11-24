@@ -2,6 +2,7 @@ package com.gaia3d.command;
 
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.types.PriorityType;
+import com.gaia3d.terrain.util.NoDataUtils;
 import com.gaia3d.util.CelestialBody;
 import lombok.Getter;
 import lombok.Setter;
@@ -319,7 +320,7 @@ public class GlobalOptions {
         }
 
         if (command.hasOption(CommandOptions.NODATA_VALUE.getLongName())) {
-            double noDataValue = Double.parseDouble(command.getOptionValue(CommandOptions.NODATA_VALUE.getLongName()));
+            double noDataValue = NoDataUtils.parseNoDataValue(command.getOptionValue(CommandOptions.NODATA_VALUE.getLongName()));
             instance.setNoDataValue(noDataValue);
         } else {
             instance.setNoDataValue(DEFAULT_NO_DATA_VALUE);

@@ -29,6 +29,7 @@ public class GeographicTerrainTileRaster {
     private static final Comparator<TerrainElevationData> PRIORITY_ORDER = Comparator
             .comparingInt(TerrainElevationData::getPriorityRank)
             .thenComparingDouble(TerrainElevationData::getPixelArea);
+    private static final double[] LONGITUDE_SHIFTS = {-360.0, 360.0};
 
     private TerrainTilesetGenerator manager = null;
     private TileIndices tileIndices = null;
@@ -67,18 +68,38 @@ public class GeographicTerrainTileRaster {
     }
 
     private double normalizeLongitude(double lonDeg) {
+        return lonDeg + getLongitudeShift(lonDeg);
+    }
+
+    /**
+     * Returns the shift (-360, 0 or +360) that moves the longitude into the frame of this raster.
+     * A mesh connected across the antimeridian can temporarily represent the +180 side in the -180
+     * coordinate frame (or vice versa). The shift that brings the longitude closest to the raster
+     * extent is chosen, so a longitude exactly on the antimeridian is also mapped correctly when the
+     * raster is 180 degrees wide (depth 0).
+     */
+    public double getLongitudeShift(double lonDeg) {
+        double bestShift = 0.0;
+        double bestDistance = getDistanceToLongitudeRange(lonDeg);
+        for (double shift : LONGITUDE_SHIFTS) {
+            double distance = getDistanceToLongitudeRange(lonDeg + shift);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestShift = shift;
+            }
+        }
+        return bestShift;
+    }
+
+    private double getDistanceToLongitudeRange(double lonDeg) {
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
-
-        // A mesh connected across the antimeridian can temporarily represent the +180 side
-        // in the -180 coordinate frame (or vice versa). Map that virtual longitude back to
-        // this raster before converting it to a column.
-        if (lonDeg < minLonDeg - 180.0) {
-            lonDeg += 360.0;
-        } else if (lonDeg > maxLonDeg + 180.0) {
-            lonDeg -= 360.0;
+        if (lonDeg < minLonDeg) {
+            return minLonDeg - lonDeg;
+        } else if (lonDeg > maxLonDeg) {
+            return lonDeg - maxLonDeg;
         }
-        return lonDeg;
+        return 0.0;
     }
 
     public int getRow(double latDeg) {
