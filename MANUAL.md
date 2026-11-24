@@ -162,7 +162,20 @@ When several rasters cover the same place, the raster with the **smallest pixel 
 
 For each depth, the rasters are resized to a resolution suitable for that depth, so shallow depths are generated from downsampled rasters.
 
-> The `--priorityType` option only supports `resolution` (the default).
+The order can be set explicitly, for example when a new survey must win over an older raster with the same resolution:
+- `--priorityType input` / `-pt input`: the order of the `--input` options (the files of a directory input are ordered by path).
+- `--priorityFile <file>` / `-pf <file>`: one raster file, directory or glob pattern (`*`, `**`, `?`) per line, the first line first. Relative paths are relative to the priority file, lines starting with `#` are comments.
+
+```
+# priority.txt
+D:/dem/survey-2025/*.tif
+D:/dem/base-5m/
+D:/dem/korea-30m.tif
+```
+```
+java -jar mago-3d-terrainer.jar --input "D:/dem" --output "/output_path/terrain_tiles_output" --priorityFile priority.txt
+```
+The rasters that are not listed come after the listed ones, by resolution. An entry that matches no input raster is reported in the log, and the resolved order is printed (`[Pre][Priority]`).
 
 ## NODATA value
 Pixels equal to the NODATA value (or NaN) are treated as "no data". The default is `-9999`.

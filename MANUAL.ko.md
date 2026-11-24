@@ -170,7 +170,20 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 
 각 depth마다 래스터를 그 depth에 맞는 해상도로 리사이즈하므로, 얕은 depth는 다운샘플된 래스터로 생성됩니다.
 
-> `--priorityType` 옵션은 `resolution`(기본값)만 지원합니다.
+예를 들어 같은 해상도의 기존 래스터보다 새 측량 자료를 우선해야 할 때는 순서를 직접 지정할 수 있습니다.
+- `--priorityType input` / `-pt input`: `--input` 옵션의 순서대로 우선합니다(디렉터리 입력 안의 파일은 경로순).
+- `--priorityFile <file>` / `-pf <file>`: 한 줄에 래스터 파일, 디렉터리 또는 glob 패턴(`*`, `**`, `?`) 하나씩 적고, 위에 있을수록 우선합니다. 상대 경로는 우선순위 파일 기준이고, `#`으로 시작하는 줄은 주석입니다.
+
+```
+# priority.txt
+D:/dem/survey-2025/*.tif
+D:/dem/base-5m/
+D:/dem/korea-30m.tif
+```
+```
+java -jar mago-3d-terrainer.jar --input "D:/dem" --output "/output_path/terrain_tiles_output" --priorityFile priority.txt
+```
+목록에 없는 래스터는 목록에 있는 래스터 뒤에 해상도순으로 사용됩니다. 어떤 입력 래스터와도 맞지 않는 항목은 로그에 경고로 남고, 정해진 순서는 로그(`[Pre][Priority]`)에 출력됩니다.
 
 ## NODATA 값
 NODATA 값(또는 NaN)과 같은 픽셀은 "데이터 없음"으로 처리됩니다. 기본값은 `-9999`입니다.
