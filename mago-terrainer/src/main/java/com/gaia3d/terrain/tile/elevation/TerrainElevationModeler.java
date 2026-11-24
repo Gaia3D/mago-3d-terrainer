@@ -391,9 +391,12 @@ public class TerrainElevationModeler {
     private double sampleElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         PriorityType priorityType = globalOptions.getPriorityType();
 
+        // indexed loops : this is the hottest path of the elevation sampling, avoid the iterator allocation
         intersects[0] = false;
+        int terrainElevDataCount = terrainElevDataArray.size();
         if (priorityType == PriorityType.RESOLUTION) {
-            for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+            for (int i = 0; i < terrainElevDataCount; i++) {
+                TerrainElevationData terrainElevationData = terrainElevDataArray.get(i);
                 double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
                 if (intersects[0]) {
                     return elevation;
@@ -405,7 +408,8 @@ public class TerrainElevationModeler {
 
         boolean anyIntersects = false;
         double candidateElevation = 0.0;
-        for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
+        for (int i = 0; i < terrainElevDataCount; i++) {
+            TerrainElevationData terrainElevationData = terrainElevDataArray.get(i);
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
             if (!intersects[0]) {
                 continue;

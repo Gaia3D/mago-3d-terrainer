@@ -148,6 +148,7 @@ public class TerrainTilesetGenerator {
         this.minTriangleSizeForTileDepthList.clear();
         this.mapNoUsableGeotiffPaths.clear();
         this.availableTileSet.getMapDepthAvailableTileRanges().clear();
+        this.terrainTileStore.clearTempTileCache();
     }
 
     public void makeTempFilesFromQuantizedMeshes(int depth) {
@@ -257,6 +258,9 @@ public class TerrainTilesetGenerator {
             if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
+            if (depth < maxTileDepth) {
+                this.terrainTileStore.checkpointTempTiles(depth);
+            }
 
             this.terrainElevationModeler.deleteGeoTiffManager();
             this.terrainElevationModeler.deleteTileRaster();
@@ -351,6 +355,7 @@ public class TerrainTilesetGenerator {
         if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
+        globalOptions.setMaximumTileDepth(maxTileDepth);
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
@@ -475,6 +480,7 @@ public class TerrainTilesetGenerator {
         if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
+        globalOptions.setMaximumTileDepth(maxTileDepth);
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
@@ -592,6 +598,8 @@ public class TerrainTilesetGenerator {
         } else if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
+        // the tiles of the last depth must not create children, so the effective max depth is shared with the tile matrix
+        globalOptions.setMaximumTileDepth(maxTileDepth);
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
@@ -654,6 +662,9 @@ public class TerrainTilesetGenerator {
 
             if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
+            }
+            if (depth < maxTileDepth) {
+                this.terrainTileStore.checkpointTempTiles(depth);
             }
 
             long endTime = System.currentTimeMillis();

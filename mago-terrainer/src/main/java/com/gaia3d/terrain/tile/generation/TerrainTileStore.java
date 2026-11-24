@@ -4,11 +4,13 @@ import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.LittleEndianDataInputStream;
 import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
+import com.gaia3d.terrain.structure.TerrainMesh;
 import com.gaia3d.terrain.tile.core.GeographicTerrainTile;
 import com.gaia3d.terrain.tile.core.TileIndices;
 import com.gaia3d.terrain.tile.core.TileRange;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import com.gaia3d.terrain.util.TerrainMeshUtils;
+import com.gaia3d.util.DecimalUtils;
 import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,30 @@ import java.util.*;
 public class TerrainTileStore {
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TerrainTilesetGenerator generator;
+    private final TempTileCache tempTileCache = new TempTileCache();
+
+    public void saveTempTileMesh(TerrainMesh mesh, String filePath) throws IOException {
+        tempTileCache.save(mesh, filePath);
+    }
+
+    /**
+     * Writes the in-memory temp tiles to the temp folder, so the "continue" mode can resume from the next depth.
+     */
+    public void checkpointTempTiles(int depth) {
+        long startTime = System.currentTimeMillis();
+        try {
+            int writtenCount = tempTileCache.checkpoint();
+            if (writtenCount > 0) {
+                log.info("[Tile][{}] Checkpoint {} temp tiles : Duration: {}", depth, writtenCount, DecimalUtils.millisecondToDisplayTime(System.currentTimeMillis() - startTime));
+            }
+        } catch (IOException e) {
+            log.error("Failed to checkpoint the temp tiles.", e);
+        }
+    }
+
+    public void clearTempTileCache() {
+        tempTileCache.clear();
+    }
 
     public void writeTempTilesFromQuantizedMeshes(int depth) {
         String tempPath = globalOptions.getTileTempPath();
@@ -231,6 +257,7 @@ public class TerrainTileStore {
 
     public void deleteTempFilesByDepth(int depth) {
         String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
+        tempTileCache.removeByPrefix(depthTempPath + File.separator);
         File depthTempFolder = new File(depthTempPath);
         if (depthTempFolder.exists()) {
             org.apache.commons.io.FileUtils.deleteQuietly(depthTempFolder);
@@ -240,6 +267,21 @@ public class TerrainTileStore {
     public void deleteTempFilesByTileRange(TileRange tileRange) {
         int depth = tileRange.getTileDepth();
         String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
+
+        // remove the in-memory tiles. Only the tiles that may exist on disk are deleted from the temp folder.
+        List<String> diskTempFilePaths = new ArrayList<>();
+        for (int x = tileRange.getMinTileX(); x <= tileRange.getMaxTileX(); x++) {
+            for (int y = tileRange.getMinTileY(); y <= tileRange.getMaxTileY(); y++) {
+                String tempFilePath = getTilePath(new TileIndices(x, y, depth));
+                if (tempTileCache.remove(tempFilePath)) {
+                    diskTempFilePaths.add(tempFilePath);
+                }
+            }
+        }
+        if (diskTempFilePaths.isEmpty()) {
+            return;
+        }
+
         File depthTempFolder = new File(depthTempPath);
         if (!depthTempFolder.exists()) {
             return;
@@ -300,24 +342,24 @@ public class TerrainTileStore {
                 tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null,
                 generator.getImaginaryType(), generator.originIsLeftUp()));
 
-        if (!FileUtils.isFileExists(tilePath)) {
+        if (!tempTileCache.exists(tilePath)) {
             log.debug("Creating tile: CREATE - * - CREATE : {}, {}, {}", tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
             tile.createInitialMesh();
             if (tile.getMesh() == null) {
                 log.error("Error: tile.mesh == null");
             }
-            tile.saveFile(tile.getMesh(), tilePath);
+            tempTileCache.save(tile.getMesh(), tilePath);
             return tile;
         }
 
         log.debug("Loading tile: LOAD - * - LOAD : {}, {}, {}", tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
-        tile.loadFile(tilePath);
+        tile.setMesh(tempTileCache.load(tilePath));
         return tile;
     }
 
     public GeographicTerrainTile loadGeographicTerrainTile(TileIndices tileIndices) throws IOException {
         String tilePath = getTilePath(tileIndices);
-        if (!FileUtils.isFileExists(tilePath)) {
+        if (!tempTileCache.exists(tilePath)) {
             return null;
         }
 
@@ -327,7 +369,7 @@ public class TerrainTileStore {
         tile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
                 tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null,
                 generator.getImaginaryType(), generator.originIsLeftUp()));
-        tile.loadFile(tilePath);
+        tile.setMesh(tempTileCache.load(tilePath));
         return tile;
     }
 }
