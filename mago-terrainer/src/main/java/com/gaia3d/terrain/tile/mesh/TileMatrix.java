@@ -985,14 +985,11 @@ public class TileMatrix {
         maxDiff *= scale; // scale the maxDiff
 
         GeographicTerrainTileRaster tileRaster = terrainElevationModeler.getGeographicTerrainTileRaster(tileIndices, this.manager);
+        // the triangle can be in a translated longitude frame across the antimeridian (mesh = raster + offset)
         double rasterLongitudeOffset = 0.0;
         if (tileRaster != null) {
-            GeographicExtension tileRasterExtension = tileRaster.getGeographicExtension();
-            if (bboxTriangle.getMaxX() < tileRasterExtension.getMinLongitudeDeg() - 180.0) {
-                rasterLongitudeOffset = -360.0;
-            } else if (bboxTriangle.getMinX() > tileRasterExtension.getMaxLongitudeDeg() + 180.0) {
-                rasterLongitudeOffset = 360.0;
-            }
+            double triangleCenterLonDeg = (bboxTriangle.getMinX() + bboxTriangle.getMaxX()) * 0.5;
+            rasterLongitudeOffset = -tileRaster.getLongitudeShift(triangleCenterLonDeg);
         }
 
         // if the triangle size is very small, then do not refine**********************
