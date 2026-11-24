@@ -37,8 +37,8 @@ public enum CommandOptions {
     // Experimental options
     CONTINUOUS("continue", "c", false, "[Experimental] Continue terrain generation from the previous run. Use this option when terrain generation is interrupted or fails."),
     MODIFY("modify", "m", false, "[Experimental] Modify existing terrain. Not available yet: the option is ignored and the terrain is fully generated."),
-    EXT_META_DATA("metadata", "md", false, "[Experimental] Add the metadata extension to layer.json. The tiles do not contain metadata yet."),
-    EXT_WATER_MASK("waterMask", "wm", false, "[Experimental] Add the watermask extension to layer.json. The tiles do not contain a water mask yet."),
+    EXT_META_DATA("metadata", "md", false, "Add the metadata extension: the tiles at the depths 0, 10, 20... store the availability of their descendants, and layer.json only lists the depth 0 (metadataAvailability)."),
+    EXT_WATER_MASK("waterMask", "wm", false, "Add the water mask extension: the areas without data (NODATA or outside the input rasters) are water."),
     //INPUT_CRS("inputCrs", "ic", true, "[Experimental] Input Coordinate Reference System, EPSG Code [4326, 3857...]"),
     //TILING_SCHEMA("tilingSchema", "ts", true, "[Experimental] Schema for the terrain data. [geodetic, mercator][default : geodetic]"),
 

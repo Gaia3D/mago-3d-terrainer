@@ -217,6 +217,13 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
 });
 ```
 
+## 확장 (워터마스크, 메타데이터)
+- `--waterMask` / `-wm`: `watermask` 확장을 추가합니다. 데이터가 없는 영역(NODATA 또는 입력 래스터 밖)을 물로 표시합니다. 타일마다 1바이트(전부 육지/전부 물) 또는 256 x 256 마스크가 저장되며, CesiumJS에서 `requestWaterMask: true`로 수면 효과에 사용됩니다.
+- `--metadata` / `-md`: 타일 가용성(availability)을 담은 `metadata` 확장을 추가합니다. depth 0, 10, 20... 타일이 다음 10개 depth의 하위 타일 범위를 저장하고, layer.json에는 `"metadataAvailability": 10`과 depth 0의 `available`만 기록됩니다. CesiumJS가 가용성을 타일에서 읽으므로, 큰 타일셋에서도 layer.json이 작게 유지됩니다.
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --waterMask --metadata
+```
+
 ---
 
 # 처리 제어

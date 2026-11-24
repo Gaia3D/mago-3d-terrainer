@@ -209,6 +209,13 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
 });
 ```
 
+## Extensions (water mask, metadata)
+- `--waterMask` / `-wm`: adds the `watermask` extension. The areas without data (NODATA or outside the input rasters) are water. Each tile has 1 byte (all land / all water) or a 256 x 256 mask. CesiumJS uses it with `requestWaterMask: true` (water effects).
+- `--metadata` / `-md`: adds the `metadata` extension with the tile availability. The tiles at the depths 0, 10, 20... store the available tile ranges of their descendants for the next 10 depths, and layer.json has `"metadataAvailability": 10` with the `available` list of the depth 0 only. CesiumJS then reads the availability from the tiles, so layer.json stays small for large tilesets.
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --waterMask --metadata
+```
+
 ---
 
 # Processing Control

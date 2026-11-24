@@ -75,8 +75,8 @@ Usage: command options
                                      (default: 4096)
  -c, --continue                      [Experimental] Continue terrain generation from the previous run. Use this option when terrain generation is interrupted or fails.
  -m, --modify                        [Experimental] Modify existing terrain. Not available yet: the option is ignored and the terrain is fully generated.
- -md, --metadata                     [Experimental] Add the metadata extension to layer.json. The tiles do not contain metadata yet.
- -wm, --waterMask                    [Experimental] Add the watermask extension to layer.json. The tiles do not contain a water mask yet.
+ -md, --metadata                     Add the metadata extension: the tiles at the depths 0, 10, 20... store the availability of their descendants, and layer.json only lists the depth 0 (metadataAvailability).
+ -wm, --waterMask                    Add the water mask extension: the areas without data (NODATA or outside the input rasters) are water.
  -b, --body <arg>                    Set the celestial body for terrain generation.
                                      (default: earth)(options: earth, moon)
  -vb, --verbose                      Print verbose logs.
