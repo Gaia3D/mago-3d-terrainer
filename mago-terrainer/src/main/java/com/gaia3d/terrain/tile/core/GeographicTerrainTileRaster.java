@@ -5,7 +5,6 @@ import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationData;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
 import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
-import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +28,11 @@ public class GeographicTerrainTileRaster {
     private static final int WATER_MASK_SIZE = 256;
     private static final byte LAND = 0;
     private static final byte WATER = (byte) 255;
+    // the first raster with data at a point gives its height: the priority rank, then the highest resolution
+    private static final Comparator<TerrainElevationData> PRIORITY_ORDER = Comparator
+            .comparingInt(TerrainElevationData::getPriorityRank)
+            .thenComparingDouble(TerrainElevationData::getPixelArea);
+    private static final double[] LONGITUDE_SHIFTS = {-360.0, 360.0};
 
     private TerrainTilesetGenerator manager = null;
     private TileIndices tileIndices = null;
@@ -69,18 +73,38 @@ public class GeographicTerrainTileRaster {
     }
 
     private double normalizeLongitude(double lonDeg) {
+        return lonDeg + getLongitudeShift(lonDeg);
+    }
+
+    /**
+     * Returns the shift (-360, 0 or +360) that moves the longitude into the frame of this raster.
+     * A mesh connected across the antimeridian can temporarily represent the +180 side in the -180
+     * coordinate frame (or vice versa). The shift that brings the longitude closest to the raster
+     * extent is chosen, so a longitude exactly on the antimeridian is also mapped correctly when the
+     * raster is 180 degrees wide (depth 0).
+     */
+    public double getLongitudeShift(double lonDeg) {
+        double bestShift = 0.0;
+        double bestDistance = getDistanceToLongitudeRange(lonDeg);
+        for (double shift : LONGITUDE_SHIFTS) {
+            double distance = getDistanceToLongitudeRange(lonDeg + shift);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestShift = shift;
+            }
+        }
+        return bestShift;
+    }
+
+    private double getDistanceToLongitudeRange(double lonDeg) {
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
-
-        // A mesh connected across the antimeridian can temporarily represent the +180 side
-        // in the -180 coordinate frame (or vice versa). Map that virtual longitude back to
-        // this raster before converting it to a column.
-        if (lonDeg < minLonDeg - 180.0) {
-            lonDeg += 360.0;
-        } else if (lonDeg > maxLonDeg + 180.0) {
-            lonDeg -= 360.0;
+        if (lonDeg < minLonDeg) {
+            return minLonDeg - lonDeg;
+        } else if (lonDeg > maxLonDeg) {
+            return lonDeg - maxLonDeg;
         }
-        return lonDeg;
+        return 0.0;
     }
 
     public int getRow(double latDeg) {
@@ -189,9 +213,7 @@ public class GeographicTerrainTileRaster {
         GeographicExtension geoExtension = this.getGeographicExtension();
         List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
         terrainElevationModeler.collectTerrainElevationData(geoExtension, resultTerrainElevDataArray);
-        if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
-            resultTerrainElevDataArray.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
-        }
+        resultTerrainElevDataArray.sort(PRIORITY_ORDER);
         terrainElevationModeler.preloadTerrainElevationRasters(resultTerrainElevDataArray);
 
         double[] longitudes = new double[rasterWidth];
@@ -266,9 +288,7 @@ public class GeographicTerrainTileRaster {
         terrainElevationModeler.collectTerrainElevationData(eastSeam, seamDataMap);
 
         List<TerrainElevationData> seamData = new ArrayList<>(seamDataMap.keySet());
-        if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
-            seamData.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
-        }
+        seamData.sort(PRIORITY_ORDER);
 
         int frontierColumn = westFrontier ? 0 : rasterWidth - 1;
         double minLatDeg = geographicExtension.getMinLatitudeDeg();

@@ -2,6 +2,7 @@ package com.gaia3d.command;
 
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.types.PriorityType;
+import com.gaia3d.terrain.util.NoDataUtils;
 import com.gaia3d.util.CelestialBody;
 import lombok.Getter;
 import lombok.Setter;
@@ -72,6 +73,7 @@ public class GlobalOptions {
     private int maximumTileDepth;
     private InterpolationType interpolationType;
     private PriorityType priorityType;
+    private String priorityFilePath;
     private double noDataValue;
     private double intensity;
 
@@ -279,6 +281,17 @@ public class GlobalOptions {
         } else {
             instance.setPriorityType(PriorityType.RESOLUTION);
         }
+        if (command.hasOption(CommandOptions.PRIORITY_FILE.getLongName())) {
+            String priorityFilePath = command.getOptionValue(CommandOptions.PRIORITY_FILE.getLongName());
+            if (!new File(priorityFilePath).isFile()) {
+                throw new IllegalArgumentException("Priority file does not exist: " + priorityFilePath);
+            }
+            instance.setPriorityFilePath(priorityFilePath);
+            instance.setPriorityType(PriorityType.FILE);
+        } else if (instance.getPriorityType() == PriorityType.FILE) {
+            log.warn("* Priority type 'file' requires --priorityFile. Set to resolution.");
+            instance.setPriorityType(PriorityType.RESOLUTION);
+        }
 
         if (command.hasOption(CommandOptions.TILING_MOSAIC_SIZE.getLongName())) {
             instance.setMosaicSize(Integer.parseInt(command.getOptionValue(CommandOptions.TILING_MOSAIC_SIZE.getLongName())));
@@ -307,7 +320,7 @@ public class GlobalOptions {
         }
 
         if (command.hasOption(CommandOptions.NODATA_VALUE.getLongName())) {
-            double noDataValue = Double.parseDouble(command.getOptionValue(CommandOptions.NODATA_VALUE.getLongName()));
+            double noDataValue = NoDataUtils.parseNoDataValue(command.getOptionValue(CommandOptions.NODATA_VALUE.getLongName()));
             instance.setNoDataValue(noDataValue);
         } else {
             instance.setNoDataValue(DEFAULT_NO_DATA_VALUE);

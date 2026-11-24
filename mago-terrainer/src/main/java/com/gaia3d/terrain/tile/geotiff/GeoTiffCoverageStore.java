@@ -2,10 +2,12 @@ package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
+import com.gaia3d.terrain.util.NoDataUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.imagen.Interpolation;
 import org.eclipse.imagen.PlanarImage;
 import org.eclipse.imagen.TiledImage;
 import org.eclipse.imagen.media.range.NoDataContainer;
@@ -52,6 +54,8 @@ public class GeoTiffCoverageStore {
     private static final double RASTER_CACHE_HEAP_RATIO = 0.15d;
     private final String PROJECTION_CRS = "EPSG:3857";
     private final double defaultNoDataValue = GlobalOptions.getInstance().getNoDataValue();
+    // the NODATA samples must not be interpolated into valid heights
+    private static final Interpolation NEAREST_INTERPOLATION = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
     private int[] pixel = new int[1];
     private double[] originalUpperLeftCorner = new double[2];
     private Map<String, GridCoverage2D> mapPathGridCoverage2d = new HashMap<>();
@@ -225,7 +229,7 @@ public class GeoTiffCoverageStore {
                 double scaleX = (double) desiredImageWidth / (double) resizedSpanX;
                 double scaleY = (double) desiredImageHeight / (double) resizedSpanY;
                 Operations ops = new Operations(null);
-                GridCoverage2D exactSizedCoverage = (GridCoverage2D) ops.scale(resizedCoverage, scaleX, scaleY, 0, 0);
+                GridCoverage2D exactSizedCoverage = (GridCoverage2D) ops.scale(resizedCoverage, scaleX, scaleY, 0, 0, NEAREST_INTERPOLATION);
                 resizedCoverage.dispose(true);
                 resizedCoverage = exactSizedCoverage;
             }
@@ -234,7 +238,7 @@ public class GeoTiffCoverageStore {
             double scaleY = (double) desiredImageHeight / (double) gridSpanY;
 
             Operations ops = new Operations(null);
-            resizedCoverage = (GridCoverage2D) ops.scale(originalCoverage, scaleX, scaleY, 0, 0);
+            resizedCoverage = (GridCoverage2D) ops.scale(originalCoverage, scaleX, scaleY, 0, 0, NEAREST_INTERPOLATION);
         }
 
         originalUpperLeftCorner[0] = envelopeOriginal.getMinimum(0);
@@ -466,7 +470,7 @@ public class GeoTiffCoverageStore {
     }
 
     private boolean isNoDataValue(double value, double noDataValue) {
-        return Double.isNaN(value) || Double.compare(value, noDataValue) == 0;
+        return NoDataUtils.isNoData(value, noDataValue, defaultNoDataValue);
     }
 
     private WritableRaster createZeroBasedWritableRaster(Raster sourceRaster) {

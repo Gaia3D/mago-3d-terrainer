@@ -31,6 +31,7 @@ import org.geotools.gce.geotiff.GeoTiffWriteParams;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
 import com.gaia3d.terrain.tile.raster.TerrainRasterWriter;
+import com.gaia3d.terrain.util.NoDataUtils;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -497,6 +498,10 @@ public class RasterStandardizer {
         boolean hasDemNoDataVal = demNoDataVal != null;
         double demNoData = hasDemNoDataVal ? demNoDataVal : Double.NaN;
         double outputNoData = hasDemNoDataVal ? demNoData : globalNodata;
+        // the resampled geoid has its NODATA tag, or the configured NODATA value as background, outside the geoid grid
+        Double geoidNoDataVal = getNodata(alignedGeoid);
+        double geoidNoData = geoidNoDataVal != null ? geoidNoDataVal : Double.NaN;
+        long noGeoidCount = 0;
 
         Raster demRaster = demImg.getData();
         Raster geoRaster = geoidImg.getData();
@@ -511,25 +516,27 @@ public class RasterStandardizer {
             for (int x = demRectangle.x; x < demRectangle.x + demRectangle.width; x++) {
                 int outputX = x - demRectangle.x;
                 int outputY = y - demRectangle.y;
-                outRaster.setSample(outputX, outputY, 0, (float) demRaster.getSampleDouble(x, y, 0));
+
+                double H = demRaster.getSampleDouble(x, y, 0);
+                if (NoDataUtils.isNoData(H, demNoData, globalNodata)) {
+                    outRaster.setSample(outputX, outputY, 0, (float) outputNoData);
+                    continue;
+                }
+
+                // a DEM height without a valid geoid height would be off by the geoid undulation, so it is NODATA
+                boolean insideGeoid = intersection.contains(x, y);
+                double N = insideGeoid ? geoRaster.getSampleDouble(x, y, 0) : Double.NaN;
+                if (!NoDataUtils.isValidGeoidHeight(N, geoidNoData, globalNodata)) {
+                    outRaster.setSample(outputX, outputY, 0, (float) outputNoData);
+                    noGeoidCount++;
+                    continue;
+                }
+                outRaster.setSample(outputX, outputY, 0, (float) (H + N));
             }
         }
 
-        for (int y = intersection.y; y < intersection.y + intersection.height; y++) {
-            for (int x = intersection.x; x < intersection.x + intersection.width; x++) {
-                int outputX = x - demRectangle.x;
-                int outputY = y - demRectangle.y;
-
-                double H = demRaster.getSampleDouble(x, y, 0);
-                if (Double.isNaN(H)
-                        || (hasDemNoDataVal && Double.compare(H, demNoData) == 0)
-                        || (!hasDemNoDataVal && H <= -9999)) {
-                    outRaster.setSample(outputX, outputY, 0, (float) outputNoData);
-                } else {
-                    double N = geoRaster.getSampleDouble(x, y, 0);
-                    outRaster.setSample(outputX, outputY, 0, (float) (H + N));
-                }
-            }
+        if (noGeoidCount > 0) {
+            log.warn("[Pre][Geoid] {} DEM pixels of {} are outside the geoid coverage, they are treated as NODATA.", noGeoidCount, dem.getName());
         }
 
         // dispose
@@ -602,7 +609,7 @@ public class RasterStandardizer {
     }
 
     private boolean isNoDataValue(double value, double noDataValue) {
-        return Double.isNaN(value) || Double.compare(value, noDataValue) == 0;
+        return NoDataUtils.isNoData(value, noDataValue, globalOptions.getNoDataValue());
     }
 
     private GeneralParameterValue[] createWriteParameters(GridCoverage2D coverage) {
