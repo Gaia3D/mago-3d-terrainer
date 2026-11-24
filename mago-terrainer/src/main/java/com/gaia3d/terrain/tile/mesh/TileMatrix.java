@@ -1014,9 +1014,11 @@ public class TileMatrix {
         double sourceMinX = bboxTriangle.getMinX() - rasterLongitudeOffset;
         double sourceMaxX = bboxTriangle.getMaxX() - rasterLongitudeOffset;
         if (!rootGeographicExtension.intersectsBox(sourceMinX, bboxTriangle.getMinY(), sourceMaxX, bboxTriangle.getMaxY())) {
-            // Need check only the 3 vertex of the triangle
+            // Need check only the 3 vertex of the triangle: outside the data, the surface is the no-data height (0 or the geoid)
             for (TerrainVertex vertex : this.listVertices) {
-                if (vertex.getPosition().z > maxDiff) {
+                Vector3d position = vertex.getPosition();
+                double noDataHeight = terrainElevationModeler.getNoDataHeight(position.x, position.y);
+                if (abs(position.z - noDataHeight) > maxDiff) {
                     return true;
                 }
             }
