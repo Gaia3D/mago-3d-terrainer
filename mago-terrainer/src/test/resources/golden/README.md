@@ -29,7 +29,7 @@ The outputs and logs are written to `mago-terrainer/build/release-test/{case}`.
 | F03 | no normals | `sample` | `-max 10 -ncn` |
 | F04 | refinement intensity | `sample` | `-max 10 -is 8` |
 | F05 | mosaic size, raster split size | `sample` | `-max 10 -ms 4 -mr 1024` |
-| F06 | water mask, metadata extensions | `sample` | **disabled**: only `layer.json` lists the extensions, the tiles have no extension data |
+| F06 | water mask, metadata extensions | `sample` | `-max 10 -wm -md`, the tile hashes include the extensions, layer.json has `metadataAvailability` (requires #44) |
 | F07 | built-in geoid | `sample` | `-max 10 -geoid EGM96` |
 | F08 | external geoid file | `sample` | `-max 10 -geoid kr_ngii_KNGeoid18_4326.tif` |
 | F09 | EPSG:5186 5m input | `another-crs-sample` | `-max 12` |
@@ -60,4 +60,4 @@ gdal_translate -projwin 335000 270000 355000 250000 -co COMPRESS=DEFLATE -co PRE
 
 The golden manifests were first generated with the code of `e4e68352` (before the temp tile cache), and the temp tile cache (#36) gives the same output.
 They were then regenerated with the NODATA fixes (#40, #41) and the depth-0 antimeridian fix (#39), which change the tiles at the NODATA borders and, with a geoid, the areas without data.
-So this test requires #39, #40, #41, #42 (F21) and #29 (F14) to be merged.
+So this test requires #39, #40, #41, #42 (F21), #43 (F14) and #44 (F06) to be merged.

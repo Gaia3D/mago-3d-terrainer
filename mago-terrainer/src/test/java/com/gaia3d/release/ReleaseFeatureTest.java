@@ -4,7 +4,6 @@ import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.command.Mago3DTerrainerMain;
 import com.gaia3d.release.golden.TerrainGolden;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -78,10 +77,13 @@ class ReleaseFeatureTest {
     }
 
     @Test
-    @Disabled("Not implemented: -waterMask/-metadata only add the extension names to layer.json, the tiles have no extension data.")
     @DisplayName("F06 water mask and metadata extensions")
     void extensions() throws IOException {
-        assertGolden("F06-extensions", run("F06-extensions", "-i", path(SAMPLE), "-max", "10", "-wm", "-md"));
+        // the extensions are written after the mesh, so the tile hashes include the water mask and the availability metadata (#35)
+        File output = run("F06-extensions", "-i", path(SAMPLE), "-max", "10", "-wm", "-md");
+        String layerJson = Files.readString(new File(output, "layer.json").toPath(), StandardCharsets.UTF_8);
+        assertTrue(layerJson.contains("\"metadataAvailability\":10"), "layer.json must declare the metadata availability");
+        assertGolden("F06-extensions", output);
     }
 
     // --- height reference ---
