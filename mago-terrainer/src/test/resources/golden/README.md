@@ -58,4 +58,6 @@ gdal_translate -projwin 320000 285000 375000 245000 -co COMPRESS=DEFLATE -co PRE
 gdal_translate -projwin 335000 270000 355000 250000 -co COMPRESS=DEFLATE -co PREDICTOR=3 -co TILED=YES dem30-mini-5186-part.tif dem30.tif
 ```
 
-The golden manifests were generated with the code of `e4e68352` (before the temp tile cache), so they also check that the optimizations do not change the output.
+The golden manifests were first generated with the code of `e4e68352` (before the temp tile cache), and the temp tile cache (#36) gives the same output.
+They were then regenerated with the NODATA fixes (#40, #41) and the depth-0 antimeridian fix (#39), which change the tiles at the NODATA borders and, with a geoid, the areas without data.
+So this test requires #39, #40 and #41 to be merged.
