@@ -67,6 +67,21 @@ public class TerrainGolden {
         }
     }
 
+    /**
+     * Checks that the output has the same files as the golden of the case, whatever their contents.
+     */
+    public static void assertSameFiles(String caseName, File outputDir) throws IOException {
+        File goldenFile = new File(GOLDEN_DIR, caseName + ".manifest");
+        Set<String> expected = readManifest(goldenFile).keySet();
+        Set<String> actual = buildManifest(outputDir).keySet();
+        List<String> missing = expected.stream().filter(path -> !actual.contains(path)).toList();
+        List<String> extra = actual.stream().filter(path -> !expected.contains(path)).toList();
+        if (!missing.isEmpty() || !extra.isEmpty()) {
+            fail(String.format("[%s] Output files differ from the golden manifest%n  missing %d: %s%n  extra %d: %s",
+                    caseName, missing.size(), head(missing), extra.size(), head(extra)));
+        }
+    }
+
     public static SortedMap<String, String> buildManifest(File outputDir) throws IOException {
         SortedMap<String, String> manifest = new TreeMap<>();
         Path root = outputDir.toPath();

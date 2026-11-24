@@ -197,12 +197,14 @@ class ReleaseFeatureTest {
     }
 
     @Test
-    @Disabled("Known issue: when killed in the middle of a depth, -continue skips the rest of that depth because the depth folder already exists.")
-    @DisplayName("F21 recovery: killed in the middle of a depth")
+    @DisplayName("F21 recovery: killed in the middle of a depth, continue generates the interrupted depth again")
     void recoverAfterKillInDepth() throws Exception {
-        File output = runAndKill("F21-recovery-in-depth", "\\[Tile\\]\\[9/10\\]\\[1/", "-i", path(SAMPLE), "-max", "10");
-        execute("-i", path(SAMPLE), "-o", path(output), "-max", "10", "-continue");
-        assertSameAsGolden("F01-basic", output);
+        // the depth 11 of this sample has 2 subranges: the run is killed after the first one modified the temp tiles (#34)
+        File output = runAndKill("F21-recovery-in-depth", "\\[Tile\\]\\[11/12\\]\\[2/", "-i", path(MULTI_RESOLUTION_SAMPLE), "-max", "12");
+        execute("-i", path(MULTI_RESOLUTION_SAMPLE), "-o", path(output), "-max", "12", "-continue");
+        // no missing tiles. The interrupted depth is generated from the quantized meshes, so the tiles differ from F13
+        TerrainGolden.assertSameFiles("F13-multi-resolution", output);
+        assertGolden("F21-recovery-in-depth", output);
     }
 
     // --- helpers ---
@@ -276,7 +278,8 @@ class ReleaseFeatureTest {
         }
         process.destroyForcibly().waitFor();
         assertTrue(matched, "the child process must reach the kill point: " + killLogPattern);
-        assertFalse(new File(output, "layer.json").exists() && new File(output, "10").isDirectory(), "the child process must be killed before it finishes");
+        // a completed run deletes its temp folder
+        assertTrue(new File(output, "temp").isDirectory(), "the child process must be killed before it finishes");
         return output;
     }
 }
