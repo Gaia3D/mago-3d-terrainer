@@ -1,0 +1,3 @@
+# release feature test F14: dem100 first, then dem500. dem30 is not listed, so it comes last
+input/dem100.tif
+input/dem5*.tif

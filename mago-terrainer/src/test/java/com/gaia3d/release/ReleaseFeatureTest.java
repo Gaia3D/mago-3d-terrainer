@@ -133,10 +133,18 @@ class ReleaseFeatureTest {
     }
 
     @Test
-    @Disabled("Not implemented: PriorityType.HIGHER_VALUE is commented out, so \"-pt higher\" falls back to resolution.")
-    @DisplayName("F14 multi-resolution overlap, higher priority")
-    void multiResolutionHigherPriority() throws IOException {
-        assertGolden("F14-multi-resolution-higher", run("F14-multi-resolution-higher", "-i", path(MULTI_RESOLUTION_SAMPLE), "-max", "12", "-pt", "higher"));
+    @DisplayName("F14 multi-resolution overlap, priority file (100m first, then 500m, then 30m)")
+    void multiResolutionPriorityFile() throws IOException {
+        File priorityFile = new File(MULTI_RESOLUTION_SAMPLE.getParentFile(), "priority.txt");
+        File output = run("F14-multi-resolution-priority-file", "-i", path(MULTI_RESOLUTION_SAMPLE), "-max", "12", "-priorityFile", path(priorityFile));
+        assertGolden("F14-multi-resolution-priority-file", output);
+
+        // the same order with the input options
+        File inputOrder = run("F14-multi-resolution-priority-input", "-max", "12", "-pt", "input",
+                "-i", path(new File(MULTI_RESOLUTION_SAMPLE, "dem100.tif")),
+                "-i", path(new File(MULTI_RESOLUTION_SAMPLE, "dem500.tif")),
+                "-i", path(new File(MULTI_RESOLUTION_SAMPLE, "dem30.tif")));
+        assertSameAsGolden("F14-multi-resolution-priority-file", inputOrder);
     }
 
     @Test
