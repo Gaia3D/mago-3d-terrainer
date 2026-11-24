@@ -2,6 +2,7 @@ package com.gaia3d.terrain.tile.elevation;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.tile.generation.RasterPriority;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.tile.raster.TerrainRasterData;
 import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
@@ -57,6 +58,8 @@ public class TerrainElevationData {
     private NoDataContainer noDataContainer = null;
     private Position2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
+    // see RasterPriority, the lower first
+    private int priorityRank = RasterPriority.UNRANKED;
     private int geoTiffHeight = -1;
     private int queryMark = 0;
     private Vector2i gridCoverage2DSize = null;

@@ -38,6 +38,8 @@ public class AvailableTileAnalyzer {
             throw new RuntimeException("Error: No GeoTiff files found in input paths: " + resolveConfiguredInputPaths());
         }
 
+        generator.setRasterPriority(RasterPriority.create(rasterFileNames));
+
         int geoTiffFilesSize = rasterFileNames.size();
         int geoTiffFilesCount = 0;
 

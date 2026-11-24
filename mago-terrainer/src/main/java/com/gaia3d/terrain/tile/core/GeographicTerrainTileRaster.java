@@ -5,7 +5,6 @@ import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationData;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
 import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
-import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +25,10 @@ public class GeographicTerrainTileRaster {
     private static final int RASTER_RELEASE_COLUMN_BLOCK_SIZE = 32;
     private static final double ANTIMERIDIAN_EPSILON_DEG = 1.0e-8;
     private static final double ANTIMERIDIAN_CANDIDATE_BAND_DEG = 1.0;
+    // the first raster with data at a point gives its height: the priority rank, then the highest resolution
+    private static final Comparator<TerrainElevationData> PRIORITY_ORDER = Comparator
+            .comparingInt(TerrainElevationData::getPriorityRank)
+            .thenComparingDouble(TerrainElevationData::getPixelArea);
     private static final double[] LONGITUDE_SHIFTS = {-360.0, 360.0};
 
     private TerrainTilesetGenerator manager = null;
@@ -203,9 +206,7 @@ public class GeographicTerrainTileRaster {
         GeographicExtension geoExtension = this.getGeographicExtension();
         List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
         terrainElevationModeler.collectTerrainElevationData(geoExtension, resultTerrainElevDataArray);
-        if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
-            resultTerrainElevDataArray.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
-        }
+        resultTerrainElevDataArray.sort(PRIORITY_ORDER);
         terrainElevationModeler.preloadTerrainElevationRasters(resultTerrainElevDataArray);
 
         double[] longitudes = new double[rasterWidth];
@@ -277,9 +278,7 @@ public class GeographicTerrainTileRaster {
         terrainElevationModeler.collectTerrainElevationData(eastSeam, seamDataMap);
 
         List<TerrainElevationData> seamData = new ArrayList<>(seamDataMap.keySet());
-        if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
-            seamData.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
-        }
+        seamData.sort(PRIORITY_ORDER);
 
         int frontierColumn = westFrontier ? 0 : rasterWidth - 1;
         double minLatDeg = geographicExtension.getMinLatitudeDeg();
