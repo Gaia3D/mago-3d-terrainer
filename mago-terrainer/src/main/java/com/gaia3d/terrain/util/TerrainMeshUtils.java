@@ -203,7 +203,7 @@ public class TerrainMeshUtils {
 
             try {
                 //log.debug("Saving children tiles... L : " + childTileIndices.getL() + " i : " + j + " / " + childMeshesCount);
-                childMesh.saveFile(childTileFullPath);
+                manager.getTerrainTileStore().saveTempTileMesh(childMesh, childTileFullPath);
             } catch (IOException e) {
                 log.error("Error:", e);
                 return;

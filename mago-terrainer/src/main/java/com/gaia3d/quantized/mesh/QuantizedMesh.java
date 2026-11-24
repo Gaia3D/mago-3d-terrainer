@@ -7,11 +7,15 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Setter
 @Getter
 @Slf4j
 public class QuantizedMesh {
+    public static final byte WATER_MASK_EXTENSION_ID = 2;
+    public static final byte METADATA_EXTENSION_ID = 4;
+
     private QuantizedMeshHeader header = new QuantizedMeshHeader();
 
     private int vertexCount = 0;
@@ -36,6 +40,11 @@ public class QuantizedMesh {
     private byte extensionId = 0;
     private int extensionLength = 0;
     private byte[] octEncodedNormals = null; // 2 bytes per normal
+
+    // water mask extension: 1 byte (all land 0, all water 255) or 256 x 256 bytes from the north-west corner, null if none
+    private byte[] waterMask = null;
+    // metadata extension (e.g. the availability of the child tiles), null if none
+    private String metadataJson = null;
 
     public short zigZagEncode(int n) {
         return (short) ((n << 1) ^ (n >> 31));
@@ -339,6 +348,20 @@ public class QuantizedMesh {
             dataOutputStream.writeByte(extensionId);
             dataOutputStream.writeInt(extensionLength);
             dataOutputStream.write(octEncodedNormals);
+        }
+
+        if (waterMask != null) {
+            dataOutputStream.writeByte(WATER_MASK_EXTENSION_ID);
+            dataOutputStream.writeInt(waterMask.length);
+            dataOutputStream.write(waterMask);
+        }
+
+        if (metadataJson != null) {
+            byte[] json = metadataJson.getBytes(StandardCharsets.UTF_8);
+            dataOutputStream.writeByte(METADATA_EXTENSION_ID);
+            dataOutputStream.writeInt(Integer.BYTES + json.length);
+            dataOutputStream.writeInt(json.length);
+            dataOutputStream.write(json);
         }
     }
 }

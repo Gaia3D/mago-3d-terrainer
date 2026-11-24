@@ -175,6 +175,10 @@ public class TerrainLayer {
         this.bounds[3] = maxLat;
     }
 
+    private boolean hasMetadataAvailability() {
+        return this.extensions != null && this.extensions.contains("metadata");
+    }
+
     public void saveJsonFile(String outputDirectory, String layerJsonName) {
         String fullFileName = outputDirectory + File.separator + layerJsonName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
@@ -202,9 +206,18 @@ public class TerrainLayer {
             objectNodeRoot.set("extensions", objectNodeExtensions);
         }
 
+        // with the metadata extension, the availability is stored in the tiles (see TileAvailabilityMetadata)
+        boolean metadataAvailability = hasMetadataAvailability();
+        if (metadataAvailability) {
+            objectNodeRoot.put("metadataAvailability", TileAvailabilityMetadata.AVAILABILITY_LEVELS);
+        }
+
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         HashMap<Integer, TileRange> tilesRangeMap = this.getTilesRangeMap();
         for (Integer tileDepth : tilesRangeMap.keySet()) {
+            if (metadataAvailability && tileDepth > 0) {
+                continue;
+            }
             TileRange tilesRange = tilesRangeMap.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
@@ -326,9 +339,18 @@ public class TerrainLayer {
             objectNodeRoot.set("extensions", objectNodeExtensions);
         }
 
+        // with the metadata extension, the availability is stored in the tiles (see TileAvailabilityMetadata)
+        boolean metadataAvailability = hasMetadataAvailability();
+        if (metadataAvailability) {
+            objectNodeRoot.put("metadataAvailability", TileAvailabilityMetadata.AVAILABILITY_LEVELS);
+        }
+
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         Map<Integer, List<TileRange>> mapDepthAvailableTileRanges = availableTileSet.getMapDepthAvailableTileRanges();
         for (Integer tileDepth : mapDepthAvailableTileRanges.keySet()) {
+            if (metadataAvailability && tileDepth > 0) {
+                continue;
+            }
             List<TileRange> tileRanges = mapDepthAvailableTileRanges.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             for (TileRange tilesRange : tileRanges) {

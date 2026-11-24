@@ -4,11 +4,13 @@ import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.io.LittleEndianDataInputStream;
 import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
+import com.gaia3d.terrain.structure.TerrainMesh;
 import com.gaia3d.terrain.tile.core.GeographicTerrainTile;
 import com.gaia3d.terrain.tile.core.TileIndices;
 import com.gaia3d.terrain.tile.core.TileRange;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import com.gaia3d.terrain.util.TerrainMeshUtils;
+import com.gaia3d.util.DecimalUtils;
 import com.gaia3d.util.FileUtils;
 import com.gaia3d.util.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,10 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 @Slf4j
@@ -26,6 +32,37 @@ import java.util.*;
 public class TerrainTileStore {
     private final GlobalOptions globalOptions = GlobalOptions.getInstance();
     private final TerrainTilesetGenerator generator;
+    private static final String PROGRESS_FILE_NAME = "progress.properties";
+    private static final String COMPLETED_DEPTH_KEY = "completedDepth";
+    private static final String RUNNING_DEPTH_KEY = "runningDepth";
+
+    private final TempTileCache tempTileCache = new TempTileCache();
+    // the depth that started but whose temp tiles are not modified yet, see beginDepth()
+    private int pendingRunningDepth = -1;
+
+    public void saveTempTileMesh(TerrainMesh mesh, String filePath) throws IOException {
+        markDepthRunning();
+        tempTileCache.save(mesh, filePath);
+    }
+
+    /**
+     * Writes the in-memory temp tiles to the temp folder, so the "continue" mode can resume from the next depth.
+     */
+    public void checkpointTempTiles(int depth) {
+        long startTime = System.currentTimeMillis();
+        try {
+            int writtenCount = tempTileCache.checkpoint();
+            if (writtenCount > 0) {
+                log.info("[Tile][{}] Checkpoint {} temp tiles : Duration: {}", depth, writtenCount, DecimalUtils.millisecondToDisplayTime(System.currentTimeMillis() - startTime));
+            }
+        } catch (IOException e) {
+            log.error("Failed to checkpoint the temp tiles.", e);
+        }
+    }
+
+    public void clearTempTileCache() {
+        tempTileCache.clear();
+    }
 
     public void writeTempTilesFromQuantizedMeshes(int depth) {
         String tempPath = globalOptions.getTileTempPath();
@@ -229,8 +266,66 @@ public class TerrainTileStore {
         return new File(depthTempPath).exists();
     }
 
+    /**
+     * Starts a depth. It is recorded as running only when its temp tiles are modified for the first time (overwritten or deleted):
+     * until then, the temp tiles are still those of the end of the previous depth, and "-continue" can resume from them.
+     */
+    public void beginDepth(int depth) {
+        pendingRunningDepth = depth;
+    }
+
+    private void markDepthRunning() {
+        if (pendingRunningDepth >= 0) {
+            int runningDepth = pendingRunningDepth;
+            pendingRunningDepth = -1;
+            writeDepthProgress(runningDepth - 1, runningDepth);
+        }
+    }
+
+    /**
+     * Records the progress of the tiling in the temp folder, so "-continue" knows if the previous run stopped in the middle of a depth.
+     * @param completedDepth the last depth whose tiles (and the temp tiles of the next depth) are complete, -1 if none
+     * @param runningDepth the depth being generated, equal to completedDepth between two depths
+     */
+    public void writeDepthProgress(int completedDepth, int runningDepth) {
+        if (completedDepth == runningDepth) {
+            pendingRunningDepth = -1;
+        }
+        Path progressPath = Path.of(globalOptions.getTileTempPath(), PROGRESS_FILE_NAME);
+        Path writingPath = Path.of(globalOptions.getTileTempPath(), PROGRESS_FILE_NAME + ".tmp");
+        String content = COMPLETED_DEPTH_KEY + "=" + completedDepth + System.lineSeparator() + RUNNING_DEPTH_KEY + "=" + runningDepth + System.lineSeparator();
+        try {
+            Files.createDirectories(progressPath.getParent());
+            Files.writeString(writingPath, content, StandardCharsets.UTF_8);
+            Files.move(writingPath, progressPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            log.warn("Failed to write the tiling progress: {}", progressPath, e);
+        }
+    }
+
+    /**
+     * @return {completedDepth, runningDepth} of the previous run, or null if there is no progress file
+     */
+    public int[] readDepthProgress() {
+        Path progressPath = Path.of(globalOptions.getTileTempPath(), PROGRESS_FILE_NAME);
+        if (!Files.isRegularFile(progressPath)) {
+            return null;
+        }
+        try (var reader = Files.newBufferedReader(progressPath, StandardCharsets.UTF_8)) {
+            Properties properties = new Properties();
+            properties.load(reader);
+            int completedDepth = Integer.parseInt(properties.getProperty(COMPLETED_DEPTH_KEY).trim());
+            int runningDepth = Integer.parseInt(properties.getProperty(RUNNING_DEPTH_KEY).trim());
+            return new int[]{completedDepth, runningDepth};
+        } catch (Exception e) {
+            log.warn("Failed to read the tiling progress: {}", progressPath, e);
+            return null;
+        }
+    }
+
     public void deleteTempFilesByDepth(int depth) {
         String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
+        tempTileCache.removeByPrefix(depthTempPath + File.separator);
         File depthTempFolder = new File(depthTempPath);
         if (depthTempFolder.exists()) {
             org.apache.commons.io.FileUtils.deleteQuietly(depthTempFolder);
@@ -238,8 +333,24 @@ public class TerrainTileStore {
     }
 
     public void deleteTempFilesByTileRange(TileRange tileRange) {
+        markDepthRunning();
         int depth = tileRange.getTileDepth();
         String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
+
+        // remove the in-memory tiles. Only the tiles that may exist on disk are deleted from the temp folder.
+        List<String> diskTempFilePaths = new ArrayList<>();
+        for (int x = tileRange.getMinTileX(); x <= tileRange.getMaxTileX(); x++) {
+            for (int y = tileRange.getMinTileY(); y <= tileRange.getMaxTileY(); y++) {
+                String tempFilePath = getTilePath(new TileIndices(x, y, depth));
+                if (tempTileCache.remove(tempFilePath)) {
+                    diskTempFilePaths.add(tempFilePath);
+                }
+            }
+        }
+        if (diskTempFilePaths.isEmpty()) {
+            return;
+        }
+
         File depthTempFolder = new File(depthTempPath);
         if (!depthTempFolder.exists()) {
             return;
@@ -300,24 +411,24 @@ public class TerrainTileStore {
                 tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null,
                 generator.getImaginaryType(), generator.originIsLeftUp()));
 
-        if (!FileUtils.isFileExists(tilePath)) {
+        if (!tempTileCache.exists(tilePath)) {
             log.debug("Creating tile: CREATE - * - CREATE : {}, {}, {}", tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
             tile.createInitialMesh();
             if (tile.getMesh() == null) {
                 log.error("Error: tile.mesh == null");
             }
-            tile.saveFile(tile.getMesh(), tilePath);
+            tempTileCache.save(tile.getMesh(), tilePath);
             return tile;
         }
 
         log.debug("Loading tile: LOAD - * - LOAD : {}, {}, {}", tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
-        tile.loadFile(tilePath);
+        tile.setMesh(tempTileCache.load(tilePath));
         return tile;
     }
 
     public GeographicTerrainTile loadGeographicTerrainTile(TileIndices tileIndices) throws IOException {
         String tilePath = getTilePath(tileIndices);
-        if (!FileUtils.isFileExists(tilePath)) {
+        if (!tempTileCache.exists(tilePath)) {
             return null;
         }
 
@@ -327,7 +438,7 @@ public class TerrainTileStore {
         tile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
                 tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null,
                 generator.getImaginaryType(), generator.originIsLeftUp()));
-        tile.loadFile(tilePath);
+        tile.setMesh(tempTileCache.load(tilePath));
         return tile;
     }
 }

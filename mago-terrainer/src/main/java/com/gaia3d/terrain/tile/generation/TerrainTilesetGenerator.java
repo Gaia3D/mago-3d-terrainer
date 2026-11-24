@@ -47,6 +47,9 @@ public class TerrainTilesetGenerator {
 
     private final TerrainRasterPreprocessor rasterPreprocessor = new TerrainRasterPreprocessor(this);
     private final AvailableTileAnalyzer availableTileAnalyzer = new AvailableTileAnalyzer(this);
+    // the priority of the overlapping rasters, resolved with the input rasters
+    @Setter
+    private RasterPriority rasterPriority = RasterPriority.none();
     private final TerrainTileStore terrainTileStore = new TerrainTileStore(this);
 
     // tileRasterSize : when triangles refinement, we use a DEM raster of this size
@@ -148,6 +151,7 @@ public class TerrainTilesetGenerator {
         this.minTriangleSizeForTileDepthList.clear();
         this.mapNoUsableGeotiffPaths.clear();
         this.availableTileSet.getMapDepthAvailableTileRanges().clear();
+        this.terrainTileStore.clearTempTileCache();
     }
 
     public void makeTempFilesFromQuantizedMeshes(int depth) {
@@ -257,6 +261,9 @@ public class TerrainTilesetGenerator {
             if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
+            if (depth < maxTileDepth) {
+                this.terrainTileStore.checkpointTempTiles(depth);
+            }
 
             this.terrainElevationModeler.deleteGeoTiffManager();
             this.terrainElevationModeler.deleteTileRaster();
@@ -351,6 +358,7 @@ public class TerrainTilesetGenerator {
         if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
+        globalOptions.setMaximumTileDepth(maxTileDepth);
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
@@ -437,10 +445,33 @@ public class TerrainTilesetGenerator {
         terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
     }
 
+    /**
+     * The deepest depth folder of the output is not always complete: when the previous run stopped in the middle of a depth,
+     * that depth folder is partly written and the temp tiles of that depth were partly consumed (deleted and overwritten).
+     * In that case the interrupted depth is generated again from the quantized meshes of the last completed depth.
+     */
+    private int resolveCompletedDepthOfPreviousRun(int existentMaxDepth) {
+        int[] progress = terrainTileStore.readDepthProgress();
+        if (progress == null) {
+            return existentMaxDepth;
+        }
+        int completedDepth = progress[0];
+        int runningDepth = progress[1];
+        if (runningDepth > completedDepth) {
+            log.info("[Tile] The previous run stopped in the middle of the depth {}. Generating it again from the depth {}.", runningDepth, completedDepth);
+            deleteTempFilesByDepth(runningDepth);
+            deleteTempFilesByDepth(runningDepth + 1);
+        } else {
+            log.info("[Tile] The previous run completed the depth {}.", completedDepth);
+        }
+        return completedDepth;
+    }
+
     public void continueAvailableTileMeshes() throws IOException, TransformException, FactoryException {
         String outputDirectory = globalOptions.getOutputPath();
         int existentMaxDepth = determineExistentTileSetMaxDepth(outputDirectory);
         log.info("existent max depth: {}", existentMaxDepth);
+        existentMaxDepth = resolveCompletedDepthOfPreviousRun(existentMaxDepth);
 
         GeographicExtension geographicExtension = this.terrainElevationModeler.getRootGeographicExtension();
 
@@ -475,6 +506,7 @@ public class TerrainTilesetGenerator {
         if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
+        globalOptions.setMaximumTileDepth(maxTileDepth);
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
@@ -485,9 +517,11 @@ public class TerrainTilesetGenerator {
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             long startTime = System.currentTimeMillis();
+            terrainTileStore.beginDepth(depth);
 
             // check if the temp folder exists
-            if (!existTempFiles(depth)) {
+            // the depth 0 has no parent depth, its tiles are created by the first generation
+            if (depth > 0 && !existTempFiles(depth)) {
                 log.info("making tempFiles from quantized meshes... depth: {}", depth - 1);
                 makeTempFilesFromQuantizedMeshes(depth - 1);
                 makeChildrenTempFiles(depth - 1);
@@ -534,6 +568,7 @@ public class TerrainTilesetGenerator {
             if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
+            terrainTileStore.writeDepthProgress(depth, depth);
 
             this.terrainElevationModeler.deleteGeoTiffManager();
             this.terrainElevationModeler.deleteTileRaster();
@@ -592,6 +627,8 @@ public class TerrainTilesetGenerator {
         } else if (availableMaxDepth < maxTileDepth) {
             maxTileDepth = availableMaxDepth;
         }
+        // the tiles of the last depth must not create children, so the effective max depth is shared with the tile matrix
+        globalOptions.setMaximumTileDepth(maxTileDepth);
 
         // delete available tile ranges over maxTileDepth
         this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
@@ -599,6 +636,7 @@ public class TerrainTilesetGenerator {
 
         for (int depth = minTileDepth; depth <= maxTileDepth; depth += 1) {
             long startTime = System.currentTimeMillis();
+            terrainTileStore.beginDepth(depth);
 
             // Set terrainLayer.available of tileSet JSON
             //terrainLayer.getAvailable().add(tilesRange); // this is used to save the terrainLayer.json
@@ -655,6 +693,10 @@ public class TerrainTilesetGenerator {
             if (!GlobalOptions.getInstance().isLeaveTemp()) {
                 this.deleteTempFilesByDepth(depth);
             }
+            if (depth < maxTileDepth) {
+                this.terrainTileStore.checkpointTempTiles(depth);
+            }
+            terrainTileStore.writeDepthProgress(depth, depth);
 
             long endTime = System.currentTimeMillis();
             log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));
