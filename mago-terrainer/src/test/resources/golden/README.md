@@ -37,7 +37,7 @@ The outputs and logs are written to `mago-terrainer/build/release-test/{case}`.
 | F11 | EPSG:5187 1m input, automatic max depth | `precision-test-garisan/garisan-precision-1m.tif` | (none) |
 | F12 | multiple adjacent files | `multi-sample` | `-max 12` |
 | F13 | multi-resolution overlap (500m/100m/30m, with -9999 holes), resolution priority | `multi-resolution-sample` | `-max 12` |
-| F14 | multi-resolution overlap, higher priority | `multi-resolution-sample` | **disabled**: `PriorityType.HIGHER_VALUE` is commented out, `-pt higher` falls back to `resolution` |
+| F14 | multi-resolution overlap, priority file (100m, 500m, then the unlisted 30m) | `multi-resolution-sample` | `-max 12 -priorityFile priority.txt`, and the same order with `-pt input` (requires #29) |
 | F15 | repeated `-input`, NODATA value | `dem500.tif`, `dem100.tif` | `-max 11 -nv 0` |
 | F16 | leave temp | `sample` | `-max 10 -lt` → same as F01, temp kept |
 | F17 | custom temp path | `sample` | `-max 10 -t {dir}` → same as F01 |
@@ -60,4 +60,4 @@ gdal_translate -projwin 335000 270000 355000 250000 -co COMPRESS=DEFLATE -co PRE
 
 The golden manifests were first generated with the code of `e4e68352` (before the temp tile cache), and the temp tile cache (#36) gives the same output.
 They were then regenerated with the NODATA fixes (#40, #41) and the depth-0 antimeridian fix (#39), which change the tiles at the NODATA borders and, with a geoid, the areas without data.
-So this test requires #39, #40 and #41 to be merged.
+So this test requires #39, #40, #41, #42 (F21) and #29 (F14) to be merged.
