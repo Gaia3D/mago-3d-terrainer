@@ -149,6 +149,148 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 
 ---
 
+# Input and Output
+
+## Input data
+- Input format: **GeoTIFF** (`.tif`, `.tiff`). A directory input is searched recursively.
+- The raster must use a projected or geographic CRS. It is reprojected to geographic coordinates (EPSG:4326 for Earth) during the standardization step.
+- The input values must be heights in metres. Use `--geoid` when the heights are orthometric (see [Using a geoid correction file](#using-a-geoid-correction-file)).
+- Large rasters are split into pieces of `--rasterMaxSize` pixels during the standardization step.
+
+## Overlapping inputs (priority)
+When several rasters cover the same place, the raster with the **smallest pixel area (the highest resolution)** is used. Where that raster has NODATA, the next raster in the resolution order is used.
+
+For each depth, the rasters are resized to a resolution suitable for that depth, so shallow depths are generated from downsampled rasters.
+
+The order can be set explicitly, for example when a new survey must win over an older raster with the same resolution:
+- `--priorityType input` / `-pt input`: the order of the `--input` options (the files of a directory input are ordered by path).
+- `--priorityFile <file>` / `-pf <file>`: one raster file, directory or glob pattern (`*`, `**`, `?`) per line, the first line first. Relative paths are relative to the priority file, lines starting with `#` are comments.
+
+```
+# priority.txt
+D:/dem/survey-2025/*.tif
+D:/dem/base-5m/
+D:/dem/korea-30m.tif
+```
+```
+java -jar mago-3d-terrainer.jar --input "D:/dem" --output "/output_path/terrain_tiles_output" --priorityFile priority.txt
+```
+The rasters that are not listed come after the listed ones, by resolution. An entry that matches no input raster is reported in the log, and the resolved order is printed (`[Pre][Priority]`).
+
+## NODATA value
+Pixels equal to the NODATA value (or NaN) are treated as "no data". The default is `-9999`.
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --nodataValue -32767
+```
+Areas without any valid data are generated at **ellipsoidal height 0**. The geoid correction is not applied there, so they can be tens of metres below the sea level.
+
+Notes:
+- Make sure the NODATA tag of the GeoTIFF (`gdalinfo`) matches the values that really mark "no data". When the tag is `nan` but the voids are filled with `-9999`, pass `--nodataValue -9999`.
+- Do not use `--nodataValue` with a value that is a valid height (for example `0` on a coast), because those heights are then removed.
+
+## Output structure
+```
+output/
+├── layer.json          # tileset metadata (bounds, available tile ranges, extensions)
+├── 0/0/0.terrain       # quantized-mesh tiles: {z}/{x}/{y}.terrain
+├── 0/1/0.terrain
+└── ...
+```
+- The tiles use the geographic TMS tiling scheme (`"scheme": "tms"`, `"projection": "EPSG:4326"`) with 2 root tiles at depth 0.
+- The `.terrain` files are **not gzip compressed**. Do not serve them with a `Content-Encoding: gzip` header unless you compress them yourself.
+- The output contains one file per tile, so a deep tileset can contain millions of files.
+
+Loading the terrain in CesiumJS:
+```javascript
+const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrainProvider: await Cesium.CesiumTerrainProvider.fromUrl("/path/to/terrain_tiles_output", {
+        requestVertexNormals: true
+    })
+});
+```
+
+## Extensions (water mask, metadata)
+- `--waterMask` / `-wm`: adds the `watermask` extension. The areas without data (NODATA or outside the input rasters) are water. Each tile has 1 byte (all land / all water) or a 256 x 256 mask. CesiumJS uses it with `requestWaterMask: true` (water effects).
+- `--metadata` / `-md`: adds the `metadata` extension with the tile availability. The tiles at the depths 0, 10, 20... store the available tile ranges of their descendants for the next 10 depths, and layer.json has `"metadataAvailability": 10` with the `available` list of the depth 0 only. CesiumJS then reads the availability from the tiles, so layer.json stays small for large tilesets.
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --waterMask --metadata
+```
+
+---
+
+# Processing Control
+
+## Temporary files
+Intermediate tile meshes and standardized rasters are written to `{OUTPUT}/temp` and deleted at the end.
+- `--temp <path>` / `-t <path>`: use another temp folder (for example a faster disk).
+- `--leaveTemp` / `-lt`: keep the temp files for debugging.
+
+The intermediate tile meshes are kept in memory while the heap allows it, and are written to the temp folder at the end of each depth (checkpoint) and when the heap runs low.
+The memory used for them can be changed with the JVM option `-Dmago.tempTileCacheRatio=<ratio of the max heap>` (default `0.25`, `0` disables it).
+
+## Resuming a run (`--continue`)
+`--continue` / `-c` continues from the tiles in the output folder and the temp files of the previous run.
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --continue
+```
+- Use the same input and options as the interrupted run.
+- The run resumes from the depth after the last depth folder in the output.
+- If the previous run stopped **between two depths**, the result is the same as an uninterrupted run.
+- If the previous run stopped **in the middle of a depth**, the rest of that depth is not generated (known limitation). Delete the last depth folder of the output before continuing.
+- It can also be used to extend a completed tileset to a deeper `--maxDepth`. The deeper tiles are then generated from the existing quantized-mesh tiles.
+
+## Modifying a part of a tileset (`--modify`)
+`--modify` / `-m` is **not available yet**. The option is currently ignored and the terrain is fully generated from the input rasters.
+
+To add a higher resolution DEM to an existing area, generate the tileset again with both the existing DEM and the new DEM as inputs. The higher resolution raster is used where they overlap.
+
+## Generating only layer.json (`--json`)
+`--json` / `-j` regenerates `layer.json` from an existing tileset, without generating tiles. Use the tileset folder as the input and the output.
+```
+java -jar mago-3d-terrainer.jar --input "/output_path/terrain_tiles_output" --output "/output_path/terrain_tiles_output" --json
+```
+
+## Skipping the standardization (`--skipStandardizationResize`)
+`--skipStandardizationResize` / `-ssr` reuses the standardized and resized rasters left in the temp folder by a previous run, for example together with `--continue` after an interruption.
+
+## Logging
+- `--log <path>` / `-l <path>`: also write the log to a file.
+- `--quiet` / `-q`: print errors only.
+- `--verbose` / `-vb`, `--debug` / `-d`: print more detailed logs.
+
+---
+
+# Memory, Disk and Performance
+
+## Java heap
+Set the maximum heap with `-Xmx`. A larger heap keeps more intermediate tiles in memory and is faster.
+```
+java -Xmx16g -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output"
+```
+When the free heap is under 20%, the in-memory intermediate tiles are written to the temp folder. When it is under 10%, the mesh refinement of the current tile stops early (`CRITICAL memory pressure` in the log) and the tiles become coarser. Increase `-Xmx` if you see this message.
+
+## Disk space and file count
+- The tile count grows about 4 times per depth.
+- Reserve disk space for the temp files as well as the output. The temp folder can be larger than the output at the deepest depths (see [#7](https://github.com/Gaia3D/mago-3d-terrainer/issues/7)).
+- On Windows (NTFS), creating and deleting millions of small files is slow. Use a fast local disk for the output and the temp folder, and exclude them from real-time antivirus scanning if your policy allows it.
+
+Example (`changwon_1m`, a 6.5GB 1m GeoTIFF, auto max depth 18): 476,527 files, 2.3GB output, about 2 hours with `-Xmx16g`.
+
+---
+
+# Troubleshooting
+
+| Symptom | Cause / Solution |
+|---|---|
+| `java.lang.OutOfMemoryError`, `CRITICAL memory pressure` in the log | The heap is too small. Increase `-Xmx`. |
+| `There is not enough space on the disk` | The temp files need additional space. Use `--temp` on another disk or free space. |
+| `net::ERR_CONTENT_DECODING_FAILED` in the browser | The server sends `Content-Encoding: gzip` but the tiles are not compressed. Remove the header, or gzip the tiles. |
+| The terrain floats or sinks by tens of metres | The input heights are orthometric. Use `--geoid EGM96`/`EGM2008` or a local geoid file. |
+| Holes or flat areas | The input has NODATA there. Check `--nodataValue` and the NODATA tag of the GeoTIFF (`gdalinfo`). |
+| The run was interrupted | See [Resuming a run](#resuming-a-run---continue). |
+
+---
+
 # Planetary Body Support
 
 ## Overview
@@ -208,4 +350,13 @@ Without `ellipsoid: Cesium.Ellipsoid.MOON`, Cesium defaults to the Earth ellipso
 
 ## Geographic tiling scheme
 
-mago-3d-terrainer uses the standard geographic tiling scheme (longitude -180 to 180, latitude -90 to 90) for all bodies. This matches CesiumJS's `GeographicTilingScheme` used internally by `CesiumTerrainProvider`, so no changes to the tiling scheme are required for planetary data. Most GIS-ready planetary GeoTIFFs use this -180/180 convention; datasets in the 0–360 planetary science convention must be reprojected first.
+mago-3d-terrainer uses the standard geographic tiling scheme (longitude -180 to 180, latitude -90 to 90) for all bodies. This matches CesiumJS's `GeographicTilingScheme` used internally by `CesiumTerrainProvider`, so no changes to the tiling scheme are required for planetary data. Most GIS-ready planetary GeoTIFFs use this -180/180 convention; datasets in the 0–360 planetary science convention must be reprojected first:
+```
+gdalwarp -t_srs "IAU_2015:30100" -te -180 -90 180 90 --config CENTER_LONG 0 -r bilinear input_0_360.tif output.tif
+```
+
+> **Note:** Inputs with 0–360 longitudes or a planetary projected CRS are not rejected yet, but the result is wrong (the western hemisphere is missing, or the raster is not reprojected). Always check the converted GeoTIFF with `gdalinfo` first.
+
+## Height reference for planetary bodies
+
+The built-in geoid models (`EGM96`, `EGM2008`, `EGM84`) are Earth models. Do not use `--geoid` with `--body moon`; lunar DEMs are usually relative to the reference sphere (1,737,400 m).
