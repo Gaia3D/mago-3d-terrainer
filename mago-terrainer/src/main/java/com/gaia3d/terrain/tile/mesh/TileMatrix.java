@@ -891,7 +891,7 @@ public class TileMatrix {
             }
 
             try {
-                mesh.saveFile(tileFullPath);
+                this.manager.getTerrainTileStore().saveTempTileMesh(mesh, tileFullPath);
             } catch (IOException e) {
                 log.error("Error:", e);
                 return false;
@@ -985,14 +985,11 @@ public class TileMatrix {
         maxDiff *= scale; // scale the maxDiff
 
         GeographicTerrainTileRaster tileRaster = terrainElevationModeler.getGeographicTerrainTileRaster(tileIndices, this.manager);
+        // the triangle can be in a translated longitude frame across the antimeridian (mesh = raster + offset)
         double rasterLongitudeOffset = 0.0;
         if (tileRaster != null) {
-            GeographicExtension tileRasterExtension = tileRaster.getGeographicExtension();
-            if (bboxTriangle.getMaxX() < tileRasterExtension.getMinLongitudeDeg() - 180.0) {
-                rasterLongitudeOffset = -360.0;
-            } else if (bboxTriangle.getMinX() > tileRasterExtension.getMaxLongitudeDeg() + 180.0) {
-                rasterLongitudeOffset = 360.0;
-            }
+            double triangleCenterLonDeg = (bboxTriangle.getMinX() + bboxTriangle.getMaxX()) * 0.5;
+            rasterLongitudeOffset = -tileRaster.getLongitudeShift(triangleCenterLonDeg);
         }
 
         // if the triangle size is very small, then do not refine**********************
@@ -1002,13 +999,13 @@ public class TileMatrix {
 
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.setRefineChecked(true);
-            log.debug("Filtered by Min Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # minTriangleSizeForDepth : " + minTriangleSizeForDepth);
+            log.debug("Filtered by Min Triangle Size : L : {} # triangleMaxLengthMeters : {} # minTriangleSizeForDepth : {}", tileIndices.getL(), triangleMaxLengthMeters, minTriangleSizeForDepth);
             return false;
         }
 
         double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(currL);
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
-            log.debug("Filtered by Max Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # maxTriangleSizeForDepth : " + maxTriangleSizeForDepth);
+            log.debug("Filtered by Max Triangle Size : L : {} # triangleMaxLengthMeters : {} # maxTriangleSizeForDepth : {}", tileIndices.getL(), triangleMaxLengthMeters, maxTriangleSizeForDepth);
             return true;
         }
 
@@ -1188,7 +1185,7 @@ public class TileMatrix {
                     //halfEdges.clear();
 //                    intersects = triangle.intersectsPointXY(posX, posY, halfEdges, this.listVertices, line2d);
 
-                    log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+                    log.debug("Filtered by RasterTile : L : {} # col : {} / {} # row : {} / {} # cosAng : {} # distToPlane : {} # maxDiff : {}", tileIndices.getL(), col, colsCount, row, rowsCount, cosAng, distToPlane, maxDiff);
                     return true;
                 }
                 rowAux++;
@@ -1197,7 +1194,7 @@ public class TileMatrix {
         }
         triangle.setRefineChecked(true);
 
-        log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + colAux + " / " + colsCount + " # row : " + rowAux + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+        log.debug("Filtered by RasterTile : L : {} # col : {} / {} # row : {} / {} # cosAng : {} # distToPlane : {} # maxDiff : {}", tileIndices.getL(), colAux, colsCount, rowAux, rowsCount, cosAng, distToPlane, maxDiff);
         return false;
     }
 

@@ -4,6 +4,8 @@ import com.gaia3d.util.DecimalUtils;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.function.LongSupplier;
+
 /**
  * Memory monitoring utility for detecting and preventing OutOfMemoryError during mesh refinement.
  * Provides proactive memory checks with configurable thresholds.
@@ -16,6 +18,13 @@ public class MemoryMonitor {
     private static final double CRITICAL_MEMORY_THRESHOLD = 0.10;  // 10% free = STOP
     private static final double WARNING_MEMORY_THRESHOLD = 0.20;   // 20% free = WARN
 
+    // releases memory held by caches (e.g. the in-memory temp tiles) and returns the released bytes
+    private static volatile LongSupplier memoryReleaser = null;
+
+    public static void setMemoryReleaser(LongSupplier releaser) {
+        memoryReleaser = releaser;
+    }
+
     /**
      * Check memory and log appropriate messages based on state
      * @param context Description of current operation (e.g., "RefineMesh", "Iteration 5")
@@ -23,6 +32,9 @@ public class MemoryMonitor {
      */
     public static MemoryState checkMemory(String context) {
         MemoryState state = new MemoryState();
+        if ((state.isCritical || state.isWarning) && releaseCachedMemory(context)) {
+            state = new MemoryState();
+        }
 
         if (state.isCritical) {
             log.error("[{}] CRITICAL memory pressure: {}% free ({} / {}). " +
@@ -36,6 +48,25 @@ public class MemoryMonitor {
         }
 
         return state;
+    }
+
+    /**
+     * Releases the cached memory before reporting memory pressure, so the caches never reduce the memory available to the refinement.
+     * @return true if some memory was released
+     */
+    private static boolean releaseCachedMemory(String context) {
+        LongSupplier releaser = memoryReleaser;
+        if (releaser == null) {
+            return false;
+        }
+        long releasedBytes = releaser.getAsLong();
+        if (releasedBytes <= 0) {
+            return false;
+        }
+        log.info("[{}] Low memory, released {} of cached memory.", context, DecimalUtils.byteCountToDisplaySize(releasedBytes));
+        // the released memory is counted as used until the next GC
+        System.gc();
+        return true;
     }
 
     /**
