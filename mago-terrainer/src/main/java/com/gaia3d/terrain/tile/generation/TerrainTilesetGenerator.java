@@ -158,10 +158,6 @@ public class TerrainTilesetGenerator {
         terrainTileStore.writeTempTilesFromQuantizedMeshes(depth);
     }
 
-    public void makeTempFilesFromQuantizedMeshes(int depth, TileRange tileRange) {
-        terrainTileStore.writeTempTilesFromQuantizedMeshes(depth, tileRange);
-    }
-
     private void makeChildrenTempFiles(int depth) {
         terrainTileStore.writeChildTempTiles(depth);
     }
@@ -312,138 +308,6 @@ public class TerrainTilesetGenerator {
         frontierMatrix.deleteObjects();
     }
 
-    public void generateModifiedAvailableTileMeshes() throws IOException, TransformException, FactoryException {
-        String outputDirectory = globalOptions.getOutputPath();
-        int existentMaxDepth = determineExistentTileSetMaxDepth(outputDirectory);
-        log.info("existent max depth: {}", existentMaxDepth);
-
-        // in MODIFY_MODE process, 1rst load the layer.json file.************************************
-        String jsonFileName = "layer.json";
-        String jsonFullPath = outputDirectory + File.separator + jsonFileName;
-
-        // create the terrainLayer and load the existent layer.json file
-        terrainLayer = new TerrainLayer();
-        AvailableTileSet existentAvailableTileSet = new AvailableTileSet();
-        terrainLayer.loadJsonFileCustom(jsonFullPath, existentAvailableTileSet);
-        // End loading existent layer.json file.-----------------------------------------------------
-
-        GeographicExtension geographicExtension = this.terrainElevationModeler.getRootGeographicExtension();
-
-        double minLon = geographicExtension.getMinLongitudeDeg();
-        double maxLon = geographicExtension.getMaxLongitudeDeg();
-        double minLat = geographicExtension.getMinLatitudeDeg();
-        double maxLat = geographicExtension.getMaxLatitudeDeg();
-
-        double[] bounds = terrainLayer.getBounds();
-        bounds[0] = minLon;
-        bounds[1] = minLat;
-        bounds[2] = maxLon;
-        bounds[3] = maxLat;
-
-        if (globalOptions.isCalculateNormalsExtension()) {
-            terrainLayer.addExtension("octvertexnormals");
-        }
-        if (globalOptions.isWaterMaskExtension()) {
-            terrainLayer.addExtension("watermask");
-        }
-        if (globalOptions.isMetaDataExtension()) {
-            terrainLayer.addExtension("metadata");
-        }
-
-        log.info("----------------------------------------");
-        int minTileDepth = 0;
-        int maxTileDepth = globalOptions.getMaximumTileDepth();
-
-        int availableMaxDepth = this.availableTileSet.getMaxAvailableDepth();
-        if (availableMaxDepth < maxTileDepth) {
-            maxTileDepth = availableMaxDepth;
-        }
-        globalOptions.setMaximumTileDepth(maxTileDepth);
-
-        // delete available tile ranges over maxTileDepth
-        this.availableTileSet.deleteTileRangesOverDepth(maxTileDepth);
-        saveLayerJsonBeforeTileGeneration();
-
-//        // if the maxTileDepth is less than the existent max depth, set the maxTileDepth to the existent max depth
-//        minTileDepth = Math.max(minTileDepth, existentMaxDepth + 1);
-
-        for (int depth = 0; depth <= maxTileDepth; depth += 1) {
-            long startTime = System.currentTimeMillis();
-
-//            // check if the temp folder exists
-//            if (!existTempFiles(depth)) {
-//                log.info("making tempFiles from quantized meshes... depth: {}", depth - 1);
-//                makeTempFilesFromQuantizedMeshes(depth - 1);
-//                makeChildrenTempFiles(depth - 1);
-//            }
-
-            // Set terrainLayer.available of tileSet json
-            this.triangleRefinementMaxIterations = GeographicTerrainTileUtils.getRefinementIterations(depth);
-            this.terrainElevationModeler.deleteObjects();
-            this.terrainElevationModeler = new TerrainElevationModeler();
-            this.terrainElevationModeler.setTerrainTilesetGenerator(this);
-            this.terrainElevationModeler.setTerrainElevationDataFiles(resolveRasterFilesForDepth(depth));
-            this.terrainElevationModeler.generateTerrainQuadTree(depth);
-            int mosaicSize = globalOptions.getMosaicSize();
-
-            //List<TileRange> subDividedTilesRanges = GeographicTerrainTileUtils.subDivideTileRange(tilesRange, mosaicSize, mosaicSize, null);
-            List<TileRange> availableTileRangesAtDepth = this.availableTileSet.getAvailableTileRangesAtDepth(depth);
-            List<TileRange> subDividedTilesRanges = new ArrayList<>();
-            // for each available tile range, subdivide it into mosaicSize x mosaicSize tiles, and put them into subDividedTilesRanges
-            for (TileRange availableTileRange : availableTileRangesAtDepth) {
-                GeographicTerrainTileUtils.subDivideTileRange(availableTileRange, mosaicSize, mosaicSize, subDividedTilesRanges);
-            }
-
-            log.info("[Tile][{}/{}] Start generating tile meshes - Divided Tiles Size: {}", depth, maxTileDepth, subDividedTilesRanges.size());
-            AtomicInteger counter = new AtomicInteger(0);
-
-            int total = subDividedTilesRanges.size();
-            for (TileRange subDividedTilesRange : subDividedTilesRanges) {
-                int progress = counter.incrementAndGet();
-                log.info("[Tile][{}/{}][{}/{}] generate wgs84 raster all tiles...", depth, maxTileDepth, progress, total);
-                TileRange expandedTilesRange = subDividedTilesRange.expand1();
-
-                // check if the temp folder exists
-                // For each expandedTilesRange make temp files if no exists.***************************
-                log.info("making tempFiles from quantized meshes... depth: {}", depth - 1);
-                makeTempFilesFromQuantizedMeshes(depth, expandedTilesRange); // here makes tempFiles for children too.
-                // End making tempFiles.---------------------------------------------------------------
-
-                this.terrainElevationModeler.prepareTileRastersForRange(expandedTilesRange, this);
-
-                log.info("[Tile][{}/{}][{}/{}] process tiling...", depth, maxTileDepth, progress, total);
-                TileMatrix tileMatrix = new TileMatrix(subDividedTilesRange, this);
-
-                boolean isFirstGeneration = (depth == 0);
-                tileMatrix.makeMatrixMeshModifyMode(isFirstGeneration);
-                tileMatrix.deleteObjects();
-            }
-
-            if (!GlobalOptions.getInstance().isLeaveTemp()) {
-                this.deleteTempFilesByDepth(depth);
-            }
-
-            this.terrainElevationModeler.deleteGeoTiffManager();
-            this.terrainElevationModeler.deleteTileRaster();
-            this.terrainElevationModeler.deleteCoverage();
-
-            long endTime = System.currentTimeMillis();
-            log.info("[Tile][{}/{}] - End making tile meshes : Duration: {}", depth, maxTileDepth, DecimalUtils.millisecondToDisplayTime(endTime - startTime));
-
-            String javaHeapSize = System.getProperty("java.vm.name") + " " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB";
-            // jvm heap size
-            String maxMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().maxMemory());
-            // jvm total memory
-            String totalMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory());
-            // jvm free memory
-            String freeMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory());
-            // jvm used memory
-            String usedMem = DecimalUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
-            log.debug("[Tile][{}/{}] Java Heap Size: {} - MaxMem: {}MB / TotalMem: {}MB / FreeMem: {}MB / UsedMem: {}MB ({}%)", depth, maxTileDepth, javaHeapSize, maxMem, totalMem, freeMem, usedMem);
-            log.info("----------------------------------------");
-        }
-        terrainLayer.saveJsonFileCustom(globalOptions.getOutputPath(), "layer.json", this.availableTileSet);
-    }
 
     /**
      * The deepest depth folder of the output is not always complete: when the previous run stopped in the middle of a depth,
@@ -861,14 +725,6 @@ public class TerrainTilesetGenerator {
     @Deprecated
     public void makeTileMeshes() throws IOException, TransformException, FactoryException {
         generateFullTreeTileMeshes();
-    }
-
-    /**
-     * @deprecated use {@link #generateModifiedAvailableTileMeshes()}
-     */
-    @Deprecated
-    public void makeTileMeshesCustomModifyMode() throws IOException, TransformException, FactoryException {
-        generateModifiedAvailableTileMeshes();
     }
 
     /**

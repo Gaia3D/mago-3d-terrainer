@@ -574,7 +574,7 @@ public class TerrainMesh {
 
     public void splitTriangle(TerrainTriangle triangle, TerrainElevationModeler terrainElevationModeler,
                               List<TerrainTriangle> resultNewTriangles,
-                              List<TerrainHalfEdge> listHalfEdges, boolean isModify, int[] stack) throws TransformException, IOException {
+                              List<TerrainHalfEdge> listHalfEdges, int[] stack) throws TransformException, IOException {
         // A triangle is split by the longest edge, so
         // the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
@@ -587,7 +587,7 @@ public class TerrainMesh {
         try {
             byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
             listHalfEdges.clear();
-            TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationModeler, listHalfEdges, isModify, stack);
+            TerrainTriangle adjacentTriangle = getSplittableAdjacentTriangle(triangle, terrainElevationModeler, listHalfEdges, stack);
             if (adjacentTriangle == null) {
                 // the triangle is border triangle, so is splittable
                 listHalfEdges.clear();
@@ -620,13 +620,6 @@ public class TerrainMesh {
                 if (Double.isNaN(z)) {
                     log.info("getElevationBilinear: resultElevation is NaN");
                     z = beforeZ;
-                }
-
-                if (isModify) {
-                    if (intersectionType[0] != 1) {
-                        // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
-                        z = beforeZ;
-                    }
                 }
 
                 midPosition.z = z; // assign the z value.
@@ -816,13 +809,6 @@ public class TerrainMesh {
                     z = beforeZ;
                 }
 
-                if (isModify) {
-                    if (intersectionType[0] != 1) {
-                        // in modify process, if the pixel is no_data or no_intersected_data, then use the interpolationZ value.
-                        z = beforeZ;
-                    }
-                }
-
                 midPosition.z = z; // assign the z value.
                 if (Double.isNaN(midPosition.z)) {
                     log.warn("getElevationBilinear returned NaN for triangle {}. Using interpolated elevation from edge endpoints as fallback.",
@@ -1007,7 +993,7 @@ public class TerrainMesh {
 
     public TerrainTriangle getSplittableAdjacentTriangle(TerrainTriangle targetTriangle,
                                                          TerrainElevationModeler terrainElevationModeler,
-                                                         List<TerrainHalfEdge> listHalfEdges, boolean isModify, int[] stack) throws TransformException, IOException {
+                                                         List<TerrainHalfEdge> listHalfEdges, int[] stack) throws TransformException, IOException {
         // A triangle is split by the longest edge
         // so, the longest edge of the triangle must be the longest edge of the adjacentTriangle
         // If the longest edge of the adjacentTriangle is not the longest edge of the triangle, then must split the adjacentTriangle first
@@ -1082,7 +1068,7 @@ public class TerrainMesh {
             // first split the adjacentTriangle;
             terrainElevationModeler.getTrianglesArray().clear();
             listHalfEdges.clear();
-            splitTriangle(adjacentTriangle, terrainElevationModeler, terrainElevationModeler.getTrianglesArray(), listHalfEdges, isModify, stack);
+            splitTriangle(adjacentTriangle, terrainElevationModeler, terrainElevationModeler.getTrianglesArray(), listHalfEdges, stack);
             listHalfEdges.clear();
 
             // now search the new adjacentTriangle for the targetTriangle

@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * The serialized bytes are identical to the temp file contents, so the tiling result does not change.
  * When the memory budget is exceeded, the tiles are spilled to the temp folder as before.
  * At the end of each depth, the tiles are also written to the temp folder (checkpoint), so an interrupted run can be continued.
- * Continue/modify mode and "leaveTemp" rely on the temp files, so the cache is disabled for them.
+ * Continue mode and "leaveTemp" rely on the temp files, so the cache is disabled for them.
  */
 @Slf4j
 public class TempTileCache {
@@ -41,7 +41,7 @@ public class TempTileCache {
 
     private boolean isEnabled() {
         GlobalOptions globalOptions = GlobalOptions.getInstance();
-        return memoryBudget > 0 && !globalOptions.isLeaveTemp() && !globalOptions.isContinue() && !globalOptions.isModify();
+        return memoryBudget > 0 && !globalOptions.isLeaveTemp() && !globalOptions.isContinue();
     }
 
     private static double getAvailableHeapRatio() {
