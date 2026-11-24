@@ -299,6 +299,13 @@ public class TerrainElevationModeler {
         return terrainElevationDataQueryMark;
     }
 
+    /**
+     * Returns true if a raster had data at the last sampled position.
+     */
+    public boolean isLastSampleIntersected() {
+        return intersects[0];
+    }
+
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
         if (rootTerrainElevationDataQuadTree == null) {
             intersects[0] = false;

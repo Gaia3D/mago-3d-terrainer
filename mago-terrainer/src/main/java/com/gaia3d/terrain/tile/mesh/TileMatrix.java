@@ -7,6 +7,7 @@ import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.layer.TileAvailabilityMetadata;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
 import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
@@ -765,6 +766,15 @@ public class TileMatrix {
             FileUtils.createAllFoldersIfNoExist(tileFolderPath);
 
             LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(new FileOutputStream(tileFullPath)));
+
+            if (globalOptions.isWaterMaskExtension()) {
+                GeographicTerrainTileRaster tileRaster = this.manager.getTerrainElevationModeler().getGeographicTerrainTileRaster(tileIndices, this.manager);
+                quantizedMesh.setWaterMask(tileRaster != null ? tileRaster.createWaterMask() : new byte[]{0});
+            }
+            if (globalOptions.isMetaDataExtension()) {
+                quantizedMesh.setMetadataJson(TileAvailabilityMetadata.createMetadataJson(
+                        tileIndices, this.manager.getAvailableTileSet(), globalOptions.getMaximumTileDepth()));
+            }
 
             // save the tile
             quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);

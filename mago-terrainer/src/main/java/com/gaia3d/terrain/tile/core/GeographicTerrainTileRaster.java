@@ -26,11 +26,16 @@ public class GeographicTerrainTileRaster {
     private static final int RASTER_RELEASE_COLUMN_BLOCK_SIZE = 32;
     private static final double ANTIMERIDIAN_EPSILON_DEG = 1.0e-8;
     private static final double ANTIMERIDIAN_CANDIDATE_BAND_DEG = 1.0;
+    private static final int WATER_MASK_SIZE = 256;
+    private static final byte LAND = 0;
+    private static final byte WATER = (byte) 255;
 
     private TerrainTilesetGenerator manager = null;
     private TileIndices tileIndices = null;
     private GeographicExtension geographicExtension = null;
     private float[] elevations = null;
+    // true where a raster has data, only with the water mask extension (the areas without data are water)
+    private boolean[] dataMask = null;
     private int rasterWidth = 0;
     private int rasterHeight = 0;
     private double deltaLonDeg = 0;
@@ -157,6 +162,7 @@ public class GeographicTerrainTileRaster {
     public void deleteObjects() {
         this.geographicExtension = null;
         this.elevations = null;
+        this.dataMask = null;
     }
 
     public void generateElevations(TerrainElevationModeler terrainElevationModeler, int rasterWidth, int rasterHeight) {
@@ -165,6 +171,7 @@ public class GeographicTerrainTileRaster {
 
         int elevationsCount = rasterWidth * rasterHeight;
         this.elevations = new float[elevationsCount];
+        this.dataMask = GlobalOptions.getInstance().isWaterMaskExtension() ? new boolean[elevationsCount] : null;
 
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
@@ -225,6 +232,9 @@ public class GeographicTerrainTileRaster {
                     for (int col = colStart; col < colEndExclusive; col++) {
                         double lonDeg = longitudes[col];
                         elevations[rowOffset + col] = (float) terrainElevationModeler.getElevation(lonDeg, latDeg, blockTerrainElevDataArray);
+                        if (dataMask != null) {
+                            dataMask[rowOffset + col] = terrainElevationModeler.isLastSampleIntersected();
+                        }
                     }
                 }
             }
@@ -266,7 +276,44 @@ public class GeographicTerrainTileRaster {
             double latDeg = minLatDeg + row * deltaLatDeg;
             elevations[row * rasterWidth + frontierColumn] =
                     (float) terrainElevationModeler.getAntimeridianElevation(latDeg, seamData);
+            if (dataMask != null) {
+                dataMask[row * rasterWidth + frontierColumn] = terrainElevationModeler.isLastSampleIntersected();
+            }
         }
+    }
+
+    /**
+     * Creates the water mask of the quantized-mesh water mask extension: the areas without data are water.
+     * @return 1 byte (0 = all land, 255 = all water), or 256 x 256 bytes from the north-west corner, row by row to the south
+     */
+    public byte[] createWaterMask() {
+        if (dataMask == null) {
+            return new byte[]{0};
+        }
+        byte[] mask = new byte[WATER_MASK_SIZE * WATER_MASK_SIZE];
+        double minLonDeg = geographicExtension.getMinLongitudeDeg();
+        double maxLatDeg = geographicExtension.getMaxLatitudeDeg();
+        double stepLonDeg = geographicExtension.getLongitudeRangeDegree() / WATER_MASK_SIZE;
+        double stepLatDeg = geographicExtension.getLatitudeRangeDegree() / WATER_MASK_SIZE;
+        boolean hasLand = false;
+        boolean hasWater = false;
+        for (int maskRow = 0; maskRow < WATER_MASK_SIZE; maskRow++) {
+            int row = getRow(maxLatDeg - (maskRow + 0.5) * stepLatDeg);
+            for (int maskCol = 0; maskCol < WATER_MASK_SIZE; maskCol++) {
+                int col = getColumn(minLonDeg + (maskCol + 0.5) * stepLonDeg);
+                boolean water = !dataMask[row * rasterWidth + col];
+                mask[maskRow * WATER_MASK_SIZE + maskCol] = water ? WATER : LAND;
+                hasLand |= !water;
+                hasWater |= water;
+            }
+        }
+        if (!hasWater) {
+            return new byte[]{LAND};
+        }
+        if (!hasLand) {
+            return new byte[]{WATER};
+        }
+        return mask;
     }
 
     /**
