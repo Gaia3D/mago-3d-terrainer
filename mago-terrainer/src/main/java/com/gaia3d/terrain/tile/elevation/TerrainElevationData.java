@@ -231,6 +231,13 @@ public class TerrainElevationData {
         resultPixelSize.set(pixelSizeX, pixelSizeY);
     }
 
+    /**
+     * The NODATA samples are represented by the configured NODATA value, which can be NaN ("-nv nan").
+     */
+    private boolean isNoDataSample(double value) {
+        return Double.isNaN(value) || value == globalOptions.getNoDataValue();
+    }
+
     public double getGridValue(int x, int y) {
         if (isTerrainRasterFile()) {
             if (!ensureRasterInitialized() || x < 0 || y < 0 || x >= terrainRasterData.width() || y >= terrainRasterData.height()) {
@@ -311,8 +318,7 @@ public class TerrainElevationData {
             resultAltitude = calcNearestInterpolation((int) Math.floor(unitaryX * geoTiffRasterWidth), (int) Math.floor(unitaryY * geoTiffRasterHeight));
         }
 
-        double noDataValue = globalOptions.getNoDataValue();
-        if (resultAltitude == noDataValue) {
+        if (isNoDataSample(resultAltitude)) {
             intersects[0] = false;
             return resultAltitude;
         }
@@ -383,11 +389,10 @@ public class TerrainElevationData {
         }
 
         // Ignore noDataValue samples.
-        double noDataValue = globalOptions.getNoDataValue();
-        boolean hasNoData = (value00 == noDataValue) || (value01 == noDataValue) || (value10 == noDataValue) || (value11 == noDataValue);
+        boolean hasNoData = isNoDataSample(value00) || isNoDataSample(value01) || isNoDataSample(value10) || isNoDataSample(value11);
         if (hasNoData) {
-            if (value00 == noDataValue) {
-                return noDataValue;
+            if (isNoDataSample(value00)) {
+                return globalOptions.getNoDataValue();
             } else {
                 return value00;
             }
