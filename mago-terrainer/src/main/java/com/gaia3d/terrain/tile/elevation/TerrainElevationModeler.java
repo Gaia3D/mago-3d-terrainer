@@ -12,7 +12,6 @@ import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
 import com.gaia3d.terrain.tile.raster.TerrainRasterReader;
 import com.gaia3d.terrain.tile.raster.TerrainRasterMetadata;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import com.gaia3d.util.FileUtils;
@@ -341,10 +340,7 @@ public class TerrainElevationModeler {
 
     private double sampleAntimeridianFallback(boolean west, double latDeg,
                                                List<TerrainElevationData> terrainElevDataArray) {
-        PriorityType priorityType = globalOptions.getPriorityType();
         Vector2d pixelSize = new Vector2d();
-        boolean anyIntersects = false;
-        double candidateElevation = 0.0;
 
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             GeographicExtension extension = terrainElevationData.getGeographicExtension();
@@ -372,52 +368,26 @@ public class TerrainElevationModeler {
                     Math.min(extension.getMaxLongitudeDeg(), fallbackLon));
 
             double elevation = terrainElevationData.getElevation(fallbackLon, latDeg, intersects);
-            if (!intersects[0]) {
-                continue;
-            }
-            if (priorityType == PriorityType.RESOLUTION) {
+            if (intersects[0]) {
                 return elevation;
-            }
-            anyIntersects = true;
-            if (elevation > candidateElevation) {
-                candidateElevation = elevation;
             }
         }
 
-        intersects[0] = anyIntersects;
-        return candidateElevation;
+        intersects[0] = false;
+        return 0.0;
     }
 
     private double sampleElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
-        PriorityType priorityType = globalOptions.getPriorityType();
-
+        // the rasters are in priority order (GeographicTerrainTileRaster), the first one with data gives the height
         intersects[0] = false;
-        if (priorityType == PriorityType.RESOLUTION) {
-            for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
-                double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
-                if (intersects[0]) {
-                    return elevation;
-                }
-            }
-            intersects[0] = false;
-            return 0.0;
-        }
-
-        boolean anyIntersects = false;
-        double candidateElevation = 0.0;
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
             double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
-            if (!intersects[0]) {
-                continue;
-            }
-            anyIntersects = true;
-            if (elevation > candidateElevation) {
-                candidateElevation = elevation;
+            if (intersects[0]) {
+                return elevation;
             }
         }
-
-        intersects[0] = anyIntersects;
-        return candidateElevation;
+        intersects[0] = false;
+        return 0.0;
     }
 
     private List<File> resolveConfiguredElevationFiles() {
@@ -485,6 +455,9 @@ public class TerrainElevationModeler {
             }
 
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
+            if (terrainTilesetGenerator != null) {
+                terrainElevationData.setPriorityRank(terrainTilesetGenerator.getRasterPriority().getRank(geoTiffFilePath));
+            }
             if (geoTiffFilePath.toLowerCase().endsWith(TerrainRasterFormat.EXTENSION)) {
                 loadTerrainRasterMetadata(new File(geoTiffFilePath), terrainElevationData);
                 rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);

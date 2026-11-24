@@ -72,6 +72,7 @@ public class GlobalOptions {
     private int maximumTileDepth;
     private InterpolationType interpolationType;
     private PriorityType priorityType;
+    private String priorityFilePath;
     private double noDataValue;
     private double intensity;
 
@@ -277,6 +278,17 @@ public class GlobalOptions {
             }
             instance.setPriorityType(type);
         } else {
+            instance.setPriorityType(PriorityType.RESOLUTION);
+        }
+        if (command.hasOption(CommandOptions.PRIORITY_FILE.getLongName())) {
+            String priorityFilePath = command.getOptionValue(CommandOptions.PRIORITY_FILE.getLongName());
+            if (!new File(priorityFilePath).isFile()) {
+                throw new IllegalArgumentException("Priority file does not exist: " + priorityFilePath);
+            }
+            instance.setPriorityFilePath(priorityFilePath);
+            instance.setPriorityType(PriorityType.FILE);
+        } else if (instance.getPriorityType() == PriorityType.FILE) {
+            log.warn("* Priority type 'file' requires --priorityFile. Set to resolution.");
             instance.setPriorityType(PriorityType.RESOLUTION);
         }
 

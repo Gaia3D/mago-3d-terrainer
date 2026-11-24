@@ -47,6 +47,9 @@ public class TerrainTilesetGenerator {
 
     private final TerrainRasterPreprocessor rasterPreprocessor = new TerrainRasterPreprocessor(this);
     private final AvailableTileAnalyzer availableTileAnalyzer = new AvailableTileAnalyzer(this);
+    // the priority of the overlapping rasters, resolved with the input rasters
+    @Setter
+    private RasterPriority rasterPriority = RasterPriority.none();
     private final TerrainTileStore terrainTileStore = new TerrainTileStore(this);
 
     // tileRasterSize : when triangles refinement, we use a DEM raster of this size
