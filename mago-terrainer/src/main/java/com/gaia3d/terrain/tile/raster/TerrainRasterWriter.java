@@ -1,6 +1,7 @@
 package com.gaia3d.terrain.tile.raster;
 
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.terrain.util.NoDataUtils;
 import org.eclipse.imagen.media.range.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.util.CoverageUtilities;
@@ -42,7 +43,7 @@ public final class TerrainRasterWriter {
             for (int x = raster.getMinX(); x < maxX; x++) {
                 double sample = raster.getSampleDouble(x, y, 0);
                 float elevation = (float) sample;
-                elevations[index++] = isNoData(sample, sourceNoDataValue, configuredNoDataValue) || !Float.isFinite(elevation)
+                elevations[index++] = NoDataUtils.isNoData(sample, sourceNoDataValue, configuredNoDataValue) || !Float.isFinite(elevation)
                         ? noDataValue : elevation;
             }
         }
@@ -57,16 +58,6 @@ public final class TerrainRasterWriter {
     private double resolveNoDataValue(GridCoverage2D coverage) {
         NoDataContainer noData = CoverageUtilities.getNoDataProperty(coverage);
         return noData == null ? Double.NaN : noData.getAsSingleValue();
-    }
-
-    private boolean isNoData(double sample, double sourceNoDataValue, double configuredNoDataValue) {
-        return !Double.isFinite(sample)
-                || matchesNoData(sample, sourceNoDataValue)
-                || matchesNoData(sample, configuredNoDataValue);
-    }
-
-    private boolean matchesNoData(double sample, double noDataValue) {
-        return !Double.isNaN(noDataValue) && Double.compare(sample, noDataValue) == 0;
     }
 
     private ByteBuffer createHeader(TerrainRasterData data) {
