@@ -157,6 +157,128 @@ java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/
 
 ---
 
+# 입력과 출력
+
+## 입력 데이터
+- 입력 형식: **GeoTIFF** (`.tif`, `.tiff`). 디렉터리를 입력하면 하위 폴더까지 검색합니다.
+- 래스터는 투영 좌표계 또는 지리 좌표계여야 합니다. 표준화 단계에서 지리 좌표계(지구는 EPSG:4326)로 재투영됩니다.
+- 래스터 값은 미터 단위 높이여야 합니다. 정표고(orthometric height)라면 `--geoid`를 사용합니다([Geoid 보정 파일 사용](#geoid-보정-파일-사용) 참고).
+- 큰 래스터는 표준화 단계에서 `--rasterMaxSize` 픽셀 크기로 분할됩니다.
+
+## 입력 데이터가 겹칠 때 (우선순위)
+여러 래스터가 같은 위치를 덮으면 **픽셀 면적이 가장 작은(해상도가 가장 높은)** 래스터를 사용합니다. 그 래스터가 NODATA인 위치에서는 다음 해상도 순서의 래스터를 사용합니다.
+
+각 depth마다 래스터를 그 depth에 맞는 해상도로 리사이즈하므로, 얕은 depth는 다운샘플된 래스터로 생성됩니다.
+
+> `--priorityType` 옵션은 `resolution`(기본값)만 지원합니다.
+
+## NODATA 값
+NODATA 값(또는 NaN)과 같은 픽셀은 "데이터 없음"으로 처리됩니다. 기본값은 `-9999`입니다.
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --nodataValue -32767
+```
+유효한 데이터가 전혀 없는 영역은 **타원체고 0**으로 생성됩니다. 이 영역에는 지오이드 보정이 적용되지 않으므로 해수면보다 수십 미터 낮게 표시될 수 있습니다.
+
+참고:
+- GeoTIFF의 NODATA 태그(`gdalinfo`)가 실제로 "데이터 없음"을 나타내는 값과 같은지 확인하세요. 태그는 `nan`인데 빈 영역이 `-9999`로 채워져 있다면 `--nodataValue -9999`를 지정합니다.
+- 실제 높이로 쓰이는 값(예: 해안의 `0`)을 `--nodataValue`로 지정하지 마세요. 해당 높이가 모두 제거됩니다.
+
+## 출력 구조
+```
+output/
+├── layer.json          # 타일셋 메타데이터 (범위, 사용 가능한 타일 범위, 확장)
+├── 0/0/0.terrain       # quantized-mesh 타일: {z}/{x}/{y}.terrain
+├── 0/1/0.terrain
+└── ...
+```
+- 타일은 지리 TMS 타일링 체계(`"scheme": "tms"`, `"projection": "EPSG:4326"`)를 사용하며, depth 0에 루트 타일이 2개입니다.
+- `.terrain` 파일은 **gzip으로 압축되어 있지 않습니다.** 직접 압축하지 않았다면 `Content-Encoding: gzip` 헤더를 붙여 서비스하지 마세요.
+- 타일 하나가 파일 하나이므로, depth가 깊은 타일셋은 파일이 수백만 개가 될 수 있습니다.
+
+CesiumJS에서 불러오기:
+```javascript
+const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrainProvider: await Cesium.CesiumTerrainProvider.fromUrl("/path/to/terrain_tiles_output", {
+        requestVertexNormals: true
+    })
+});
+```
+
+---
+
+# 처리 제어
+
+## 임시 파일
+중간 타일 메시와 표준화된 래스터는 `{OUTPUT}/temp`에 저장되고 작업이 끝나면 삭제됩니다.
+- `--temp <path>` / `-t <path>`: 다른 임시 폴더를 사용합니다(예: 더 빠른 디스크).
+- `--leaveTemp` / `-lt`: 디버깅을 위해 임시 파일을 남깁니다.
+
+중간 타일 메시는 힙이 허용하는 동안 메모리에 유지됩니다. 각 depth가 끝날 때(체크포인트)와 힙이 부족할 때 임시 폴더에 기록됩니다.
+이때 사용하는 메모리는 JVM 옵션 `-Dmago.tempTileCacheRatio=<최대 힙 대비 비율>`로 바꿀 수 있습니다(기본값 `0.25`, `0`이면 사용 안 함).
+
+## 중단된 작업 이어서 하기 (`--continue`)
+`--continue` / `-c`는 이전 실행의 출력 폴더 타일과 임시 파일에서 작업을 이어갑니다.
+```
+java -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output" --continue
+```
+- 중단된 실행과 같은 입력과 옵션을 사용하세요.
+- 출력 폴더에 있는 마지막 depth 폴더의 다음 depth부터 이어서 생성합니다.
+- 이전 실행이 **depth와 depth 사이**에서 중단되었다면, 중단 없이 실행한 결과와 같습니다.
+- 이전 실행이 **depth 처리 도중**에 중단되었다면, 그 depth의 나머지 타일이 생성되지 않습니다(알려진 제한 사항). 이어서 하기 전에 출력 폴더의 마지막 depth 폴더를 삭제하세요.
+- 완성된 타일셋을 더 깊은 `--maxDepth`로 확장할 때도 사용할 수 있습니다. 이 경우 더 깊은 타일은 기존 quantized-mesh 타일을 바탕으로 생성됩니다.
+
+## 타일셋 일부 수정 (`--modify`)
+`--modify` / `-m`은 **아직 사용할 수 없습니다.** 현재는 옵션이 무시되고 입력 래스터로 전체를 새로 생성합니다.
+
+기존 영역에 더 높은 해상도의 DEM을 추가하려면, 기존 DEM과 새 DEM을 함께 입력하여 타일셋을 다시 생성하세요. 겹치는 영역에서는 해상도가 높은 래스터가 사용됩니다.
+
+## layer.json만 생성 (`--json`)
+`--json` / `-j`는 타일을 생성하지 않고, 기존 타일셋에서 `layer.json`만 다시 생성합니다. 타일셋 폴더를 입력과 출력으로 지정합니다.
+```
+java -jar mago-3d-terrainer.jar --input "/output_path/terrain_tiles_output" --output "/output_path/terrain_tiles_output" --json
+```
+
+## 표준화 단계 건너뛰기 (`--skipStandardizationResize`)
+`--skipStandardizationResize` / `-ssr`은 이전 실행이 임시 폴더에 남긴 표준화·리사이즈된 래스터를 다시 사용합니다. 예를 들어 중단 후 `--continue`와 함께 사용합니다.
+
+## 로그
+- `--log <path>` / `-l <path>`: 로그를 파일에도 기록합니다.
+- `--quiet` / `-q`: 오류만 출력합니다.
+- `--verbose` / `-vb`, `--debug` / `-d`: 더 자세한 로그를 출력합니다.
+
+---
+
+# 메모리, 디스크, 성능
+
+## Java 힙
+`-Xmx`로 최대 힙을 지정합니다. 힙이 클수록 중간 타일을 메모리에 더 많이 유지하므로 빨라집니다.
+```
+java -Xmx16g -jar mago-3d-terrainer.jar --input "/input_path/geotiff_folder" --output "/output_path/terrain_tiles_output"
+```
+여유 힙이 20% 미만이면 메모리의 중간 타일을 임시 폴더로 내립니다. 10% 미만이면 현재 타일의 메시 정제를 일찍 멈추고(로그에 `CRITICAL memory pressure`), 타일이 거칠어집니다. 이 메시지가 보이면 `-Xmx`를 늘리세요.
+
+## 디스크 공간과 파일 수
+- 타일 수는 depth마다 약 4배로 늘어납니다.
+- 출력뿐 아니라 임시 파일을 위한 디스크 공간도 확보하세요. 가장 깊은 depth에서는 임시 폴더가 출력보다 클 수 있습니다([#7](https://github.com/Gaia3D/mago-3d-terrainer/issues/7) 참고).
+- Windows(NTFS)에서는 작은 파일 수백만 개를 만들고 지우는 작업이 느립니다. 출력과 임시 폴더는 빠른 로컬 디스크에 두고, 정책이 허용한다면 실시간 백신 검사에서 제외하세요.
+
+예시(`changwon_1m`, 6.5GB 1m GeoTIFF, 자동 max depth 18): 파일 476,527개, 출력 2.3GB, `-Xmx16g`에서 약 2시간.
+
+---
+
+# 문제 해결
+
+| 증상 | 원인 / 해결 |
+|---|---|
+| `java.lang.OutOfMemoryError`, 로그에 `CRITICAL memory pressure` | 힙이 부족합니다. `-Xmx`를 늘리세요. |
+| `There is not enough space on the disk` | 임시 파일에 추가 공간이 필요합니다. `--temp`로 다른 디스크를 지정하거나 공간을 확보하세요. |
+| 브라우저에서 `net::ERR_CONTENT_DECODING_FAILED` | 서버가 `Content-Encoding: gzip`을 보내지만 타일은 압축되어 있지 않습니다. 헤더를 제거하거나 타일을 gzip으로 압축하세요. |
+| 지형이 수십 미터 떠 있거나 가라앉음 | 입력 높이가 정표고입니다. `--geoid EGM96`/`EGM2008` 또는 지역 지오이드 파일을 사용하세요. |
+| 구멍이나 평평한 영역 | 그 위치의 입력이 NODATA입니다. `--nodataValue`와 GeoTIFF의 NODATA 태그(`gdalinfo`)를 확인하세요. |
+| 작업이 중단됨 | [중단된 작업 이어서 하기](#중단된-작업-이어서-하기---continue)를 참고하세요. |
+
+---
+
 # 행성 천체 지원
 
 ## 개요
@@ -217,3 +339,12 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
 ## 지리 타일링 체계
 
 mago-3d-terrainer는 모든 천체에 대해 표준 지리 타일링 체계(경도 -180~180, 위도 -90~90)를 사용합니다. 이는 CesiumJS의 `CesiumTerrainProvider`가 내부적으로 사용하는 `GeographicTilingScheme`과 동일하므로, 행성 데이터를 위한 별도의 타일링 체계 변경은 필요하지 않습니다. GIS용으로 제공되는 행성 GeoTIFF 데이터는 대부분 -180/180 경도 체계를 따르며, 행성과학 아카이브에서 0~360 경도 체계로 배포된 데이터는 사전에 재투영해야 합니다.
+```
+gdalwarp -t_srs "IAU_2015:30100" -te -180 -90 180 90 --config CENTER_LONG 0 -r bilinear input_0_360.tif output.tif
+```
+
+> **참고:** 0~360 경도 체계나 행성 투영 좌표계로 된 입력은 아직 오류로 처리되지 않지만 결과가 잘못됩니다(서반구가 빠지거나 재투영되지 않음). 변환 전에 반드시 `gdalinfo`로 GeoTIFF를 확인하세요.
+
+## 행성 천체의 높이 기준
+
+내장 지오이드 모델(`EGM96`, `EGM2008`, `EGM84`)은 지구 모델입니다. `--body moon`에서는 `--geoid`를 사용하지 마세요. 달 DEM은 보통 기준 구(1,737,400 m)에 대한 높이입니다.

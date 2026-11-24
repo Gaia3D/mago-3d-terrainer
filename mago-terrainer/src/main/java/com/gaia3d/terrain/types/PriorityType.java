@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum PriorityType {
     RESOLUTION("resolution"); // high resolution raster
-    //HIGHER_VALUE("higher");
 
     private final String argumentName;
 
