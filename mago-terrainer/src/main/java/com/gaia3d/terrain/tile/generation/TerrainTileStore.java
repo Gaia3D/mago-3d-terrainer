@@ -40,9 +40,9 @@ public class TerrainTileStore {
     // the depth that started but whose temp tiles are not modified yet, see beginDepth()
     private int pendingRunningDepth = -1;
 
-    public void saveTempTileMesh(TerrainMesh mesh, String filePath) throws IOException {
+    public void saveTempTileMesh(TerrainMesh mesh, TileIndices tileIndices) throws IOException {
         markDepthRunning();
-        tempTileCache.save(mesh, filePath);
+        tempTileCache.save(mesh, tileIndices);
     }
 
     /**
@@ -65,13 +65,6 @@ public class TerrainTileStore {
     }
 
     public void writeTempTilesFromQuantizedMeshes(int depth) {
-        String tempPath = globalOptions.getTileTempPath();
-        String depthTempPath = tempPath + File.separator + "L" + depth;
-        File depthTempFolder = new File(depthTempPath);
-        if (!depthTempFolder.exists() && depthTempFolder.mkdirs()) {
-            log.debug("Created temp folder: {}", depthTempFolder.getAbsolutePath());
-        }
-
         String quantizedMeshPath = globalOptions.getOutputPath() + File.separator + depth;
         File quantizedMeshFolder = new File(quantizedMeshPath);
         if (!quantizedMeshFolder.exists()) {
@@ -79,7 +72,6 @@ public class TerrainTileStore {
             return;
         }
 
-        TileIndices tileIndices = new TileIndices();
         QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
         List<String> quantizedMeshFolderNames = new ArrayList<>();
         FileUtils.getFolderNames(quantizedMeshPath, quantizedMeshFolderNames);
@@ -87,39 +79,23 @@ public class TerrainTileStore {
         for (String quantizedMeshFolderName : quantizedMeshFolderNames) {
             int x = Integer.parseInt(quantizedMeshFolderName);
             String quantizedMeshFolderPath = quantizedMeshPath + File.separator + quantizedMeshFolderName;
-            File quantizedMeshSubFolder = new File(quantizedMeshFolderPath);
-            if (!quantizedMeshSubFolder.exists()) {
-                log.error("Quantized mesh subfolder does not exist: {}", quantizedMeshSubFolder.getAbsolutePath());
-                continue;
-            }
-
-            String tempXFolderName = "X" + quantizedMeshFolderName;
             List<String> quantizedMeshFileNames = new ArrayList<>();
             FileUtils.getFileNames(quantizedMeshFolderPath, ".terrain", quantizedMeshFileNames);
             for (String quantizedMeshFileName : quantizedMeshFileNames) {
                 int y = Integer.parseInt(quantizedMeshFileName.substring(0, quantizedMeshFileName.indexOf(".")));
                 String quantizedMeshFilePath = quantizedMeshFolderPath + File.separator + quantizedMeshFileName;
-                File quantizedMeshFile = new File(quantizedMeshFilePath);
-                if (!quantizedMeshFile.exists()) {
-                    log.error("Quantized mesh file does not exist: {}", quantizedMeshFilePath);
-                    continue;
-                }
-
-                String tempFileName = "L" + depth + "_" + tempXFolderName + "_Y" + y + ".til";
-                String tempFilePath = depthTempPath + File.separator + tempXFolderName + File.separator + tempFileName;
-                if (new File(tempFilePath).exists()) {
-                    log.debug("Temp file already exists: {}", tempFilePath);
-                    continue;
-                }
-
+                TileIndices tileIndices = new TileIndices(x, y, depth);
                 try {
-                    LittleEndianDataInputStream inputStream = new LittleEndianDataInputStream(new BufferedInputStream(new FileInputStream(quantizedMeshFilePath)));
+                    if (tempTileCache.exists(tileIndices)) {
+                        log.debug("Temp tile already exists: {}", tileIndices.getString());
+                        continue;
+                    }
                     QuantizedMesh quantizedMesh = new QuantizedMesh();
-                    quantizedMesh.loadDataInputStream(inputStream);
-
-                    tileIndices.set(x, y, depth);
+                    try (LittleEndianDataInputStream inputStream = new LittleEndianDataInputStream(new BufferedInputStream(new FileInputStream(quantizedMeshFilePath)))) {
+                        quantizedMesh.loadDataInputStream(inputStream);
+                    }
                     GeographicTerrainTile geographicTerrainTile = quantizedMeshManager.getGeographicTerrainTileFromQuantizedMesh(quantizedMesh, tileIndices, generator);
-                    geographicTerrainTile.saveFile(geographicTerrainTile.getMesh(), tempFilePath);
+                    tempTileCache.save(geographicTerrainTile.getMesh(), tileIndices);
                 } catch (Exception e) {
                     log.error("Error loading quantized mesh file: {}", quantizedMeshFilePath, e);
                 }
@@ -128,61 +104,17 @@ public class TerrainTileStore {
     }
 
     public void writeChildTempTiles(int depth) {
-        int childrenDepth = depth + 1;
-        String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
-        File depthTempFolder = new File(depthTempPath);
-        if (!depthTempFolder.exists()) {
-            return;
-        }
-
-        String childrenTempPath = globalOptions.getTileTempPath() + File.separator + "L" + childrenDepth;
-        File childrenTempFolder = new File(childrenTempPath);
-        if (!childrenTempFolder.exists() && childrenTempFolder.mkdirs()) {
-            log.debug("Created children temp folder: {}", childrenTempFolder.getAbsolutePath());
-        }
-
-        List<String> xFolders = new ArrayList<>();
-        FileUtils.getFolderNames(depthTempPath, xFolders);
-        for (String xFolderName : xFolders) {
-            int x = Integer.parseInt(xFolderName.substring(1));
-            String xFolderPath = depthTempPath + File.separator + xFolderName;
-            File xFolder = new File(xFolderPath);
-            if (!xFolder.exists()) {
-                log.error("X folder does not exist: {}", xFolderPath);
-                continue;
-            }
-
-            File childrenXTempFolder = new File(childrenTempPath + File.separator + xFolderName);
-            if (!childrenXTempFolder.exists() && childrenXTempFolder.mkdirs()) {
-                log.debug("Created children temp folder: {}", childrenXTempFolder.getAbsolutePath());
-            }
-
-            List<String> tileFileNames = new ArrayList<>();
-            FileUtils.getFileNames(xFolderPath, ".til", tileFileNames);
-            for (String tileFileName : tileFileNames) {
-                List<String> splitStrings = Arrays.asList(tileFileName.split("_"));
-                String yFileName = splitStrings.get(2);
-                int y = Integer.parseInt(yFileName.substring(1, yFileName.indexOf(".")));
-                String tileFilePath = xFolderPath + File.separator + tileFileName;
-                if (!new File(tileFilePath).exists()) {
-                    log.error("GeographicTerrainTile file does not exist: {}", tileFilePath);
+        try {
+            for (TileIndices tileIndices : tempTileCache.listTiles(depth)) {
+                GeographicTerrainTile geographicTerrainTile = loadGeographicTerrainTile(tileIndices);
+                if (geographicTerrainTile == null) {
+                    log.error("GeographicTerrainTile is null: {}", tileIndices.getString());
                     continue;
                 }
-
-                try {
-                    TileIndices tileIndices = new TileIndices();
-                    tileIndices.set(x, y, depth);
-                    GeographicTerrainTile geographicTerrainTile = loadGeographicTerrainTile(tileIndices);
-                    if (geographicTerrainTile == null) {
-                        log.error("GeographicTerrainTile is null: {}", tileFilePath);
-                        continue;
-                    }
-
-                    TerrainMeshUtils.save4ChildrenMeshes(geographicTerrainTile.getMesh(), generator, globalOptions);
-                } catch (Exception e) {
-                    log.error("Error loading GeographicTerrainTile file: {}", tileFilePath, e);
-                }
+                TerrainMeshUtils.save4ChildrenMeshes(geographicTerrainTile.getMesh(), generator, globalOptions);
             }
+        } catch (IOException e) {
+            log.error("Error writing the child temp tiles of the depth {}", depth, e);
         }
     }
 
@@ -210,8 +142,12 @@ public class TerrainTileStore {
     }
 
     public boolean existTempFiles(int depth) {
-        String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
-        return new File(depthTempPath).exists();
+        try {
+            return tempTileCache.hasTiles(depth);
+        } catch (IOException e) {
+            log.warn("Failed to read the temp tiles of the depth {}", depth, e);
+            return false;
+        }
     }
 
     /**
@@ -272,9 +208,9 @@ public class TerrainTileStore {
     }
 
     public void deleteTempFilesByDepth(int depth) {
-        String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
-        tempTileCache.removeByPrefix(depthTempPath + File.separator);
-        File depthTempFolder = new File(depthTempPath);
+        tempTileCache.removeDepth(depth);
+        // the temp folder of the depth of the versions that wrote one file per tile
+        File depthTempFolder = new File(globalOptions.getTileTempPath() + File.separator + "L" + depth);
         if (depthTempFolder.exists()) {
             org.apache.commons.io.FileUtils.deleteQuietly(depthTempFolder);
         }
@@ -283,61 +219,17 @@ public class TerrainTileStore {
     public void deleteTempFilesByTileRange(TileRange tileRange) {
         markDepthRunning();
         int depth = tileRange.getTileDepth();
-        String depthTempPath = globalOptions.getTileTempPath() + File.separator + "L" + depth;
-
-        // remove the in-memory tiles. Only the tiles that may exist on disk are deleted from the temp folder.
-        List<String> diskTempFilePaths = new ArrayList<>();
-        for (int x = tileRange.getMinTileX(); x <= tileRange.getMaxTileX(); x++) {
-            for (int y = tileRange.getMinTileY(); y <= tileRange.getMaxTileY(); y++) {
-                String tempFilePath = getTilePath(new TileIndices(x, y, depth));
-                if (tempTileCache.remove(tempFilePath)) {
-                    diskTempFilePaths.add(tempFilePath);
+        try {
+            for (int x = tileRange.getMinTileX(); x <= tileRange.getMaxTileX(); x++) {
+                for (int y = tileRange.getMinTileY(); y <= tileRange.getMaxTileY(); y++) {
+                    tempTileCache.remove(new TileIndices(x, y, depth));
                 }
             }
-        }
-        if (diskTempFilePaths.isEmpty()) {
-            return;
-        }
-
-        File depthTempFolder = new File(depthTempPath);
-        if (!depthTempFolder.exists()) {
-            return;
-        }
-
-        for (int x = tileRange.getMinTileX(); x <= tileRange.getMaxTileX(); x++) {
-            String xFolderName = "X" + x;
-            String xFolderPath = depthTempPath + File.separator + xFolderName;
-            File xFolder = new File(xFolderPath);
-            if (!xFolder.exists()) {
-                continue;
-            }
-
-            for (int y = tileRange.getMinTileY(); y <= tileRange.getMaxTileY(); y++) {
-                String tempFilePath = xFolderPath + File.separator + "L" + depth + "_" + xFolderName + "_Y" + y + ".til";
-                File tempFile = new File(tempFilePath);
-                if (tempFile.exists() && tempFile.delete()) {
-                    log.debug("Deleted temp file: {}", tempFilePath);
-                } else if (tempFile.exists()) {
-                    log.warn("Failed to delete temp file: {}", tempFilePath);
-                }
-            }
-
-            String[] remainingFiles = xFolder.list();
-            if (remainingFiles != null && remainingFiles.length == 0) {
-                if (xFolder.delete()) {
-                    log.debug("Deleted empty X folder: {}", xFolderPath);
-                } else {
-                    log.warn("Failed to delete X folder: {}", xFolderPath);
-                }
-            }
+        } catch (IOException e) {
+            log.warn("Failed to remove the temp tiles of {}", tileRange, e);
         }
     }
 
-    public String getTilePath(TileIndices tileIndices) {
-        String tileTempDirectory = globalOptions.getTileTempPath();
-        String neighborFilePath = GeographicTerrainTileUtils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
-        return tileTempDirectory + File.separator + neighborFilePath;
-    }
 
     public String getQuantizedMeshTileFolderPath(TileIndices tileIndices) {
         return globalOptions.getOutputPath() + File.separator + tileIndices.getL() + File.separator + tileIndices.getX();
@@ -352,31 +244,29 @@ public class TerrainTileStore {
             return null;
         }
 
-        String tilePath = getTilePath(tileIndices);
         GeographicTerrainTile tile = new GeographicTerrainTile(null, generator);
         tile.setTileIndices(tileIndices);
         tile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
                 tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null,
                 generator.getImaginaryType(), generator.originIsLeftUp()));
 
-        if (!tempTileCache.exists(tilePath)) {
+        if (!tempTileCache.exists(tileIndices)) {
             log.debug("Creating tile: CREATE - * - CREATE : {}, {}, {}", tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
             tile.createInitialMesh();
             if (tile.getMesh() == null) {
                 log.error("Error: tile.mesh == null");
             }
-            tempTileCache.save(tile.getMesh(), tilePath);
+            tempTileCache.save(tile.getMesh(), tileIndices);
             return tile;
         }
 
         log.debug("Loading tile: LOAD - * - LOAD : {}, {}, {}", tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
-        tile.setMesh(tempTileCache.load(tilePath));
+        tile.setMesh(tempTileCache.load(tileIndices));
         return tile;
     }
 
     public GeographicTerrainTile loadGeographicTerrainTile(TileIndices tileIndices) throws IOException {
-        String tilePath = getTilePath(tileIndices);
-        if (!tempTileCache.exists(tilePath)) {
+        if (!tempTileCache.exists(tileIndices)) {
             return null;
         }
 
@@ -386,7 +276,7 @@ public class TerrainTileStore {
         tile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
                 tileIndices.getL(), tileIndices.getX(), tileIndices.getY(), null,
                 generator.getImaginaryType(), generator.originIsLeftUp()));
-        tile.setMesh(tempTileCache.load(tilePath));
+        tile.setMesh(tempTileCache.load(tileIndices));
         return tile;
     }
 }

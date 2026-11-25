@@ -563,9 +563,6 @@ public class TileMatrix {
 
             TerrainTriangle triangle = mesh.triangles.getFirst();
             TileIndices tileIndices = triangle.getOwnerTileIndices();
-            String tileTempDirectory = globalOptions.getTileTempPath();
-            String tileFilePath = GeographicTerrainTileUtils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
-            String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             if (counter >= 100) {
                 counter = 0;
@@ -573,7 +570,7 @@ public class TileMatrix {
             }
 
             try {
-                this.manager.getTerrainTileStore().saveTempTileMesh(mesh, tileFullPath);
+                this.manager.getTerrainTileStore().saveTempTileMesh(mesh, tileIndices);
             } catch (IOException e) {
                 log.error("Error:", e);
                 return false;
