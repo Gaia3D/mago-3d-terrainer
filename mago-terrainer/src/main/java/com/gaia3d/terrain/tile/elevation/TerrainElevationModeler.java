@@ -624,11 +624,8 @@ public class TerrainElevationModeler {
             return;
         }
 
+        // a budget of 0 (no free headroom) releases every raster outside the retained area
         long liveRasterBudgetBytes = computeLiveRasterBudgetBytes();
-        if (liveRasterBudgetBytes <= 0L) {
-            return;
-        }
-
         long loadedRasterBytes = estimateLoadedRasterBytes(terrainElevDataArray);
         if (loadedRasterBytes <= liveRasterBudgetBytes) {
             return;
@@ -653,10 +650,6 @@ public class TerrainElevationModeler {
         }
 
         long liveRasterBudgetBytes = computeLiveRasterBudgetBytes();
-        if (liveRasterBudgetBytes <= 0L) {
-            return;
-        }
-
         long loadedRasterBytes = estimateLoadedRasterBytes(activeArea);
         if (loadedRasterBytes <= liveRasterBudgetBytes) {
             return;

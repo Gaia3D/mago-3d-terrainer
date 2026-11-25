@@ -1226,17 +1226,19 @@ public class TerrainMesh {
             halfEdge.loadDataInputStream(dataInputStream);
         }
 
-        // now, for each object, find pointing objects
-        Map<Integer, TerrainVertex> verticesMap = getVerticesMap();
-        Map<Integer, TerrainTriangle> trianglesMap = getTrianglesMap();
-        Map<Integer, TerrainHalfEdge> halfEdgesMap = getHalfEdgesMap();
+        // now, for each object, find pointing objects.
+        // The ids are the list indices when the mesh was saved after setObjectsIdInList(), then the lists are used directly
+        // (the boxed maps cost about 250 bytes per triangle while loading)
+        Map<Integer, TerrainVertex> verticesMap = hasListIndexIds(vertices, TerrainVertex::getId) ? null : getVerticesMap();
+        Map<Integer, TerrainTriangle> trianglesMap = hasListIndexIds(triangles, TerrainTriangle::getId) ? null : getTrianglesMap();
+        Map<Integer, TerrainHalfEdge> halfEdgesMap = hasListIndexIds(halfEdges, TerrainHalfEdge::getId) ? null : getHalfEdgesMap();
 
         // now, find pointing objects
         for (int i = 0; i < verticesCount; i++) {
             TerrainVertex vertex = vertices.get(i);
             int outingHalfEdgeId = vertex.getOutingHEdgeId();
             if (outingHalfEdgeId != -1) {
-                TerrainHalfEdge outingHalfEdge = halfEdgesMap.get(outingHalfEdgeId);
+                TerrainHalfEdge outingHalfEdge = findById(halfEdges, halfEdgesMap, outingHalfEdgeId);
                 vertex.setOutingHEdge(outingHalfEdge);
             }
         }
@@ -1246,7 +1248,7 @@ public class TerrainMesh {
 
             int halfEdgeId = triangle.getHalfEdgeId();
             if (halfEdgeId != -1) {
-                TerrainHalfEdge halfEdge = halfEdgesMap.get(halfEdgeId);
+                TerrainHalfEdge halfEdge = findById(halfEdges, halfEdgesMap, halfEdgeId);
                 triangle.setHalfEdge(halfEdge);
             }
         }
@@ -1257,20 +1259,20 @@ public class TerrainMesh {
             // halfEdge points vertex
             int vertexId = halfEdge.getStartVertexId();
             if (vertexId != -1) {
-                TerrainVertex vertex = verticesMap.get(vertexId);
+                TerrainVertex vertex = findById(vertices, verticesMap, vertexId);
                 halfEdge.setStartVertex(vertex);
             }
 
             // halfEdge points triangle
             int triangleId = halfEdge.getTriangleId();
             if (triangleId != -1) {
-                TerrainTriangle triangle = trianglesMap.get(triangleId);
+                TerrainTriangle triangle = findById(triangles, trianglesMap, triangleId);
                 halfEdge.setTriangle(triangle);
             }
             // halfEdge points next
             int nextId = halfEdge.getNextId();
             if (nextId != -1) {
-                TerrainHalfEdge next = halfEdgesMap.get(nextId);
+                TerrainHalfEdge next = findById(halfEdges, halfEdgesMap, nextId);
                 halfEdge.setNext(next);
             }
 
@@ -1278,11 +1280,28 @@ public class TerrainMesh {
             // twin can be null
             int twinId = halfEdge.getTwinId();
             if (twinId != -1) {
-                TerrainHalfEdge twin = halfEdgesMap.get(twinId);
+                TerrainHalfEdge twin = findById(halfEdges, halfEdgesMap, twinId);
                 halfEdge.setTwin(twin);
             }
         }
 
+    }
+
+    private static <T> boolean hasListIndexIds(List<T> objects, java.util.function.ToIntFunction<T> idOf) {
+        int count = objects.size();
+        for (int i = 0; i < count; i++) {
+            if (idOf.applyAsInt(objects.get(i)) != i) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static <T> T findById(List<T> objects, Map<Integer, T> objectsById, int id) {
+        if (objectsById != null) {
+            return objectsById.get(id);
+        }
+        return id >= 0 && id < objects.size() ? objects.get(id) : null;
     }
 
     public void setStartVertexAllHEdges() {
