@@ -777,9 +777,6 @@ public class TerrainTilesetGenerator {
         }
     }
 
-    public String getTilePath(TileIndices tileIndices) {
-        return terrainTileStore.getTilePath(tileIndices);
-    }
 
     public String getQuantizedMeshTileFolderPath(TileIndices tileIndices) {
         return terrainTileStore.getQuantizedMeshTileFolderPath(tileIndices);

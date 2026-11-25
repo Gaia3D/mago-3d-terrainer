@@ -197,13 +197,10 @@ public class TerrainMeshUtils {
             GeographicTerrainTileUtils.clampVerticesInToTile(childMesh, childTileIndices, manager.getImaginaryType(), manager.originIsLeftUp());
 
             // Now, save the mesh
-            String tileTempDirectory = globalOptions.getTileTempPath();
-            String childTileFilePath = GeographicTerrainTileUtils.getTileFilePath(childTileIndices.getX(), childTileIndices.getY(), childTileIndices.getL());
-            String childTileFullPath = tileTempDirectory + File.separator + childTileFilePath;
 
             try {
                 //log.debug("Saving children tiles... L : " + childTileIndices.getL() + " i : " + j + " / " + childMeshesCount);
-                manager.getTerrainTileStore().saveTempTileMesh(childMesh, childTileFullPath);
+                manager.getTerrainTileStore().saveTempTileMesh(childMesh, childTileIndices);
             } catch (IOException e) {
                 log.error("Error:", e);
                 return;
