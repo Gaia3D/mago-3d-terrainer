@@ -1,6 +1,7 @@
 package com.gaia3d.terrain.tile.geotiff;
 
 import com.gaia3d.command.GlobalOptions;
+import com.gaia3d.util.CelestialBody;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.imagen.Interpolation;
@@ -15,6 +16,7 @@ import org.geotools.api.parameter.ParameterValueGroup;
 import org.geotools.api.referencing.ReferenceIdentifier;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.api.referencing.crs.GeographicCRS;
+import org.geotools.api.referencing.crs.ProjectedCRS;
 import org.geotools.api.referencing.datum.Ellipsoid;
 import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -99,7 +101,7 @@ public class RasterStandardizer {
                 try {
                     CoordinateReferenceSystem sourceCRS = croppedTile.getCoordinateReferenceSystem();
                     if (!isSameCRS(sourceCRS, targetCRS)) {
-                        outputTile = resample(croppedTile, targetCRS);
+                        outputTile = resample(croppedTile, resolveResampleTarget(sourceCRS, targetCRS));
                     }
 
                     File tileFile = createOutputTileFile(outputPath, tileDescriptor.tileName(), current);
@@ -147,7 +149,7 @@ public class RasterStandardizer {
                     try {
                         CoordinateReferenceSystem sourceCRS = croppedTile.getCoordinateReferenceSystem();
                         if (!isSameCRS(sourceCRS, targetCRS)) {
-                            GridCoverage2D lazyResampledTile = resample(croppedTile, targetCRS);
+                            GridCoverage2D lazyResampledTile = resample(croppedTile, resolveResampleTarget(sourceCRS, targetCRS));
                             resampledTile = materializeCoverage(lazyResampledTile);
                             if (lazyResampledTile != resampledTile) {
                                 disposeCoverage(lazyResampledTile);
@@ -426,10 +428,31 @@ public class RasterStandardizer {
             }
             return (GridCoverage2D) processor.doOperation(params);
         } catch (Exception e) {
-            log.error("Failed to reproject tile : {}", sourceCoverage.getName());
-            log.error("Error : ", e);
-            return sourceCoverage;
+            // the source coverage must not be used as if it was reprojected (e.g. metres used as degrees)
+            throw new IllegalStateException("Failed to reproject " + sourceCoverage.getName() + " from "
+                    + sourceCoverage.getCoordinateReferenceSystem().getName() + " to " + targetCRS.getName()
+                    + ". Reproject the raster to geographic coordinates (longitude/latitude) with GDAL first.", e);
         }
+    }
+
+    /**
+     * The CRS to reproject a raster to. A projected CRS of another body than the Earth (e.g. the PDS SIMPLE_CYLINDRICAL
+     * MOON of the lunar DEMs) is reprojected to its own base geographic CRS: GeoTools finds no datum transformation between
+     * the planetary datums and the IAU CRS, but it is the same body, so the longitudes and latitudes are the same.
+     */
+    CoordinateReferenceSystem resolveResampleTarget(CoordinateReferenceSystem sourceCRS, CoordinateReferenceSystem targetCRS) {
+        if (globalOptions.getCelestialBody() == null || globalOptions.getCelestialBody() == CelestialBody.EARTH) {
+            return targetCRS;
+        }
+        if (sourceCRS instanceof ProjectedCRS projectedCRS && targetCRS instanceof GeographicCRS geographicCRS) {
+            Ellipsoid sourceEllipsoid = projectedCRS.getBaseCRS().getDatum().getEllipsoid();
+            Ellipsoid targetEllipsoid = geographicCRS.getDatum().getEllipsoid();
+            if (Math.abs(sourceEllipsoid.getSemiMajorAxis() - targetEllipsoid.getSemiMajorAxis()) < 1.0
+                    && Math.abs(sourceEllipsoid.getSemiMinorAxis() - targetEllipsoid.getSemiMinorAxis()) < 1.0) {
+                return projectedCRS.getBaseCRS();
+            }
+        }
+        return targetCRS;
     }
 
     /**

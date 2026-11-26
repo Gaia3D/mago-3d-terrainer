@@ -201,6 +201,13 @@ public class GlobalOptions {
             instance.setCelestialBody(DEFAULT_CELESTIAL_BODY);
         }
 
+        // the built-in geoid models (EGM96, EGM2008, EGM84) are models of the Earth
+        if (instance.getCelestialBody() != CelestialBody.EARTH && command.hasOption(CommandOptions.GEOID_PATH.getLongName())
+                && isBuiltInGeoidModel(command.getOptionValue(CommandOptions.GEOID_PATH.getLongName()))) {
+            throw new IllegalArgumentException("The built-in geoid models are Earth models and cannot be used with --body "
+                    + instance.getCelestialBody().getDisplayName() + ". Remove --geoid, or use a geoid GeoTIFF of that body.");
+        }
+
         // Set output CRS based on celestial body
         if (instance.getCelestialBody() == CelestialBody.EARTH) {
             instance.setOutputCRS(DEFAULT_TARGET_CRS);

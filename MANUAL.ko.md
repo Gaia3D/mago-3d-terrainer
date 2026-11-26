@@ -312,30 +312,27 @@ mago-3d-terrainer는 지구 외의 행성 천체에 대한 지형 타일 생성�
 java -jar mago-3d-terrainer.jar --input "/input_path/lunar_dem" --output "/output_path/lunar_terrain" --body moon --max 8
 ```
 
-## GDAL을 이용한 달 DEM 데이터 전처리
+## 행성 천체의 입력 데이터
 
-달 DEM 데이터셋(예: NASA LOLA, JAXA Kaguya/SELENE)은 일반적으로 투영 좌표계(SimpleCylindrical, 단위: 미터)로 배포됩니다. mago-3d-terrainer는 지리 좌표계(경위도, 단위: 도)를 기대하므로, 변환 전에 GDAL로 재투영해야 합니다.
-
-**예시: NASA LRO LOLA 전구 DEM 118m**
-출처: https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m
-
-SimpleCylindrical에서 달 타원체 기반 경위도 좌표계로 재투영:
+달 DEM 데이터셋(예: NASA LRO LOLA, JAXA Kaguya/SELENE)은 배포된 형태 그대로 사용할 수 있습니다.
+- **지리 좌표계**(경위도, 단위: 도)의 **-180~180** 또는 행성과학에서 쓰는 **0~360** 경도 체계. 0~360 래스터는 자동으로 -180~180으로 옮겨지고, 전 지구 래스터는 -180~180의 래스터 하나로 회전되므로 -180~180 입력과 같은 결과가 나옵니다.
+- **같은 천체의 투영 좌표계**. 예를 들어 LOLA 제품의 PDS `SIMPLE_CYLINDRICAL MOON`(단위: 미터)은 표준화 단계에서 그 천체의 지리 좌표계로 재투영됩니다.
+- 재투영할 수 없는 래스터는 오류로 변환을 멈춥니다. 이 경우 GDAL로 먼저 경위도 좌표계로 재투영하세요.
+```
+gdalwarp -t_srs "IAU_2015:30100" -r bilinear input.tif output.tif
+```
+PROJ에 IAU 데이터베이스가 없다면:
 ```
 gdalwarp -t_srs "+proj=longlat +a=1737400 +b=1737400 +no_defs" -r bilinear input.tif output.tif
 ```
 
-PROJ 설치 환경에 IAU 2015 데이터베이스가 포함된 경우 다음 방법도 사용 가능합니다:
-```
-gdalwarp -t_srs "IAU_2015:30100" input.tif output.tif
-```
+> **참고:** 지리 좌표계 GeoTIFF의 좌표계가 공식 IAU 코드 대신 `GEOGCRS["unknown"]`으로 표시될 수 있습니다. mago-3d-terrainer는 타원체 반지름을 직접 비교하므로 별도의 CRS 수정은 필요하지 않습니다.
 
-재투영 후 `gdalinfo`로 결과를 확인합니다. 원점이 (-180, 90)이고 픽셀 크기가 도(degree) 단위로 표시되어야 합니다:
+예: [PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/)의 LOLA GDR 제품(`ldem_4.img`, `ldem_16.img` 등)은 높이를 `Int16`, 0.5 m 단위로 저장합니다. 미터 단위 높이의 GeoTIFF로 변환합니다.
 ```
-Origin = (-180.000000000000000, 90.000000000000000)
-Pixel Size = (0.003906250000000, -0.003906249999888)
+gdal_translate -of VRT -a_scale 0.5 -a_offset 0 ldem_4.lbl ldem_4_scaled.vrt
+gdal_translate -unscale -ot Float32 -co COMPRESS=DEFLATE ldem_4_scaled.vrt ldem_4.tif
 ```
-
-> **참고:** 재투영된 GeoTIFF의 좌표계가 공식 IAU 코드 대신 `GEOGCRS["unknown"]`으로 표시될 수 있습니다. mago-3d-terrainer는 타원체 반지름 수치를 직접 비교하여 처리하므로, 별도의 CRS 수정 작업은 필요하지 않습니다.
 
 ## CesiumJS에서 렌더링
 
@@ -355,13 +352,8 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
 
 ## 지리 타일링 체계
 
-mago-3d-terrainer는 모든 천체에 대해 표준 지리 타일링 체계(경도 -180~180, 위도 -90~90)를 사용합니다. 이는 CesiumJS의 `CesiumTerrainProvider`가 내부적으로 사용하는 `GeographicTilingScheme`과 동일하므로, 행성 데이터를 위한 별도의 타일링 체계 변경은 필요하지 않습니다. GIS용으로 제공되는 행성 GeoTIFF 데이터는 대부분 -180/180 경도 체계를 따르며, 행성과학 아카이브에서 0~360 경도 체계로 배포된 데이터는 사전에 재투영해야 합니다.
-```
-gdalwarp -t_srs "IAU_2015:30100" -te -180 -90 180 90 --config CENTER_LONG 0 -r bilinear input_0_360.tif output.tif
-```
-
-> **참고:** 0~360 경도 체계나 행성 투영 좌표계로 된 입력은 아직 오류로 처리되지 않지만 결과가 잘못됩니다(서반구가 빠지거나 재투영되지 않음). 변환 전에 반드시 `gdalinfo`로 GeoTIFF를 확인하세요.
+mago-3d-terrainer는 모든 천체에 대해 표준 지리 타일링 체계(경도 -180~180, 위도 -90~90)를 사용합니다. 이는 CesiumJS의 `CesiumTerrainProvider`가 내부적으로 사용하는 `GeographicTilingScheme`과 동일하므로, 행성 데이터를 위한 별도의 타일링 체계 변경은 필요하지 않습니다. 0~360 경도 체계의 행성 GeoTIFF는 자동으로 변환됩니다([행성 천체의 입력 데이터](#행성-천체의-입력-데이터) 참고).
 
 ## 행성 천체의 높이 기준
 
-내장 지오이드 모델(`EGM96`, `EGM2008`, `EGM84`)은 지구 모델입니다. `--body moon`에서는 `--geoid`를 사용하지 마세요. 달 DEM은 보통 기준 구(1,737,400 m)에 대한 높이입니다.
+내장 지오이드 모델(`EGM96`, `EGM2008`, `EGM84`)은 지구 모델이므로 `--body moon`과 함께 쓰면 거부됩니다. 달 DEM은 보통 기준 구(1,737,400 m)에 대한 높이입니다.
