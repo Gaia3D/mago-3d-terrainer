@@ -43,6 +43,10 @@ class ReleaseFeatureTest {
     private static final File COPERNICUS_SAMPLE = new File(RESOURCES, "copernicus-sample");
     private static final File GARISAN_1M = new File(RESOURCES, "precision-test-garisan/garisan-precision-1m.tif");
     private static final File KNGEOID18 = new File(RESOURCES, "custom-geoid-kngeoid18/kr_ngii_KNGeoid18_4326.tif");
+    // LRO LOLA LDEM_4 (NASA PDS), 1440 x 720: -180..180 geographic, 0..360 geographic and the PDS projected CRS
+    private static final File MOON_PM180 = new File(RESOURCES, "moon-sample/input/moon_ldem4_geo_pm180.tif");
+    private static final File MOON_0_360 = new File(RESOURCES, "moon-sample/input/moon_ldem4_geo_0_360.tif");
+    private static final File MOON_PROJECTED = new File(RESOURCES, "moon-sample/input/moon_ldem4_eqc_0_360.tif");
 
     // --- basic options ---
 
@@ -215,6 +219,36 @@ class ReleaseFeatureTest {
         // no missing tiles. The interrupted depth is generated from the quantized meshes, so the tiles differ from F13
         TerrainGolden.assertSameFiles("F13-multi-resolution", output);
         assertGolden("F21-recovery-in-depth", output);
+    }
+
+    // --- planetary bodies (#33) ---
+
+    @Test
+    @DisplayName("F22 moon, global DEM in -180..180 longitudes")
+    void moonGlobal() throws IOException {
+        assertGolden("F22-moon", run("F22-moon", "-i", path(MOON_PM180), "-body", "moon", "-max", "5"));
+    }
+
+    @Test
+    @DisplayName("F23 moon, the same DEM in 0..360 longitudes gives the same tiles as F22")
+    void moonGlobal0To360() throws IOException {
+        assertSameAsGolden("F22-moon", run("F23-moon-0-360", "-i", path(MOON_0_360), "-body", "moon", "-max", "5"));
+    }
+
+    @Test
+    @DisplayName("F24 moon, the same DEM in the PDS projected CRS (SIMPLE_CYLINDRICAL MOON)")
+    void moonProjected() throws IOException {
+        File output = run("F24-moon-projected", "-i", path(MOON_PROJECTED), "-body", "moon", "-max", "5");
+        // reprojected, so the heights differ from F22 by the quantization only; the tiles are the same
+        TerrainGolden.assertSameFiles("F22-moon", output);
+        assertGolden("F24-moon-projected", output);
+    }
+
+    @Test
+    @DisplayName("F25 moon, an Earth geoid is rejected")
+    void moonWithEarthGeoid() {
+        assertThrows(RuntimeException.class, () -> execute("-i", path(MOON_PM180), "-body", "moon", "-max", "2", "-geoid", "EGM96",
+                "-o", path(new File(OUTPUT_ROOT, "F25-moon-geoid"))));
     }
 
     // --- helpers ---

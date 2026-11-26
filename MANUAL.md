@@ -304,30 +304,27 @@ Supported bodies:
 java -jar mago-3d-terrainer.jar --input "/input_path/lunar_dem" --output "/output_path/lunar_terrain" --body moon --max 8
 ```
 
-## Preprocessing lunar DEM data with GDAL
+## Input data for planetary bodies
 
-Lunar DEM datasets (e.g. NASA LOLA, JAXA Kaguya/SELENE) are often distributed in a projected CRS (SimpleCylindrical, coordinates in metres). mago-3d-terrainer expects geographic coordinates (longitude/latitude in degrees). Use GDAL to reproject before conversion.
-
-**Example: NASA LRO LOLA Global DEM 118m**
-Source: https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m
-
-Reproject from SimpleCylindrical to geographic lon/lat on the Moon ellipsoid:
+Lunar DEM datasets (e.g. NASA LRO LOLA, JAXA Kaguya/SELENE) are used as distributed:
+- **Geographic CRS** (longitude/latitude in degrees) in **-180..180** or in the planetary **0..360** convention. 0..360 rasters are shifted to -180..180 automatically, and a global raster is rotated into one -180..180 raster, so the result is the same as with a -180..180 input.
+- **Projected CRS of the same body**, e.g. the PDS `SIMPLE_CYLINDRICAL MOON` of the LOLA products (coordinates in metres). It is reprojected to the geographic CRS of that body during the standardization.
+- If a raster cannot be reprojected, the conversion stops with an error. Reproject it to geographic coordinates with GDAL first:
+```
+gdalwarp -t_srs "IAU_2015:30100" -r bilinear input.tif output.tif
+```
+or, without the IAU database of PROJ:
 ```
 gdalwarp -t_srs "+proj=longlat +a=1737400 +b=1737400 +no_defs" -r bilinear input.tif output.tif
 ```
 
-Alternatively, if your PROJ installation includes the IAU 2015 database:
-```
-gdalwarp -t_srs "IAU_2015:30100" input.tif output.tif
-```
+> **Note:** A geographic GeoTIFF may be tagged as `GEOGCRS["unknown"]` rather than a formal IAU code. mago-3d-terrainer compares the ellipsoid radii directly, so no manual CRS correction is needed.
 
-After the warp, verify the output with `gdalinfo`. The coordinate system should show a geographic CRS with origin at (-180, 90) and pixel size in degrees:
+Example: the LOLA GDR products (`ldem_4.img`, `ldem_16.img`, ...) of the [PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/) store the height as `Int16` with a scale of 0.5 m. Convert them to a GeoTIFF of heights in metres:
 ```
-Origin = (-180.000000000000000, 90.000000000000000)
-Pixel Size = (0.003906250000000, -0.003906249999888)
+gdal_translate -of VRT -a_scale 0.5 -a_offset 0 ldem_4.lbl ldem_4_scaled.vrt
+gdal_translate -unscale -ot Float32 -co COMPRESS=DEFLATE ldem_4_scaled.vrt ldem_4.tif
 ```
-
-> **Note:** The warped GeoTIFF may be tagged as `GEOGCRS["unknown"]` rather than a formal IAU code. mago-3d-terrainer handles this by comparing ellipsoid radii directly, so no manual CRS correction is needed.
 
 ## Rendering in CesiumJS
 
@@ -347,13 +344,8 @@ Without `ellipsoid: Cesium.Ellipsoid.MOON`, Cesium defaults to the Earth ellipso
 
 ## Geographic tiling scheme
 
-mago-3d-terrainer uses the standard geographic tiling scheme (longitude -180 to 180, latitude -90 to 90) for all bodies. This matches CesiumJS's `GeographicTilingScheme` used internally by `CesiumTerrainProvider`, so no changes to the tiling scheme are required for planetary data. Most GIS-ready planetary GeoTIFFs use this -180/180 convention; datasets in the 0–360 planetary science convention must be reprojected first:
-```
-gdalwarp -t_srs "IAU_2015:30100" -te -180 -90 180 90 --config CENTER_LONG 0 -r bilinear input_0_360.tif output.tif
-```
-
-> **Note:** Inputs with 0–360 longitudes or a planetary projected CRS are not rejected yet, but the result is wrong (the western hemisphere is missing, or the raster is not reprojected). Always check the converted GeoTIFF with `gdalinfo` first.
+mago-3d-terrainer uses the standard geographic tiling scheme (longitude -180 to 180, latitude -90 to 90) for all bodies. This matches CesiumJS's `GeographicTilingScheme` used internally by `CesiumTerrainProvider`, so no changes to the tiling scheme are required for planetary data. The planetary GeoTIFFs in the 0–360 convention are shifted automatically (see [Input data for planetary bodies](#input-data-for-planetary-bodies)).
 
 ## Height reference for planetary bodies
 
-The built-in geoid models (`EGM96`, `EGM2008`, `EGM84`) are Earth models. Do not use `--geoid` with `--body moon`; lunar DEMs are usually relative to the reference sphere (1,737,400 m).
+The built-in geoid models (`EGM96`, `EGM2008`, `EGM84`) are Earth models, so they are rejected with `--body moon`. Lunar DEMs are usually relative to the reference sphere (1,737,400 m).

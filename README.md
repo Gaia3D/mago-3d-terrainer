@@ -116,21 +116,10 @@ mago-3d-terrainer supports terrain generation for planetary bodies other than Ea
 java -jar mago-3d-terrainer.jar --input /input/lunar_dem --output /output/lunar_terrain --body moon --max 8
 ```
 
-The Moon's DEM data (e.g. [NASA LOLA](https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m)) is typically distributed in a projected CRS and must be reprojected to geographic coordinates before use. Use GDAL to preprocess:
+Lunar DEMs can be used as distributed: geographic rasters in -180..180 or 0..360 longitudes (shifted automatically), or the projected CRS of the body such as the PDS `SIMPLE_CYLINDRICAL MOON` (reprojected automatically). Other rasters can be reprojected with GDAL first:
 
 ```
-gdalwarp -t_srs "+proj=longlat +a=1737400 +b=1737400 +no_defs" -r bilinear input.tif output.tif
-```
-
-Alternatively, if your PROJ installation includes the IAU 2015 database:
-```
-gdalwarp -t_srs "IAU_2015:30100" input.tif output.tif
-```
-
-The input must use longitudes from -180 to 180. Many lunar datasets (e.g. the PDS LOLA products) use 0 to 360, so shift them with GDAL first:
-
-```
-gdalwarp -t_srs "IAU_2015:30100" -te -180 -90 180 90 --config CENTER_LONG 0 -r bilinear input.tif output.tif
+gdalwarp -t_srs "IAU_2015:30100" -r bilinear input.tif output.tif
 ```
 
 The output tile structure uses the same geographic tiling scheme (-180 to 180 longitude) as Earth tiles. To render in CesiumJS, configure the terrain provider with the correct ellipsoid:
