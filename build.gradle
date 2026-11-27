@@ -96,6 +96,20 @@ project(':mago-terrainer') {
     }
 }
 
+// use the hooks of githooks/ (subtree protection, local and AI agent files), set on the first build of a clone
+tasks.register('installGitHooks', Exec) {
+    group = 'Build Setup'
+    description = 'Sets core.hooksPath to githooks.'
+    commandLine 'git', 'config', 'core.hooksPath', 'githooks'
+    onlyIf { file('.git').exists() && System.getenv('CI') == null }
+}
+
+subprojects {
+    tasks.named('compileJava') {
+        dependsOn(rootProject.tasks.named('installGitHooks'))
+    }
+}
+
 tasks.register('releaseDocker') {
     dependsOn(':mago-terrainer:javadoc')
     dependsOn(':mago-terrainer:jib')

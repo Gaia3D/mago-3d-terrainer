@@ -10,6 +10,11 @@ build/
 .cursor/
 .continue/
 .copilot/
+.agents/
+.agent/
+.codex/
+.gemini/
+CLAUDE.local.md
 
 ### IntelliJ IDEA ###
 .idea/
@@ -45,6 +50,9 @@ bin/
 
 ### VS Code ###
 .vscode/
+
+### Crash dumps ###
+*.stackdump
 
 ### Mac OS ###
 .DS_Store

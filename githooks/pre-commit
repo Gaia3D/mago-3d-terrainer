@@ -1,10 +1,11 @@
 #!/bin/sh
 
-if [ "$ALLOW_OSS_SUBTREE_COMMIT" = "1" ]; then
-  exit 0
-fi
+HOOKS_DIR="$(git rev-parse --show-toplevel)/githooks"
 
-CHANGED_FILES=$(git diff --cached --name-only)
+# --no-renames: a file moved out of a protected path is listed as deleted there
+CHANGED_FILES=$(git diff --cached --name-only --no-renames)
+# the deleted files are allowed, they remove a forbidden file from the repository
+ADDED_FILES=$(git diff --cached --name-only --no-renames --diff-filter=d)
 
 check_protected_path() {
   PROTECTED_PATH="$1"
@@ -13,7 +14,7 @@ check_protected_path() {
 
   if echo "$CHANGED_FILES" | grep -q "^${PROTECTED_PATH}/"; then
     echo ""
-    echo "ERROR: Direct changes to ${PROTECTED_PATH}/ cannot be committed in mago-3d-tiler."
+    echo "ERROR: Direct changes to ${PROTECTED_PATH}/ cannot be committed in mago-3d-terrainer."
     echo ""
     echo "This directory is managed as an OSS subtree."
     echo "Make changes in the standalone ${PROTECTED_PATH} repository, then sync with:"
@@ -31,8 +32,14 @@ check_protected_path() {
 
 FAILED=0
 
-check_protected_path "mago-common" "common" "main" || FAILED=1
-check_protected_path "mago-io" "mago-io" "main" || FAILED=1
+if [ "$ALLOW_OSS_SUBTREE_COMMIT" != "1" ]; then
+  check_protected_path "mago-common" "common" "main" || FAILED=1
+  check_protected_path "mago-io" "mago-io" "main" || FAILED=1
+fi
+
+if [ -n "$ADDED_FILES" ]; then
+  echo "$ADDED_FILES" | sh "$HOOKS_DIR/check-forbidden-paths.sh" || FAILED=1
+fi
 
 if [ "$FAILED" = "1" ]; then
   exit 1

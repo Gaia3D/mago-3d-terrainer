@@ -1,0 +1,23 @@
+name: PR Check
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  paths:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check local and AI agent files
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git diff --name-only --no-renames --diff-filter=d "origin/$BASE_REF...HEAD" | sh githooks/check-forbidden-paths.sh
+
+      - name: Check direct changes to the OSS subtrees
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: sh githooks/check-subtree-commits.sh "origin/$BASE_REF" HEAD
