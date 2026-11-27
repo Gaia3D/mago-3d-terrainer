@@ -74,9 +74,6 @@ public class TerrainerPipeline {
         if (globalOptions.isContinue()) {
             return ProcessType.CONTINUE;
         }
-        if (globalOptions.isModify()) {
-            return ProcessType.MODIFICATION;
-        }
         return ProcessType.CREATION;
     }
 
@@ -84,13 +81,6 @@ public class TerrainerPipeline {
         if (processType == ProcessType.CONTINUE) {
             log.info("[Tile] Continuing making tile meshes.");
             terrainTilesetGenerator.continueAvailableTileMeshes();
-            log.info("[Tile] Finished making tile meshes.");
-            return;
-        }
-
-        if (processType == ProcessType.MODIFICATION) {
-            log.info("[Tile] Start making tile meshes.");
-            terrainTilesetGenerator.generateModifiedAvailableTileMeshes();
             log.info("[Tile] Finished making tile meshes.");
             return;
         }

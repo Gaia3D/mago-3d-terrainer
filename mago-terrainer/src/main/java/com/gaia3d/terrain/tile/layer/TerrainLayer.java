@@ -175,6 +175,10 @@ public class TerrainLayer {
         this.bounds[3] = maxLat;
     }
 
+    private boolean hasMetadataAvailability() {
+        return this.extensions != null && this.extensions.contains("metadata");
+    }
+
     public void saveJsonFile(String outputDirectory, String layerJsonName) {
         String fullFileName = outputDirectory + File.separator + layerJsonName;
         FileUtils.createAllFoldersIfNoExist(outputDirectory);
@@ -202,9 +206,18 @@ public class TerrainLayer {
             objectNodeRoot.set("extensions", objectNodeExtensions);
         }
 
+        // with the metadata extension, the availability is stored in the tiles (see TileAvailabilityMetadata)
+        boolean metadataAvailability = hasMetadataAvailability();
+        if (metadataAvailability) {
+            objectNodeRoot.put("metadataAvailability", TileAvailabilityMetadata.AVAILABILITY_LEVELS);
+        }
+
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         HashMap<Integer, TileRange> tilesRangeMap = this.getTilesRangeMap();
         for (Integer tileDepth : tilesRangeMap.keySet()) {
+            if (metadataAvailability && tileDepth > 0) {
+                continue;
+            }
             TileRange tilesRange = tilesRangeMap.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             ObjectNode objectNodeTileDepth = objectMapper.createObjectNode();
@@ -223,77 +236,6 @@ public class TerrainLayer {
         try {
             JsonNode jsonNode = new ObjectMapper().readTree(objectNodeRoot.toString());
             objectMapper.writeValue(new File(fullFileName), jsonNode);
-        } catch (IOException e) {
-            log.error("Error:", e);
-        }
-    }
-
-    public void loadJsonFileCustom(String jsonFullPath, AvailableTileSet availableTileSet) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(new File(jsonFullPath));
-
-            this.tilejson = jsonNode.get("tilejson").asText();
-            this.name = jsonNode.get("name").asText();
-            this.description = jsonNode.get("description").asText();
-            this.version = jsonNode.get("version").asText();
-            this.format = jsonNode.get("format").asText();
-            this.attribution = jsonNode.get("attribution").asText();
-            this.template = jsonNode.get("template").asText();
-            this.legend = jsonNode.get("legend").asText();
-            this.scheme = jsonNode.get("scheme").asText();
-            this.projection = jsonNode.get("projection").asText();
-
-            ArrayNode tilesArrayNode = (ArrayNode) jsonNode.get("tiles");
-            if (tilesArrayNode != null && tilesArrayNode.size() > 0) {
-                this.tiles = new String[tilesArrayNode.size()];
-                for (int i = 0; i < tilesArrayNode.size(); i++) {
-                    this.tiles[i] = tilesArrayNode.get(i).asText();
-                }
-            }
-
-            ArrayNode boundsArrayNode = (ArrayNode) jsonNode.get("bounds");
-            if (boundsArrayNode != null && boundsArrayNode.size() == 4) {
-                this.bounds = new double[4];
-                for (int i = 0; i < boundsArrayNode.size(); i++) {
-                    this.bounds[i] = boundsArrayNode.get(i).asDouble();
-                }
-            }
-
-            ArrayNode extensionsArrayNode = (ArrayNode) jsonNode.get("extensions");
-            if (extensionsArrayNode != null && extensionsArrayNode.size() > 0) {
-                this.extensions = new ArrayList<>();
-                for (int i = 0; i < extensionsArrayNode.size(); i++) {
-                    this.extensions.add(extensionsArrayNode.get(i).asText());
-                }
-            }
-
-            // available
-            Map<Integer, List<TileRange>> mapDepthAvailableTileRanges = availableTileSet.getMapDepthAvailableTileRanges();
-            ArrayNode availableArrayNode = (ArrayNode) jsonNode.get("available");
-            if (availableArrayNode != null && availableArrayNode.size() > 0) {
-                for (int i = 0; i < availableArrayNode.size(); i++) {
-                    ArrayNode tileDepthArrayNode = (ArrayNode) availableArrayNode.get(i);
-                    if (tileDepthArrayNode != null && tileDepthArrayNode.size() > 0) {
-                        List<TileRange> tileRanges = new ArrayList<>();
-                        for (int j = 0; j < tileDepthArrayNode.size(); j++) {
-                            JsonNode tileDepthNode = tileDepthArrayNode.get(j);
-                            int startX = tileDepthNode.get("startX").asInt();
-                            int endX = tileDepthNode.get("endX").asInt();
-                            int startY = tileDepthNode.get("startY").asInt();
-                            int endY = tileDepthNode.get("endY").asInt();
-                            TileRange tileRange = new TileRange();
-                            tileRange.setMinTileX(startX);
-                            tileRange.setMaxTileX(endX);
-                            tileRange.setMinTileY(startY);
-                            tileRange.setMaxTileY(endY);
-                            tileRanges.add(tileRange);
-                        }
-                        mapDepthAvailableTileRanges.put(i, tileRanges);
-                    }
-                }
-            }
-
         } catch (IOException e) {
             log.error("Error:", e);
         }
@@ -326,9 +268,18 @@ public class TerrainLayer {
             objectNodeRoot.set("extensions", objectNodeExtensions);
         }
 
+        // with the metadata extension, the availability is stored in the tiles (see TileAvailabilityMetadata)
+        boolean metadataAvailability = hasMetadataAvailability();
+        if (metadataAvailability) {
+            objectNodeRoot.put("metadataAvailability", TileAvailabilityMetadata.AVAILABILITY_LEVELS);
+        }
+
         ArrayNode objectNodeAvailable = objectMapper.createArrayNode();
         Map<Integer, List<TileRange>> mapDepthAvailableTileRanges = availableTileSet.getMapDepthAvailableTileRanges();
         for (Integer tileDepth : mapDepthAvailableTileRanges.keySet()) {
+            if (metadataAvailability && tileDepth > 0) {
+                continue;
+            }
             List<TileRange> tileRanges = mapDepthAvailableTileRanges.get(tileDepth);
             ArrayNode objectNodeTileDepth_array = objectMapper.createArrayNode();
             for (TileRange tilesRange : tileRanges) {

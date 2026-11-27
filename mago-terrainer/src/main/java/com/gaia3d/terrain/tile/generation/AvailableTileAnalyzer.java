@@ -6,6 +6,7 @@ import com.gaia3d.terrain.tile.core.TileRange;
 import com.gaia3d.terrain.tile.custom.AvailableTileSet;
 import com.gaia3d.terrain.tile.geotiff.GeoTiffCoverageStore;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
+import com.gaia3d.util.CelestialBody;
 import com.gaia3d.util.FileUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.geotools.api.referencing.crs.ProjectedCRS;
 import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffException;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.joml.Vector2d;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -37,6 +39,8 @@ public class AvailableTileAnalyzer {
             log.error("No GeoTiff files found in input paths: {}", resolveConfiguredInputPaths());
             throw new RuntimeException("Error: No GeoTiff files found in input paths: " + resolveConfiguredInputPaths());
         }
+
+        generator.setRasterPriority(RasterPriority.create(rasterFileNames));
 
         int geoTiffFilesSize = rasterFileNames.size();
         int geoTiffFilesCount = 0;
@@ -72,13 +76,19 @@ public class AvailableTileAnalyzer {
 
             GeographicExtension geographicExtension = new GeographicExtension();
             try {
-                GaiaGeoTiffUtils.getGeographicExtension(originalGridCoverage2D, gf, targetToWgs, geographicExtension);
+                if (globalOptions.getCelestialBody() != null && globalOptions.getCelestialBody() != CelestialBody.EARTH) {
+                    getPlanetaryGeographicExtension(originalGridCoverage2D, crsTarget, geographicExtension);
+                } else {
+                    GaiaGeoTiffUtils.getGeographicExtension(originalGridCoverage2D, gf, targetToWgs, geographicExtension);
+                }
             } catch (Exception ex) {
                 log.error("Error calculating geographic extension for geotiff: {}", geoTiffFileName, ex);
                 continue;
             }
 
-            availableTileSet.addAvailableExtensions(pixelSizeMeters.x, geographicExtension);
+            for (GeographicExtension normalizedExtension : normalizeLongitudeRange(geographicExtension)) {
+                availableTileSet.addAvailableExtensions(pixelSizeMeters.x, normalizedExtension);
+            }
         }
         availableTileSet.recombineTileRanges();
 
@@ -87,6 +97,88 @@ public class AvailableTileAnalyzer {
             globalOptions.setMaximumTileDepth(availableTileSet.getMaxAvailableDepth());
         }
         System.gc();
+    }
+
+    /**
+     * The geographic extension of a raster of another body than the Earth, in the geographic CRS of that body.
+     * The transform to EPSG:4326 wraps the longitudes into -180..180, so a raster in the 0..360 convention (common for
+     * planetary data) would get the extension of a thin band around 0. Here the west and east edges are transformed to the
+     * base geographic CRS, and the east edge is unwrapped when it is not east of the west edge.
+     */
+    static void getPlanetaryGeographicExtension(GridCoverage2D coverage, CoordinateReferenceSystem crs, GeographicExtension resultExtension) throws Exception {
+        ReferencedEnvelope envelope = new ReferencedEnvelope(coverage.getEnvelope2D());
+        double minLon;
+        double maxLon;
+        double minLat;
+        double maxLat;
+        if (crs instanceof ProjectedCRS projectedCRS) {
+            MathTransform toGeographic = CRS.findMathTransform(projectedCRS, projectedCRS.getBaseCRS(), true);
+            double midY = (envelope.getMinimum(1) + envelope.getMaximum(1)) * 0.5;
+            double midX = (envelope.getMinimum(0) + envelope.getMaximum(0)) * 0.5;
+            // the centers of the first and last columns: the edges of a global raster are both on the same meridian
+            double halfPixelX = envelope.getSpan(0) / coverage.getGridGeometry().getGridRange2D().getSpan(0) * 0.5;
+            double[] points = {
+                    envelope.getMinimum(0) + halfPixelX, midY, envelope.getMaximum(0) - halfPixelX, midY,
+                    midX, midY, midX, envelope.getMinimum(1), midX, envelope.getMaximum(1)};
+            double[] geographic = new double[points.length];
+            toGeographic.transform(points, 0, geographic, 0, points.length / 2);
+            // the transform wraps the longitudes: unwrap the west edge to the west and the east edge to the east of the center
+            double centerLon = geographic[4];
+            double westOffset = geographic[0] - centerLon;
+            while (westOffset > 0.0) {
+                westOffset -= 360.0;
+            }
+            double eastOffset = geographic[2] - centerLon;
+            while (eastOffset < 0.0) {
+                eastOffset += 360.0;
+            }
+            minLon = centerLon + westOffset - halfPixelX / projectedCRS.getBaseCRS().getDatum().getEllipsoid().getSemiMajorAxis() * 180.0 / Math.PI;
+            maxLon = centerLon + eastOffset + halfPixelX / projectedCRS.getBaseCRS().getDatum().getEllipsoid().getSemiMajorAxis() * 180.0 / Math.PI;
+            minLat = Math.max(-90.0, Math.min(geographic[7], geographic[9]));
+            maxLat = Math.min(90.0, Math.max(geographic[7], geographic[9]));
+        } else {
+            minLon = envelope.getMinimum(0);
+            maxLon = envelope.getMaximum(0);
+            minLat = envelope.getMinimum(1);
+            maxLat = envelope.getMaximum(1);
+        }
+        resultExtension.setDegrees(minLon, minLat, 0.0, maxLon, maxLat, 0.0);
+    }
+
+    /**
+     * Returns the extension in -180..180 longitudes: an extension in the 0..360 convention (planetary data) is shifted,
+     * and an extension crossing the antimeridian is split in two. The standardized rasters are normalized the same way
+     * (TerrainRasterWriter.writeNormalizedLongitude).
+     */
+    static List<GeographicExtension> normalizeLongitudeRange(GeographicExtension extension) {
+        double minLon = extension.getMinLongitudeDeg();
+        double maxLon = extension.getMaxLongitudeDeg();
+        double minLat = extension.getMinLatitudeDeg();
+        double maxLat = extension.getMaxLatitudeDeg();
+        if (minLon >= 180.0) {
+            minLon -= 360.0;
+            maxLon -= 360.0;
+        } else if (maxLon <= -180.0) {
+            minLon += 360.0;
+            maxLon += 360.0;
+        }
+        List<GeographicExtension> result = new ArrayList<>();
+        if (maxLon > 180.0) {
+            result.add(createExtension(minLon, minLat, 180.0, maxLat));
+            result.add(createExtension(-180.0, minLat, Math.min(180.0, maxLon - 360.0), maxLat));
+        } else if (minLon < -180.0) {
+            result.add(createExtension(-180.0, minLat, maxLon, maxLat));
+            result.add(createExtension(Math.max(-180.0, minLon + 360.0), minLat, 180.0, maxLat));
+        } else {
+            result.add(createExtension(minLon, minLat, maxLon, maxLat));
+        }
+        return result;
+    }
+
+    private static GeographicExtension createExtension(double minLon, double minLat, double maxLon, double maxLat) {
+        GeographicExtension extension = new GeographicExtension();
+        extension.setDegrees(minLon, minLat, 0.0, maxLon, maxLat, 0.0);
+        return extension;
     }
 
     public List<String> resolveInputRasterFileNames() {

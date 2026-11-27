@@ -2,6 +2,7 @@ package com.gaia3d.terrain.tile.elevation;
 
 import com.gaia3d.command.GlobalOptions;
 import com.gaia3d.terrain.structure.GeographicExtension;
+import com.gaia3d.terrain.tile.generation.RasterPriority;
 import com.gaia3d.terrain.types.InterpolationType;
 import com.gaia3d.terrain.tile.raster.TerrainRasterData;
 import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
@@ -57,6 +58,8 @@ public class TerrainElevationData {
     private NoDataContainer noDataContainer = null;
     private Position2D worldPosition = null; // longitude supplied first
     private int geoTiffWidth = -1;
+    // see RasterPriority, the lower first
+    private int priorityRank = RasterPriority.UNRANKED;
     private int geoTiffHeight = -1;
     private int queryMark = 0;
     private Vector2i gridCoverage2DSize = null;
@@ -231,6 +234,42 @@ public class TerrainElevationData {
         resultPixelSize.set(pixelSizeX, pixelSizeY);
     }
 
+    /**
+     * The NODATA samples are represented by the configured NODATA value, which can be NaN ("-nv nan").
+     */
+    private boolean isNoDataSample(double value) {
+        return Double.isNaN(value) || value == globalOptions.getNoDataValue();
+    }
+
+    /**
+     * Bilinear interpolation when some of the 4 samples are NODATA (value01 is the next row, value10 the next column).
+     * The point is NODATA when its nearest sample is NODATA, otherwise the valid samples are interpolated with their
+     * renormalized weights, so the border of the valid area is not shifted and NODATA is never mixed into heights.
+     */
+    double interpolateValidSamples(double value00, double value01, double value10, double value11, double factorX, double factorY) {
+        double nearest;
+        if (factorX < 0.5) {
+            nearest = factorY < 0.5 ? value00 : value01;
+        } else {
+            nearest = factorY < 0.5 ? value10 : value11;
+        }
+        if (isNoDataSample(nearest)) {
+            return globalOptions.getNoDataValue();
+        }
+
+        double[] values = {value00, value01, value10, value11};
+        double[] weights = {(1.0 - factorX) * (1.0 - factorY), (1.0 - factorX) * factorY, factorX * (1.0 - factorY), factorX * factorY};
+        double sum = 0.0;
+        double weightSum = 0.0;
+        for (int i = 0; i < 4; i++) {
+            if (!isNoDataSample(values[i])) {
+                sum += values[i] * weights[i];
+                weightSum += weights[i];
+            }
+        }
+        return weightSum > 0.0 ? sum / weightSum : nearest;
+    }
+
     public double getGridValue(int x, int y) {
         if (isTerrainRasterFile()) {
             if (!ensureRasterInitialized() || x < 0 || y < 0 || x >= terrainRasterData.width() || y >= terrainRasterData.height()) {
@@ -254,9 +293,10 @@ public class TerrainElevationData {
                 }
             } catch (ArrayIndexOutOfBoundsException e) {
                 log.debug("[getGridValue : ArrayIndexOutOfBoundsException] getGridValue", e);
+                return globalOptions.getNoDataValue();
             } catch (Exception e) {
                 log.error("[getGridValue : Exception] Error in getGridValue", e);
-                log.error("Error:", e);
+                return globalOptions.getNoDataValue();
             }
 
             if (this.noDataContainer == null && coverage != null) {
@@ -311,8 +351,7 @@ public class TerrainElevationData {
             resultAltitude = calcNearestInterpolation((int) Math.floor(unitaryX * geoTiffRasterWidth), (int) Math.floor(unitaryY * geoTiffRasterHeight));
         }
 
-        double noDataValue = globalOptions.getNoDataValue();
-        if (resultAltitude == noDataValue) {
+        if (isNoDataSample(resultAltitude)) {
             intersects[0] = false;
             return resultAltitude;
         }
@@ -338,8 +377,11 @@ public class TerrainElevationData {
         double clampedX = Math.max(0.0, Math.min(x, Math.nextDown(1.0)));
         double clampedY = Math.max(0.0, Math.min(y, Math.nextDown(1.0)));
 
-        double scaledX = clampedX * geoTiffWidth;
-        double scaledY = clampedY * geoTiffHeight;
+        // GeoTIFF sample values are located at pixel centers. Convert the
+        // normalized coverage coordinate to a center-based grid coordinate and
+        // extend the edge samples across the outer half-pixel region.
+        double scaledX = Math.max(0.0, Math.min(clampedX * geoTiffWidth - 0.5, geoTiffWidth - 1.0));
+        double scaledY = Math.max(0.0, Math.min(clampedY * geoTiffHeight - 0.5, geoTiffHeight - 1.0));
 
         int column = (int) Math.floor(scaledX);
         int row = (int) Math.floor(scaledY);
@@ -380,14 +422,9 @@ public class TerrainElevationData {
         }
 
         // Ignore noDataValue samples.
-        double noDataValue = globalOptions.getNoDataValue();
-        boolean hasNoData = (value00 == noDataValue) || (value01 == noDataValue) || (value10 == noDataValue) || (value11 == noDataValue);
+        boolean hasNoData = isNoDataSample(value00) || isNoDataSample(value01) || isNoDataSample(value10) || isNoDataSample(value11);
         if (hasNoData) {
-            if (value00 == noDataValue) {
-                return noDataValue;
-            } else {
-                return value00;
-            }
+            return interpolateValidSamples(value00, value01, value10, value11, factorX, factorY);
         }
 
         double value0 = value00 * (1.0 - factorY) + value01 * factorY;

@@ -5,7 +5,6 @@ import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationData;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
 import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
-import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +13,9 @@ import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Getter
@@ -22,15 +23,31 @@ import java.util.List;
 public class GeographicTerrainTileRaster {
     private static final int RASTER_RELEASE_ROW_BLOCK_SIZE = 32;
     private static final int RASTER_RELEASE_COLUMN_BLOCK_SIZE = 32;
+    private static final double ANTIMERIDIAN_EPSILON_DEG = 1.0e-8;
+    private static final double ANTIMERIDIAN_CANDIDATE_BAND_DEG = 1.0;
+    private static final int WATER_MASK_SIZE = 256;
+    private static final byte LAND = 0;
+    private static final byte WATER = (byte) 255;
+    // the first raster with data at a point gives its height: the priority rank, then the highest resolution
+    private static final Comparator<TerrainElevationData> PRIORITY_ORDER = Comparator
+            .comparingInt(TerrainElevationData::getPriorityRank)
+            .thenComparingDouble(TerrainElevationData::getPixelArea);
+    private static final double[] LONGITUDE_SHIFTS = {-360.0, 360.0};
 
     private TerrainTilesetGenerator manager = null;
     private TileIndices tileIndices = null;
     private GeographicExtension geographicExtension = null;
     private float[] elevations = null;
+    // true where a raster has data, only with the water mask extension (the areas without data are water)
+    private boolean[] dataMask = null;
     private int rasterWidth = 0;
     private int rasterHeight = 0;
     private double deltaLonDeg = 0;
     private double deltaLatDeg = 0;
+
+    GeographicTerrainTileRaster() {
+        // Used by focused raster interpolation tests.
+    }
 
     public GeographicTerrainTileRaster(TileIndices tileIndices, TerrainTilesetGenerator manager) {
         this.tileIndices = tileIndices;
@@ -42,17 +59,52 @@ public class GeographicTerrainTileRaster {
     }
 
     public int getColumn(double lonDeg) {
+        lonDeg = normalizeLongitude(lonDeg);
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
-        double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
 
         // Clamp longitude to valid bounds instead of returning -1
         // This handles floating-point precision errors at tile boundaries
-        double clampedLonDeg = Math.max(minLonDeg, Math.min(maxLonDeg, lonDeg));
+        double clampedLonDeg = Math.max(minLonDeg, Math.min(this.geographicExtension.getMaxLongitudeDeg(), lonDeg));
 
         int col = (int) ((clampedLonDeg - minLonDeg) / deltaLonDeg);
 
         // Ensure column is within valid raster range
         return Math.max(0, Math.min(rasterWidth - 1, col));
+    }
+
+    private double normalizeLongitude(double lonDeg) {
+        return lonDeg + getLongitudeShift(lonDeg);
+    }
+
+    /**
+     * Returns the shift (-360, 0 or +360) that moves the longitude into the frame of this raster.
+     * A mesh connected across the antimeridian can temporarily represent the +180 side in the -180
+     * coordinate frame (or vice versa). The shift that brings the longitude closest to the raster
+     * extent is chosen, so a longitude exactly on the antimeridian is also mapped correctly when the
+     * raster is 180 degrees wide (depth 0).
+     */
+    public double getLongitudeShift(double lonDeg) {
+        double bestShift = 0.0;
+        double bestDistance = getDistanceToLongitudeRange(lonDeg);
+        for (double shift : LONGITUDE_SHIFTS) {
+            double distance = getDistanceToLongitudeRange(lonDeg + shift);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestShift = shift;
+            }
+        }
+        return bestShift;
+    }
+
+    private double getDistanceToLongitudeRange(double lonDeg) {
+        double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
+        double maxLonDeg = this.geographicExtension.getMaxLongitudeDeg();
+        if (lonDeg < minLonDeg) {
+            return minLonDeg - lonDeg;
+        } else if (lonDeg > maxLonDeg) {
+            return lonDeg - maxLonDeg;
+        }
+        return 0.0;
     }
 
     public int getRow(double latDeg) {
@@ -89,6 +141,10 @@ public class GeographicTerrainTileRaster {
     }
 
     public float getElevationBilinear(double lonDeg, double latDeg) {
+        // Keep the interpolation fraction in the raster's longitude frame as well as
+        // the column lookup. Using a translated longitude (for example -180.5 for an
+        // east-antimeridian raster at 179.5) here produces an enormous extrapolation.
+        lonDeg = normalizeLongitude(lonDeg);
         int col = getColumn(lonDeg);
         int row = getRow(latDeg);
 
@@ -130,6 +186,7 @@ public class GeographicTerrainTileRaster {
     public void deleteObjects() {
         this.geographicExtension = null;
         this.elevations = null;
+        this.dataMask = null;
     }
 
     public void generateElevations(TerrainElevationModeler terrainElevationModeler, int rasterWidth, int rasterHeight) {
@@ -138,6 +195,7 @@ public class GeographicTerrainTileRaster {
 
         int elevationsCount = rasterWidth * rasterHeight;
         this.elevations = new float[elevationsCount];
+        this.dataMask = GlobalOptions.getInstance().isWaterMaskExtension() ? new boolean[elevationsCount] : null;
 
         double minLonDeg = this.geographicExtension.getMinLongitudeDeg();
         double minLatDeg = this.geographicExtension.getMinLatitudeDeg();
@@ -151,21 +209,16 @@ public class GeographicTerrainTileRaster {
         deltaLonDeg = (maxLonDeg - minLonDeg) / (rasterWidth - 1);
         deltaLatDeg = (maxLatDeg - minLatDeg) / (rasterHeight - 1);
 
-        double semiDeltaLonDeg = deltaLonDeg * 0.5;
-        double semiDeltaLatDeg = deltaLatDeg * 0.5;
-
         // make intersected terrainElevationDataList
         GeographicExtension geoExtension = this.getGeographicExtension();
         List<TerrainElevationData> resultTerrainElevDataArray = this.manager.getTerrainElevationDataList();
         terrainElevationModeler.collectTerrainElevationData(geoExtension, resultTerrainElevDataArray);
-        if (GlobalOptions.getInstance().getPriorityType() == PriorityType.RESOLUTION) {
-            resultTerrainElevDataArray.sort(Comparator.comparingDouble(TerrainElevationData::getPixelArea));
-        }
+        resultTerrainElevDataArray.sort(PRIORITY_ORDER);
         terrainElevationModeler.preloadTerrainElevationRasters(resultTerrainElevDataArray);
 
         double[] longitudes = new double[rasterWidth];
         for (int col = 0; col < rasterWidth; col++) {
-            longitudes[col] = minLonDeg + semiDeltaLonDeg + col * deltaLonDeg;
+            longitudes[col] = minLonDeg + col * deltaLonDeg;
         }
 
         GeographicExtension activeBlock = new GeographicExtension();
@@ -175,8 +228,8 @@ public class GeographicTerrainTileRaster {
             for (int colStart = 0; colStart < rasterWidth; colStart += RASTER_RELEASE_COLUMN_BLOCK_SIZE) {
                 int colEndExclusive = Math.min(colStart + RASTER_RELEASE_COLUMN_BLOCK_SIZE, rasterWidth);
 
-                double blockMinLatDeg = minLatDeg + semiDeltaLatDeg + rowStart * deltaLatDeg;
-                double blockMaxLatDeg = minLatDeg + semiDeltaLatDeg + (rowEndExclusive - 1) * deltaLatDeg;
+                double blockMinLatDeg = minLatDeg + rowStart * deltaLatDeg;
+                double blockMaxLatDeg = minLatDeg + (rowEndExclusive - 1) * deltaLatDeg;
                 if (blockMinLatDeg > blockMaxLatDeg) {
                     double swap = blockMinLatDeg;
                     blockMinLatDeg = blockMaxLatDeg;
@@ -196,16 +249,91 @@ public class GeographicTerrainTileRaster {
                 filterTerrainElevationDataForBlock(resultTerrainElevDataArray, activeBlock, blockTerrainElevDataArray);
 
                 for (int row = rowStart; row < rowEndExclusive; row++) {
-                    double latDeg = minLatDeg + semiDeltaLatDeg + row * deltaLatDeg;
+                    double latDeg = minLatDeg + row * deltaLatDeg;
                     int rowOffset = row * rasterWidth;
                     for (int col = colStart; col < colEndExclusive; col++) {
                         double lonDeg = longitudes[col];
                         elevations[rowOffset + col] = (float) terrainElevationModeler.getElevation(lonDeg, latDeg, blockTerrainElevDataArray);
+                        if (dataMask != null) {
+                            dataMask[rowOffset + col] = terrainElevationModeler.isLastSampleIntersected();
+                        }
                     }
                 }
             }
         }
 
+        reconcileAntimeridianFrontier(terrainElevationModeler);
+
+    }
+
+    private void reconcileAntimeridianFrontier(TerrainElevationModeler terrainElevationModeler) {
+        double minLonDeg = geographicExtension.getMinLongitudeDeg();
+        double maxLonDeg = geographicExtension.getMaxLongitudeDeg();
+        boolean westFrontier = Math.abs(minLonDeg + 180.0) <= ANTIMERIDIAN_EPSILON_DEG;
+        boolean eastFrontier = Math.abs(maxLonDeg - 180.0) <= ANTIMERIDIAN_EPSILON_DEG;
+        if (!westFrontier && !eastFrontier) {
+            return;
+        }
+
+        // The opposite frontier is normally outside this tile's local DEM candidate list.
+        // Query both full-height frontier lines and de-duplicate rasters before the final pass.
+        Map<TerrainElevationData, TerrainElevationData> seamDataMap = new HashMap<>();
+        GeographicExtension westSeam = new GeographicExtension();
+        westSeam.setDegrees(-180.0, -90.0, 0.0,
+                -180.0 + ANTIMERIDIAN_CANDIDATE_BAND_DEG, 90.0, 0.0);
+        GeographicExtension eastSeam = new GeographicExtension();
+        eastSeam.setDegrees(180.0 - ANTIMERIDIAN_CANDIDATE_BAND_DEG, -90.0, 0.0,
+                180.0, 90.0, 0.0);
+        terrainElevationModeler.collectTerrainElevationData(westSeam, seamDataMap);
+        terrainElevationModeler.collectTerrainElevationData(eastSeam, seamDataMap);
+
+        List<TerrainElevationData> seamData = new ArrayList<>(seamDataMap.keySet());
+        seamData.sort(PRIORITY_ORDER);
+
+        int frontierColumn = westFrontier ? 0 : rasterWidth - 1;
+        double minLatDeg = geographicExtension.getMinLatitudeDeg();
+        for (int row = 0; row < rasterHeight; row++) {
+            double latDeg = minLatDeg + row * deltaLatDeg;
+            elevations[row * rasterWidth + frontierColumn] =
+                    (float) terrainElevationModeler.getAntimeridianElevation(latDeg, seamData);
+            if (dataMask != null) {
+                dataMask[row * rasterWidth + frontierColumn] = terrainElevationModeler.isLastSampleIntersected();
+            }
+        }
+    }
+
+    /**
+     * Creates the water mask of the quantized-mesh water mask extension: the areas without data are water.
+     * @return 1 byte (0 = all land, 255 = all water), or 256 x 256 bytes from the north-west corner, row by row to the south
+     */
+    public byte[] createWaterMask() {
+        if (dataMask == null) {
+            return new byte[]{0};
+        }
+        byte[] mask = new byte[WATER_MASK_SIZE * WATER_MASK_SIZE];
+        double minLonDeg = geographicExtension.getMinLongitudeDeg();
+        double maxLatDeg = geographicExtension.getMaxLatitudeDeg();
+        double stepLonDeg = geographicExtension.getLongitudeRangeDegree() / WATER_MASK_SIZE;
+        double stepLatDeg = geographicExtension.getLatitudeRangeDegree() / WATER_MASK_SIZE;
+        boolean hasLand = false;
+        boolean hasWater = false;
+        for (int maskRow = 0; maskRow < WATER_MASK_SIZE; maskRow++) {
+            int row = getRow(maxLatDeg - (maskRow + 0.5) * stepLatDeg);
+            for (int maskCol = 0; maskCol < WATER_MASK_SIZE; maskCol++) {
+                int col = getColumn(minLonDeg + (maskCol + 0.5) * stepLonDeg);
+                boolean water = !dataMask[row * rasterWidth + col];
+                mask[maskRow * WATER_MASK_SIZE + maskCol] = water ? WATER : LAND;
+                hasLand |= !water;
+                hasWater |= water;
+            }
+        }
+        if (!hasWater) {
+            return new byte[]{LAND};
+        }
+        if (!hasLand) {
+            return new byte[]{WATER};
+        }
+        return mask;
     }
 
     /**

@@ -58,7 +58,8 @@ class TerrainElevationDataTest {
             elevationData.setGeographicExtension(createExtension());
 
             boolean[] intersects = new boolean[1];
-            assertEquals(15.0, elevationData.getElevation(0.5, 1.5, intersects), 0.0001);
+            assertEquals(0.0, elevationData.getElevation(0.5, 1.5, intersects), 0.0001);
+            assertEquals(15.0, elevationData.getElevation(1.0, 1.0, intersects), 0.0001);
             assertTrue(intersects[0]);
             assertTrue(elevationData.isRasterLoaded());
         } finally {
@@ -85,7 +86,8 @@ class TerrainElevationDataTest {
         double elevation = elevationData.getElevation(0.5, 1.5, intersects);
 
         assertTrue(intersects[0]);
-        assertEquals(15.0, elevation, 0.0001);
+        assertEquals(0.0, elevation, 0.0001);
+        assertEquals(15.0, elevationData.getElevation(1.0, 1.0, intersects), 0.0001);
     }
 
     @Test
@@ -130,7 +132,8 @@ class TerrainElevationDataTest {
         double elevation = elevationData.getElevation(0.5, 1.5, intersects);
 
         assertTrue(intersects[0]);
-        assertEquals(15.0, elevation, 0.0001);
+        assertEquals(0.0, elevation, 0.0001);
+        assertEquals(15.0, elevationData.getElevation(1.0, 1.0, intersects), 0.0001);
         assertTrue(image.getTileCalls > 0);
         assertEquals(0, image.getDataCalls);
     }

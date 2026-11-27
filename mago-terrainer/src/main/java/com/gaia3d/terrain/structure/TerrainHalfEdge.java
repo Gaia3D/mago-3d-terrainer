@@ -86,6 +86,15 @@ public class TerrainHalfEdge {
     }
 
     public TerrainHalfEdge getPrev() {
+        // fast path : the loop of a triangle has 3 halfEdges
+        TerrainHalfEdge next1 = this.next;
+        if (next1 != null) {
+            TerrainHalfEdge next2 = next1.next;
+            if (next2 != null && next2.next == this) {
+                return next2;
+            }
+        }
+
         TerrainHalfEdge thisHalfEdge = this;
         TerrainHalfEdge currHalfEdge = this;
         TerrainHalfEdge prevHalfEdge = null;

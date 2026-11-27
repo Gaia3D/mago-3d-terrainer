@@ -68,16 +68,12 @@ public class TileRange {
     public TileRange expand(int expandTiles) {
         TileRange expandedTilesRange = new TileRange();
         expandedTilesRange.setTileDepth(tileDepth);
-        int expandedMinTileX = minTileX - expandTiles;
-        if (expandedMinTileX < 0) {
-            expandedMinTileX = 0;
-        }
-        int expandedMaxTileX = maxTileX + expandTiles;
-        int expandedMinTileY = minTileY - expandTiles;
-        if (expandedMinTileY < 0) {
-            expandedMinTileY = 0;
-        }
-        int expandedMaxTileY = maxTileY + expandTiles;
+        int maxValidTileX = (1 << (tileDepth + 1)) - 1;
+        int maxValidTileY = (1 << tileDepth) - 1;
+        int expandedMinTileX = Math.max(0, minTileX - expandTiles);
+        int expandedMaxTileX = Math.min(maxValidTileX, maxTileX + expandTiles);
+        int expandedMinTileY = Math.max(0, minTileY - expandTiles);
+        int expandedMaxTileY = Math.min(maxValidTileY, maxTileY + expandTiles);
         expandedTilesRange.setMinTileX(expandedMinTileX);
         expandedTilesRange.setMaxTileX(expandedMaxTileX);
         expandedTilesRange.setMinTileY(expandedMinTileY);
@@ -87,24 +83,7 @@ public class TileRange {
     }
 
     public TileRange expand1() {
-        TileRange expandedTilesRange = new TileRange();
-        expandedTilesRange.setTileDepth(tileDepth);
-        int expandedMinTileX = minTileX - 1;
-        if (expandedMinTileX < 0) {
-            expandedMinTileX = 0;
-        }
-        int expandedMaxTileX = maxTileX + 1;
-        int expandedMinTileY = minTileY - 1;
-        if (expandedMinTileY < 0) {
-            expandedMinTileY = 0;
-        }
-        int expandedMaxTileY = maxTileY + 1;
-        expandedTilesRange.setMinTileX(expandedMinTileX);
-        expandedTilesRange.setMaxTileX(expandedMaxTileX);
-        expandedTilesRange.setMinTileY(expandedMinTileY);
-        expandedTilesRange.setMaxTileY(expandedMaxTileY);
-        return expandedTilesRange;
-
+        return expand(1);
     }
 
     public boolean contains(TileRange tileRange) {

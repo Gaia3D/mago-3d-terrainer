@@ -28,12 +28,17 @@ test {
     }
 
     useJUnitPlatform {
+        def tags = ['default']
         if (project.hasProperty("includeLoadTests")) {
-            includeTags 'default', 'load'
-        } else {
-            includeTags 'default'
+            tags += 'load'
         }
+        // release feature tests with golden files (see src/test/resources/golden/README.md)
+        if (project.hasProperty("includeReleaseTests")) {
+            tags += 'release'
+        }
+        includeTags(*tags)
     }
+    systemProperty 'mago.golden.update', project.hasProperty("updateGolden").toString()
 
     if (project.hasProperty("showTestOutput")) {
         testLogging {

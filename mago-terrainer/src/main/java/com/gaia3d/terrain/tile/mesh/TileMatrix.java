@@ -7,6 +7,7 @@ import com.gaia3d.quantized.mesh.QuantizedMesh;
 import com.gaia3d.quantized.mesh.QuantizedMeshManager;
 import com.gaia3d.terrain.structure.*;
 import com.gaia3d.terrain.tile.core.*;
+import com.gaia3d.terrain.tile.layer.TileAvailabilityMetadata;
 import com.gaia3d.terrain.tile.elevation.TerrainElevationModeler;
 import com.gaia3d.terrain.tile.generation.TerrainTilesetGenerator;
 import com.gaia3d.terrain.types.TerrainObjectStatus;
@@ -62,142 +63,6 @@ public class TileMatrix {
 
         listVertices.clear();
         listHalfEdges.clear();
-    }
-
-    private boolean refineAdjacentTilesVertically(TerrainMesh upMesh, TerrainMesh downMesh, boolean isModify) {
-        if (upMesh == null || downMesh == null) {
-            return false;
-        }
-
-        //  +------------+
-        //  |            |
-        //  |   tileUp   |
-        //  |            |
-        //  +------------+
-        //  |            |
-        //  |  tileDown  |
-        //  |            |
-        //  +------------+
-
-        // The downSide of tileUp must have the same vertices count than the upSide of tileDown, and must be coincident.
-
-        List<TerrainVertex> upTileDownVertices = upMesh.getDownVerticesSortedLeftToRight();
-        List<TerrainVertex> downTileUpVertices = downMesh.getUpVerticesSortedRightToLeft();
-
-        if (upTileDownVertices.size() != downTileUpVertices.size()) {
-            // For each vertex of the upTile, check if is coincident with a vertex or hedge of the downTile.
-            // If a vertex of upTile is coincident with a hedge of downTile, then must refine the triangle of the hedge of the downTile.
-            int splitCountUp = 0;
-            int splitCountDown = 0;
-
-            splitCountUp = refineTileOneSide(upMesh, downTileUpVertices, CardinalDirection.SOUTH, isModify);
-            splitCountDown = refineTileOneSide(downMesh, upTileDownVertices, CardinalDirection.NORTH, isModify);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean refineAdjacentTilesHorizontally(TerrainMesh leftMesh, TerrainMesh rightMesh, boolean isModify) {
-        if (leftMesh == null || rightMesh == null) {
-            return false;
-        }
-
-        //  +----------+----------+
-        //  |          |          |
-        //  | tileLeft | tileRight|
-        //  |          |          |
-        //  +----------+----------+
-
-        // The rightSide of the leftTile must twineable with the leftSide of the rightTile,
-        // so, must have same number of vertices and be coincident.
-
-        List<TerrainVertex> leftTileRightVertices = leftMesh.getRightVerticesSortedDownToUp();
-        List<TerrainVertex> rightTileLeftVertices = rightMesh.getLeftVerticesSortedUpToDown();
-
-        if (leftTileRightVertices.size() != rightTileLeftVertices.size()) {
-            // For each vertex of the leftTile, check if is coincident with a vertex or hedge of the rightTile.
-            // If a vertex of leftTile is coincident with a hedge of rightTile, then must refine the triangle of the hedge of the rightTile.
-            int splitCountLeft = 0;
-            int splitCountRight = 0;
-            splitCountLeft = refineTileOneSide(leftMesh, rightTileLeftVertices, CardinalDirection.EAST, isModify);
-            splitCountRight = refineTileOneSide(rightMesh, leftTileRightVertices, CardinalDirection.WEST, isModify);
-            return true;
-        }
-
-        return false;
-    }
-
-    private int refineTileOneSide(TerrainMesh meshToRefine, List<TerrainVertex> vertices, CardinalDirection tileSide, boolean isModify) {
-        double error = 1e-6;
-        int verticesCount = vertices.size();
-        boolean triangleSplit = false;
-        boolean finished = false;
-        int counter = 0;
-        int splitCount = 0;
-        List<TerrainHalfEdge> halfEdgesToRefine = null;
-        while (!finished) {
-            triangleSplit = false;
-            for (int i = 0; i < verticesCount; i++) {
-                TerrainVertex vertex = vertices.get(i);
-                if (vertex.getObjectStatus() == TerrainObjectStatus.DELETED) {
-                    continue;
-                }
-                if (tileSide == CardinalDirection.SOUTH) {
-                    halfEdgesToRefine = meshToRefine.getDownHalfEdgesSortedLeftToRight();
-                } else if (tileSide == CardinalDirection.NORTH) {
-                    halfEdgesToRefine = meshToRefine.getUpHalfEdgesSortedRightToLeft();
-                } else if (tileSide == CardinalDirection.EAST) {
-                    halfEdgesToRefine = meshToRefine.getRightHalfEdgesSortedDownToUp();
-                } else if (tileSide == CardinalDirection.WEST) {
-                    halfEdgesToRefine = meshToRefine.getLeftHalfEdgesSortedUpToDown();
-                }
-
-                int hedgesCount = halfEdgesToRefine.size();
-                for (int j = 0; j < hedgesCount; j++) {
-                    TerrainHalfEdge hEdge = halfEdgesToRefine.get(j);
-                    if (hEdge.getObjectStatus() == TerrainObjectStatus.DELETED) {
-                        continue;
-                    }
-                    // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = COINCIDENT_WITH_START_VERTEX, 3 = COINCIDENT_WITH_END_VERTEX
-                    if (hEdge.intersectsPoint(vertex.getPosition(), error) == 1) {
-                        // refine the triangle of the hedge of the rightTile
-                        TerrainTriangle triangle = hEdge.getTriangle();
-                        try {
-                            this.listHalfEdges.clear();
-                            meshToRefine.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
-                            this.listHalfEdges.clear();
-                            splitCount++;
-                        } catch (Exception e) {
-                            log.warn("Refine adjacent tiles horizontally, counter : {}", counter);
-                        }
-
-                        meshToRefine.removeDeletedObjects();
-                        meshToRefine.setObjectsIdInList();
-
-                        triangleSplit = true;
-                        break; // break for this vertex.
-                    }
-                }
-            }
-
-            meshToRefine.removeDeletedObjects();
-            meshToRefine.setObjectsIdInList();
-
-            if (!triangleSplit) {
-                finished = true;
-                break;
-            }
-
-            counter++;
-            if (counter > 100) {
-                log.warn("Refine adjacent tiles horizontally, counter : {}", counter);
-                break;
-            }
-        }
-
-        return splitCount;
     }
 
     private boolean setTwinsBetweenHalfEdgesInverseOrder(List<TerrainHalfEdge> listHEdges_A, List<TerrainHalfEdge> listHEdges_B) {
@@ -331,197 +196,6 @@ public class TileMatrix {
         }
 
         return true;
-    }
-
-    public void makeMatrixMeshModifyMode(boolean isFirstGeneration) throws TransformException, IOException {
-        TileIndices tileIndices = new TileIndices();
-
-        boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
-
-        // First, load or create all the of the matrix
-        // Must load from min tile-1 to max tile+1
-        tilesMatrixRowCol.clear();
-        int minTileX = tilesRange.getMinTileX() - 1;
-        int maxTileX = tilesRange.getMaxTileX() + 1;
-        int minTileY = tilesRange.getMinTileY() - 1;
-        int maxTileY = tilesRange.getMaxTileY() + 1;
-        // Note : the minTileX, minTileY, maxTileX, maxTileY are no necessary to verify if the values are out of the limits
-        // It is verified in the TerrainTilesetGenerator
-
-        int totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
-
-        int counter = 0;
-        int counterAux = 0;
-        for (int Y = minTileY; Y <= maxTileY; Y++) {
-            List<GeographicTerrainTile> tilesListRow = new ArrayList<>();
-            for (int X = minTileX; X <= maxTileX; X++) {
-                tileIndices.set(X, Y, tilesRange.getTileDepth());
-
-                // In MODIFY_MODE always load or create the tile file.
-                GeographicTerrainTile tile = this.manager.loadOrCreateGeographicTerrainTile(tileIndices);
-                if (counter >= 100) {
-                    counter = 0;
-                    log.debug("Loading Tile Level : {}, i : {}/{}", tileIndices.getL(), counterAux, totalTiles);
-                }
-
-                tilesListRow.add(tile);
-
-                counter++;
-                counterAux++;
-            }
-            tilesMatrixRowCol.add(tilesListRow);
-        }
-
-        int rowsCount = tilesMatrixRowCol.size();
-        int colsCount = tilesMatrixRowCol.get(0).size();
-        log.debug("Making TileMatrix columns : {}, rows : {} ", colsCount, rowsCount);
-
-        List<TerrainMesh> rowMeshesList = new ArrayList<>();
-        for (int i = 0; i < rowsCount; i++) {
-            List<GeographicTerrainTile> rowTilesArray = tilesMatrixRowCol.get(i);
-            TerrainMesh rowMesh = null;
-
-            for (int j = 0; j < colsCount; j++) {
-                GeographicTerrainTile tile = rowTilesArray.get(j);
-                if (tile != null) {
-                    TerrainMesh tileMesh = tile.getMesh();
-                    if (rowMesh == null) {
-                        rowMesh = tileMesh;
-                    } else {
-                        //  +----------+----------+
-                        //  |          |          |
-                        //  | RowMesh  | tileMesh |
-                        //  |          |          |
-                        //  +----------+----------+
-                        // merge the tileMesh with the rowMesh
-                        // set twins between the right HEdges of the rowMesh and the left HEdges of the tileMesh
-                        List<TerrainHalfEdge> rowMeshRightHalfEdges = rowMesh.getRightHalfEdgesSortedDownToUp();
-                        List<TerrainHalfEdge> tileMeshLeftHalfEdges = tileMesh.getLeftHalfEdgesSortedUpToDown();
-
-                        // the c_tile can be null
-                        if (!rowMeshRightHalfEdges.isEmpty()) {
-                            if (rowMeshRightHalfEdges.size() != tileMeshLeftHalfEdges.size()) {
-                                log.debug("The size of the halfEdges lists are different." + "rowMeshRightHalfEdges_size: " + rowMeshRightHalfEdges.size() + ", tileMeshLeftHalfEdges_size: " + tileMeshLeftHalfEdges.size());
-                                refineAdjacentTilesHorizontally(rowMesh, tileMesh, globalOptions.isModify());
-                            }
-                            this.setTwinsBetweenHalfEdgesInverseOrder(rowMeshRightHalfEdges, tileMeshLeftHalfEdges);
-
-                            // now, merge the left tile mesh to the result mesh.
-                            rowMesh.removeDeletedObjects();
-                            rowMesh.mergeMesh(tileMesh);
-                        }
-                    }
-                }
-            }
-            rowMeshesList.add(rowMesh);
-        }
-
-        // now, join all the rowMeshes
-        TerrainMesh resultMesh = null;
-        for (TerrainMesh rowMesh : rowMeshesList) {
-            if (rowMesh == null) {
-                continue;
-            }
-
-            if (resultMesh == null) {
-                resultMesh = rowMesh;
-            } else {
-                if (originIsLeftUp) {
-                    //  +------------+
-                    //  |            |
-                    //  | resultMesh |
-                    //  |            |
-                    //  +------------+
-                    //  |            |
-                    //  | rowMesh    |
-                    //  |            |
-                    //  +------------+
-                    // merge the rowMesh with the resultMesh
-                    // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
-                    List<TerrainHalfEdge> resultMeshDownHalfEdges = resultMesh.getDownHalfEdgesSortedLeftToRight();
-                    List<TerrainHalfEdge> rowMeshUpHalfEdges = rowMesh.getUpHalfEdgesSortedRightToLeft();
-
-                    // the c_tile can be null
-                    if (!resultMeshDownHalfEdges.isEmpty()) {
-                        // now, set twins of halfEdges
-                        if (resultMeshDownHalfEdges.size() != rowMeshUpHalfEdges.size()) {
-                            log.debug("The size of the halfEdges lists are different." + "resultMeshDownHalfEdges_size: " + resultMeshDownHalfEdges.size() + ", rowMeshUpHalfEdges_size: " + rowMeshUpHalfEdges.size());
-                            refineAdjacentTilesVertically(resultMesh, rowMesh, globalOptions.isModify());
-                        }
-                        this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshDownHalfEdges, rowMeshUpHalfEdges);
-                        // now, merge the row mesh to the result mesh.
-                        resultMesh.removeDeletedObjects();
-                        resultMesh.mergeMesh(rowMesh);
-                    }
-                } else {
-                    //  +------------+
-                    //  |            |
-                    //  |  rowMesh   |
-                    //  |            |
-                    //  +------------+
-                    //  |            |
-                    //  | resultMesh |
-                    //  |            |
-                    //  +------------+
-                    // merge the rowMesh with the resultMesh
-                    // set twins between the bottom HEdges of the resultMesh and the top HEdges of the rowMesh
-                    List<TerrainHalfEdge> resultMeshUpHalfEdges = resultMesh.getUpHalfEdgesSortedRightToLeft();
-                    List<TerrainHalfEdge> rowMeshDownHalfEdges = rowMesh.getDownHalfEdgesSortedLeftToRight();
-
-                    // the c_tile can be null
-                    if (!resultMeshUpHalfEdges.isEmpty()) {
-                        // now, set twins of halfEdges
-                        this.setTwinsBetweenHalfEdgesInverseOrder(resultMeshUpHalfEdges, rowMeshDownHalfEdges);
-                        // now, merge the row mesh to the result mesh.
-                        resultMesh.removeDeletedObjects();
-                        resultMesh.mergeMesh(rowMesh);
-                    }
-                }
-            }
-        }
-
-        log.debug("End making TileMatrix");
-
-        if (resultMesh != null) {
-            resultMesh.setObjectsIdInList();
-
-            boolean skipNoDataType = true; // true only in MODIFY_MODE.
-            // noDataType includes NO_INTERSECTION and INTERSECTION_BUT_NO_DATA.
-            this.recalculateElevation(resultMesh, tilesRange, skipNoDataType);
-            this.refineMesh(resultMesh, tilesRange);
-
-            // check if you must calculate normals
-            if (globalOptions.isCalculateNormalsExtension()) {
-                this.listVertices.clear();
-                this.listHalfEdges.clear();
-                resultMesh.calculateNormals(this.listVertices, this.listHalfEdges);
-            }
-
-            // now save the 9 tiles
-            List<TerrainMesh> separatedMeshes = new ArrayList<>();
-            TerrainMeshUtils.getSeparatedMeshes(resultMesh, separatedMeshes, originIsLeftUp);
-
-            // save order:
-            // 1- saveSeparatedTiles()
-            // 2- saveQuantizedMeshes()
-            // 3- saveSeparatedChildrenTiles()
-            //------------------------------------------
-            log.debug("Saving Separated Tiles...");
-            saveSeparatedTiles(separatedMeshes);
-
-            // now save quantizedMeshes
-            log.debug("Saving Quantized Meshes...");
-            saveQuantizedMeshes(separatedMeshes);
-
-            // finally save the children tiles
-            // note : the children tiles must be the last saved
-            if (tilesRange.getTileDepth() < globalOptions.getMaximumTileDepth()) {
-                log.debug("Saving Separated children Tiles...");
-                saveSeparatedChildrenTiles(separatedMeshes);
-            }
-        } else {
-            log.error("ResultMesh is null.");
-        }
     }
 
     public void makeMatrixMesh(boolean isFirstGeneration) throws TransformException, IOException {
@@ -700,8 +374,7 @@ public class TileMatrix {
         if (resultMesh != null) {
             resultMesh.setObjectsIdInList();
 
-            boolean skipNoDataType = false; // only true in MODIFY_MODE, so, here is false.
-            this.recalculateElevation(resultMesh, tilesRange, skipNoDataType);
+            this.recalculateElevation(resultMesh, tilesRange);
             this.refineMesh(resultMesh, tilesRange);
 
             // check if you must calculate normals
@@ -739,6 +412,11 @@ public class TileMatrix {
     }
 
     public void saveQuantizedMeshes(List<TerrainMesh> separatedMeshes) throws IOException {
+        saveQuantizedMeshes(separatedMeshes, null, null);
+    }
+
+    private void saveQuantizedMeshes(List<TerrainMesh> separatedMeshes,
+                                     Double commonMinimumHeight, Double commonMaximumHeight) throws IOException {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         boolean calculateNormals = globalOptions.isCalculateNormalsExtension();
 
@@ -753,16 +431,127 @@ public class TileMatrix {
             tile.setMesh(mesh);
 
             QuantizedMeshManager quantizedMeshManager = new QuantizedMeshManager();
-            QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(tile, calculateNormals);
+            QuantizedMesh quantizedMesh = quantizedMeshManager.getQuantizedMeshFromTile(
+                    tile, calculateNormals, commonMinimumHeight, commonMaximumHeight);
             String tileFullPath = this.manager.getQuantizedMeshTilePath(tileIndices);
             String tileFolderPath = this.manager.getQuantizedMeshTileFolderPath(tileIndices);
             FileUtils.createAllFoldersIfNoExist(tileFolderPath);
 
             LittleEndianDataOutputStream dataOutputStream = new LittleEndianDataOutputStream(new BufferedOutputStream(new FileOutputStream(tileFullPath)));
 
+            if (globalOptions.isWaterMaskExtension()) {
+                GeographicTerrainTileRaster tileRaster = this.manager.getTerrainElevationModeler().getGeographicTerrainTileRaster(tileIndices, this.manager);
+                quantizedMesh.setWaterMask(tileRaster != null ? tileRaster.createWaterMask() : new byte[]{0});
+            }
+            if (globalOptions.isMetaDataExtension()) {
+                quantizedMesh.setMetadataJson(TileAvailabilityMetadata.createMetadataJson(
+                        tileIndices, this.manager.getAvailableTileSet(), globalOptions.getMaximumTileDepth()));
+            }
+
             // save the tile
             quantizedMesh.saveDataOutputStream(dataOutputStream, calculateNormals);
             dataOutputStream.close();
+        }
+    }
+
+    public void regenerateAntimeridianPair(int depth, int tileY) throws IOException, TransformException {
+        int maxTileX = (1 << (depth + 1)) - 1;
+        TileIndices westIndices = new TileIndices(0, tileY, depth);
+        TileIndices eastIndices = new TileIndices(maxTileX, tileY, depth);
+
+        GeographicTerrainTile westTile = new GeographicTerrainTile(null, manager);
+        westTile.setTileIndices(westIndices);
+        westTile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
+                depth, 0, tileY, null, manager.getImaginaryType(), manager.isOriginIsLeftUp()));
+        westTile.createInitialMesh();
+
+        GeographicTerrainTile eastTile = new GeographicTerrainTile(null, manager);
+        eastTile.setTileIndices(eastIndices);
+        eastTile.setGeographicExtension(GeographicTerrainTileUtils.getGeographicExtentOfTileLXY(
+                depth, maxTileX, tileY, null, manager.getImaginaryType(), manager.isOriginIsLeftUp()));
+        eastTile.createInitialMesh();
+
+        TerrainMesh westMesh = westTile.getMesh();
+        TerrainMesh eastMesh = eastTile.getMesh();
+
+        TileRange westRange = new TileRange();
+        westRange.setTileDepth(depth);
+        westRange.setMinTileX(0);
+        westRange.setMaxTileX(0);
+        westRange.setMinTileY(tileY);
+        westRange.setMaxTileY(tileY);
+        recalculateElevation(westMesh, westRange);
+
+        TileRange eastRange = new TileRange();
+        eastRange.setTileDepth(depth);
+        eastRange.setMinTileX(maxTileX);
+        eastRange.setMaxTileX(maxTileX);
+        eastRange.setMinTileY(tileY);
+        eastRange.setMaxTileY(tileY);
+        recalculateElevation(eastMesh, eastRange);
+
+        translateMeshLongitude(eastMesh, -360.0);
+
+        List<TerrainHalfEdge> eastFrontier = eastMesh.getRightHalfEdgesSortedDownToUp();
+        List<TerrainHalfEdge> westFrontier = westMesh.getLeftHalfEdgesSortedUpToDown();
+        if (!setTwinsBetweenHalfEdgesInverseOrder(eastFrontier, westFrontier)) {
+            throw new IOException("Failed to connect antimeridian R-TIN frontiers at L=" + depth + ", Y=" + tileY);
+        }
+        eastMesh.removeDeletedObjects();
+        eastMesh.mergeMesh(westMesh);
+
+        TileRange pairRange = new TileRange();
+        pairRange.setTileDepth(depth);
+        pairRange.setMinTileX(0);
+        pairRange.setMaxTileX(maxTileX);
+        pairRange.setMinTileY(tileY);
+        pairRange.setMaxTileY(tileY);
+        refineMesh(eastMesh, pairRange);
+
+        List<TerrainMesh> separatedMeshes = new ArrayList<>();
+        TerrainMeshUtils.getSeparatedMeshes(eastMesh, separatedMeshes, manager.isOriginIsLeftUp());
+        double commonMinimumHeight = Double.MAX_VALUE;
+        double commonMaximumHeight = -Double.MAX_VALUE;
+        List<TerrainMesh> westSeparatedMeshes = new ArrayList<>();
+        List<TerrainMesh> eastSeparatedMeshes = new ArrayList<>();
+        for (TerrainMesh separatedMesh : separatedMeshes) {
+            TileIndices owner = separatedMesh.getTriangles().getFirst().getOwnerTileIndices();
+            if (owner.getX() == maxTileX) {
+                eastSeparatedMeshes.add(separatedMesh);
+            } else {
+                westSeparatedMeshes.add(separatedMesh);
+            }
+            for (TerrainVertex vertex : separatedMesh.getVertices()) {
+                double height = vertex.getPosition().z;
+                commonMinimumHeight = Math.min(commonMinimumHeight, height);
+                commonMaximumHeight = Math.max(commonMaximumHeight, height);
+            }
+        }
+
+        // getSeparatedMeshes keeps the antimeridian vertices shared between both meshes.
+        // Save the west side while they are still at -180, then restore and save the east
+        // side. Restoring the east side first would also move the west frontier to +180.
+        calculateNormalsIfRequired(westSeparatedMeshes);
+        saveQuantizedMeshes(westSeparatedMeshes, commonMinimumHeight, commonMaximumHeight);
+        for (TerrainMesh eastSeparatedMesh : eastSeparatedMeshes) {
+            translateMeshLongitude(eastSeparatedMesh, 360.0);
+        }
+        calculateNormalsIfRequired(eastSeparatedMeshes);
+        saveQuantizedMeshes(eastSeparatedMeshes, commonMinimumHeight, commonMaximumHeight);
+    }
+
+    private void calculateNormalsIfRequired(List<TerrainMesh> meshes) {
+        if (!globalOptions.isCalculateNormalsExtension()) {
+            return;
+        }
+        for (TerrainMesh mesh : meshes) {
+            mesh.calculateNormals(new ArrayList<>(), new ArrayList<>());
+        }
+    }
+
+    private void translateMeshLongitude(TerrainMesh mesh, double longitudeOffset) {
+        for (TerrainVertex vertex : mesh.getVertices()) {
+            vertex.getPosition().x += longitudeOffset;
         }
     }
 
@@ -774,9 +563,6 @@ public class TileMatrix {
 
             TerrainTriangle triangle = mesh.triangles.getFirst();
             TileIndices tileIndices = triangle.getOwnerTileIndices();
-            String tileTempDirectory = globalOptions.getTileTempPath();
-            String tileFilePath = GeographicTerrainTileUtils.getTileFilePath(tileIndices.getX(), tileIndices.getY(), tileIndices.getL());
-            String tileFullPath = tileTempDirectory + File.separator + tileFilePath;
 
             if (counter >= 100) {
                 counter = 0;
@@ -784,7 +570,7 @@ public class TileMatrix {
             }
 
             try {
-                mesh.saveFile(tileFullPath);
+                this.manager.getTerrainTileStore().saveTempTileMesh(mesh, tileIndices);
             } catch (IOException e) {
                 log.error("Error:", e);
                 return false;
@@ -801,7 +587,7 @@ public class TileMatrix {
         }
     }
 
-    public void recalculateElevation(TerrainMesh terrainMesh, TileRange tilesRange, boolean skipNoDataType) throws TransformException, IOException {
+    public void recalculateElevation(TerrainMesh terrainMesh, TileRange tilesRange) throws TransformException, IOException {
         List<TerrainTriangle> triangles = new ArrayList<>();
         terrainMesh.getTrianglesByTilesRange(tilesRange, triangles, null);
 
@@ -825,27 +611,12 @@ public class TileMatrix {
         boolean originIsLeftUp = this.manager.isOriginIsLeftUp();
         int currDepth = tilesRange.getTileDepth();
         byte[] intersectionType = {0}; // 0 = NO_INTERSECTION, 1 = INTERSECTION, 2 = INTERSECTION_BUT_NO_DATA
-        // noDataType includes NO_INTERSECTION and INTERSECTION_BUT_NO_DATA.
         for (int i = 0; i < verticesCount; i++) {
             TerrainVertex vertex = verticesOfCurrentTile.get(i);
             Vector3d position = vertex.getPosition();
-            //********************************************************************************
-            // in ModifyMode, check if the position intersects with any of the geoTiff.
-            // In the case of NO intersection, then do nothing.
-            //********************************************************************************
             GeographicTerrainTileUtils.selectTileIndices(currDepth, position.x, position.y, tileIndicesAux, originIsLeftUp);
             double z = terrainElevationModeler.sampleBilinearElevation(tileIndicesAux, this.manager, position.x, position.y, intersectionType);
-            if (skipNoDataType) {
-                //********************************************
-                // skipNoDataType is true only in MODIFY_MODE.
-                //********************************************
-                if (intersectionType[0] == 1) {
-                    // only modify when there are pixel data.***
-                    position.z = z;
-                }
-            } else {
-                position.z = z;
-            }
+            position.z = z;
         }
     }
 
@@ -878,6 +649,12 @@ public class TileMatrix {
         maxDiff *= scale; // scale the maxDiff
 
         GeographicTerrainTileRaster tileRaster = terrainElevationModeler.getGeographicTerrainTileRaster(tileIndices, this.manager);
+        // the triangle can be in a translated longitude frame across the antimeridian (mesh = raster + offset)
+        double rasterLongitudeOffset = 0.0;
+        if (tileRaster != null) {
+            double triangleCenterLonDeg = (bboxTriangle.getMinX() + bboxTriangle.getMaxX()) * 0.5;
+            rasterLongitudeOffset = -tileRaster.getLongitudeShift(triangleCenterLonDeg);
+        }
 
         // if the triangle size is very small, then do not refine**********************
         // Calculate the maxLength of the triangle in meters
@@ -886,22 +663,26 @@ public class TileMatrix {
 
         if (triangleMaxLengthMeters < minTriangleSizeForDepth) {
             triangle.setRefineChecked(true);
-            log.debug("Filtered by Min Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # minTriangleSizeForDepth : " + minTriangleSizeForDepth);
+            log.debug("Filtered by Min Triangle Size : L : {} # triangleMaxLengthMeters : {} # minTriangleSizeForDepth : {}", tileIndices.getL(), triangleMaxLengthMeters, minTriangleSizeForDepth);
             return false;
         }
 
         double maxTriangleSizeForDepth = this.manager.getMaxTriangleSizeForTileDepth(currL);
         if (triangleMaxLengthMeters > maxTriangleSizeForDepth) {
-            log.debug("Filtered by Max Triangle Size : L : " + tileIndices.getL() + " # triangleMaxLengthMeters : " + triangleMaxLengthMeters + " # maxTriangleSizeForDepth : " + maxTriangleSizeForDepth);
+            log.debug("Filtered by Max Triangle Size : L : {} # triangleMaxLengthMeters : {} # maxTriangleSizeForDepth : {}", tileIndices.getL(), triangleMaxLengthMeters, maxTriangleSizeForDepth);
             return true;
         }
 
         // check if the triangle intersects the terrainData
         GeographicExtension rootGeographicExtension = terrainElevationModeler.getRootGeographicExtension();
-        if (!rootGeographicExtension.intersectsBox(bboxTriangle.getMinX(), bboxTriangle.getMinY(), bboxTriangle.getMaxX(), bboxTriangle.getMaxY())) {
-            // Need check only the 3 vertex of the triangle
+        double sourceMinX = bboxTriangle.getMinX() - rasterLongitudeOffset;
+        double sourceMaxX = bboxTriangle.getMaxX() - rasterLongitudeOffset;
+        if (!rootGeographicExtension.intersectsBox(sourceMinX, bboxTriangle.getMinY(), sourceMaxX, bboxTriangle.getMaxY())) {
+            // Need check only the 3 vertex of the triangle: outside the data, the surface is the no-data height (0 or the geoid)
             for (TerrainVertex vertex : this.listVertices) {
-                if (vertex.getPosition().z > maxDiff) {
+                Vector3d position = vertex.getPosition();
+                double noDataHeight = terrainElevationModeler.getNoDataHeight(position.x, position.y);
+                if (abs(position.z - noDataHeight) > maxDiff) {
                     return true;
                 }
             }
@@ -925,7 +706,7 @@ public class TileMatrix {
         triangle.getBarycenter(this.listVertices, this.listHalfEdges, this.barycenterScratch);
         int colIdx = tileRaster.getColumn(this.barycenterScratch.x);
         int rowIdx = tileRaster.getRow(this.barycenterScratch.y);
-        double barycenterLonDeg = tileRaster.getLonDeg(colIdx);
+        double barycenterLonDeg = tileRaster.getLonDeg(colIdx) + rasterLongitudeOffset;
         double barycenterLatDeg = tileRaster.getLatDeg(rowIdx);
 
         double elevation = tileRaster.getElevation(colIdx, rowIdx);
@@ -941,9 +722,8 @@ public class TileMatrix {
             distToPlane = rawDistToPlane * cosAng;
         }
 
+        // is it Barycenter?
         if (distToPlane > maxDiff) {
-            // is it Barycenter?
-            log.debug("Filtered by Barycenter : L : " + tileIndices.getL() + " # col : " + colIdx + " # row : " + rowIdx + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
             return true;
         }
 
@@ -956,7 +736,8 @@ public class TileMatrix {
         int colsCount = endCol - startCol + 1;
         int rowsCount = endRow - startRow + 1;
 
-        if (colsCount < 6 || rowsCount < 6) {
+        boolean isMaxDepth = currL >= globalOptions.getMaximumTileDepth();
+        if (!isMaxDepth && (colsCount < 3 || rowsCount < 3)) {
             triangle.setRefineChecked(true);
             return false;
         }
@@ -986,8 +767,8 @@ public class TileMatrix {
         }
         double inverseDenominator = 1.0 / denominator;
 
-        double startLonDeg = tileRaster.getLonDeg(startCol); // here contains the semiDeltaLonDeg, for the pixel center
-        double startLatDeg = tileRaster.getLatDeg(startRow); // here contains the semiDeltaLatDeg, for the pixel center
+        double startLonDeg = tileRaster.getLonDeg(startCol) + rasterLongitudeOffset;
+        double startLatDeg = tileRaster.getLatDeg(startRow);
 
         double deltaLonDeg = tileRaster.getDeltaLonDeg();
         double deltaLatDeg = tileRaster.getDeltaLatDeg();
@@ -1068,7 +849,7 @@ public class TileMatrix {
                     //halfEdges.clear();
 //                    intersects = triangle.intersectsPointXY(posX, posY, halfEdges, this.listVertices, line2d);
 
-                    log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + col + " / " + colsCount + " # row : " + row + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+                    log.debug("Filtered by RasterTile : L : {} # col : {} / {} # row : {} / {} # cosAng : {} # distToPlane : {} # maxDiff : {}", tileIndices.getL(), col, colsCount, row, rowsCount, cosAng, distToPlane, maxDiff);
                     return true;
                 }
                 rowAux++;
@@ -1077,7 +858,7 @@ public class TileMatrix {
         }
         triangle.setRefineChecked(true);
 
-        log.debug("Filtered by RasterTile : L : " + tileIndices.getL() + " # col : " + colAux + " / " + colsCount + " # row : " + rowAux + " / " + rowsCount + " # cosAng : " + cosAng + " # distToPlane : " + distToPlane + " # maxDiff : " + maxDiff);
+        log.debug("Filtered by RasterTile : L : {} # col : {} / {} # row : {} / {} # cosAng : {} # distToPlane : {} # maxDiff : {}", tileIndices.getL(), colAux, colsCount, rowAux, rowsCount, cosAng, distToPlane, maxDiff);
         return false;
     }
 
@@ -1097,7 +878,6 @@ public class TileMatrix {
         // Inside the mesh, there are triangles of 9 different tiles
         // Here refine only the triangles of the current tile
 
-        boolean isModify = globalOptions.isModify();
         final int memoryCheckSplitInterval = 256;
 
         // refine the mesh
@@ -1127,7 +907,7 @@ public class TileMatrix {
 
                 this.manager.getTriangleList().clear();
                 this.listHalfEdges.clear();
-                mesh.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, isModify, null);
+                mesh.splitTriangle(triangle, this.manager.getTerrainElevationModeler(), this.manager.getTriangleList(), this.listHalfEdges, null);
                 this.listHalfEdges.clear();
 
                 if (!this.manager.getTriangleList().isEmpty()) {

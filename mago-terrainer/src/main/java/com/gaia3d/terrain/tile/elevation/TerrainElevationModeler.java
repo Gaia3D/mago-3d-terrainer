@@ -12,7 +12,6 @@ import com.gaia3d.terrain.tile.raster.TerrainRasterFormat;
 import com.gaia3d.terrain.tile.raster.TerrainRasterReader;
 import com.gaia3d.terrain.tile.raster.TerrainRasterMetadata;
 import com.gaia3d.util.GlobeUtils;
-import com.gaia3d.terrain.types.PriorityType;
 import com.gaia3d.terrain.util.GaiaGeoTiffUtils;
 import com.gaia3d.terrain.util.GeographicTerrainTileUtils;
 import com.gaia3d.util.FileUtils;
@@ -41,6 +40,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Slf4j
 public class TerrainElevationModeler {
+    private static final double ANTIMERIDIAN_EPSILON_DEG = 1.0e-8;
     private static final boolean PRELOAD_TERRAIN_RASTERS = true;
     private static final long MEMORY_PLANNING_LIMIT_BYTES = 8L * 1024L * 1024L * 1024L;
     private static final long MIN_PRELOAD_BUDGET_BYTES = 256L * 1024L * 1024L;
@@ -68,6 +68,9 @@ public class TerrainElevationModeler {
     private TerrainElevationDataQuadTree rootTerrainElevationDataQuadTree = null;
     private GeoTiffCoverageStore geoTiffManager = null;
     private boolean[] intersects = {false};
+    // the geoid used for the height of the areas without data, resolved on the first use
+    private GeoidHeightSampler noDataGeoidSampler = null;
+    private boolean noDataGeoidResolved = false;
     private List<String> geoTiffFileNames = new ArrayList<>();
     private int terrainElevationDataQueryMark = 1;
 
@@ -298,39 +301,117 @@ public class TerrainElevationModeler {
         return terrainElevationDataQueryMark;
     }
 
+    /**
+     * Returns true if a raster had data at the last sampled position.
+     */
+    public boolean isLastSampleIntersected() {
+        return intersects[0];
+    }
+
     public double getElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
-        double resultElevation = 0.0;
-
         if (rootTerrainElevationDataQuadTree == null) {
-            return resultElevation;
+            intersects[0] = false;
+            return getNoDataHeight(lonDeg, latDeg);
         }
 
-        PriorityType priorityType = globalOptions.getPriorityType();
+        return sampleElevation(lonDeg, latDeg, terrainElevDataArray);
+    }
 
-        intersects[0] = false;
-        if (priorityType == PriorityType.RESOLUTION) {
-            for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
-                double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
-                if (intersects[0]) {
-                    return elevation;
-                }
-            }
-            return 0.0;
+    /**
+     * Resolves the common elevation of the two antimeridian frontiers. This is deliberately
+     * separate from {@link #getElevation(double, double, List)} so ordinary DEM sampling and
+     * overlap priority remain unchanged; raster tiles call it only in their final seam pass.
+     */
+    public double getAntimeridianElevation(double latDeg, List<TerrainElevationData> terrainElevDataArray) {
+        double westElevation = sampleElevation(-180.0, latDeg, terrainElevDataArray);
+        boolean westIntersects = intersects[0];
+        if (!westIntersects) {
+            westElevation = sampleAntimeridianFallback(true, latDeg, terrainElevDataArray);
+            westIntersects = intersects[0];
+        }
+        double eastElevation = sampleElevation(180.0, latDeg, terrainElevDataArray);
+        boolean eastIntersects = intersects[0];
+        if (!eastIntersects) {
+            eastElevation = sampleAntimeridianFallback(false, latDeg, terrainElevDataArray);
+            eastIntersects = intersects[0];
         }
 
-        double candidateElevation = 0.0;
+        if (westIntersects && eastIntersects) {
+            intersects[0] = true;
+            return (westElevation + eastElevation) * 0.5;
+        }
+        if (westIntersects) {
+            intersects[0] = true;
+            return westElevation;
+        }
+        intersects[0] = eastIntersects;
+        return eastIntersects ? eastElevation : getNoDataHeight(180.0, latDeg);
+    }
+
+    /**
+     * The height of the areas without data: the geoid height (the mean sea level) when a geoid is used, otherwise 0.
+     */
+    public double getNoDataHeight(double lonDeg, double latDeg) {
+        if (!noDataGeoidResolved) {
+            noDataGeoidSampler = GeoidHeightSampler.getConfiguredSampler();
+            noDataGeoidResolved = true;
+        }
+        return noDataGeoidSampler != null ? noDataGeoidSampler.getHeight(lonDeg, latDeg) : 0.0;
+    }
+
+    private double sampleAntimeridianFallback(boolean west, double latDeg,
+                                               List<TerrainElevationData> terrainElevDataArray) {
+        Vector2d pixelSize = new Vector2d();
+
         for (TerrainElevationData terrainElevationData : terrainElevDataArray) {
-            double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
-            if (!intersects[0]) {
+            GeographicExtension extension = terrainElevationData.getGeographicExtension();
+            terrainElevationData.getPixelSizeDegree(pixelSize);
+            double pixelSizeLon = Math.abs(pixelSize.x);
+            if (!(pixelSizeLon > 0.0) || !Double.isFinite(pixelSizeLon)) {
                 continue;
             }
-            if (elevation > candidateElevation) {
-                candidateElevation = elevation;
+
+            double frontierLon = west ? -180.0 : 180.0;
+            double edgeLon = west ? extension.getMinLongitudeDeg() : extension.getMaxLongitudeDeg();
+            double gap = Math.abs(edgeLon - frontierLon);
+            if (gap > pixelSizeLon + ANTIMERIDIAN_EPSILON_DEG) {
+                continue;
+            }
+
+            // If the nominal frontier is covered but NoData, move one pixel inward. If the
+            // raster ends just short of ±180, its closest valid edge is already the fallback.
+            boolean containsFrontier = extension.getMinLongitudeDeg() <= frontierLon
+                    && extension.getMaxLongitudeDeg() >= frontierLon;
+            double fallbackLon = containsFrontier
+                    ? frontierLon + (west ? pixelSizeLon : -pixelSizeLon)
+                    : edgeLon;
+            fallbackLon = Math.max(extension.getMinLongitudeDeg(),
+                    Math.min(extension.getMaxLongitudeDeg(), fallbackLon));
+
+            double elevation = terrainElevationData.getElevation(fallbackLon, latDeg, intersects);
+            if (intersects[0]) {
+                return elevation;
             }
         }
 
-        resultElevation = candidateElevation;
-        return resultElevation;
+        intersects[0] = false;
+        return 0.0;
+    }
+
+    private double sampleElevation(double lonDeg, double latDeg, List<TerrainElevationData> terrainElevDataArray) {
+        // the rasters are in priority order (GeographicTerrainTileRaster), the first one with data gives the height
+        // indexed loop : this is the hottest path of the elevation sampling, avoid the iterator allocation
+        intersects[0] = false;
+        int terrainElevDataCount = terrainElevDataArray.size();
+        for (int i = 0; i < terrainElevDataCount; i++) {
+            TerrainElevationData terrainElevationData = terrainElevDataArray.get(i);
+            double elevation = terrainElevationData.getElevation(lonDeg, latDeg, intersects);
+            if (intersects[0]) {
+                return elevation;
+            }
+        }
+        intersects[0] = false;
+        return getNoDataHeight(lonDeg, latDeg);
     }
 
     private List<File> resolveConfiguredElevationFiles() {
@@ -398,6 +479,9 @@ public class TerrainElevationModeler {
             }
 
             TerrainElevationData terrainElevationData = new TerrainElevationData(this);
+            if (terrainTilesetGenerator != null) {
+                terrainElevationData.setPriorityRank(terrainTilesetGenerator.getRasterPriority().getRank(geoTiffFilePath));
+            }
             if (geoTiffFilePath.toLowerCase().endsWith(TerrainRasterFormat.EXTENSION)) {
                 loadTerrainRasterMetadata(new File(geoTiffFilePath), terrainElevationData);
                 rootTerrainElevationDataQuadTree.addTerrainElevationData(terrainElevationData);
@@ -540,11 +624,8 @@ public class TerrainElevationModeler {
             return;
         }
 
+        // a budget of 0 (no free headroom) releases every raster outside the retained area
         long liveRasterBudgetBytes = computeLiveRasterBudgetBytes();
-        if (liveRasterBudgetBytes <= 0L) {
-            return;
-        }
-
         long loadedRasterBytes = estimateLoadedRasterBytes(terrainElevDataArray);
         if (loadedRasterBytes <= liveRasterBudgetBytes) {
             return;
@@ -569,10 +650,6 @@ public class TerrainElevationModeler {
         }
 
         long liveRasterBudgetBytes = computeLiveRasterBudgetBytes();
-        if (liveRasterBudgetBytes <= 0L) {
-            return;
-        }
-
         long loadedRasterBytes = estimateLoadedRasterBytes(activeArea);
         if (loadedRasterBytes <= liveRasterBudgetBytes) {
             return;

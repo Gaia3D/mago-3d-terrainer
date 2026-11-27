@@ -10,7 +10,6 @@ import java.util.Objects;
 
 @Getter
 public class MagoRenderableNode {
-
     private final List<MagoRenderableMesh> renderableMeshes =
             new ArrayList<>();
     private final List<MagoRenderableNode> children =
